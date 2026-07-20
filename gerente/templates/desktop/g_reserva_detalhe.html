@@ -1,0 +1,65 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-reservas' %}
+{% block title %}Reserva de {{ r.cliente }} · Partiu Quadra{% endblock %}
+{% block page_title %}Detalhes da reserva{% endblock %}
+{% block page_sub %}{{ r.cliente }} · {{ r.data }}{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('pc_gerente_reservas') }}" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para reservas</a>
+
+<div class="split-2">
+  <div>
+    <div class="card">
+      <h2>Reserva</h2>
+      <div class="bc-fields" style="margin-top:0;">
+        <div class="bc-field"><span class="k"><svg class="ic"><use href="#i-grid"/></svg> Quadra</span><span class="v">{{ r.quadra }}</span></div>
+        <div class="bc-field"><span class="k"><svg class="ic"><use href="#i-calendar"/></svg> Data</span><span class="v">{{ r.data }}</span></div>
+        <div class="bc-field"><span class="k"><svg class="ic"><use href="#i-clock"/></svg> Horário</span><span class="v num">{{ r.hora }}</span></div>
+        <div class="bc-field"><span class="k"><svg class="ic"><use href="#i-check"/></svg> Status</span><span class="v"><span class="status {{ r.status|lower }}">{{ r.status }}</span></span></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:0;">
+      <h2>Repasse</h2>
+      <div class="bc-summary" style="margin-bottom:0;">
+        <div class="line"><span class="muted">Valor da reserva</span><span class="num">R$ {{ '%.2f'|format(r.valor) }}</span></div>
+        <div class="line"><span class="muted">Comissão Partiu Quadra ({{ taxa }}%)</span><span class="num">− R$ {{ '%.2f'|format(comissao) }}</span></div>
+        <div class="line total"><span>Você recebe</span><span class="num">R$ {{ '%.2f'|format(repasse) }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h2>Cliente</h2>
+      <div class="cli" style="margin-bottom:16px;"><span class="av">{{ r.cliente[0] }}</span> <b>{{ r.cliente }}</b></div>
+      <div class="bc-fields" style="margin-top:0;">
+        <div class="bc-field"><span class="k"><svg class="ic"><use href="#i-user"/></svg> Telefone</span><span class="v num">{{ r.telefone }}</span></div>
+        <div class="bc-field"><span class="k"><svg class="ic"><use href="#i-star"/></svg> Reservas</span><span class="v">8 no total</span></div>
+      </div>
+      <a href="{{ url_for('pc_gerente_mensagens', cid=chat_cid) if chat_cid else url_for('pc_gerente_mensagens') }}" class="btn btn-outline btn-block" style="margin-top:14px;">
+        <svg class="ic sm"><use href="#i-chat"/></svg> Falar com o cliente
+      </a>
+    </div>
+
+    <div class="card" style="margin-bottom:0;">
+      <h2>Ações</h2>
+      {% if r.status == 'Solicitada' %}
+      <div class="set-hint" style="margin:0 0 14px;"><svg class="ic"><use href="#i-bell"/></svg> Este cliente está aguardando sua aprovação.</div>
+      <form method="post" action="{{ url_for('pc_gerente_reserva_aprovar', rid=r.id) }}"><button type="submit" class="btn btn-primary btn-block" style="margin-bottom:10px;"><svg class="ic sm"><use href="#i-check-circle"/></svg> Aprovar reserva</button></form>
+      <form method="post" action="{{ url_for('pc_gerente_reserva_recusar', rid=r.id) }}"><button type="submit" class="btn btn-danger btn-block"><svg class="ic sm"><use href="#i-x-circle"/></svg> Recusar</button></form>
+      {% else %}
+      {% if r.status == 'Pendente' %}
+      <form method="post" action="{{ url_for('pc_gerente_reserva_pagar', rid=r.id) }}"><button type="submit" class="btn btn-primary btn-block" style="margin-bottom:10px;">Confirmar pagamento</button></form>
+      {% endif %}
+      <a href="{{ url_for('pc_gerente_agenda') }}" class="btn btn-soft btn-block" style="margin-bottom:10px;">Ver na agenda</a>
+      {% if r.status not in ['Cancelada', 'Recusada'] %}
+      <form method="post" action="{{ url_for('pc_gerente_reserva_cancelar', rid=r.id) }}"><button type="submit" class="btn btn-danger btn-block">Cancelar reserva</button></form>
+      {% endif %}
+      {% endif %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'carteira' %}
+{% block title %}Usar cupom · Partiu Quadra{% endblock %}
+{% block page_title %}Usar cupom{% endblock %}
+{% block page_sub %}Aplique um código e ganhe desconto ou bônus{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('pc_carteira') }}" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para a carteira</a>
+
+<div class="split-2">
+  <form method="post" class="card" style="margin-bottom:0;">
+    <h2>Tem um cupom?</h2>
+    <div class="inp"><label>Código do cupom</label><input type="text" name="codigo" placeholder="Ex.: PARTIU10" style="text-transform:uppercase;" autocomplete="off" required></div>
+    <button type="submit" class="btn btn-volt btn-lg btn-block"><svg class="ic sm"><use href="#i-gift"/></svg> Aplicar cupom</button>
+  </form>
+
+  <aside class="card" style="margin-bottom:0;">
+    <h2>Cupons disponíveis</h2>
+    <div class="rlist" style="gap:10px;">
+      {% for c in cupons %}
+      <div class="coupon">
+        <div class="coupon-code">{{ c.codigo }}</div>
+        <div class="coupon-desc">{{ c.desc }}</div>
+        <button type="button" class="btn btn-soft btn-xs" data-copy="{{ c.codigo }}" data-copy-msg="Código {{ c.codigo }} copiado!">Copiar</button>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

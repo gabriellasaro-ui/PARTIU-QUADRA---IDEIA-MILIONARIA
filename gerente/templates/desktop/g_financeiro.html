@@ -1,0 +1,79 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-financeiro' %}
+{% block title %}Financeiro · Partiu Quadra{% endblock %}
+{% block page_title %}Financeiro{% endblock %}
+{% block page_sub %}Faturamento, comissão e repasses{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<div class="period" data-seg><a>Hoje</a><a class="on">7 dias</a><a>30 dias</a></div>
+{% endblock %}
+
+{% block content %}
+<div class="kpi-row" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="kpi feature">
+    <div class="top"><span class="ico"><svg class="ic"><use href="#i-wallet"/></svg></span><span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +11%</span></div>
+    <div class="val num">R$ {{ '%.0f'|format(g.repasse) }}</div><div class="lbl">Repasse para você</div>
+  </div>
+  <div class="kpi">
+    <div class="top"><span class="ico"><svg class="ic"><use href="#i-dollar"/></svg></span><span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +12%</span></div>
+    <div class="val num">R$ {{ '%.0f'|format(g.bruto) }}</div><div class="lbl">Faturamento bruto</div>
+  </div>
+  <div class="kpi">
+    <div class="top"><span class="ico"><svg class="ic"><use href="#i-shield"/></svg></span></div>
+    <div class="val num">R$ {{ '%.0f'|format(g.comissao) }}</div><div class="lbl">Comissão Partiu Quadra ({{ g.taxa }}%)</div>
+  </div>
+</div>
+
+<div class="dash-cols">
+  <div class="panel">
+    <div class="panel-head"><div><h2>Faturamento na semana</h2><span class="panel-sub">Últimos 7 dias</span></div></div>
+    <svg class="lc" viewBox="0 0 {{ g.chart.w }} {{ g.chart.h }}" role="img" aria-label="Faturamento por dia">
+      <defs><linearGradient id="lcfin" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1b7a3e" stop-opacity=".20"/><stop offset="1" stop-color="#1b7a3e" stop-opacity="0"/>
+      </linearGradient></defs>
+      {% for gl in g.chart.grid %}
+        <line class="lc-grid" x1="{{ g.chart.plot_x0 }}" y1="{{ gl.y }}" x2="{{ g.chart.plot_x1 }}" y2="{{ gl.y }}"/>
+        <text class="lc-yl" x="{{ g.chart.plot_x0 - 9 }}" y="{{ gl.y + 3 }}">{{ gl.lab }}</text>
+      {% endfor %}
+      <path class="lc-area" d="{{ g.chart.area }}" fill="url(#lcfin)"/>
+      <path class="lc-line" d="{{ g.chart.line }}"/>
+      {% for p in g.chart.points %}
+        <text class="lc-val {{ 'peak' if loop.index0 == g.chart.peak }}" x="{{ p.x }}" y="{{ p.y - 11 }}">{{ p.val }}</text>
+        <circle class="lc-dot {{ 'peak' if loop.index0 == g.chart.peak }}" cx="{{ p.x }}" cy="{{ p.y }}" r="{{ 5 if loop.index0 == g.chart.peak else 3.4 }}"/>
+        <text class="lc-xl" x="{{ p.x }}" y="{{ g.chart.h - 9 }}"
+              style="text-anchor: {{ 'start' if loop.first else ('end' if loop.last else 'middle') }};">{{ p.lab }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Como funciona o repasse</h2></div>
+    <div class="commission-box">
+      <div class="cb-row"><span class="muted">Faturamento bruto</span><span class="num">R$ {{ '%.2f'|format(g.bruto) }}</span></div>
+      <div class="cb-row"><span class="muted">Comissão Partiu Quadra ({{ g.taxa }}%)</span><span class="num">− R$ {{ '%.2f'|format(g.comissao) }}</span></div>
+      <div class="cb-row cb-total"><span>Você recebe</span><span class="num">R$ {{ '%.2f'|format(g.repasse) }}</span></div>
+    </div>
+    <p class="panel-foot"><svg class="ic sm"><use href="#i-shield"/></svg> Comissão só sobre o que você fatura, sem mensalidade. O repasse cai via Pix a cada reserva paga.</p>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:16px;">
+  <div class="panel-head"><h2>Histórico de repasses</h2><a class="lk" data-csv-table="#tbl-repasses" data-csv-name="repasses-partiu-quadra.csv">Exportar CSV</a></div>
+  <table class="tbl" id="tbl-repasses">
+    <thead><tr><th>Período</th><th>Bruto</th><th>Comissão</th><th>Líquido</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for r in repasses %}
+      <tr>
+        <td>{{ r.periodo }}</td>
+        <td class="num">R$ {{ '%.2f'|format(r.bruto) }}</td>
+        <td class="num">− R$ {{ '%.2f'|format(r.comissao) }}</td>
+        <td class="val num">R$ {{ '%.2f'|format(r.liquido) }}</td>
+        <td><span class="status {{ r.cls }}">{{ r.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

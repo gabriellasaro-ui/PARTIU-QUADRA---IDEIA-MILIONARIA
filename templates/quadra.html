@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% set active = 'mapa' %}
+{% block title %}{{ quadra.nome }}{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <a class="back" href="{{ url_for('buscar') }}"><svg class="ic"><use href="#i-left"/></svg></a>
+  <span class="pill tr" style="top: 50px;"><svg class="ic"><use href="#i-pin"/></svg>{{ quadra.distancia }} km</span>
+  <img src="{{ quadra.foto }}" alt="{{ quadra.nome }}">
+</div>
+
+<div class="detail-head">
+  <h1>{{ quadra.nome }}</h1>
+  <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>{{ quadra.esporte }} · {{ quadra.bairro }}</p>
+  <div class="rate-row">
+    <svg class="ic"><use href="#i-star"/></svg> {{ quadra.nota }}
+    <span class="n">({{ quadra.avaliacoes }} avaliações)</span>
+  </div>
+</div>
+
+<div class="container" style="padding-top: 12px;" data-booking
+     data-price="{{ quadra.preco }}" data-base="{{ url_for('pagamento', quadra_id=quadra.id) }}">
+  <div class="tags">
+    {% for t in quadra.tags %}<span class="tag">{{ t }}</span>{% endfor %}
+  </div>
+
+  <div class="sec-head"><h2>Escolha o dia</h2></div>
+  <div class="days">
+    {% for d in dias %}
+      <div class="day {{ 'on' if d.ativo }}">
+        <div class="d">{{ d.label }}</div>
+        <div class="n">{{ d.dia }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="sec-head"><h2>Horários</h2></div>
+  <div class="legend">
+    <span><i class="dot free"></i> Livre</span>
+    <span><i class="dot busy"></i> Ocupado</span>
+  </div>
+  {% macro slot(h) %}
+    {%- if h.status == 'livre' -%}
+      <a href="{{ url_for('pagamento', quadra_id=quadra.id, hora=h.hora) }}" class="slot free" data-hora="{{ h.hora }}">{{ h.hora }}</a>
+    {%- else -%}
+      <span class="slot busy" data-hora="{{ h.hora }}">{{ h.hora }}</span>
+    {%- endif -%}
+  {% endmacro %}
+  <div class="avail" data-slots>
+    <div class="avail-group">
+      <div class="avail-lbl">Manhã</div>
+      <div class="avail-slots">{% for h in horarios if h.hora[:2]|int < 12 %}{{ slot(h) }}{% endfor %}</div>
+    </div>
+    <div class="avail-group">
+      <div class="avail-lbl">Tarde</div>
+      <div class="avail-slots">{% for h in horarios if h.hora[:2]|int >= 12 and h.hora[:2]|int < 18 %}{{ slot(h) }}{% endfor %}</div>
+    </div>
+    <div class="avail-group">
+      <div class="avail-lbl">Noite</div>
+      <div class="avail-slots">{% for h in horarios if h.hora[:2]|int >= 18 %}{{ slot(h) }}{% endfor %}</div>
+    </div>
+  </div>
+
+  <div class="sec-head"><h2>Duração</h2></div>
+  <div class="dur-seg" data-dur-seg>
+    <button type="button" class="dur on" data-dur="1">1 hora</button>
+    <button type="button" class="dur" data-dur="2">2 horas</button>
+    <button type="button" class="dur" data-dur="3">3 horas</button>
+  </div>
+
+  <div class="book-bar">
+    <div class="bb-line">
+      <span class="bb-k"><svg class="ic"><use href="#i-clock"/></svg> <span data-bk-range>Escolha um horário</span></span>
+    </div>
+    <div class="bb-line"><span class="bb-k">Aluguel <span data-bk-hours></span></span><span data-bk-sub>—</span></div>
+    <div class="bb-line bb-total"><span>Total</span><span data-bk-total>—</span></div>
+    <a class="btn block is-disabled" data-bk-cta><span data-bk-cta-label>Escolha um horário</span></a>
+  </div>
+
+  <p class="note">
+    <svg class="ic"><use href="#i-shield"/></svg>
+    Pagamento protegido. Você só é cobrado após confirmar.
+  </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
+{% endblock %}

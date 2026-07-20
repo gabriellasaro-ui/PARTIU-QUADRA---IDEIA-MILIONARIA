@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% set active = 'gerente' %}
+{% block title %}Painel do Gerente{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="brand">
+    <span class="logo-mark"><svg class="ic"><use href="#i-chart"/></svg></span>
+    Partiu Quadra
+  </div>
+  <h1 style="margin-top:16px;">{{ quadra.nome }}</h1>
+  <p class="greet">Resumo dos últimos 7 dias · {{ g.data_hoje }}</p>
+</div>
+
+<div class="container">
+  <div class="kpi hero-kpi">
+    <div class="label">Repasse para você (já com {{ g.taxa }}% descontado)</div>
+    <div class="val">R$ {{ '%.2f'|format(g.repasse) }}</div>
+    <div class="sub"><svg class="ic"><use href="#i-trend"/></svg> de R$ {{ '%.0f'|format(g.bruto) }} em reservas · +11%</div>
+  </div>
+
+  <div class="sec-head"><h2>Resumo · 7 dias</h2></div>
+  <div class="stat-grid">
+    <div class="stat">
+      <span class="ico"><svg class="ic"><use href="#i-wallet"/></svg></span>
+      <div class="v">{{ g.kpis[0].val }}</div>
+      <div class="l">Faturamento</div>
+      <div class="d"><svg class="ic"><use href="#i-trend"/></svg> +12%</div>
+    </div>
+    <div class="stat">
+      <span class="ico"><svg class="ic"><use href="#i-calendar"/></svg></span>
+      <div class="v">{{ g.reservas_semana }}</div>
+      <div class="l">Reservas</div>
+      <div class="d"><svg class="ic"><use href="#i-trend"/></svg> +8</div>
+    </div>
+    <div class="stat">
+      <span class="ico"><svg class="ic"><use href="#i-dollar"/></svg></span>
+      <div class="v">R$ {{ g.ticket_medio }}</div>
+      <div class="l">Ticket médio</div>
+    </div>
+    <div class="stat">
+      <span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span>
+      <div class="v">{{ g.ocupacao }}%</div>
+      <div class="l">Ocupação média</div>
+      <div class="d"><svg class="ic"><use href="#i-trend"/></svg> +5%</div>
+    </div>
+  </div>
+
+  <div class="sec-head"><h2>Hoje</h2></div>
+  <div class="stat-grid">
+    <div class="stat">
+      <span class="ico"><svg class="ic"><use href="#i-bolt"/></svg></span>
+      <div class="v">{{ g.reservas_hoje }}</div>
+      <div class="l">Reservas hoje</div>
+    </div>
+    <div class="stat">
+      <span class="ico"><svg class="ic"><use href="#i-wallet"/></svg></span>
+      <div class="v">R$ {{ g.faturamento_hoje }}</div>
+      <div class="l">Faturamento hoje</div>
+    </div>
+    <div class="stat">
+      <span class="ico"><svg class="ic"><use href="#i-shield"/></svg></span>
+      <div class="v">R$ {{ '%.0f'|format(g.comissao) }}</div>
+      <div class="l">Comissão ({{ g.taxa }}%)</div>
+    </div>
+    <div class="stat">
+      <span class="ico"><svg class="ic"><use href="#i-user"/></svg></span>
+      <div class="v">{{ g.novos_clientes }}</div>
+      <div class="l">Novos clientes</div>
+      <div class="d"><svg class="ic"><use href="#i-trend"/></svg> +5</div>
+    </div>
+  </div>
+
+  <div class="sec-head"><h2>Faturamento na semana</h2></div>
+  <div class="chart-card">
+    <svg class="lc" viewBox="0 0 {{ g.chart.w }} {{ g.chart.h }}" role="img" aria-label="Faturamento por dia">
+      <defs>
+        <linearGradient id="lcfillm" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1b7a3e" stop-opacity=".18"/>
+          <stop offset="1" stop-color="#1b7a3e" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      {% for gl in g.chart.grid %}
+        <line class="lc-grid" x1="{{ g.chart.plot_x0 }}" y1="{{ gl.y }}" x2="{{ g.chart.plot_x1 }}" y2="{{ gl.y }}"/>
+        <text class="lc-yl" x="{{ g.chart.plot_x0 - 9 }}" y="{{ gl.y + 3 }}">{{ gl.lab }}</text>
+      {% endfor %}
+      <path class="lc-area" d="{{ g.chart.area }}" fill="url(#lcfillm)"/>
+      <path class="lc-line" d="{{ g.chart.line }}"/>
+      {% for p in g.chart.points %}
+        <circle class="lc-dot {{ 'peak' if loop.index0 == g.chart.peak }}" cx="{{ p.x }}" cy="{{ p.y }}" r="{{ 5 if loop.index0 == g.chart.peak else 3.2 }}"/>
+        <text class="lc-xl" x="{{ p.x }}" y="{{ g.chart.h - 9 }}"
+              style="text-anchor: {{ 'start' if loop.first else ('end' if loop.last else 'middle') }};">{{ p.lab }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+
+  <div class="sec-head"><h2>Ocupação por período</h2></div>
+  <div class="metric-card">
+    <div class="faixas">
+      {% for f in g.faixas %}
+      <div class="faixa">
+        <div class="faixa-top"><span>{{ f.lab }} <small>{{ f.sub }}</small></span><b>{{ f.occ }}%</b></div>
+        <div class="faixa-bar"><span style="width: {{ f.occ }}%;"></span></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="sec-head"><h2>Insights da semana</h2></div>
+  {% for it in g.insights[:2] %}
+  <div class="insight {{ it.tone }}" style="margin-bottom:10px;">
+    <span class="insight-ic"><svg class="ic"><use href="#{{ it.icon }}"/></svg></span>
+    <div><strong>{{ it.title }}</strong><p>{{ it.text }}</p></div>
+  </div>
+  {% endfor %}
+
+  <div class="sec-head">
+    <h2>Próximas reservas</h2>
+    <a data-toast="Em breve: todas as reservas">Ver todas</a>
+  </div>
+  {% for r in g.reservas %}
+  <div class="booking">
+    <div class="avatar">{{ r.cliente[0] }}</div>
+    <div class="who">
+      <strong>{{ r.cliente }}</strong>
+      <small><svg class="ic"><use href="#i-clock"/></svg>{{ r.data }} · {{ r.horario }}</small>
+    </div>
+    <div class="amt">
+      <div class="v">R$ {{ r.valor }}</div>
+      <span class="status {{ r.status|lower }}">{{ r.status }}</span>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="sec-head"><h2>Disponibilidade de hoje</h2></div>
+  <div class="legend">
+    <span><i class="dot free"></i> Livre</span>
+    <span><i class="dot busy"></i> Reservado</span>
+  </div>
+  <div class="slots">
+    {% for h in g.horarios %}
+      <span class="slot {{ 'busy' if h.status == 'ocupado' else 'free' }}">{{ h.hora }}</span>
+    {% endfor %}
+  </div>
+
+  <button type="button" class="btn block" data-toast="Adicione horários pelo painel no computador"><svg class="ic"><use href="#i-plus"/></svg> Adicionar novo horário</button>
+  <p class="note">O dinheiro cai na sua conta automaticamente a cada reserva paga.</p>
+</div>
+{% endblock %}

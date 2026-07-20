@@ -1,0 +1,107 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'explorar' %}
+{% block title %}{{ quadra.nome }} · Partiu Quadra{% endblock %}
+{% block page_title %}{{ quadra.nome }}{% endblock %}
+{% block page_sub %}{{ quadra.esporte }} · {{ quadra.bairro }}{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('pc_explorar') }}" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para explorar</a>
+
+<div class="gallery">
+  <div class="g-main">
+    <span class="pill star"><svg class="ic"><use href="#i-star"/></svg>{{ quadra.nota }} · {{ quadra.avaliacoes }} avaliações</span>
+    <img src="{{ galeria[0] }}" alt="{{ quadra.nome }}">
+  </div>
+  <img src="{{ galeria[1] }}" alt="">
+  <img src="{{ galeria[2] }}" alt="">
+</div>
+
+<div class="detail-cols" data-booking
+     data-price="{{ quadra.preco }}" data-base="{{ url_for('pc_checkout', quadra_id=quadra.id) }}">
+  <div class="detail-main">
+    <h1>{{ quadra.nome }}</h1>
+    <div class="meta">
+      <span class="star"><svg class="ic"><use href="#i-star"/></svg>{{ quadra.nota }}</span>
+      <span><svg class="ic"><use href="#i-pin"/></svg>{{ quadra.bairro }} · {{ quadra.distancia }} km</span>
+      <span><svg class="ic"><use href="#i-grid"/></svg>{{ quadra.esporte }}</span>
+    </div>
+
+    <div class="dsection">
+      <h2>Sobre a quadra</h2>
+      <p class="desc">Quadra de {{ quadra.esporte|lower }} no {{ quadra.bairro }}, com estrutura completa para a sua partida. Espaço bem cuidado, ideal para pelada com os amigos, treinos ou campeonatos. Reserve online e pague pelo app — a confirmação é na hora.</p>
+    </div>
+
+    <div class="dsection">
+      <h2>Comodidades</h2>
+      <div class="amenities">
+        {% for t in quadra.tags %}<div class="amenity"><svg class="ic"><use href="#i-check"/></svg> {{ t }}</div>{% endfor %}
+        <div class="amenity"><svg class="ic"><use href="#i-check"/></svg> Bola inclusa</div>
+        <div class="amenity"><svg class="ic"><use href="#i-check"/></svg> Wi-Fi no local</div>
+      </div>
+    </div>
+
+    <div class="dsection">
+      <h2>Disponibilidade</h2>
+      <div class="days">
+        {% for d in dias %}
+        <div class="day {{ 'on' if d.ativo }}"><div class="d">{{ d.label }}</div><div class="n">{{ d.dia }}</div></div>
+        {% endfor %}
+      </div>
+      <div class="legend" style="margin-top:18px;">
+        <span><i class="dot free"></i> Livre</span>
+        <span><i class="dot busy"></i> Ocupado</span>
+      </div>
+      {% macro slot(h) %}
+        {%- if h.status == 'livre' -%}
+          <a href="{{ url_for('pc_checkout', quadra_id=quadra.id, hora=h.hora) }}" class="slot free" data-hora="{{ h.hora }}">{{ h.hora }}</a>
+        {%- else -%}
+          <span class="slot busy" data-hora="{{ h.hora }}">{{ h.hora }}</span>
+        {%- endif -%}
+      {% endmacro %}
+      <div class="avail" data-slots>
+        <div class="avail-group">
+          <div class="avail-lbl">Manhã</div>
+          <div class="avail-slots">{% for h in horarios if h.hora[:2]|int < 12 %}{{ slot(h) }}{% endfor %}</div>
+        </div>
+        <div class="avail-group">
+          <div class="avail-lbl">Tarde</div>
+          <div class="avail-slots">{% for h in horarios if h.hora[:2]|int >= 12 and h.hora[:2]|int < 18 %}{{ slot(h) }}{% endfor %}</div>
+        </div>
+        <div class="avail-group">
+          <div class="avail-lbl">Noite</div>
+          <div class="avail-slots">{% for h in horarios if h.hora[:2]|int >= 18 %}{{ slot(h) }}{% endfor %}</div>
+        </div>
+      </div>
+
+      <div class="dur-seg" data-dur-seg style="margin-top:18px;">
+        <button type="button" class="dur on" data-dur="1">1 hora</button>
+        <button type="button" class="dur" data-dur="2">2 horas</button>
+        <button type="button" class="dur" data-dur="3">3 horas</button>
+      </div>
+    </div>
+  </div>
+
+  <aside>
+    <div class="booking-card">
+      <div class="bc-price">R$ {{ quadra.preco }}<small> /hora</small></div>
+      <div class="bc-rate"><svg class="ic"><use href="#i-star"/></svg>{{ quadra.nota }} <span style="color:var(--muted);font-weight:500;">· {{ quadra.avaliacoes }} avaliações</span></div>
+      <div class="bc-fields">
+        <div class="bc-field"><span class="k"><svg class="ic"><use href="#i-calendar"/></svg> Data</span><span class="v">Hoje, {{ dias[0].dia }}</span></div>
+        <div class="bc-field"><span class="k"><svg class="ic"><use href="#i-clock"/></svg> Horário</span><span class="v" data-bk-range>Escolha um horário</span></div>
+      </div>
+      <div class="bc-summary">
+        <div class="line"><span class="muted">Aluguel <span data-bk-hours></span></span><span data-bk-sub>—</span></div>
+        <div class="line total"><span>Total</span><span data-bk-total>—</span></div>
+      </div>
+      <a class="btn btn-volt btn-lg btn-block is-disabled" data-bk-cta><span data-bk-cta-label>Escolha um horário</span></a>
+      <a href="{{ url_for('pc_mensagens', cid=chat_cid) if chat_cid else url_for('pc_mensagens') }}" class="btn btn-soft btn-block" style="margin-top:10px;"><svg class="ic sm"><use href="#i-chat"/></svg> Conversar com a arena</a>
+      <div class="bc-note"><svg class="ic"><use href="#i-shield"/></svg> Você só é cobrado após confirmar</div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
+{% endblock %}

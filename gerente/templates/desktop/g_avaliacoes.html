@@ -1,0 +1,55 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-avaliacoes' %}
+{% block title %}Avaliações · Partiu Quadra{% endblock %}
+{% block page_title %}Avaliações{% endblock %}
+{% block page_sub %}O que os jogadores acham da sua quadra{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<div class="split-2" style="grid-template-columns: 320px 1fr;">
+  <div class="card" style="margin-bottom:0;">
+    <div class="rating-big">
+      <div class="rb-num num">{{ media }}</div>
+      <div>
+        <div class="rb-stars">
+          {% for i in range(5) %}<svg class="ic {{ 'on' if i < media|round(0,'floor')|int }}"><use href="#i-star"/></svg>{% endfor %}
+        </div>
+        <div class="rb-total">{{ total }} avaliações</div>
+      </div>
+    </div>
+    <div class="dist">
+      {% for d in dist %}
+      <div class="dist-row">
+        <span class="dist-n num">{{ d.n }}<svg class="ic sm"><use href="#i-star"/></svg></span>
+        <div class="faixa-bar"><span style="width: {{ (d.qtd / total * 100)|round(0) }}%;"></span></div>
+        <span class="dist-q num">{{ d.qtd }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div>
+    {% for a in avaliacoes %}
+    <div class="review">
+      <div class="review-top">
+        <span class="av">{{ a.cliente[0] }}</span>
+        <div>
+          <strong>{{ a.cliente }}</strong>
+          <div class="review-stars">
+            {% for i in range(5) %}<svg class="ic {{ 'on' if i < a.nota }}"><use href="#i-star"/></svg>{% endfor %}
+            <span class="review-when">{{ a.quando }}</span>
+          </div>
+        </div>
+      </div>
+      <p>{{ a.texto }}</p>
+      <a class="review-reply" data-reply-toggle>Responder</a>
+      <div class="review-reply-box" data-reply-box hidden>
+        <textarea placeholder="Escreva sua resposta ao cliente..."></textarea>
+        <button type="button" class="btn btn-primary" data-reply-send>Enviar resposta</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

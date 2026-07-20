@@ -1,0 +1,42 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-quadras' %}
+{% block title %}Minhas quadras · Partiu Quadra{% endblock %}
+{% block page_title %}Minhas quadras{% endblock %}
+{% block page_sub %}{{ quadras|length }} quadras cadastradas na sua arena{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('pc_gerente_quadra_nova') }}" class="btn btn-primary"><svg class="ic sm"><use href="#i-plus"/></svg> Adicionar quadra</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid">
+  {% for q in quadras %}
+  <div class="qcard">
+    <div class="ph">
+      <span class="pill tl status {{ 'pago' if q.ativa else 'pendente' }}">{{ 'Ativa' if q.ativa else 'Pausada' }}</span>
+      <img src="{{ q.foto }}" alt="{{ q.rotulo }}" loading="lazy">
+    </div>
+    <div class="bd">
+      <h3>{{ q.rotulo }}</h3>
+      <p class="meta"><svg class="ic"><use href="#i-grid"/></svg>{{ q.esporte }} · R$ {{ q.preco }}/h</p>
+      <div class="faixa" style="margin-top:14px;">
+        <div class="faixa-top"><span>Ocupação</span><b>{{ q.ocup }}%</b></div>
+        <div class="faixa-bar"><span style="width: {{ q.ocup }}%;"></span></div>
+      </div>
+      <div class="foot" style="border-top:1px solid var(--line-2); padding-top:14px; margin-top:14px;">
+        <a href="{{ url_for('pc_gerente_quadra_editar', quadra_id=q.id) }}" class="btn btn-soft">Editar</a>
+        <button type="button" class="btn btn-outline" data-toggle-quadra>{{ 'Pausar' if q.ativa else 'Ativar' }}</button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <a href="{{ url_for('pc_gerente_quadra_nova') }}" class="qcard add-card">
+    <span class="add-ic"><svg class="ic lg"><use href="#i-plus"/></svg></span>
+    <strong>Adicionar quadra</strong>
+    <small>Cadastre mais um espaço da sua arena</small>
+  </a>
+</div>
+{% endblock %}

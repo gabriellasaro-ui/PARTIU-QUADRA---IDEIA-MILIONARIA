@@ -1,0 +1,99 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-config' %}
+{% block title %}Configurações · Partiu Quadra{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+{% block page_sub %}Perfil da arena, recebimento, taxa e notificações{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('pc_gerente_config') }}" class="btn btn-soft">Descartar</a>
+<button type="submit" form="gconfig-form" class="btn btn-primary">Salvar alterações</button>
+{% endblock %}
+
+{% block content %}
+<form id="gconfig-form" method="post" class="settings">
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Perfil da arena</h2>
+      <p>É assim que sua arena aparece para os jogadores na busca.</p>
+    </div>
+    <div class="set-fields">
+      <div class="set-avatar">
+        <span class="ava" id="arena-logo">A</span>
+        <div>
+          <button type="button" class="btn btn-outline" data-file-trigger="#logo-file">Trocar logo</button>
+          <input type="file" id="logo-file" accept="image/*" data-preview="#arena-logo" hidden>
+          <div class="av-meta">PNG ou JPG, até 2&nbsp;MB</div>
+        </div>
+      </div>
+      <div class="inp"><label>Nome da arena</label><input type="text" value="Arena Bola na Rede"></div>
+      <div class="input-row">
+        <div class="inp"><label>Esporte principal</label>
+          <select><option>Futebol Society</option><option>Futsal</option><option>Beach Tennis</option><option>Vôlei</option><option>Basquete</option><option>Tênis</option></select>
+        </div>
+        <div class="inp"><label>Quadras ativas</label><input type="number" value="2" min="1"></div>
+      </div>
+      <div class="inp" style="margin-bottom:0;"><label>Descrição</label><input type="text" value="Society com grama sintética, iluminação e vestiário."></div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Endereço &amp; contato</h2>
+      <p>Onde os jogadores encontram sua arena e como falam com você.</p>
+    </div>
+    <div class="set-fields">
+      <div class="inp"><label>Endereço</label><input type="text" value="Rua das Quadras, 123 — Jardim Goiás, Goiânia"></div>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="inp" style="margin-bottom:0;"><label>Telefone / WhatsApp</label><input type="text" value="(62) 99999-0000"></div>
+        <div class="inp" style="margin-bottom:0;"><label>E-mail</label><input type="text" value="contato@arenabolanarede.com"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Recebimento (Pix)</h2>
+      <p>Conta que recebe o repasse automático a cada reserva paga.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Tipo de chave</label><select><option>CNPJ</option><option>CPF</option><option>E-mail</option><option>Celular</option><option>Aleatória</option></select></div>
+        <div class="inp"><label>Chave Pix</label><input type="text" value="12.345.678/0001-90"></div>
+      </div>
+      <div class="inp" style="margin-bottom:0;"><label>Titular da conta</label><input type="text" value="Arena Bola na Rede LTDA"></div>
+      <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Repasse cai automaticamente, sem mensalidade.</div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Notificações</h2>
+      <p>Escolha o que quer ser avisado.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row"><span>Nova reserva</span><span class="switch on"></span></label>
+      <label class="switch-row"><span>Pagamento confirmado</span><span class="switch on"></span></label>
+      <label class="switch-row"><span>Avaliação recebida</span><span class="switch"></span></label>
+      <label class="switch-row" style="border-bottom:none; padding-bottom:0;"><span>Resumo semanal por e-mail</span><span class="switch on"></span></label>
+    </div>
+  </section>
+
+  <section class="set-card danger">
+    <div class="set-aside">
+      <h2>Conta</h2>
+      <p>Encerrar a sessão ou desativar a arena na plataforma.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row"><span>Pausar arena <small style="color:var(--muted);display:block;font-weight:500;">Some da busca, sem novas reservas</small></span><span class="switch"></span></label>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <a href="{{ config.CLIENTE_URL }}" class="btn btn-soft">Sair da conta</a>
+        <button type="button" class="btn btn-danger" data-toast="Arena desativada (demo)">Desativar arena</button>
+      </div>
+    </div>
+  </section>
+
+</form>
+{% endblock %}

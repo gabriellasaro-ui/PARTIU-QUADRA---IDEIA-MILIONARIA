@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% set active = 'mapa' %}
+{% block title %}Quadras perto de você{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block content %}
+<div class="navbar">
+  <a class="icon-btn" href="{{ url_for('index') }}"><svg class="ic"><use href="#i-left"/></svg></a>
+  <div>
+    <div class="title">Quadras em até {{ raio }} km</div>
+    <div class="sub">{{ local }} · {{ quadras|length }} encontradas</div>
+  </div>
+  <span class="spacer"></span>
+  <div class="view-seg">
+    <button class="view-btn on" data-view="list" aria-label="Ver em lista"><svg class="ic sm"><use href="#i-list"/></svg></button>
+    <button class="view-btn" data-view="map" aria-label="Ver no mapa"><svg class="ic sm"><use href="#i-map"/></svg></button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="chips" style="margin-bottom: 18px;">
+    <a class="chip {{ 'on' if not esporte }}" href="{{ url_for('buscar', local=local) }}">Todos</a>
+    {% for e in esportes %}
+      <a class="chip {{ 'on' if esporte == e }}" href="{{ url_for('buscar', local=local, esporte=e) }}">{{ e }}</a>
+    {% endfor %}
+  </div>
+
+  <div data-pane="map" class="map-pane hidden">
+    <div id="pq-map" class="pq-map"
+         data-user-lat="{{ user_loc[0] }}" data-user-lng="{{ user_loc[1] }}"
+         data-detail-base="/quadra/"></div>
+  </div>
+
+  <div data-pane="list">
+  {% for q in quadras %}
+  <a href="{{ url_for('quadra', quadra_id=q.id) }}">
+    <div class="card">
+      <div class="photo">
+        <span class="pill tr"><svg class="ic"><use href="#i-pin"/></svg>{{ q.distancia }} km</span>
+        <span class="pill star bl"><svg class="ic"><use href="#i-star"/></svg>{{ q.nota }} ({{ q.avaliacoes }})</span>
+        <img src="{{ q.foto }}" alt="{{ q.nome }}" loading="lazy">
+      </div>
+      <div class="body">
+        <h3>{{ q.nome }}</h3>
+        <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>{{ q.esporte }} · {{ q.bairro }}</p>
+        <div class="tags">
+          {% for t in q.tags %}<span class="tag">{{ t }}</span>{% endfor %}
+        </div>
+        <div class="foot">
+          <div class="price">R$ {{ q.preco }}<small> /hora</small></div>
+          <span class="btn-mini">Ver horários</span>
+        </div>
+      </div>
+    </div>
+  </a>
+  {% else %}
+    <div class="empty">
+      <div class="empty-ic"><svg class="ic lg"><use href="#i-search"/></svg></div>
+      <h3>Nenhuma quadra nesse filtro</h3>
+      <p>Tente aumentar a distância ou trocar o esporte.</p>
+      <a href="{{ url_for('buscar', local=local) }}" class="btn block">Limpar filtros</a>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+
+<script type="application/json" id="pq-map-data">{{ quadras|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/findmap.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Sem conexão · Partiu Quadra{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="empty" style="padding-top:90px;">
+    <div class="empty-ic"><svg class="ic lg"><use href="#i-pin"/></svg></div>
+    <h3>Você está offline</h3>
+    <p>Não rolou conexão agora. Assim que a internet voltar, é só recarregar pra continuar reservando.</p>
+    <a href="{{ url_for('index') }}" class="btn block">Tentar de novo</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-quadras' %}
+{% set editando = quadra is not none %}
+{% block title %}{{ 'Editar quadra' if editando else 'Nova quadra' }} · Partiu Quadra{% endblock %}
+{% block page_title %}{{ 'Editar quadra' if editando else 'Cadastrar quadra' }}{% endblock %}
+{% block page_sub %}{{ 'Ajuste os dados do espaço' if editando else 'Adicione um novo espaço à sua arena' }}{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('pc_gerente_quadras') }}" class="btn btn-soft">Cancelar</a>
+<button type="submit" form="quadra-form" class="btn btn-primary">{{ 'Salvar alterações' if editando else 'Cadastrar quadra' }}</button>
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('pc_gerente_quadras') }}" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para minhas quadras</a>
+
+<form id="quadra-form" method="post" class="settings">
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Dados da quadra</h2>
+      <p>Como o espaço aparece para os jogadores na busca.</p>
+    </div>
+    <div class="set-fields">
+      <div class="set-avatar">
+        <span class="ava" id="quadra-foto" {% if editando %}style="background-image:url('{{ quadra.foto }}');background-size:cover;background-position:center;"{% endif %}>{{ '' if editando else '+' }}</span>
+        <div>
+          <button type="button" class="btn btn-outline" data-file-trigger="#foto-file">{{ 'Trocar foto' if editando else 'Enviar foto' }}</button>
+          <input type="file" id="foto-file" accept="image/*" data-preview="#quadra-foto" hidden>
+          <div class="av-meta">PNG ou JPG, até 5&nbsp;MB</div>
+        </div>
+      </div>
+      <div class="inp"><label>Nome / apelido da quadra</label><input type="text" value="{{ quadra.nome if editando else '' }}" placeholder="Ex.: Society 1"></div>
+      <div class="input-row">
+        <div class="inp"><label>Esporte</label>
+          <select>
+            {% for e in esportes %}<option {{ 'selected' if editando and quadra.esporte == e }}>{{ e }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="inp"><label>Bairro</label><input type="text" value="{{ quadra.bairro if editando else '' }}" placeholder="Ex.: Jardim Goiás"></div>
+      </div>
+      <div class="inp" style="margin-bottom:0;"><label>Descrição</label><input type="text" value="{{ 'Society com grama sintética, iluminação e vestiário.' if editando else '' }}" placeholder="Fale sobre o piso, iluminação, estrutura..."></div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Preço &amp; disponibilidade</h2>
+      <p>Valor da hora e janela de funcionamento.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Preço por hora (R$)</label><input type="number" value="{{ quadra.preco if editando else 120 }}" min="0" step="10"></div>
+        <div class="inp"><label>Duração mínima</label><select><option>1 hora</option><option>1h30</option><option>2 horas</option></select></div>
+      </div>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="inp" style="margin-bottom:0;"><label>Abre às</label><select>{% for hh in range(6, 16) %}<option {{ 'selected' if hh == 8 }}>{{ '%02d'|format(hh) }}:00</option>{% endfor %}</select></div>
+        <div class="inp" style="margin-bottom:0;"><label>Fecha às</label><select>{% for hh in range(16, 24) %}<option {{ 'selected' if hh == 23 }}>{{ '%02d'|format(hh) }}:00</option>{% endfor %}</select></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Comodidades</h2>
+      <p>O que sua quadra oferece.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row"><span>Iluminação</span><span class="switch on"></span></label>
+      <label class="switch-row"><span>Coberta</span><span class="switch"></span></label>
+      <label class="switch-row"><span>Vestiário</span><span class="switch on"></span></label>
+      <label class="switch-row"><span>Estacionamento</span><span class="switch"></span></label>
+      <label class="switch-row" style="border-bottom:none; padding-bottom:0;"><span>Bar / lanchonete</span><span class="switch"></span></label>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Status</h2>
+      <p>Quadras ativas ficam visíveis na busca e aceitam reservas.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row" style="border-bottom:none; padding-bottom:0;"><span>Quadra ativa</span><span class="switch on"></span></label>
+      <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Você só paga 5% de comissão sobre cada reserva confirmada.</div>
+    </div>
+  </section>
+
+</form>
+{% endblock %}

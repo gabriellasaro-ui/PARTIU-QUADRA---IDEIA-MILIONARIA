@@ -1,0 +1,135 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'dashboard' %}
+{% block title %}Dashboard · Partiu Quadra{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_sub %}Arena Bola na Rede · {{ g.data_hoje }}{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<div class="period" data-seg>
+  <a>Hoje</a>
+  <a class="on">7 dias</a>
+  <a>30 dias</a>
+</div>
+<button type="button" class="btn btn-primary" data-open-modal="modal-horario"><svg class="ic sm"><use href="#i-plus"/></svg> Novo horário</button>
+{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<div class="kpi-row">
+  {% for k in g.kpis %}
+  <div class="kpi {{ 'feature' if k.feature }}">
+    <div class="top">
+      <span class="ico"><svg class="ic"><use href="#{{ k.icon }}"/></svg></span>
+      <span class="delta"><svg class="ic"><use href="#i-trend"/></svg> {{ k.delta }}</span>
+    </div>
+    <div class="val num">{{ k.val }}</div>
+    <div class="lbl">{{ k.label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Faturamento na semana + ocupação por período -->
+<div class="dash-cols">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Faturamento na semana</h2>
+        <span class="panel-sub">Últimos 7 dias · pico no melhor dia</span>
+      </div>
+      <a class="lk" href="{{ url_for('pc_gerente_financeiro') }}">Ver relatório</a>
+    </div>
+    <svg class="lc" viewBox="0 0 {{ g.chart.w }} {{ g.chart.h }}" role="img" aria-label="Faturamento por dia da semana">
+      <defs>
+        <linearGradient id="lcfill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1b7a3e" stop-opacity=".20"/>
+          <stop offset="1" stop-color="#1b7a3e" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      {% for gl in g.chart.grid %}
+        <line class="lc-grid" x1="{{ g.chart.plot_x0 }}" y1="{{ gl.y }}" x2="{{ g.chart.plot_x1 }}" y2="{{ gl.y }}"/>
+        <text class="lc-yl" x="{{ g.chart.plot_x0 - 9 }}" y="{{ gl.y + 3 }}">{{ gl.lab }}</text>
+      {% endfor %}
+      <path class="lc-area" d="{{ g.chart.area }}" fill="url(#lcfill)"/>
+      <path class="lc-line" d="{{ g.chart.line }}"/>
+      {% for p in g.chart.points %}
+        <text class="lc-val {{ 'peak' if loop.index0 == g.chart.peak }}" x="{{ p.x }}" y="{{ p.y - 11 }}">{{ p.val }}</text>
+        <circle class="lc-dot {{ 'peak' if loop.index0 == g.chart.peak }}" cx="{{ p.x }}" cy="{{ p.y }}" r="{{ 5 if loop.index0 == g.chart.peak else 3.4 }}"/>
+        <text class="lc-xl" x="{{ p.x }}" y="{{ g.chart.h - 9 }}"
+              style="text-anchor: {{ 'start' if loop.first else ('end' if loop.last else 'middle') }};">{{ p.lab }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><div><h2>Ocupação por período</h2><span class="panel-sub">Média de lotação na semana</span></div></div>
+    <div class="faixas">
+      {% for f in g.faixas %}
+      <div class="faixa">
+        <div class="faixa-top"><span>{{ f.lab }} <small>{{ f.sub }}</small></span><b>{{ f.occ }}%</b></div>
+        <div class="faixa-bar"><span style="width: {{ f.occ }}%;"></span></div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="panel-foot"><svg class="ic sm"><use href="#i-flame"/></svg> A noite (18h–23h) é a mais cheia — foque preço nela.</p>
+  </div>
+</div>
+
+<!-- Mapa de calor de ocupação -->
+<div class="panel" style="margin-top:16px;">
+  <div class="panel-head">
+    <div>
+      <h2>Mapa de calor de ocupação</h2>
+      <span class="panel-sub">Cada coluna é um dia, cada linha um horário. Quanto mais escuro, mais cheio — ache seus horários nobres e os vazios.</span>
+    </div>
+    <a class="lk" href="{{ url_for('pc_gerente_agenda') }}">Editar agenda</a>
+  </div>
+  <div class="heat">
+    <div class="heat-grid">
+      <div class="heat-corner"></div>
+      {% for d in g.heat_dias %}<div class="heat-dh">{{ d }}</div>{% endfor %}
+      {% for row in g.heat %}
+        <div class="heat-rh num">{{ row.hora }}</div>
+        {% for c in row.cells %}
+          <div class="heat-c b{{ c.b }}" title="{{ c.dia }} {{ c.hora }} · {{ c.occ }}% ocupado"></div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+    <div class="heat-legend">
+      <span>Ocioso</span>
+      <i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i>
+      <span>Lotado</span>
+    </div>
+  </div>
+</div>
+
+<!-- Insights -->
+<div class="insights">
+  {% for it in g.insights %}
+  <div class="insight {{ it.tone }}">
+    <span class="insight-ic"><svg class="ic"><use href="#{{ it.icon }}"/></svg></span>
+    <div><strong>{{ it.title }}</strong><p>{{ it.text }}</p></div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Próximas reservas -->
+<div class="panel" style="margin-top:16px;">
+  <div class="panel-head"><h2>Próximas reservas</h2><a class="lk" href="{{ url_for('pc_gerente_reservas') }}">Ver todas</a></div>
+  <table class="tbl">
+    <thead><tr><th>Cliente</th><th>Data</th><th>Horário</th><th>Valor</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for r in g.reservas %}
+      <tr>
+        <td><div class="cli"><span class="av">{{ r.cliente[0] }}</span> {{ r.cliente }}</div></td>
+        <td>{{ r.data }}</td>
+        <td class="num">{{ r.horario }}</td>
+        <td class="val num">R$ {{ r.valor }}</td>
+        <td><span class="status {{ r.status|lower }}">{{ r.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

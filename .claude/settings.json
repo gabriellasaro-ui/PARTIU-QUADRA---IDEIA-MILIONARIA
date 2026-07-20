@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import flask; print\\('flask', flask.__version__\\)\")",
+      "Bash(python -c \"import PIL; print\\('Pillow', PIL.__version__\\)\")",
+      "Bash(python \"C:/Users/Gabriel/AppData/Local/Temp/claude/c--Users-Gabriel-Documents-Projetos-PARTIU-QUADRA---IDEIA-MILIONARIA/bfd646d1-1e01-4727-b1da-b243d08f23d0/scratchpad/smoke.py\")",
+      "Bash(python tools/gen_icons.py)",
+      "Bash(python -)",
+      "Bash(python -c \"import playwright; print\\('playwright OK'\\)\")",
+      "Bash(python -c \"import selenium; print\\('selenium OK'\\)\")",
+      "Bash(where chrome *)",
+      "Bash(where msedge *)",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Read(//c/Program Files \\(x86\\)/Microsoft/Edge/Application/**)",
+      "Bash(\"C:/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=412,2600 --screenshot=\"gerente_mobile.png\" \"http://127.0.0.1:5000/gerente\")",
+      "Bash(ls -la gerente_mobile.png)",
+      "Bash(\"C:/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=412,2400 --screenshot=gerente_mobile.png \"http://127.0.0.1:5000/gerente\")",
+      "Bash(echo \"exit=$?\")",
+      "Bash(\"C:/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=412,2400 \"--screenshot=C:\\\\\\\\tmp\\\\\\\\gerente_mobile.png\" \"http://127.0.0.1:5000/gerente\")",
+      "Bash(\"C:/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=390,4200 \"--screenshot=C:\\\\\\\\tmp\\\\\\\\g_full.png\" \"http://127.0.0.1:5000/gerente\")",
+      "Bash(python -c \"from PIL import Image; im=Image.open\\('C:/tmp/g_full.png'\\); print\\('size', im.size\\)\")",
+      "Bash(\"C:/Program Files/Google/Chrome/Application/chrome.exe\" --headless --no-sandbox --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=390,3200 \"--screenshot=C:\\\\\\\\tmp\\\\\\\\g_real.png\" \"http://127.0.0.1:5000/gerente\")",
+      "Bash(python -c \"from PIL import Image; im=Image.open\\('C:/tmp/g_real.png'\\); print\\('size', im.size\\)\")",
+      "Bash(python -c \"import websocket; print\\('ws OK', websocket.__version__\\)\")",
+      "Bash(python -c \"import requests; print\\('requests OK'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python -c \"import websocket; print\\('ws OK'\\)\")",
+      "Bash(taskkill //F //IM python.exe //FI \"WINDOWTITLE eq *\")",
+      "Bash(pkill -f \"app.py\")",
+      "Bash(PYTHONIOENCODING=utf-8 python -)",
+      "Bash(python cdp_full.py \"http://127.0.0.1:5000/pc/gerente\" \"C:/tmp/dash_new.png\")",
+      "Bash(\"C:/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=1300,1400 \"--screenshot=C:\\\\\\\\tmp\\\\\\\\dash_pc.png\" \"http://127.0.0.1:5000/pc/gerente\")",
+      "Bash(PYTHONIOENCODING=utf-8 python -c \"import sys; sys.path.insert\\(0,'.'\\); import app; print\\('HORARIOS_PADRAO:'\\); [print\\(' ', h\\) for h in app.HORARIOS_PADRAO]\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 6 \"http://localhost:5000/pc/gerente/agenda\")",
+      "Bash(curl -s --max-time 6 \"http://localhost:5000/pc/gerente/agenda\")"
+    ]
+  }
+}

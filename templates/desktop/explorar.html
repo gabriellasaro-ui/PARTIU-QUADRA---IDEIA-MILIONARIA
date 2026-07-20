@@ -1,0 +1,93 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'explorar' %}
+{% block title %}Explorar quadras · Partiu Quadra{% endblock %}
+{% block page_title %}Explorar quadras{% endblock %}
+{% block page_sub %}{{ quadras|length }} quadras disponíveis perto de {{ local }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block content %}
+<form action="{{ url_for('pc_explorar') }}" method="get" class="toolbar">
+  <div class="field grow">
+    <svg class="ic"><use href="#i-pin"/></svg>
+    <input type="text" name="local" value="{{ local }}" placeholder="Bairro, CEP ou cidade">
+  </div>
+  <div class="field">
+    <svg class="ic"><use href="#i-grid"/></svg>
+    <select name="esporte" onchange="this.form.submit()">
+      <option value="">Todos os esportes</option>
+      {% for e in esportes %}<option value="{{ e }}" {{ 'selected' if esporte == e }}>{{ e }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <svg class="ic"><use href="#i-pin"/></svg>
+    <select name="raio" onchange="this.form.submit()">
+      <option value="2" {{ 'selected' if raio == '2' }}>Até 2 km</option>
+      <option value="5" {{ 'selected' if raio == '5' }}>Até 5 km</option>
+      <option value="10" {{ 'selected' if raio == '10' }}>Até 10 km</option>
+    </select>
+  </div>
+  <button class="btn btn-primary" type="submit"><svg class="ic"><use href="#i-search"/></svg> Buscar</button>
+</form>
+
+<div class="chips">
+  <a class="chip {{ 'on' if not esporte }}" href="{{ url_for('pc_explorar', local=local) }}">Todos</a>
+  {% for e in esportes %}
+    <a class="chip {{ 'on' if esporte == e }}" href="{{ url_for('pc_explorar', local=local, esporte=e) }}">{{ e }}</a>
+  {% endfor %}
+</div>
+
+<div class="res-bar">
+  <div class="res-count"><b>{{ quadras|length }}</b> resultados{% if esporte %} para {{ esporte }}{% endif %} · ordenado por distância</div>
+  <div class="view-seg">
+    <button class="view-btn on" data-view="list"><svg class="ic sm"><use href="#i-list"/></svg> Lista</button>
+    <button class="view-btn" data-view="map"><svg class="ic sm"><use href="#i-map"/></svg> Mapa</button>
+  </div>
+</div>
+
+<div data-pane="map" class="map-pane hidden">
+  <div id="pq-map" class="pq-map"
+       data-user-lat="{{ user_loc[0] }}" data-user-lng="{{ user_loc[1] }}"
+       data-detail-base="/pc/quadra/"></div>
+</div>
+
+<div class="grid" data-pane="list">
+  {% for q in quadras %}
+  <a href="{{ url_for('pc_quadra', quadra_id=q.id) }}">
+    <div class="qcard">
+      <div class="ph">
+        <span class="pill tr"><svg class="ic"><use href="#i-pin"/></svg>{{ q.distancia }} km</span>
+        <span class="pill star tl"><svg class="ic"><use href="#i-star"/></svg>{{ q.nota }} ({{ q.avaliacoes }})</span>
+        <img src="{{ q.foto }}" alt="{{ q.nome }}" loading="lazy">
+      </div>
+      <div class="bd">
+        <h3>{{ q.nome }}</h3>
+        <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>{{ q.esporte }} · {{ q.bairro }}</p>
+        <div class="tags">{% for t in q.tags %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+        <div class="foot">
+          <div class="price">R$ {{ q.preco }}<small> /hora</small></div>
+          <span class="btn btn-outline">Ver horários</span>
+        </div>
+      </div>
+    </div>
+  </a>
+  {% else %}
+    <div class="empty">
+      <div class="empty-ic"><svg class="ic lg"><use href="#i-search"/></svg></div>
+      <h3>Nenhuma quadra nesse filtro</h3>
+      <p>Tente aumentar a distância ou trocar o esporte.</p>
+      <a href="{{ url_for('pc_explorar', local=local) }}" class="btn btn-outline">Limpar filtros</a>
+    </div>
+  {% endfor %}
+</div>
+
+<script type="application/json" id="pq-map-data">{{ quadras|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/findmap.js') }}"></script>
+{% endblock %}
