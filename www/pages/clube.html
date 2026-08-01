@@ -51,16 +51,22 @@
       </div>
     </section>
 
-    <div class="mobile-section-head">
-      <h2>Próximas peladas</h2>
-      <span data-pelada-count></span>
-    </div>
-    <div data-pelada-list></div>
+    <!-- Seções alternadas pela barra inferior. Mesmo idioma das abas da
+         partida: [data-*-panel] + o atributo hidden. -->
+    <section data-club-panel="peladas">
+      <div class="mobile-section-head">
+        <h2>Próximas peladas</h2>
+        <span data-pelada-count></span>
+      </div>
+      <div data-pelada-list></div>
+    </section>
 
-    <div class="mobile-section-head">
-      <h2>Membros</h2>
-      <span data-member-count></span>
-    </div>
-    <div class="payment-list" data-member-list></div>
+    <section data-club-panel="membros" hidden>
+      <div class="mobile-section-head">
+        <h2>Membros</h2>
+        <span data-member-count></span>
+      </div>
+      <div class="payment-list" data-member-list></div>
+    </section>
   </div>
 </div>

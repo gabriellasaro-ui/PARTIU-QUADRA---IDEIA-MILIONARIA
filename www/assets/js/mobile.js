@@ -10,6 +10,7 @@ let activeMobileMap = null;
 let activeUserMarker = null;
 let activeMobileApprovalTimer = null;
 let gameCardTicker = null;
+let clubSection = 'peladas';
 const DEFAULT_LOCATION = [-16.6950, -49.2550];
 const APPROVAL_WINDOW_MS = 15 * 60 * 1000;
 const MOCK_APPROVAL_DELAY_MS = 5000;
@@ -1204,6 +1205,10 @@ export async function renderMobilePage(route, root) {
   // A barra de baixo pertence a tela, nao ao app: toda rota comeca sem ela e
   // quem precisa (renderGame / renderClub) reescreve o atributo.
   delete document.documentElement.dataset.bottombar;
+  // Zera a secao do clube so ao ENTRAR na rota. renderClub roda de novo a cada
+  // voto de presenca e a cada formulario enviado — zerar la arrancaria a
+  // pessoa de Membros no meio do uso.
+  if (route.name !== 'clube') clubSection = 'peladas';
   currentRoute = route;
   const renderers = {
     home: renderHome,
@@ -1370,6 +1375,12 @@ export function initMobileActions() {
   });
 
   document.addEventListener('click', async (event) => {
+    const clubTab = event.target.closest('[data-club-tab]');
+    if (clubTab) {
+      selectClubSection(clubTab.dataset.clubTab);
+      return;
+    }
+
     const vote = event.target.closest('[data-pelada-confirm]');
     if (vote) {
       const [peladaId, value] = vote.dataset.peladaConfirm.split(':');
@@ -1849,6 +1860,21 @@ function memberRow(member) {
   </div>`;
 }
 
+/* Mesmo idioma das abas da partida ([data-*-tab] + [data-*-panel] + hidden),
+   sem o ARIA de tablist: a barra do clube nao e so um tablist — o terceiro
+   espaco e o CTA de agendar. Fora de um tablist, aria-pressed e o correto. */
+function selectClubSection(name) {
+  clubSection = name;
+  document.querySelectorAll('[data-club-tab]').forEach((tab) => {
+    const on = tab.dataset.clubTab === name;
+    tab.classList.toggle('is-active', on);
+    tab.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('[data-club-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset.clubPanel !== name;
+  });
+}
+
 async function renderClub(root) {
   const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
   const emptyView = root.querySelector('[data-club-empty]');
@@ -1863,6 +1889,9 @@ async function renderClub(root) {
   fillVenueOptions();
 
   if (!club) {
+    // Sem clube nao ha secoes para navegar — a barra de 5 espacos serve
+    // melhor, e quem nao tem clube quer mais sair do que gerenciar.
+    delete document.documentElement.dataset.bottombar;
     if (emptyView) emptyView.hidden = false;
     if (clubView) clubView.hidden = true;
     // Sem clube, so as avulsas fazem sentido aqui — uma pelada de clube
@@ -1878,6 +1907,7 @@ async function renderClub(root) {
     return;
   }
 
+  document.documentElement.dataset.bottombar = 'clube';
   if (emptyView) emptyView.hidden = true;
   if (clubView) clubView.hidden = false;
 
@@ -1897,6 +1927,7 @@ async function renderClub(root) {
   if (clubNameLabel) clubNameLabel.textContent = club.name;
 
   prefillClubForm(club);
+  selectClubSection(clubSection);
   window.pqRefreshIcons?.(root);
 }
 
