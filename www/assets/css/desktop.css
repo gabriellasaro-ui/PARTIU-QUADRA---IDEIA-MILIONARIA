@@ -3723,3 +3723,65 @@ html[data-player-desktop] .desktop-booking-aside .bc-note small {
   gap: 10px;
   margin-top: 18px;
 }
+
+/* ---------- mensalistas na visao da arena ---------- */
+.mensal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.mensal-card {
+  padding: 16px;
+  border: 1px solid var(--pq-line, #dce9df);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.mensal-card__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mensal-card__top > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.mensal-card__top strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.mensal-card__top small {
+  display: block;
+  color: #6b7f72;
+  font-size: 11.5px;
+}
+
+.mensal-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pq-line, #dce9df);
+}
+
+.mensal-card__grid small {
+  display: block;
+  color: #6b7f72;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.mensal-card__grid strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 900;
+}
