@@ -3390,20 +3390,10 @@ html[data-route="mapa"] .phone {
   box-shadow: 0 5px 14px rgba(16, 24, 19, .04);
 }
 
-.sport-item:nth-child(2) > span {
-  background: #e2f5e9;
-  color: #0a7447;
-}
-
-.sport-item:nth-child(3) > span {
-  background: #daf1e3;
-  color: #08764b;
-}
-
-.sport-item:nth-child(4) > span {
-  background: #eef8f1;
-  color: #3b9e68;
-}
+/* Havia aqui um degrade decorativo tingindo o 2o, 3o e 4o circulos. Como era
+   por POSICAO e nao por esporte, o 3o ficava visivelmente mais escuro que os
+   vizinhos e lia como "selecionado" — um estado que nem existe nesta lista.
+   Alem disso mudava de esporte se a ordem mudasse. Todos iguais agora. */
 
 .sport-item .ic {
   width: 24px;
