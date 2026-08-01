@@ -23,13 +23,44 @@ async function fromApiOrLocal(path, localValue) {
   return api.get(path);
 }
 
+function applyOverrides(venue) {
+  if (!venue) return venue;
+  const all = storage.get('venue_overrides', {});
+  const patch = all[venue.id];
+  return patch ? { ...venue, ...patch } : venue;
+}
+
 export const venueService = {
+  /* ═══════════ Precos definidos pela arena ═══════════
+     O gerente edita preco/hora e mensalidade; o resultado precisa aparecer
+     para o jogador. Guardamos so o que mudou (override por id) em vez de
+     copiar a quadra inteira: assim os demais campos continuam vindo da
+     fonte e nao congelam numa foto antiga. */
+
+  async venueOverrides() {
+    return storage.get('venue_overrides', {});
+  },
+
+  async saveVenue(venue) {
+    if (API_BASE_URL) return api.put(`/api/quadras/${venue.id}`, venue);
+    const all = storage.get('venue_overrides', {});
+    all[venue.id] = {
+      ...(all[venue.id] || {}),
+      price: Number(venue.price),
+      priceMonthly: Number(venue.priceMonthly),
+      active: venue.active !== false
+    };
+    storage.set('venue_overrides', all);
+    return clone(all[venue.id]);
+  },
+
   async list(filters = {}) {
     const data = await fromApiOrLocal('/api/quadras', { quadras: VENUES });
     const venues = Array.isArray(data) ? data : (data?.quadras || []);
     const sport = String(filters.sport || '').trim();
     return venues
       .filter((venue) => !sport || venue.esporte === sport || venue.sport === sport)
+      .map(applyOverrides)
       .sort((a, b) => (a.distancia || a.distance) - (b.distancia || b.distance));
   },
 
@@ -37,7 +68,7 @@ export const venueService = {
     const data = await fromApiOrLocal('/api/quadras/destaques', {
       destaques: clone(VENUES).sort((a, b) => b.rating - a.rating).slice(0, 4)
     });
-    return data?.destaques || [];
+    return (data?.destaques || []).map(applyOverrides);
   },
 
   async get(id) {
@@ -45,7 +76,7 @@ export const venueService = {
       const data = await api.get(`/api/quadras/${id}`);
       return data?.quadra || data || null;
     }
-    return clone(VENUES.find((venue) => venue.id === Number(id)) || null);
+    return applyOverrides(clone(VENUES.find((venue) => venue.id === Number(id)) || null));
   },
 
   async getResumo(id, hora, dur) {

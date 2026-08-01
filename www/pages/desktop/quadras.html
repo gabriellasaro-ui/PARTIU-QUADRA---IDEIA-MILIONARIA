@@ -14,43 +14,31 @@
   </div>
 </div>
 
-<div class="grid">
-  <article class="qcard">
-    <div class="ph court-surface soccer">
-      <span class="pill status pago tl">Ativa</span>
-      <span class="pill star tr"><svg class="ic"><use href="#i-star"/></svg>4.9</span>
-    </div>
-    <div class="bd">
-      <h3>Society 1</h3>
-      <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>Futebol society - Vila Mariana</p>
-      <div class="tags"><span class="tag">Pix</span><span class="tag">Iluminacao</span><span class="tag">Vestiario</span></div>
-      <div class="foot"><div class="price">R$ 140<small> /hora</small></div><button class="btn btn-soft" data-toggle-quadra>Pausar</button></div>
-    </div>
-  </article>
+<!-- Grade montada por assets/js/manager-venues.js a partir de venueService.
+     Antes eram tres cards escritos na mao, com preco em texto fixo. -->
+<div class="grid" data-manager-venue-list></div>
 
-  <article class="qcard">
-    <div class="ph court-surface sand">
-      <span class="pill status pago tl">Ativa</span>
-      <span class="pill star tr"><svg class="ic"><use href="#i-star"/></svg>4.8</span>
+<div class="modal" data-manager-venue-dialog hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Precos de <span data-venue-dialog-name></span></h3>
+      <button class="btn btn-soft" type="button" data-manager-venue-cancel aria-label="Fechar">Fechar</button>
     </div>
-    <div class="bd">
-      <h3>Beach Tennis</h3>
-      <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>Areia premium - Moema</p>
-      <div class="tags"><span class="tag">Coberta</span><span class="tag">Aula</span><span class="tag">Equipamentos</span></div>
-      <div class="foot"><div class="price">R$ 120<small> /hora</small></div><button class="btn btn-soft" data-toggle-quadra>Pausar</button></div>
-    </div>
-  </article>
-
-  <article class="qcard">
-    <div class="ph court-surface tennis">
-      <span class="pill status pendente tl">Pausada</span>
-      <span class="pill star tr"><svg class="ic"><use href="#i-star"/></svg>4.7</span>
-    </div>
-    <div class="bd">
-      <h3>Tenis Coberta</h3>
-      <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>Tenis - Pinheiros</p>
-      <div class="tags"><span class="tag">Coberta</span><span class="tag">Piso rapido</span><span class="tag">Noite</span></div>
-      <div class="foot"><div class="price">R$ 110<small> /hora</small></div><button class="btn btn-soft" data-toggle-quadra>Ativar</button></div>
-    </div>
-  </article>
+    <form data-manager-venue-form>
+      <input type="hidden" name="id">
+      <label class="field-block">
+        <span>Avulso (por hora)</span>
+        <input type="number" name="price" min="0" step="5" required>
+      </label>
+      <label class="field-block">
+        <span>Mensalista (por mes, 4 sessoes)</span>
+        <input type="number" name="priceMonthly" min="0" step="5" required>
+        <small>Deixe abaixo de 4x o avulso para o plano compensar para o jogador.</small>
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-soft" type="button" data-manager-venue-cancel>Cancelar</button>
+        <button class="btn" type="submit">Salvar precos</button>
+      </div>
+    </form>
+  </div>
 </div>

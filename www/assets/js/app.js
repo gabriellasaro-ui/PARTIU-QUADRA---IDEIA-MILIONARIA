@@ -7,6 +7,7 @@ import { parseMobileRouteHash, ROUTES } from '../../config/routes.js';
 import { initMobileActions, renderMobilePage } from './mobile.js';
 import { initPlayerDesktopActions, renderPlayerDesktopPage } from './player-desktop.js';
 import { loadGame, destroyGame } from './game-mode.js';
+import { renderManagerVenues, initManagerVenues } from './manager-venues.js';
 
 const MOBILE_ROUTES = {
   home: {
@@ -423,6 +424,9 @@ async function renderDesktopRoute() {
   view.dataset.currentRoute = routeName;
   updateDesktopMeta(routeName, route);
   await setFragment(view, route.page);
+  // As paginas do gerente ainda sao HTML fixo; quadras e a primeira ligada
+  // a dados, e outras entram aqui do mesmo jeito.
+  if (routeName === 'quadras') await renderManagerVenues(view);
   markActiveNav();
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -430,6 +434,7 @@ async function renderDesktopRoute() {
 
 function initDesktopRouter() {
   if (!document.querySelector('[data-desktop-route-view]')) return;
+  initManagerVenues();
   window.addEventListener('hashchange', renderDesktopRoute);
   return renderDesktopRoute();
 }
