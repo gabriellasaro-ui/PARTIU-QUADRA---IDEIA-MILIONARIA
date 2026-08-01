@@ -27,9 +27,12 @@
     <div class="main">
       <div data-component="./components/header/app-topbar.html"></div>
       <div class="content">
-        <main data-desktop-route-view data-current-route="dashboard">
-          <div data-component="./pages/dashboard.html"></div>
-        </main>
+        <!-- Sem data-current-route aqui. O atributo escrito na mao fazia o
+             roteador achar que ja tinha montado a rota e sair pelo caminho
+             curto, entao renderManagerOverview nunca rodava e o painel ficava
+             com todos os numeros zerados, sem erro nenhum no console.
+             O conteudo vem do roteador, como em todas as outras rotas. -->
+        <main data-desktop-route-view></main>
       </div>
     </div>
   </div>

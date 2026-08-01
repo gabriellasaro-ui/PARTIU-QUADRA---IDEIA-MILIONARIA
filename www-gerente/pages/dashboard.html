@@ -1,87 +1,147 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
-<section class="dashboard-hero" aria-label="Resumo operacional">
-  <div class="overview-panel">
-    <span class="overview-kicker"><svg class="ic sm"><use href="#i-chart"/></svg> Hoje na arena</span>
-    <h2>Agenda cheia, caixa claro e reservas sob controle.</h2>
-    <p>Visao preparada para receber dados da API: faturamento, ocupacao, proximas reservas e alertas operacionais entram pelos services.</p>
-    <div class="overview-actions">
-      <button type="button" class="btn btn-volt" data-open-modal="modal-horario"><svg class="ic sm"><use href="#i-plus"/></svg> Novo horario</button>
-      <a class="btn btn-soft" href="./dashboard.html#financeiro"><svg class="ic sm"><use href="#i-dollar"/></svg> Financeiro</a>
-    </div>
+<!-- Dashboard do gerente restaurado do app antigo.
+     O markup existia em _legacy/gerente/templates/components/manager_dashboard.html
+     e todo o CSS dele continua em manager-app.css — que nem estava sendo
+     carregado. Valores vem de assets/js/manager-overview.js. -->
+<!-- TODO: substituir os dados Jinja por consultas aos endpoints da API FastAPI -->
+<section class="manager-welcome">
+  <div class="manager-welcome__copy">
+    <span class="manager-eyebrow"><i></i> Operação ativa</span>
+    <h2>Arena Bola na Rede</h2>
+    <p>Veja o que precisa da sua atenção e mantenha a agenda rodando sem perder reservas.</p>
   </div>
-
-  <div class="panel ops-panel">
-    <div class="panel-head">
-      <div>
-        <h2>Prioridades</h2>
-        <span class="panel-sub">Fila operacional para a API</span>
-      </div>
-    </div>
-    <div class="ops-list">
-      <div class="ops-item"><div><strong>Reservas pendentes</strong><span>Aprovar ou recusar</span></div><b>3</b></div>
-      <div class="ops-item"><div><strong>Pagamento aguardando</strong><span>Confirmacao manual</span></div><b>1</b></div>
-      <div class="ops-item"><div><strong>Horarios nobres</strong><span>18h ate 23h</span></div><b>86%</b></div>
-    </div>
+  <div class="manager-welcome__actions">
+    
+    <a class="manager-request-cta" href="./dashboard.html#reservas">
+      <span><svg class="ic"><use href="#i-bell"/></svg></span>
+      <div><strong><span data-overview-requests>0 solicitações aguardando</span></strong><small>Responder agora</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    
   </div>
 </section>
 
-<div class="kpi-row">
-  <div class="kpi">
-    <div class="top">
-      <span class="ico"><svg class="ic"><use href="#i-dollar"/></svg></span>
-      <span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +12%</span>
+<section class="manager-summary" aria-label="Resumo da arena">
+  <article class="manager-balance">
+    <span class="manager-balance__icon"><svg class="ic"><use href="#i-wallet"/></svg></span>
+    <div class="manager-balance__copy">
+      <span>Repasse estimado · 7 dias</span>
+      <strong class="num">R$ <span data-overview-payout>0,00</span></strong>
+      <small>De R$ <span data-overview-gross>0,00</span> em reservas</small>
     </div>
-    <div class="val num">R$ 4.820</div>
-    <div class="lbl">Faturamento</div>
-  </div>
-  <div class="kpi">
-    <div class="top">
-      <span class="ico"><svg class="ic"><use href="#i-calendar"/></svg></span>
-      <span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +8%</span>
-    </div>
-    <div class="val num">32</div>
-    <div class="lbl">Reservas na semana</div>
-  </div>
-  <div class="kpi">
-    <div class="top">
-      <span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span>
-      <span class="delta"><svg class="ic"><use href="#i-trend"/></svg> 86%</span>
-    </div>
-    <div class="val num">18h</div>
-    <div class="lbl">Periodo mais forte</div>
-  </div>
-</div>
+    <span class="manager-trend"><svg class="ic sm"><use href="#i-trend"/></svg> 11%</span>
+  </article>
 
-<div class="dash-cols">
-  <div class="panel">
-    <div class="panel-head">
-      <div>
-        <h2>Faturamento na semana</h2>
-        <span class="panel-sub">Ultimos 7 dias</span>
+  <div class="manager-metrics">
+    <article>
+      <span><svg class="ic"><use href="#i-calendar"/></svg></span>
+      <div class="manager-metric-copy">
+        <strong class="num"><span data-overview-today>0</span></strong>
+        <small>Reservas hoje</small>
       </div>
-      <a class="lk" href="./dashboard.html#financeiro">Ver relatorio</a>
-    </div>
-    <svg class="lc" viewBox="0 0 620 220" role="img" aria-label="Faturamento por dia da semana">
-      <path class="lc-area" d="M40 170 L120 140 L200 155 L280 88 L360 104 L440 66 L560 92 L560 190 L40 190 Z" fill="rgba(27,122,62,.12)"/>
-      <path class="lc-line" d="M40 170 L120 140 L200 155 L280 88 L360 104 L440 66 L560 92"/>
-      <circle class="lc-dot" cx="40" cy="170" r="3.4"/>
-      <circle class="lc-dot" cx="120" cy="140" r="3.4"/>
-      <circle class="lc-dot" cx="200" cy="155" r="3.4"/>
-      <circle class="lc-dot peak" cx="440" cy="66" r="5"/>
-    </svg>
+    </article>
+    <article>
+      <span><svg class="ic"><use href="#i-dollar"/></svg></span>
+      <div class="manager-metric-copy">
+        <strong class="num">R$ <span data-overview-revenue>0</span></strong>
+        <small>Faturamento hoje</small>
+      </div>
+    </article>
+    <article>
+      <span><svg class="ic"><use href="#i-clock"/></svg></span>
+      <div class="manager-metric-copy">
+        <strong class="num"><span data-overview-occ>0</span>%</strong>
+        <small>Ocupação média</small>
+      </div>
+    </article>
   </div>
+</section>
 
-  <div class="panel">
-    <div class="panel-head"><div><h2>Ocupacao por periodo</h2><span class="panel-sub">Media de lotacao na semana</span></div></div>
-    <div class="faixas">
-      <div class="faixa">
-        <div class="faixa-top"><span>Manha <small>06h-12h</small></span><b>42%</b></div>
-        <div class="faixa-bar"><span style="width: 42%;"></span></div>
+<section class="manager-section">
+  <div class="manager-section__head">
+    <div><span>Atalhos</span><h2>Central da arena</h2></div>
+  </div>
+  <nav class="manager-tools" aria-label="Ferramentas da arena">
+    <a href="./dashboard.html#reservas">
+      <span><svg class="ic"><use href="#i-calendar"/></svg></span>
+      <div><strong>Reservas</strong><small>Aprovar e acompanhar</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    <a href="./dashboard.html#agenda">
+      <span><svg class="ic"><use href="#i-clock"/></svg></span>
+      <div><strong>Grade horária</strong><small>Abrir e bloquear horários</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    <a href="./dashboard.html#mensalistas">
+      <span><svg class="ic"><use href="#i-user"/></svg></span>
+      <div><strong>Mensalistas</strong><small>Recorrências e vencimentos</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    <a href="./dashboard.html#quadras">
+      <span><svg class="ic"><use href="#i-map"/></svg></span>
+      <div><strong>Vitrine</strong><small>Presença no Explorar</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+  </nav>
+</section>
+
+<div class="manager-dashboard-grid">
+  <section class="manager-panel manager-panel--bookings">
+    <div class="manager-panel__head">
+      <div><span>Movimento</span><h2>Próximas reservas</h2></div>
+      <a href="./dashboard.html#reservas">Ver todas</a>
+    </div>
+    <div class="manager-upcoming" data-overview-upcoming>
+      
+    </div>
+  </section>
+
+  <section class="manager-panel manager-panel--occupancy">
+    <div class="manager-panel__head">
+      <div><span>Disponibilidade</span><h2>Ritmo da agenda</h2></div>
+      <a href="./dashboard.html#agenda">Abrir agenda</a>
+    </div>
+    <div class="manager-occupancy" data-overview-occupancy>
+      
+    </div>
+    <div class="manager-heatmap-head">
+      <div><span>Mapa de calor</span><strong>Dias e horários mais ocupados</strong></div>
+      <small>Últimos 7 dias</small>
+    </div>
+    <div class="manager-heatmap" aria-label="Mapa de calor da ocupação por dia e horário">
+      <div class="manager-heatmap__grid" data-overview-heatmap>
+        <span class="manager-heatmap__corner" aria-hidden="true"></span>
+        
+        
       </div>
-      <div class="faixa">
-        <div class="faixa-top"><span>Noite <small>18h-23h</small></span><b>86%</b></div>
-        <div class="faixa-bar"><span style="width: 86%;"></span></div>
+      <div class="manager-heatmap__legend" aria-hidden="true">
+        <span>Menor</span><i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><span>Maior</span>
       </div>
     </div>
+  </section>
+
+<section class="manager-panel manager-panel--intelligence">
+  <div class="manager-panel__head">
+    <div><span>Inteligência da arena</span><h2>Faturamento e oportunidades</h2></div>
+    <a href="./dashboard.html#financeiro">Abrir financeiro</a>
   </div>
+  <div class="manager-intelligence-grid">
+    <div class="manager-chart">
+      <svg class="lc" data-overview-chart viewBox="0 0 620 240" role="img" aria-label="Faturamento dos últimos sete dias">
+        <defs>
+          <linearGradient id="manager-chart-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#16a765" stop-opacity=".22"/>
+            <stop offset="1" stop-color="#16a765" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        
+        <path class="lc-area" data-chart-area d="" fill="url(#manager-chart-fill)"/>
+        <path class="lc-line" data-chart-line d=""/>
+        
+      </svg>
+    </div>
+    <div class="manager-insights" data-overview-insights>
+      
+    </div>
+  </div>
+</section>
 </div>

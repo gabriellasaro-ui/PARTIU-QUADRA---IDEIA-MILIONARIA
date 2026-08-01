@@ -1,56 +1,78 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
-<div class="toolbar">
-  <div class="field grow">
-    <svg class="ic"><use href="#i-search"/></svg>
-    <input type="text" placeholder="Buscar quadra">
+<!-- Minhas quadras — os espacos da arena do gerente.
+
+     Restaura as duas metades do app antigo: a Vitrine (como a arena aparece
+     no Explorar) e o catalogo de espacos. A versao refatorada tinha perdido
+     a Vitrine inteira e listava as arenas do marketplace no lugar das
+     quadras da casa. Preenchido por assets/js/manager-courts.js. -->
+<section class="manager-showcase" id="vitrine">
+  <div class="manager-showcase__copy">
+    <span class="manager-eyebrow"><i></i> Vitrine no Explorar</span>
+    <h2>Sua arena pronta para ser encontrada</h2>
+    <p>Controle a visibilidade e o destaque das suas quadras sem sair da gestão.</p>
+
+    <div class="manager-showcase__stats">
+      <div><strong class="num">1.284</strong><small>visualizações em 30 dias</small></div>
+      <div><strong class="num">9,8%</strong><small>conversão em reservas</small></div>
+    </div>
+
+    <div class="manager-showcase__settings">
+      <button type="button" class="manager-setting-toggle" data-showcase-setting="visible" aria-pressed="false">
+        <span><svg class="ic"><use href="#i-map"/></svg></span>
+        <div><strong>Visível no Explorar</strong><small>Jogadores podem encontrar sua arena</small></div>
+        <i></i>
+      </button>
+      <button type="button" class="manager-setting-toggle" data-showcase-setting="featured" aria-pressed="false">
+        <span><svg class="ic"><use href="#i-zap"/></svg></span>
+        <div><strong>Destaque regional</strong><small>Apareça primeiro nas buscas próximas</small></div>
+        <i></i>
+      </button>
+    </div>
   </div>
-  <div class="field">
-    <svg class="ic"><use href="#i-sliders"/></svg>
-    <select>
-      <option>Todas</option>
-      <option>Ativas</option>
-      <option>Pausadas</option>
-    </select>
+
+  <div class="manager-showcase-preview" aria-label="Prévia da arena no Explorar">
+    <span class="manager-showcase-preview__label">Prévia no aplicativo</span>
+    <article data-showcase-preview></article>
   </div>
+</section>
+
+<div class="manager-section__head manager-courts-head">
+  <div>
+    <span>Catálogo</span>
+    <h2>Espaços cadastrados</h2>
+    <small class="panel-sub" data-court-count></small>
+  </div>
+  <button class="btn btn-primary" type="button" data-court-new>
+    <svg class="ic sm"><use href="#i-plus"/></svg> Adicionar quadra
+  </button>
 </div>
 
-<div class="grid">
-  <article class="qcard">
-    <div class="ph court-surface soccer">
-      <span class="pill status pago tl">Ativa</span>
-      <span class="pill star tr"><svg class="ic"><use href="#i-star"/></svg>4.9</span>
-    </div>
-    <div class="bd">
-      <h3>Society 1</h3>
-      <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>Futebol society - Vila Mariana</p>
-      <div class="tags"><span class="tag">Pix</span><span class="tag">Iluminacao</span><span class="tag">Vestiario</span></div>
-      <div class="foot"><div class="price">R$ 140<small> /hora</small></div><button class="btn btn-soft" data-toggle-quadra>Pausar</button></div>
-    </div>
-  </article>
+<div class="grid" data-court-list></div>
 
-  <article class="qcard">
-    <div class="ph court-surface sand">
-      <span class="pill status pago tl">Ativa</span>
-      <span class="pill star tr"><svg class="ic"><use href="#i-star"/></svg>4.8</span>
+<div class="modal" data-court-dialog hidden>
+  <div class="modal-backdrop" data-court-cancel></div>
+  <form class="modal-box manager-sheet" data-court-form>
+    <div class="modal-head">
+      <div>
+        <span class="manager-modal-eyebrow">Espaço</span>
+        <h3 data-court-dialog-name></h3>
+      </div>
+      <button class="modal-x" type="button" data-court-cancel aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
     </div>
-    <div class="bd">
-      <h3>Beach Tennis</h3>
-      <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>Areia premium - Moema</p>
-      <div class="tags"><span class="tag">Coberta</span><span class="tag">Aula</span><span class="tag">Equipamentos</span></div>
-      <div class="foot"><div class="price">R$ 120<small> /hora</small></div><button class="btn btn-soft" data-toggle-quadra>Pausar</button></div>
+    <div class="modal-body">
+      <input type="hidden" name="id">
+      <label class="field-block"><span>Nome do espaço</span><input name="label" type="text" placeholder="Society 3" required></label>
+      <label class="field-block"><span>Modalidade</span><select name="sport">
+        <option>Futebol Society</option><option>Futsal</option><option>Vôlei</option><option>Beach Tennis</option>
+      </select></label>
+      <div class="field-row">
+        <label class="field-block"><span>Avulso (por hora)</span><input name="price" type="number" min="0" step="5" required></label>
+        <label class="field-block"><span>Mensalista (por mês)</span><input name="priceMonthly" type="number" min="0" step="5" required></label>
+      </div>
+      <div class="set-hint"><svg class="ic"><use href="#i-check-circle"/></svg> Deixe a mensalidade abaixo de 4× o avulso para o plano compensar para o jogador.</div>
     </div>
-  </article>
-
-  <article class="qcard">
-    <div class="ph court-surface tennis">
-      <span class="pill status pendente tl">Pausada</span>
-      <span class="pill star tr"><svg class="ic"><use href="#i-star"/></svg>4.7</span>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-court-cancel>Cancelar</button>
+      <button class="btn btn-primary" type="submit">Salvar quadra</button>
     </div>
-    <div class="bd">
-      <h3>Tenis Coberta</h3>
-      <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>Tenis - Pinheiros</p>
-      <div class="tags"><span class="tag">Coberta</span><span class="tag">Piso rapido</span><span class="tag">Noite</span></div>
-      <div class="foot"><div class="price">R$ 110<small> /hora</small></div><button class="btn btn-soft" data-toggle-quadra>Ativar</button></div>
-    </div>
-  </article>
+  </form>
 </div>

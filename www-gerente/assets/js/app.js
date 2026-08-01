@@ -2,6 +2,10 @@ import { loadComponents, refreshIcons } from './component-loader.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { qsa } from '../../utils/helpers.js';
 import { ROUTES } from '../../config/routes.js';
+import { renderManagerCourts, initManagerCourts } from './manager-courts.js';
+import { renderManagerReservations, initManagerReservations } from './manager-reservations.js';
+import { renderManagerMembers, initManagerMembers } from './manager-members.js';
+import { renderManagerOverview } from './manager-overview.js';
 
 const DESKTOP_ROUTES = {
   dashboard: {
@@ -44,7 +48,14 @@ const DESKTOP_ROUTES = {
     page: './pages/desktop/quadras.html',
     title: 'Minhas quadras - Qadras',
     heading: 'Minhas quadras',
-    sub: 'Estrutura, precos e disponibilidade'
+    sub: 'Estrutura, preços e disponibilidade'
+  },
+  mensalistas: {
+    aliases: ['mensalistas'],
+    page: './pages/desktop/mensalistas.html',
+    title: 'Mensalistas - Qadras',
+    heading: 'Mensalistas',
+    sub: 'Quem tem dia e horário fixos na sua grade'
   },
   avaliacoes: {
     aliases: ['avaliacoes'],
@@ -128,8 +139,14 @@ async function renderDesktopRoute() {
   }
 
   view.dataset.currentRoute = routeName;
+  // O manager-app.css tem regras por tela penduradas neste atributo.
+  document.documentElement.dataset.managerView = routeName;
   updateDesktopMeta(routeName, route);
   await setFragment(view, route.page);
+  if (routeName === 'dashboard') renderManagerOverview(view);
+  if (routeName === 'quadras') renderManagerCourts(view);
+  if (routeName === 'reservas') renderManagerReservations(view);
+  if (routeName === 'mensalistas') await renderManagerMembers(view);
   markActiveNav();
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -137,6 +154,9 @@ async function renderDesktopRoute() {
 
 function initDesktopRouter() {
   if (!document.querySelector('[data-desktop-route-view]')) return;
+  initManagerCourts();
+  initManagerReservations();
+  initManagerMembers();
   window.addEventListener('hashchange', renderDesktopRoute);
   return renderDesktopRoute();
 }

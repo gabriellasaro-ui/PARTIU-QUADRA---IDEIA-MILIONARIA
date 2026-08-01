@@ -7,7 +7,7 @@ import { parseMobileRouteHash, ROUTES } from '../../config/routes.js';
 import { initMobileActions, renderMobilePage } from './mobile.js';
 import { initPlayerDesktopActions, renderPlayerDesktopPage } from './player-desktop.js';
 import { loadGame, destroyGame } from './game-mode.js';
-import { renderManagerVenues, initManagerVenues } from './manager-venues.js';
+import { renderManagerCourts, initManagerCourts } from './manager-courts.js';
 import { renderManagerReservations, initManagerReservations } from './manager-reservations.js';
 import { renderManagerMembers, initManagerMembers } from './manager-members.js';
 import { renderManagerOverview } from './manager-overview.js';
@@ -438,8 +438,8 @@ async function renderDesktopRoute() {
   // As paginas do gerente ainda sao HTML fixo; quadras e a primeira ligada
   // a dados, e outras entram aqui do mesmo jeito.
   if (routeName === 'dashboard') await renderManagerOverview(view);
-  if (routeName === 'quadras') await renderManagerVenues(view);
-  if (routeName === 'reservas') await renderManagerReservations(view);
+  if (routeName === 'quadras') renderManagerCourts(view);
+  if (routeName === 'reservas') renderManagerReservations(view);
   if (routeName === 'mensalistas') await renderManagerMembers(view);
   markActiveNav();
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
@@ -448,7 +448,7 @@ async function renderDesktopRoute() {
 
 function initDesktopRouter() {
   if (!document.querySelector('[data-desktop-route-view]')) return;
-  initManagerVenues();
+  initManagerCourts();
   initManagerReservations();
   initManagerMembers();
   window.addEventListener('hashchange', renderDesktopRoute);

@@ -1,44 +1,78 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
-<div class="toolbar">
-  <div class="field grow">
-    <svg class="ic"><use href="#i-search"/></svg>
-    <input type="text" placeholder="Buscar quadra">
+<!-- Minhas quadras — os espacos da arena do gerente.
+
+     Restaura as duas metades do app antigo: a Vitrine (como a arena aparece
+     no Explorar) e o catalogo de espacos. A versao refatorada tinha perdido
+     a Vitrine inteira e listava as arenas do marketplace no lugar das
+     quadras da casa. Preenchido por assets/js/manager-courts.js. -->
+<section class="manager-showcase" id="vitrine">
+  <div class="manager-showcase__copy">
+    <span class="manager-eyebrow"><i></i> Vitrine no Explorar</span>
+    <h2>Sua arena pronta para ser encontrada</h2>
+    <p>Controle a visibilidade e o destaque das suas quadras sem sair da gestão.</p>
+
+    <div class="manager-showcase__stats">
+      <div><strong class="num">1.284</strong><small>visualizações em 30 dias</small></div>
+      <div><strong class="num">9,8%</strong><small>conversão em reservas</small></div>
+    </div>
+
+    <div class="manager-showcase__settings">
+      <button type="button" class="manager-setting-toggle" data-showcase-setting="visible" aria-pressed="false">
+        <span><svg class="ic"><use href="#i-map"/></svg></span>
+        <div><strong>Visível no Explorar</strong><small>Jogadores podem encontrar sua arena</small></div>
+        <i></i>
+      </button>
+      <button type="button" class="manager-setting-toggle" data-showcase-setting="featured" aria-pressed="false">
+        <span><svg class="ic"><use href="#i-zap"/></svg></span>
+        <div><strong>Destaque regional</strong><small>Apareça primeiro nas buscas próximas</small></div>
+        <i></i>
+      </button>
+    </div>
   </div>
-  <div class="field">
-    <svg class="ic"><use href="#i-sliders"/></svg>
-    <select>
-      <option>Todas</option>
-      <option>Ativas</option>
-      <option>Pausadas</option>
-    </select>
+
+  <div class="manager-showcase-preview" aria-label="Prévia da arena no Explorar">
+    <span class="manager-showcase-preview__label">Prévia no aplicativo</span>
+    <article data-showcase-preview></article>
   </div>
+</section>
+
+<div class="manager-section__head manager-courts-head">
+  <div>
+    <span>Catálogo</span>
+    <h2>Espaços cadastrados</h2>
+    <small class="panel-sub" data-court-count></small>
+  </div>
+  <button class="btn btn-primary" type="button" data-court-new>
+    <svg class="ic sm"><use href="#i-plus"/></svg> Adicionar quadra
+  </button>
 </div>
 
-<!-- Grade montada por assets/js/manager-venues.js a partir de venueService.
-     Antes eram tres cards escritos na mao, com preco em texto fixo. -->
-<div class="grid" data-manager-venue-list></div>
+<div class="grid" data-court-list></div>
 
-<div class="modal" data-manager-venue-dialog hidden>
-  <div class="modal-card">
+<div class="modal" data-court-dialog hidden>
+  <div class="modal-backdrop" data-court-cancel></div>
+  <form class="modal-box manager-sheet" data-court-form>
     <div class="modal-head">
-      <h3>Precos de <span data-venue-dialog-name></span></h3>
-      <button class="btn btn-soft" type="button" data-manager-venue-cancel aria-label="Fechar">Fechar</button>
-    </div>
-    <form data-manager-venue-form>
-      <input type="hidden" name="id">
-      <label class="field-block">
-        <span>Avulso (por hora)</span>
-        <input type="number" name="price" min="0" step="5" required>
-      </label>
-      <label class="field-block">
-        <span>Mensalista (por mes, 4 sessoes)</span>
-        <input type="number" name="priceMonthly" min="0" step="5" required>
-        <small>Deixe abaixo de 4x o avulso para o plano compensar para o jogador.</small>
-      </label>
-      <div class="modal-actions">
-        <button class="btn btn-soft" type="button" data-manager-venue-cancel>Cancelar</button>
-        <button class="btn" type="submit">Salvar precos</button>
+      <div>
+        <span class="manager-modal-eyebrow">Espaço</span>
+        <h3 data-court-dialog-name></h3>
       </div>
-    </form>
-  </div>
+      <button class="modal-x" type="button" data-court-cancel aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" name="id">
+      <label class="field-block"><span>Nome do espaço</span><input name="label" type="text" placeholder="Society 3" required></label>
+      <label class="field-block"><span>Modalidade</span><select name="sport">
+        <option>Futebol Society</option><option>Futsal</option><option>Vôlei</option><option>Beach Tennis</option>
+      </select></label>
+      <div class="field-row">
+        <label class="field-block"><span>Avulso (por hora)</span><input name="price" type="number" min="0" step="5" required></label>
+        <label class="field-block"><span>Mensalista (por mês)</span><input name="priceMonthly" type="number" min="0" step="5" required></label>
+      </div>
+      <div class="set-hint"><svg class="ic"><use href="#i-check-circle"/></svg> Deixe a mensalidade abaixo de 4× o avulso para o plano compensar para o jogador.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-court-cancel>Cancelar</button>
+      <button class="btn btn-primary" type="submit">Salvar quadra</button>
+    </div>
+  </form>
 </div>

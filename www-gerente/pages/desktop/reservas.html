@@ -28,44 +28,28 @@
   </div>
 </div>
 
+<!-- Mensalistas primeiro: e receita recorrente e horario ja comprometido.
+     O gerente nao precisa reaprovar a mesma quinta quatro vezes. -->
+<div class="panel" data-manager-mensal-head>
+  <div class="panel-head">
+    <div>
+      <h2>Mensalistas</h2>
+      <span class="panel-sub">Quadra comprometida toda semana · <b data-manager-mensal-count>0</b> planos</span>
+    </div>
+  </div>
+  <div class="mensal-grid" data-manager-mensal-list></div>
+</div>
+
 <div class="panel">
   <div class="panel-head">
     <div>
-      <h2>Proximas reservas</h2>
-      <span class="panel-sub">Operacao do dia organizada por horario</span>
+      <h2>Reservas avulsas</h2>
+      <span class="panel-sub">Caso a caso — sao estas que precisam de decisao</span>
     </div>
     <a class="lk" href="./dashboard.html#agenda">Ver agenda</a>
   </div>
   <table class="tbl">
     <thead><tr><th>Cliente</th><th>Quadra</th><th>Data</th><th>Horario</th><th>Valor</th><th>Status</th><th></th></tr></thead>
-    <tbody>
-      <tr>
-        <td><div class="cli"><span class="av">M</span> Matheus Rocha</div></td>
-        <td>Society 1</td>
-        <td>Hoje</td>
-        <td class="num">19:00</td>
-        <td class="val num">R$ 140</td>
-        <td><span class="status pago">Pago</span></td>
-        <td><span class="act-inline"><button class="btn btn-soft btn-xs" data-toast="Detalhes preparados para a API">Detalhes</button></span></td>
-      </tr>
-      <tr>
-        <td><div class="cli"><span class="av">B</span> Bruno Lima</div></td>
-        <td>Beach Tennis</td>
-        <td>Hoje</td>
-        <td class="num">20:30</td>
-        <td class="val num">R$ 120</td>
-        <td><span class="status confirmado">Confirmado</span></td>
-        <td><span class="act-inline"><button class="btn btn-soft btn-xs" data-toast="Detalhes preparados para a API">Detalhes</button></span></td>
-      </tr>
-      <tr>
-        <td><div class="cli"><span class="av">C</span> Carol Souza</div></td>
-        <td>Tenis Coberta</td>
-        <td>Amanha</td>
-        <td class="num">18:00</td>
-        <td class="val num">R$ 110</td>
-        <td><span class="status pendente">Pendente</span></td>
-        <td><span class="act-inline"><button class="btn btn-primary btn-xs" data-toast="Reserva aprovada">Aprovar</button></span></td>
-      </tr>
-    </tbody>
+    <tbody data-manager-reservation-list></tbody>
   </table>
 </div>
