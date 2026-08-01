@@ -1,0 +1,167 @@
+{
+  "reservas": [
+    {
+      "id": 9,
+      "cliente": "Gabriel Lisboa",
+      "telefone": "(62) 99888-0001",
+      "quadra": "Society 1",
+      "data": "Sáb, 06/07",
+      "hora": "19:00 – 20:00",
+      "valor": 120,
+      "status": "Solicitada"
+    },
+    {
+      "id": 1,
+      "cliente": "Lucas Andrade",
+      "telefone": "(62) 99140-2210",
+      "quadra": "Society 1",
+      "data": "Hoje",
+      "hora": "08:00 – 09:00",
+      "valor": 120,
+      "status": "Solicitada"
+    },
+    {
+      "id": 2,
+      "cliente": "Equipe Os Galáticos",
+      "telefone": "(62) 99777-1180",
+      "quadra": "Society 1",
+      "data": "Hoje",
+      "hora": "14:00 – 16:00",
+      "valor": 240,
+      "status": "Pago"
+    },
+    {
+      "id": 3,
+      "cliente": "Marina Souza",
+      "telefone": "(62) 98120-5567",
+      "quadra": "Society 2",
+      "data": "Amanhã",
+      "hora": "18:00 – 19:00",
+      "valor": 120,
+      "status": "Solicitada"
+    },
+    {
+      "id": 4,
+      "cliente": "Pelada do Trabalho",
+      "telefone": "(62) 99604-7781",
+      "quadra": "Society 1",
+      "data": "Amanhã",
+      "hora": "20:00 – 21:00",
+      "valor": 120,
+      "status": "Pendente"
+    },
+    {
+      "id": 5,
+      "cliente": "Rafael Lima",
+      "telefone": "(62) 99333-0092",
+      "quadra": "Society 2",
+      "data": "Amanhã",
+      "hora": "21:00 – 22:00",
+      "valor": 120,
+      "status": "Confirmado"
+    },
+    {
+      "id": 6,
+      "cliente": "Time da Firma",
+      "telefone": "(62) 98800-4521",
+      "quadra": "Society 1",
+      "data": "Qui, 02/07",
+      "hora": "19:00 – 20:00",
+      "valor": 120,
+      "status": "Confirmado"
+    },
+    {
+      "id": 7,
+      "cliente": "Amigos da Bola",
+      "telefone": "(62) 99012-3344",
+      "quadra": "Society 2",
+      "data": "Sex, 03/07",
+      "hora": "20:00 – 22:00",
+      "valor": 240,
+      "status": "Solicitada"
+    },
+    {
+      "id": 8,
+      "cliente": "Galera do Bairro",
+      "telefone": "(62) 99455-8890",
+      "quadra": "Society 1",
+      "data": "Sáb, 04/07",
+      "hora": "16:00 – 17:00",
+      "valor": 120,
+      "status": "Confirmado"
+    }
+  ],
+  "conversas": [
+    {
+      "id": 1,
+      "jogador": "Gabriel Lisboa",
+      "arena": "Arena Bola na Rede",
+      "quadra": "Arena Bola na Rede",
+      "assunto": "Reserva de sábado 19h",
+      "mensagens": [
+        {
+          "de": "jogador",
+          "texto": "Fala! Reservei sábado às 19h. A quadra tem colete pra emprestar?",
+          "hora": "09:12"
+        },
+        {
+          "de": "gerente",
+          "texto": "Opa, Gabriel! Tem sim, 10 coletes. Quantos vocês vão precisar?",
+          "hora": "09:15"
+        },
+        {
+          "de": "jogador",
+          "texto": "Uns 6 tá ótimo. Valeu!",
+          "hora": "09:16"
+        },
+        {
+          "de": "gerente",
+          "texto": "Fechado, deixo separado na recepção. Bom jogo!",
+          "hora": "09:17"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "jogador": "Gabriel Lisboa",
+      "arena": "Beach Point Arena",
+      "quadra": "Beach Point Arena",
+      "assunto": "Beach tennis domingo",
+      "mensagens": [
+        {
+          "de": "gerente",
+          "texto": "Oi Gabriel, seu horário de domingo 10h está confirmado. Precisa de raquete?",
+          "hora": "18:40"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "jogador": "Lucas Andrade",
+      "arena": "Arena Bola na Rede",
+      "quadra": "Society 1",
+      "assunto": "Solicitação de hoje 08h",
+      "mensagens": [
+        {
+          "de": "jogador",
+          "texto": "Boa! Mandei a solicitação das 8h de hoje, consegue confirmar?",
+          "hora": "07:05"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "jogador": "Marina Souza",
+      "arena": "Arena Bola na Rede",
+      "quadra": "Society 2",
+      "assunto": "Reserva de amanhã 18h",
+      "mensagens": [
+        {
+          "de": "jogador",
+          "texto": "Dá pra estender pra 2 horas amanhã? Vamos ser mais gente.",
+          "hora": "21:30"
+        }
+      ]
+    }
+  ]
+}

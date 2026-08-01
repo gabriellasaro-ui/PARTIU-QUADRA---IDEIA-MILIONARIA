@@ -10,6 +10,7 @@ import { loadGame, destroyGame } from './game-mode.js';
 import { renderManagerVenues, initManagerVenues } from './manager-venues.js';
 import { renderManagerReservations, initManagerReservations } from './manager-reservations.js';
 import { renderManagerMembers, initManagerMembers } from './manager-members.js';
+import { renderManagerOverview } from './manager-overview.js';
 
 const MOBILE_ROUTES = {
   home: {
@@ -431,10 +432,12 @@ async function renderDesktopRoute() {
   }
 
   view.dataset.currentRoute = routeName;
+  document.documentElement.dataset.managerView = routeName;
   updateDesktopMeta(routeName, route);
   await setFragment(view, route.page);
   // As paginas do gerente ainda sao HTML fixo; quadras e a primeira ligada
   // a dados, e outras entram aqui do mesmo jeito.
+  if (routeName === 'dashboard') await renderManagerOverview(view);
   if (routeName === 'quadras') await renderManagerVenues(view);
   if (routeName === 'reservas') await renderManagerReservations(view);
   if (routeName === 'mensalistas') await renderManagerMembers(view);

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-page="dashboard">
+<!-- data-manager-app: as 599 regras do manager-app.css vivem sob esse
+     atributo. Sem ele a folha carrega e nao pinta nada. -->
+<html lang="pt-br" data-page="dashboard" data-manager-app data-manager-view="dashboard">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -12,6 +14,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/css/desktop.css">
+  <!-- 3339 linhas de estilo do painel do gerente que nunca eram carregadas.
+       O app antigo carregava as duas folhas; na refatoracao so a primeira
+       veio, e por isso metade das telas parecia sem acabamento. -->
+  <link rel="stylesheet" href="./assets/css/manager-app.css">
 </head>
 <body>
   <div data-component="./components/icons/sprite.html"></div>
