@@ -1,58 +1,66 @@
 <!-- Clube — o grupo que organiza a pelada recorrente.
-     Duas visoes no mesmo arquivo, alternadas por renderClub. -->
-<div class="route-page clube-page" data-player-desktop-page="clube">
-  <div class="navbar route-navbar">
+     Usa os mesmos idiomas das outras telas do app: .navbar, .mobile-wallet
+     (hero), .mobile-section-head, .res-card e .payment-row. Nada de classes
+     da tela de jogo aqui. -->
+<div class="route-page clube-page">
+  <div class="navbar">
     <a class="icon-btn" href="#home" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
-    <div>
-      <div class="title">Clube</div>
-      <div class="sub">Seu time e suas peladas</div>
-    </div>
+    <div><div class="title">Clube</div><div class="sub">Seu time e suas peladas</div></div>
   </div>
 
   <!-- ───────── Sem clube ───────── -->
   <div class="container" data-club-empty hidden>
-    <div class="empty">
-      <span class="empty-ic"><i class="ic" data-lucide="users"></i></span>
-      <h3>Você ainda não tem um clube</h3>
-      <p>O clube é onde você monta o time e organiza a pelada de sempre: quem entra, quando joga e quem confirmou.</p>
-      <button class="btn block" type="button" data-sheet-open="club-edit-sheet">Criar meu clube</button>
-      <button class="btn outline block" type="button" data-sheet-open="pelada-sheet">Agendar pelada avulsa</button>
-    </div>
+    <section class="mobile-wallet club-hero">
+      <span>Comece por aqui</span>
+      <strong>Monte seu clube</strong>
+      <p>O clube guarda seu time e organiza a pelada de sempre: quem entra, quando joga e quem confirmou.</p>
+      <div class="wallet-actions">
+        <button class="btn wallet-primary" type="button" data-sheet-open="club-edit-sheet">
+          <i class="ic" data-lucide="plus"></i>Criar clube
+        </button>
+        <button class="btn wallet-secondary" type="button" data-sheet-open="pelada-sheet">
+          <i class="ic" data-lucide="calendar-plus"></i>Pelada avulsa
+        </button>
+      </div>
+    </section>
 
-    <div class="game-section-title">Suas peladas avulsas</div>
+    <div class="mobile-section-head">
+      <h2>Peladas avulsas</h2>
+      <span>Sem time fixo</span>
+    </div>
     <div data-pelada-list-solo></div>
   </div>
 
   <!-- ───────── Com clube ───────── -->
   <div class="container" data-club-view hidden>
-    <div class="club-hero">
-      <span class="club-hero__badge" data-club-sport></span>
-      <h2 data-club-name></h2>
+    <section class="mobile-wallet club-hero">
+      <span data-club-sport></span>
+      <strong data-club-name></strong>
       <p data-club-description></p>
       <div class="club-hero__meta">
         <span><i class="ic" data-lucide="map-pin"></i><span data-club-city></span></span>
         <span><i class="ic" data-lucide="users"></i><span data-club-members-count></span></span>
       </div>
-      <div class="club-hero__actions">
-        <button class="btn" type="button" data-sheet-open="pelada-sheet">
-          <i class="ic" data-lucide="calendar-plus"></i> Agendar pelada
+      <div class="wallet-actions">
+        <button class="btn wallet-primary" type="button" data-sheet-open="pelada-sheet">
+          <i class="ic" data-lucide="calendar-plus"></i>Agendar pelada
         </button>
-        <button class="btn outline" type="button" data-club-edit>
-          <i class="ic" data-lucide="pencil"></i> Editar
+        <button class="btn wallet-secondary" type="button" data-club-edit>
+          <i class="ic" data-lucide="pencil"></i>Editar
         </button>
       </div>
-    </div>
+    </section>
 
-    <div class="game-section-title">
-      Próximas peladas
+    <div class="mobile-section-head">
+      <h2>Próximas peladas</h2>
       <span data-pelada-count></span>
     </div>
     <div data-pelada-list></div>
 
-    <div class="game-section-title">
-      Membros
+    <div class="mobile-section-head">
+      <h2>Membros</h2>
       <span data-member-count></span>
     </div>
-    <div class="game-players" data-member-list></div>
+    <div class="payment-list" data-member-list></div>
   </div>
 </div>

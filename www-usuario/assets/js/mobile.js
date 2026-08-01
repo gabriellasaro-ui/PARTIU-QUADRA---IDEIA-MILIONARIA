@@ -1793,48 +1793,56 @@ function peladaDateLabel(pelada) {
   return date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
 }
 
-function peladaCard(pelada, userId) {
+/* Mesma anatomia do card de reserva (.res-card): foto da quadra, titulo,
+   duas linhas de meta com icone e um rodape com selo. Uma pelada e um jogo
+   agendado — nao havia motivo para inventar outro card. */
+function peladaCard(pelada, userId, venue) {
   const mine = pelada.attendance?.[userId] || null;
   const going = Object.values(pelada.attendance || {}).filter((v) => v === 'sim').length;
-  const tag = pelada.kind === 'avulsa'
-    ? '<span class="pelada-card__tag is-solo">Avulsa</span>'
-    : '<span class="pelada-card__tag">Do clube</span>';
-  const options = ['sim', 'talvez', 'nao'].map((value) => `
-    <button class="pelada-card__vote${mine === value ? ' is-on' : ''}" type="button"
+  const statusClass = pelada.kind === 'avulsa' ? 'pendente' : 'pago';
+  const statusLabel = pelada.kind === 'avulsa' ? 'Avulsa' : 'Do clube';
+  const end = pelada.startTime && pelada.duration
+    ? addMinutesToTime(pelada.startTime, pelada.duration)
+    : '';
+
+  const votes = ['sim', 'talvez', 'nao'].map((value) => `
+    <button type="button" class="seg-item${mine === value ? ' on' : ''}"
             data-pelada-confirm="${pelada.id}:${value}">${ATTENDANCE_LABEL[value]}</button>`).join('');
 
-  return `<article class="pelada-card">
-    <div class="pelada-card__head">
-      <div>
-        <div class="pelada-card__when">${peladaDateLabel(pelada)} · ${escapeHtml(pelada.startTime || '')}</div>
-        <h3>${escapeHtml(pelada.title || 'Pelada')}</h3>
-        <div class="pelada-card__meta">
-          <span><i class="ic" data-lucide="map-pin"></i>${escapeHtml(pelada.venueName || '')}</span>
-          <span><i class="ic" data-lucide="users"></i>${going}/${pelada.maxPlayers || '-'}</span>
-        </div>
+  return `<article class="res-card pelada-card">
+    <img src="${escapeHtml(venue?.image || '')}" alt="${escapeHtml(pelada.venueName || '')}" loading="lazy">
+    <div class="res-info">
+      <strong>${escapeHtml(pelada.title || 'Pelada')}</strong>
+      <span class="res-meta">${icon('map-pin')}${escapeHtml(pelada.venueName || '')}</span>
+      <span class="res-meta">${icon('calendar-days')}${escapeHtml(peladaDateLabel(pelada))} - ${escapeHtml(pelada.startTime || '')}${end ? ' a ' + escapeHtml(end) : ''}</span>
+      <div class="res-foot">
+        <span class="status ${statusClass}">${statusLabel}</span>
+        <span class="res-val">${going}/${pelada.maxPlayers || '-'}</span>
       </div>
-      ${tag}
+      <div class="seg pelada-card__seg" role="group" aria-label="Sua presença">${votes}</div>
     </div>
-    <div class="pelada-card__votes">${options}</div>
   </article>`;
 }
 
+function addMinutesToTime(hhmm, minutes) {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  if (Number.isNaN(h)) return '';
+  const total = h * 60 + (m || 0) + Number(minutes || 0);
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/* Linha de membro no idioma de lista do app (.payment-row), o mesmo das
+   formas de pagamento e das configuracoes. */
 function memberRow(member) {
   const initial = member.name.charAt(0).toUpperCase();
-  const badge = member.role === 'dono'
-    ? '<span class="game-player__badge confirmed">Dono</span>'
-    : '';
-  return `<div class="game-player">
-    <div class="game-player__avatar">${initial}</div>
-    <div class="game-player__info">
-      <div class="game-player__name">${escapeHtml(member.name)}</div>
-      <div class="game-player__meta">
-        <span>${escapeHtml(member.position || '')}</span>
-        <span>&#9733; ${member.rating ?? '-'}</span>
-        <span>&middot; desde ${escapeHtml(member.since || '')}</span>
-      </div>
-    </div>
-    ${badge}
+  const role = member.role === 'dono' ? 'Dono do clube' : (member.position || 'Membro');
+  const tail = member.role === 'dono'
+    ? '<span class="status pago">Dono</span>'
+    : `<span class="member-rating">${icon('star')}${member.rating ?? '-'}</span>`;
+  return `<div class="payment-row member-row">
+    <span class="badge-ic member-row__avatar">${initial}</span>
+    <span><strong>${escapeHtml(member.name)}</strong><small>${escapeHtml(role)} &middot; desde ${escapeHtml(member.since || '')}</small></span>
+    ${tail}
   </div>`;
 }
 
@@ -1842,7 +1850,8 @@ async function renderClub(root) {
   const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
   const emptyView = root.querySelector('[data-club-empty]');
   const clubView = root.querySelector('[data-club-view]');
-  const peladas = await venueService.peladas();
+  const [peladas, venues] = await Promise.all([venueService.peladas(), venueService.list({})]);
+  const venueOf = (p) => venues.find((v) => v.id === p.venueId);
   const upcoming = peladas
     .filter((p) => p.status !== 'cancelada')
     .sort((a, b) => String(a.dateISO).localeCompare(String(b.dateISO)));
@@ -1859,8 +1868,8 @@ async function renderClub(root) {
     if (solo) {
       const avulsas = upcoming.filter((p) => p.kind === 'avulsa');
       solo.innerHTML = avulsas.length
-        ? avulsas.map((p) => peladaCard(p, user.id)).join('')
-        : '<div class="game-empty">Nenhuma pelada avulsa agendada</div>';
+        ? avulsas.map((p) => peladaCard(p, user.id, venueOf(p))).join('')
+        : '<div class="empty"><h3>Nenhuma pelada avulsa</h3><p>Marque um jogo sem precisar de time fixo.</p></div>';
     }
     window.pqRefreshIcons?.(root);
     return;
@@ -1874,12 +1883,12 @@ async function renderClub(root) {
   root.querySelector('[data-club-city]').textContent = club.city;
   root.querySelector('[data-club-description]').textContent = club.description || '';
   root.querySelector('[data-club-members-count]').textContent = `${club.members.length} membros`;
-  root.querySelector('[data-member-count]').textContent = `${club.members.length}`;
-  root.querySelector('[data-pelada-count]').textContent = `${upcoming.length}`;
+  root.querySelector('[data-member-count]').textContent = `${club.members.length} no time`;
+  root.querySelector('[data-pelada-count]').textContent = upcoming.length === 1 ? '1 marcada' : `${upcoming.length} marcadas`;
   root.querySelector('[data-member-list]').innerHTML = club.members.map(memberRow).join('');
   root.querySelector('[data-pelada-list]').innerHTML = upcoming.length
-    ? upcoming.map((p) => peladaCard(p, user.id)).join('')
-    : '<div class="game-empty">Nenhuma pelada agendada</div>';
+    ? upcoming.map((p) => peladaCard(p, user.id, venueOf(p))).join('')
+    : '<div class="empty"><h3>Nenhuma pelada marcada</h3><p>Agende a próxima e o time confirma presença por aqui.</p></div>';
 
   const clubNameLabel = document.querySelector('[data-pelada-club-name]');
   if (clubNameLabel) clubNameLabel.textContent = club.name;

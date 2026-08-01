@@ -1,9 +1,27 @@
 /* Registro do Service Worker + botão "Instalar app" (Android/Chrome). */
 (function () {
+  // Em desenvolvimento o Service Worker so atrapalha: ele mistura JS antigo
+  // com HTML novo a cada alteracao estrutural, e o resultado aparece como
+  // "tela em branco" ou "nao abre nada" — sintoma que nao tem nenhuma relacao
+  // com a causa. Em localhost nao registramos, e ainda removemos qualquer
+  // registro antigo junto com os caches, para nao deixar ninguem preso.
+  var isDev = ['localhost', '127.0.0.1', '::1', '0.0.0.0'].indexOf(location.hostname) !== -1;
+
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js').catch(function () {});
-    });
+    if (isDev) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (reg) { reg.unregister(); });
+      }).catch(function () {});
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        }).catch(function () {});
+      }
+    } else {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
+      });
+    }
   }
 
   var deferred = null;
