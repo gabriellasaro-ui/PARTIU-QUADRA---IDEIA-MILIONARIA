@@ -1,0 +1,38 @@
+/* =========================================================
+   Qadras — paleta compartilhada
+
+   Estes tokens nasceram dentro de mobile-v2.css, que so o index.html
+   carrega. Quando o modo jogo passou a usa-los, o pc.html (que carrega
+   desktop.css + player-web.css) ficou sem nenhum deles e a tela do jogo
+   renderizou sem fundo nem borda.
+
+   Agora vivem aqui e sao carregados pelas duas paginas, antes das demais
+   folhas. O :root de mobile-v2.css ainda redeclara os mesmos valores —
+   inofensivo, e mantem aquele arquivo legivel isoladamente.
+   ========================================================= */
+:root {
+  /* marca */
+  --pq-brand: #16a765;
+  --pq-brand-strong: #0c8b52;
+  --pq-brand-deep: #075e3a;
+  --pq-signal: #b9edcb;
+  --pq-signal-soft: #edf9f1;
+
+  /* estado "vai acontecer" — distinto de --pq-gold, que e sinalizacao */
+  --pq-amber: #ea580c;
+  --pq-amber-strong: #9a3412;
+  --pq-amber-soft: #ffedd5;
+
+  /* sinalizacao */
+  --pq-gold: #e4a11b;
+
+  /* superficies e texto */
+  --pq-app-bg: #f3f8f4;
+  --pq-panel: #ffffff;
+  --pq-surface-2: #f3f5f1;
+  --pq-ink: #143523;
+  --pq-muted: #6b7f72;
+  --pq-line: #dce9df;
+  --pq-line-strong: #ccd5cb;
+  --pq-shadow-1: 0 2px 4px rgba(7, 94, 58, .03), 0 12px 28px rgba(7, 94, 58, .07);
+}

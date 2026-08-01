@@ -3,15 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Qadras</title>
+  <title>Qadras — Painel do dono</title>
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
   <link rel="stylesheet" href="./assets/css/admin.css">
 </head>
 <body>
-  <div id="app">
-    <h1>Painel Administrativo</h1>
-    <p>Área restrita para desenvolvedores.</p>
+  <div class="admin">
+    <aside class="admin-side">
+      <div class="admin-brand">
+        <span class="admin-brand__mark"><i class="ic" data-lucide="shield-check"></i></span>
+        <div>
+          <strong>Qadras</strong>
+          <small>Painel do dono</small>
+        </div>
+      </div>
+
+      <nav class="admin-nav" aria-label="Seções">
+        <a href="#visao" data-admin-nav="visao"><i class="ic" data-lucide="layout-dashboard"></i>Visão geral</a>
+        <a href="#arenas" data-admin-nav="arenas"><i class="ic" data-lucide="goal"></i>Arenas</a>
+        <a href="#reservas" data-admin-nav="reservas"><i class="ic" data-lucide="calendar-check"></i>Reservas</a>
+        <a href="#clubes" data-admin-nav="clubes"><i class="ic" data-lucide="users"></i>Clubes</a>
+      </nav>
+
+      <div class="admin-side__foot">
+        <p>Os dados vêm do mesmo armazenamento do app. Enquanto não houver
+          backend, cada navegador enxerga o próprio.</p>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-head">
+        <div>
+          <h1 data-admin-title>Visão geral</h1>
+          <p data-admin-sub>A plataforma inteira num lugar só</p>
+        </div>
+        <span class="admin-badge"><i class="ic" data-lucide="database"></i>dados locais</span>
+      </header>
+
+      <div data-admin-view></div>
+    </main>
   </div>
-  <script src="./assets/js/admin.js"></script>
+
+  <script src="./assets/vendor/lucide/lucide.min.js" defer></script>
+  <script type="module" src="./assets/js/admin.js"></script>
 </body>
 </html>

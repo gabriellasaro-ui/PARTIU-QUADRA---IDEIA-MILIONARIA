@@ -5508,24 +5508,38 @@ html[data-route="mapa"] .phone {
   height: 17px;
 }
 
-/* Conversa do clube — mesmas bolhas do chat com as arenas, numa caixa que
-   cabe na secao em vez de ocupar a tela inteira. */
-.club-chat {
-  overflow: hidden;
-  border: 1px solid var(--pq-line);
-  border-radius: 22px;
+/* Conversa do clube: tela de chat, nao secao de pagina. A lista come o
+   espaco livre e rola sozinha; o compositor fica preso embaixo, acima da
+   barra contextual. */
+.club-chat-panel {
+  display: flex;
+  flex-direction: column;
+  /* desconta o cabecalho da rota e a barra de baixo */
+  height: calc(100dvh - 170px - var(--pq-tabbar-height) - var(--pq-safe-bottom));
+  min-height: 320px;
+  margin: 0 -16px;
+}
+
+.club-chat-panel .mobile-bubbles {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: none;
+}
+
+.club-chat-panel .mobile-bubbles::-webkit-scrollbar { display: none; }
+
+.club-chat-composer {
+  flex: 0 0 auto;
+  padding: 10px 16px calc(10px + var(--pq-safe-bottom));
+  border-top: 1px solid var(--pq-line);
   background: var(--pq-panel);
 }
 
-.club-chat .mobile-bubbles {
-  max-height: 46vh;
-  min-height: 180px;
-  overflow-y: auto;
-  padding: 14px;
-}
-
-.club-chat .mobile-composer {
-  border-top: 1px solid var(--pq-line);
+/* Na Conversa a pagina nao rola: quem rola e a lista de mensagens. */
+.clube-page:has([data-club-panel="chat"]:not([hidden])) .container {
+  padding-bottom: 0;
 }
 
 .bub-name {
