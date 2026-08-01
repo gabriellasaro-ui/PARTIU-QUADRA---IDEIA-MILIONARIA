@@ -44,3 +44,35 @@
     </div>
   </section>
 </div>
+
+<!-- Secoes que existiam no app antigo e se perderam na refatoracao. -->
+<div class="panel">
+  <div class="panel-head"><div><h2>Endereco e contato</h2><span class="panel-sub">O que o jogador ve na ficha da arena</span></div></div>
+  <div class="set-grid">
+    <label class="field-block"><span>Endereco</span><input type="text" value="Rua 27, 345 - Jardim Goias"></label>
+    <label class="field-block"><span>Cidade</span><input type="text" value="Goiania, GO"></label>
+    <label class="field-block"><span>Telefone</span><input type="tel" value="(62) 98888-0001"></label>
+    <label class="field-block"><span>E-mail</span><input type="email" value="contato@arenabolanarede.com.br"></label>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><div><h2>Recebimento (Pix)</h2><span class="panel-sub">Conta que recebe os repasses</span></div></div>
+  <div class="set-grid">
+    <label class="field-block"><span>Chave Pix</span><input type="text" value="62988880001"></label>
+    <label class="field-block"><span>Tipo da chave</span><select><option>Telefone</option><option>CNPJ</option><option>E-mail</option><option>Aleatoria</option></select></label>
+    <label class="field-block"><span>Titular</span><input type="text" value="Arena Bola na Rede LTDA"></label>
+    <label class="field-block"><span>CNPJ</span><input type="text" value="12.345.678/0001-90"></label>
+  </div>
+  <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Os repasses caem em ate 1 dia util apos a partida acontecer.</div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><div><h2>Notificacoes</h2><span class="panel-sub">Quando a arena quer ser avisada</span></div></div>
+  <div class="ops-list">
+    <div class="ops-item"><div><strong>Nova reserva</strong><span>Assim que alguem reservar</span></div><b>Sim</b></div>
+    <div class="ops-item"><div><strong>Cancelamento</strong><span>Quando um horario abrir</span></div><b>Sim</b></div>
+    <div class="ops-item"><div><strong>Mensalista renovando</strong><span>3 dias antes do vencimento</span></div><b>Sim</b></div>
+    <div class="ops-item"><div><strong>Resumo semanal</strong><span>Toda segunda de manha</span></div><b>Nao</b></div>
+  </div>
+</div>

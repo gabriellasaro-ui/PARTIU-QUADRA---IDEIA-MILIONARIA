@@ -3886,3 +3886,92 @@ html[data-player-desktop] .desktop-booking-aside .bc-note small {
 @media (max-width: 1080px) {
   .dashboard-hero { grid-template-columns: 1fr; }
 }
+
+/* ---------- mensalistas (secao restaurada) ---------- */
+.manager-members { display: flex; flex-direction: column; }
+
+.manager-member {
+  display: grid;
+  grid-template-columns: 44px minmax(160px, 1.4fr) minmax(150px, 1fr) minmax(120px, .8fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--pq-line, #dce9df);
+}
+
+.manager-member:last-child { border-bottom: 0; }
+
+.manager-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--pq-signal-soft, #edf9f1);
+  color: var(--pq-brand-deep, #075e3a);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.manager-member__person strong { display: block; font-size: 14px; font-weight: 850; }
+.manager-member__person small { display: block; color: #6b7f72; font-size: 12px; }
+
+.manager-member > div > span {
+  display: block;
+  color: #6b7f72;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.manager-member > div > strong { display: block; margin-top: 2px; font-size: 13.5px; font-weight: 850; }
+
+.manager-row-actions { display: flex; gap: 6px; }
+
+.manager-row-menu {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--pq-line, #dce9df);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.manager-row-menu:hover { background: #f3f7f4; }
+.manager-row-menu.is-danger { color: #b91c1c; }
+.manager-row-menu .ic { width: 16px; height: 16px; }
+
+/* Plano vindo do app nao se edita aqui: quem manda e a reserva. */
+.manager-locked { color: #b7c2ba; font-size: 18px; padding: 0 12px; }
+
+.manager-modal-eyebrow {
+  display: block;
+  color: var(--pq-brand-strong, #0c8b52);
+  font-size: 10.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.set-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: #f3f7f4;
+  color: #5b6560;
+  font-size: 12px;
+}
+
+.set-hint .ic { width: 15px; height: 15px; }
+
+.set-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}

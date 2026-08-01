@@ -9,6 +9,7 @@ import { initPlayerDesktopActions, renderPlayerDesktopPage } from './player-desk
 import { loadGame, destroyGame } from './game-mode.js';
 import { renderManagerVenues, initManagerVenues } from './manager-venues.js';
 import { renderManagerReservations, initManagerReservations } from './manager-reservations.js';
+import { renderManagerMembers, initManagerMembers } from './manager-members.js';
 
 const MOBILE_ROUTES = {
   home: {
@@ -124,6 +125,13 @@ const DESKTOP_ROUTES = {
     title: 'Mensagens - Qadras',
     heading: 'Mensagens',
     sub: 'Conversas com jogadores'
+  },
+  mensalistas: {
+    aliases: ['mensalistas'],
+    page: './pages/desktop/mensalistas.html',
+    title: 'Mensalistas - Qadras',
+    heading: 'Mensalistas',
+    sub: 'Quem tem dia e horário fixos na sua grade'
   },
   agenda: {
     aliases: ['agenda'],
@@ -429,6 +437,7 @@ async function renderDesktopRoute() {
   // a dados, e outras entram aqui do mesmo jeito.
   if (routeName === 'quadras') await renderManagerVenues(view);
   if (routeName === 'reservas') await renderManagerReservations(view);
+  if (routeName === 'mensalistas') await renderManagerMembers(view);
   markActiveNav();
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -438,6 +447,7 @@ function initDesktopRouter() {
   if (!document.querySelector('[data-desktop-route-view]')) return;
   initManagerVenues();
   initManagerReservations();
+  initManagerMembers();
   window.addEventListener('hashchange', renderDesktopRoute);
   return renderDesktopRoute();
 }

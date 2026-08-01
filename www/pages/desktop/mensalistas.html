@@ -1,0 +1,61 @@
+<!-- Mensalistas — secao restaurada do app antigo.
+
+     Ela existia no gerente e se perdeu na refatoracao: o menu tinha o item,
+     o manager-app.js manteve os handlers, mas o markup sumiu. Voltou aqui
+     ligada a dados, e nao como HTML fixo.
+
+     Junta as duas origens de mensalista, que sao reais e diferentes:
+     quem assinou pelo app (o plano nasce da reserva) e quem o gerente
+     cadastrou na mao, porque fechou por fora. -->
+<div class="toolbar">
+  <div class="field grow">
+    <svg class="ic"><use href="#i-search"/></svg>
+    <input type="text" placeholder="Buscar mensalista">
+  </div>
+  <button class="btn btn-primary" type="button" data-member-new>
+    <svg class="ic sm"><use href="#i-plus"/></svg> Adicionar mensalista
+  </button>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Recorrência</h2>
+      <span class="panel-sub">Clientes com dia e horário fixos na sua grade · <b data-member-count>0</b></span>
+    </div>
+  </div>
+  <div class="manager-members" data-member-list></div>
+</div>
+
+<div class="modal" data-member-dialog hidden>
+  <div class="modal-backdrop" data-member-cancel></div>
+  <form class="modal-box manager-sheet" data-member-form>
+    <div class="modal-head">
+      <div>
+        <span class="manager-modal-eyebrow">Recorrência</span>
+        <h3 data-member-dialog-title>Novo mensalista</h3>
+      </div>
+      <button class="modal-x" type="button" data-member-cancel aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" name="id">
+      <label class="field-block"><span>Cliente</span><input name="name" type="text" placeholder="Nome do cliente" required></label>
+      <div class="field-row">
+        <label class="field-block"><span>Quadra</span><select name="court" data-member-courts></select></label>
+        <label class="field-block"><span>Dia fixo</span><select name="day">
+          <option>Segunda</option><option>Terça</option><option selected>Quarta</option>
+          <option>Quinta</option><option>Sexta</option><option>Sábado</option><option>Domingo</option>
+        </select></label>
+      </div>
+      <div class="field-row">
+        <label class="field-block"><span>Horário</span><input name="time" type="time" value="20:00" required></label>
+        <label class="field-block"><span>Mensalidade</span><input name="price" type="number" min="0" step="10" value="420" required></label>
+      </div>
+      <div class="set-hint"><svg class="ic"><use href="#i-calendar"/></svg> O horário fica reservado semanalmente na grade.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-member-cancel>Cancelar</button>
+      <button class="btn btn-primary" type="submit">Salvar mensalista</button>
+    </div>
+  </form>
+</div>
