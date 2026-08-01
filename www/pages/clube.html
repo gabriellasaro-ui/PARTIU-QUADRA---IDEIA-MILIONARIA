@@ -1,0 +1,58 @@
+<!-- Clube — o grupo que organiza a pelada recorrente.
+     Duas visoes no mesmo arquivo, alternadas por renderClub. -->
+<div class="route-page clube-page" data-player-desktop-page="clube">
+  <div class="navbar route-navbar">
+    <a class="icon-btn" href="#home" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
+    <div>
+      <div class="title">Clube</div>
+      <div class="sub">Seu time e suas peladas</div>
+    </div>
+  </div>
+
+  <!-- ───────── Sem clube ───────── -->
+  <div class="container" data-club-empty hidden>
+    <div class="empty">
+      <span class="empty-ic"><i class="ic" data-lucide="users"></i></span>
+      <h3>Você ainda não tem um clube</h3>
+      <p>O clube é onde você monta o time e organiza a pelada de sempre: quem entra, quando joga e quem confirmou.</p>
+      <button class="btn block" type="button" data-sheet-open="club-edit-sheet">Criar meu clube</button>
+      <button class="btn outline block" type="button" data-sheet-open="pelada-sheet">Agendar pelada avulsa</button>
+    </div>
+
+    <div class="game-section-title">Suas peladas avulsas</div>
+    <div data-pelada-list-solo></div>
+  </div>
+
+  <!-- ───────── Com clube ───────── -->
+  <div class="container" data-club-view hidden>
+    <div class="club-hero">
+      <span class="club-hero__badge" data-club-sport></span>
+      <h2 data-club-name></h2>
+      <p data-club-description></p>
+      <div class="club-hero__meta">
+        <span><i class="ic" data-lucide="map-pin"></i><span data-club-city></span></span>
+        <span><i class="ic" data-lucide="users"></i><span data-club-members-count></span></span>
+      </div>
+      <div class="club-hero__actions">
+        <button class="btn" type="button" data-sheet-open="pelada-sheet">
+          <i class="ic" data-lucide="calendar-plus"></i> Agendar pelada
+        </button>
+        <button class="btn outline" type="button" data-club-edit>
+          <i class="ic" data-lucide="pencil"></i> Editar
+        </button>
+      </div>
+    </div>
+
+    <div class="game-section-title">
+      Próximas peladas
+      <span data-pelada-count></span>
+    </div>
+    <div data-pelada-list></div>
+
+    <div class="game-section-title">
+      Membros
+      <span data-member-count></span>
+    </div>
+    <div class="game-players" data-member-list></div>
+  </div>
+</div>

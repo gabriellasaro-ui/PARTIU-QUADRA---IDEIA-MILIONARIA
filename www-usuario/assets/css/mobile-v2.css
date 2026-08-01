@@ -5496,3 +5496,225 @@ html[data-route="mapa"] .phone {
 .map-filter-strip .chip.on {
   box-shadow: none !important;
 }
+
+/* ---------- clube ---------- */
+.club-hero {
+  padding: 18px 16px 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+}
+
+.club-hero__badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-deep);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.club-hero h2 {
+  margin-top: 8px;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.club-hero p {
+  margin-top: 4px;
+  color: var(--pq-muted);
+  font-size: 12px;
+}
+
+.club-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.club-hero__meta > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.club-hero__meta .ic {
+  width: 14px;
+  height: 14px;
+  color: var(--pq-brand-strong);
+}
+
+.club-hero__actions {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.club-hero__actions .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 46px;
+  font-size: 12.5px;
+}
+
+.club-hero__actions .ic { width: 15px; height: 15px; }
+
+/* ── card de pelada ── */
+.pelada-card {
+  margin-bottom: 10px;
+  padding: 14px 15px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+}
+
+.pelada-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pelada-card__when {
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.pelada-card h3 {
+  margin-top: 3px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.pelada-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 5px;
+  color: var(--pq-muted);
+  font-size: 11px;
+}
+
+.pelada-card__meta > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pelada-card__meta .ic { width: 13px; height: 13px; }
+
+.pelada-card__tag {
+  flex-shrink: 0;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-deep);
+  font-size: 8.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pelada-card__tag.is-solo {
+  background: var(--pq-amber-soft, #ffedd5);
+  color: var(--pq-amber-strong, #9a3412);
+}
+
+.pelada-card__votes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pelada-card__vote {
+  min-height: 40px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.pelada-card__vote.is-on {
+  border-color: transparent;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.pelada-card__vote:active { transform: translateY(1px); }
+
+/* ── escolha "do clube" ou "avulsa" ── */
+.pelada-kind {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  margin-bottom: 4px;
+}
+
+.pelada-kind legend {
+  margin-bottom: 8px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pelada-kind label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-panel);
+  cursor: pointer;
+}
+
+.pelada-kind label:has(input:checked) {
+  border-color: var(--pq-brand);
+  background: var(--pq-signal-soft);
+}
+
+.pelada-kind label > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.pelada-kind strong { font-size: 12.5px; font-weight: 900; }
+
+.pelada-kind small {
+  overflow: hidden;
+  margin-top: 1px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.clube-page .empty .btn + .btn { margin-top: 10px; }

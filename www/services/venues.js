@@ -9,7 +9,9 @@ import {
   INITIAL_RESERVATIONS,
   SPORTS,
   VENUES,
-  WALLET
+  WALLET,
+  CLUBS,
+  PELADAS
 } from '../config/mock-data.js';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -173,6 +175,67 @@ export const venueService = {
       match.elapsedSeconds = Math.floor((now - match.startTimestamp) / 1000);
     }
     return match;
+  },
+
+  /* ═══════════ Clube ═══════════
+     Mesmo padrao de reservations()/saveReservation(): API quando houver,
+     localStorage enquanto nao houver. Os caminhos de API ja ficam declarados
+     para o contrato existir antes do backend. */
+
+  async clubs() {
+    if (API_BASE_URL) {
+      const data = await api.get('/api/clubes');
+      return data?.clubes || [];
+    }
+    return storage.get('clubs', clone(CLUBS));
+  },
+
+  async myClub() {
+    const user = await this.profile();
+    const clubs = await this.clubs();
+    return clubs.find((club) => club.members.some((m) => m.id === user.id)) || null;
+  },
+
+  async saveClub(club) {
+    if (API_BASE_URL) return api.post('/api/clubes', club);
+    const clubs = await this.clubs();
+    const id = club.id || clubs.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+    const previous = clubs.find((c) => c.id === id);
+    const next = [
+      ...clubs.filter((c) => c.id !== id),
+      { ...previous, ...club, id, members: club.members || previous?.members || [] }
+    ];
+    storage.set('clubs', next);
+    return clone(next.find((c) => c.id === id));
+  },
+
+  async peladas(clubId) {
+    if (API_BASE_URL) {
+      const data = await api.get('/api/peladas');
+      return data?.peladas || [];
+    }
+    const all = storage.get('peladas', clone(PELADAS));
+    if (clubId === undefined || clubId === null) return all;
+    return all.filter((p) => p.clubId === Number(clubId));
+  },
+
+  async savePelada(pelada) {
+    if (API_BASE_URL) return api.post('/api/peladas', pelada);
+    const list = await this.peladas();
+    const id = pelada.id || list.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+    const next = [...list.filter((p) => p.id !== id), { ...pelada, id }];
+    storage.set('peladas', next);
+    return clone(next.find((p) => p.id === id));
+  },
+
+  async setPeladaAttendance(peladaId, memberId, value) {
+    if (API_BASE_URL) return api.post(`/api/peladas/${peladaId}/presenca`, { memberId, value });
+    const list = await this.peladas();
+    const item = list.find((p) => p.id === Number(peladaId));
+    if (!item) return null;
+    item.attendance = { ...item.attendance, [memberId]: value };
+    storage.set('peladas', list);
+    return clone(item);
   },
 
   async confirmPresence(id) {

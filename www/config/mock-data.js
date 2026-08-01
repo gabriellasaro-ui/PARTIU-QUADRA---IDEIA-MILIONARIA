@@ -264,6 +264,10 @@ export const WALLET = {
 };
 
 export const CURRENT_USER = {
+  // Id proprio: a presenca na pelada precisa de chave estavel, e "Editar
+  // perfil" ja permite trocar o nome — chavear por nome deixaria referencias
+  // orfas em silencio na primeira edicao.
+  id: 'u-gabriel',
   name: 'Gabriel Lisboa',
   email: 'gabriel@email.com',
   phone: '(62) 99999-0000',
@@ -364,3 +368,76 @@ export const ACTIVE_MATCH = {
   photos: [],
   videos: []
 };
+
+/* ═══════════════ Clube ═══════════════
+   Um clube e o grupo que organiza a pelada recorrente. Uma pelada pode ser
+   "do clube" ou "avulsa" (sem time fixo).
+
+   Membros tem id; jogadores da partida continuam por nome, de proposito: a
+   escalacao e outro dominio (inclui convidado que nao e membro). O elo entre
+   os dois e feito por nome, e devolve null quando e convidado. */
+// ?clube=vazio mostra o estado sem clube sem precisar limpar o localStorage,
+// no mesmo espirito de demoMatchOffsetMinutes().
+function demoWithoutClub() {
+  return new URLSearchParams(globalThis.location?.search || '').get('clube') === 'vazio';
+}
+
+export const CLUBS = demoWithoutClub() ? [] : [
+  {
+    id: 1,
+    name: 'Pelada dos Cria',
+    sport: 'Futebol Society',
+    city: 'Goiânia, GO',
+    description: 'Toda quinta às 20h. Quem faltar sem avisar paga a água.',
+    photo: '',
+    createdBy: 'u-gabriel',
+    members: [
+      { id: 'u-gabriel', name: 'Gabriel Lisboa', role: 'dono', position: 'Atacante', rating: 4.8, since: 'jun/2025' },
+      { id: 'u-rafael', name: 'Rafael Costa', role: 'membro', position: 'Meio-campo', rating: 4.5, since: 'jun/2025' },
+      { id: 'u-mariana', name: 'Mariana Alves', role: 'membro', position: 'Zagueira', rating: 4.9, since: 'jul/2025' },
+      { id: 'u-joao', name: 'João Pedro', role: 'membro', position: 'Goleiro', rating: 4.3, since: 'jul/2025' },
+      { id: 'u-camila', name: 'Camila Rocha', role: 'membro', position: 'Atacante', rating: 4.7, since: 'jul/2025' },
+      { id: 'u-thiago', name: 'Thiago Santos', role: 'membro', position: 'Lateral', rating: 4.6, since: 'ago/2025' }
+    ]
+  }
+];
+
+function peladaDate(daysFromNow) {
+  const d = new Date(Date.now() + daysFromNow * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+export const PELADAS = [
+  {
+    id: 1,
+    clubId: 1,
+    kind: 'clube',
+    title: 'Pelada de quinta',
+    venueId: 1,
+    venueName: 'Arena Bola na Rede',
+    sport: 'Futebol Society',
+    dateISO: peladaDate(3),
+    startTime: '20:00',
+    duration: 60,
+    maxPlayers: 14,
+    organizerId: 'u-gabriel',
+    status: 'agendada',
+    attendance: { 'u-gabriel': 'sim', 'u-rafael': 'sim', 'u-mariana': 'talvez', 'u-joao': 'sim' }
+  },
+  {
+    id: 2,
+    clubId: null,
+    kind: 'avulsa',
+    title: 'Vôlei com a galera do trabalho',
+    venueId: 4,
+    venueName: 'Volei Sand Club',
+    sport: 'Volei',
+    dateISO: peladaDate(6),
+    startTime: '19:00',
+    duration: 60,
+    maxPlayers: 12,
+    organizerId: 'u-gabriel',
+    status: 'agendada',
+    attendance: { 'u-gabriel': 'sim' }
+  }
+];

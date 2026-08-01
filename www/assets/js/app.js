@@ -87,6 +87,12 @@ const MOBILE_ROUTES = {
     title: 'Mensagens - Qadras',
     nav: 'menu'
   },
+  clube: {
+    header: null,
+    page: './pages/clube.html',
+    title: 'Clube - Qadras',
+    nav: 'menu'
+  },
   game: {
     header: null,
     page: './pages/game.html',

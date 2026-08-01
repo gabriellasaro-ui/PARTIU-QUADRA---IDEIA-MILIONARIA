@@ -1,6 +1,7 @@
 import venueService from '../../services/venues.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
+import { SPORTS } from '../../config/mock-data.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
 
@@ -1215,6 +1216,7 @@ export async function renderMobilePage(route, root) {
     perfil: renderProfile,
     config: async () => {},
     mensagens: renderMessages,
+    clube: renderClub,
     game: renderGame
   };
   await renderers[route.name]?.(root, route);
@@ -1274,6 +1276,71 @@ export function initMobileActions() {
       return;
     }
 
+    const clubForm = event.target.closest('[data-club-form]');
+    if (clubForm) {
+      event.preventDefault();
+      if (!clubForm.reportValidity()) return;
+      const data = new FormData(clubForm);
+      const user = await venueService.profile();
+      const id = Number(data.get('id')) || null;
+      const saved = await venueService.saveClub({
+        id,
+        name: String(data.get('name') || '').trim(),
+        sport: String(data.get('sport') || ''),
+        city: String(data.get('city') || '').trim(),
+        description: String(data.get('description') || '').trim(),
+        createdBy: user.id,
+        // Quem cria entra como dono; edicao preserva os membros existentes.
+        members: id ? undefined : [{
+          id: user.id,
+          name: user.name,
+          role: 'dono',
+          position: user.favoriteSport ? 'Jogador' : 'Jogador',
+          rating: 5,
+          since: new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+        }]
+      });
+      closeMarketSheet(clubForm.closest('[data-market-sheet]'));
+      window.pqToast?.(id ? 'Clube atualizado' : `${saved.name} criado!`);
+      const view = document.querySelector('[data-route-view]');
+      await renderClub(view);
+      window.pqRefreshIcons?.(view);
+      return;
+    }
+
+    const peladaForm = event.target.closest('[data-pelada-form]');
+    if (peladaForm) {
+      event.preventDefault();
+      if (!peladaForm.reportValidity()) return;
+      const data = new FormData(peladaForm);
+      const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
+      const kind = String(data.get('kind') || 'avulsa');
+      const venueId = Number(data.get('venueId'));
+      const venues = await venueService.list({});
+      const venue = venues.find((v) => v.id === venueId);
+      const saved = await venueService.savePelada({
+        clubId: kind === 'clube' && club ? club.id : null,
+        kind: club ? kind : 'avulsa',
+        title: String(data.get('title') || '').trim(),
+        venueId,
+        venueName: venue?.name || '',
+        sport: venue?.sport || club?.sport || '',
+        dateISO: String(data.get('dateISO') || ''),
+        startTime: String(data.get('startTime') || ''),
+        duration: Number(data.get('duration')) || 60,
+        maxPlayers: Number(data.get('maxPlayers')) || 14,
+        organizerId: user.id,
+        status: 'agendada',
+        attendance: { [user.id]: 'sim' }
+      });
+      closeMarketSheet(peladaForm.closest('[data-market-sheet]'));
+      window.pqToast?.(`${saved.title} agendada!`);
+      const view = document.querySelector('[data-route-view]');
+      await renderClub(view);
+      window.pqRefreshIcons?.(view);
+      return;
+    }
+
     const demo = event.target.closest('[data-demo-form]');
     if (demo) {
       event.preventDefault();
@@ -1297,6 +1364,26 @@ export function initMobileActions() {
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-game-reload]')) location.reload();
+  });
+
+  document.addEventListener('click', async (event) => {
+    const vote = event.target.closest('[data-pelada-confirm]');
+    if (vote) {
+      const [peladaId, value] = vote.dataset.peladaConfirm.split(':');
+      const user = await venueService.profile();
+      await venueService.setPeladaAttendance(peladaId, user.id, value);
+      const view = document.querySelector('[data-route-view]');
+      await renderClub(view);
+      window.pqRefreshIcons?.(view);
+      return;
+    }
+
+    const editClub = event.target.closest('[data-club-edit]');
+    if (editClub) {
+      const club = await venueService.myClub();
+      prefillClubForm(club);
+      openMarketSheet('club-edit-sheet');
+    }
   });
 
   document.addEventListener('change', async (event) => {
@@ -1686,6 +1773,148 @@ function startGameCardTicker(container, match) {
       if (unit) unit.textContent = countdown.unit;
     }
   }, 1000);
+}
+
+/* ═══════════════ Clube ═══════════════
+   O clube e o grupo que organiza a pelada recorrente. Uma pelada pode ser
+   "do clube" ou "avulsa" — e a avulsa precisa ser alcancavel mesmo sem
+   clube, e metade da intencao do produto. */
+
+const ATTENDANCE_LABEL = { sim: 'Vou', talvez: 'Talvez', nao: 'Não vou' };
+
+function peladaDateLabel(pelada) {
+  const [y, m, d] = String(pelada.dateISO || '').split('-').map(Number);
+  if (!y) return pelada.dateISO || '';
+  const date = new Date(y, m - 1, d);
+  const today = new Date();
+  const days = Math.round((date - new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
+  if (days === 0) return 'Hoje';
+  if (days === 1) return 'Amanhã';
+  return date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+}
+
+function peladaCard(pelada, userId) {
+  const mine = pelada.attendance?.[userId] || null;
+  const going = Object.values(pelada.attendance || {}).filter((v) => v === 'sim').length;
+  const tag = pelada.kind === 'avulsa'
+    ? '<span class="pelada-card__tag is-solo">Avulsa</span>'
+    : '<span class="pelada-card__tag">Do clube</span>';
+  const options = ['sim', 'talvez', 'nao'].map((value) => `
+    <button class="pelada-card__vote${mine === value ? ' is-on' : ''}" type="button"
+            data-pelada-confirm="${pelada.id}:${value}">${ATTENDANCE_LABEL[value]}</button>`).join('');
+
+  return `<article class="pelada-card">
+    <div class="pelada-card__head">
+      <div>
+        <div class="pelada-card__when">${peladaDateLabel(pelada)} · ${escapeHtml(pelada.startTime || '')}</div>
+        <h3>${escapeHtml(pelada.title || 'Pelada')}</h3>
+        <div class="pelada-card__meta">
+          <span><i class="ic" data-lucide="map-pin"></i>${escapeHtml(pelada.venueName || '')}</span>
+          <span><i class="ic" data-lucide="users"></i>${going}/${pelada.maxPlayers || '-'}</span>
+        </div>
+      </div>
+      ${tag}
+    </div>
+    <div class="pelada-card__votes">${options}</div>
+  </article>`;
+}
+
+function memberRow(member) {
+  const initial = member.name.charAt(0).toUpperCase();
+  const badge = member.role === 'dono'
+    ? '<span class="game-player__badge confirmed">Dono</span>'
+    : '';
+  return `<div class="game-player">
+    <div class="game-player__avatar">${initial}</div>
+    <div class="game-player__info">
+      <div class="game-player__name">${escapeHtml(member.name)}</div>
+      <div class="game-player__meta">
+        <span>${escapeHtml(member.position || '')}</span>
+        <span>&#9733; ${member.rating ?? '-'}</span>
+        <span>&middot; desde ${escapeHtml(member.since || '')}</span>
+      </div>
+    </div>
+    ${badge}
+  </div>`;
+}
+
+async function renderClub(root) {
+  const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
+  const emptyView = root.querySelector('[data-club-empty]');
+  const clubView = root.querySelector('[data-club-view]');
+  const peladas = await venueService.peladas();
+  const upcoming = peladas
+    .filter((p) => p.status !== 'cancelada')
+    .sort((a, b) => String(a.dateISO).localeCompare(String(b.dateISO)));
+
+  fillSportOptions();
+  fillVenueOptions();
+
+  if (!club) {
+    if (emptyView) emptyView.hidden = false;
+    if (clubView) clubView.hidden = true;
+    // Sem clube, so as avulsas fazem sentido aqui — uma pelada de clube
+    // pertence a um grupo do qual esta pessoa nao faz parte.
+    const solo = root.querySelector('[data-pelada-list-solo]');
+    if (solo) {
+      const avulsas = upcoming.filter((p) => p.kind === 'avulsa');
+      solo.innerHTML = avulsas.length
+        ? avulsas.map((p) => peladaCard(p, user.id)).join('')
+        : '<div class="game-empty">Nenhuma pelada avulsa agendada</div>';
+    }
+    window.pqRefreshIcons?.(root);
+    return;
+  }
+
+  if (emptyView) emptyView.hidden = true;
+  if (clubView) clubView.hidden = false;
+
+  root.querySelector('[data-club-name]').textContent = club.name;
+  root.querySelector('[data-club-sport]').textContent = club.sport;
+  root.querySelector('[data-club-city]').textContent = club.city;
+  root.querySelector('[data-club-description]').textContent = club.description || '';
+  root.querySelector('[data-club-members-count]').textContent = `${club.members.length} membros`;
+  root.querySelector('[data-member-count]').textContent = `${club.members.length}`;
+  root.querySelector('[data-pelada-count]').textContent = `${upcoming.length}`;
+  root.querySelector('[data-member-list]').innerHTML = club.members.map(memberRow).join('');
+  root.querySelector('[data-pelada-list]').innerHTML = upcoming.length
+    ? upcoming.map((p) => peladaCard(p, user.id)).join('')
+    : '<div class="game-empty">Nenhuma pelada agendada</div>';
+
+  const clubNameLabel = document.querySelector('[data-pelada-club-name]');
+  if (clubNameLabel) clubNameLabel.textContent = club.name;
+
+  prefillClubForm(club);
+  window.pqRefreshIcons?.(root);
+}
+
+/* As folhas sao globais (vivem fora do route-view), entao os selects sao
+   preenchidos aqui — mesmo motivo pelo qual o filter-sheet ja faz isso. */
+function fillSportOptions() {
+  const select = document.querySelector('[data-sport-options]');
+  if (!select || select.options.length) return;
+  select.innerHTML = SPORTS.map((sport) => `<option value="${escapeHtml(sport)}">${escapeHtml(sport)}</option>`).join('');
+}
+
+async function fillVenueOptions() {
+  const select = document.querySelector('[data-venue-options]');
+  if (!select || select.options.length) return;
+  const venues = await venueService.list({});
+  select.innerHTML = venues
+    .map((v) => `<option value="${v.id}">${escapeHtml(v.name)} — ${escapeHtml(v.neighborhood || '')}</option>`)
+    .join('');
+}
+
+function prefillClubForm(club) {
+  const form = document.querySelector('[data-club-form]');
+  if (!form) return;
+  const title = document.querySelector('[data-club-form-title]');
+  if (title) title.textContent = club ? 'Editar clube' : 'Criar clube';
+  form.elements.id.value = club?.id || '';
+  form.elements.name.value = club?.name || '';
+  form.elements.city.value = club?.city || '';
+  form.elements.description.value = club?.description || '';
+  if (club?.sport) form.elements.sport.value = club.sport;
 }
 
 async function renderGame(root) {

@@ -13,7 +13,8 @@ export const ROUTES = {
   carteira: './index.html#carteira',
   mensagens: './index.html#mensagens',
   perfil: './index.html#perfil',
-  configuracoes: './index.html#config'
+  configuracoes: './index.html#config',
+  clube: './index.html#clube'
 };
 
 export function parseMobileRouteHash(hashValue = '') {
@@ -42,7 +43,8 @@ export function parseMobileRouteHash(hashValue = '') {
     'perfil',
     'config',
     'mensagens',
-    'game'
+    'game',
+    'clube'
   ]);
   let name = aliases[first] || first;
   const params = {};

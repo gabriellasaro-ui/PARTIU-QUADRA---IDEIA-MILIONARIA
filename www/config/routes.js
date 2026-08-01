@@ -14,6 +14,7 @@ export const ROUTES = {
   mensagens: './index.html#mensagens',
   perfil: './index.html#perfil',
   configuracoes: './index.html#config',
+  clube: './index.html#clube',
   game: './index.html#game',
   gerenteReservas: './dashboard.html#reservas',
   gerenteMensagens: './dashboard.html#mensagens',
@@ -50,7 +51,8 @@ export function parseMobileRouteHash(hashValue = '') {
     'perfil',
     'config',
     'mensagens',
-    'game'
+    'game',
+    'clube'
   ]);
   let name = aliases[first] || first;
   const params = {};
