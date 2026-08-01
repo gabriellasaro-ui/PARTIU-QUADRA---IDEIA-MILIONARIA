@@ -2941,6 +2941,11 @@ button .ic,
   --pq-brand-deep: #075e3a;
   --pq-signal: #b9edcb;
   --pq-signal-soft: #edf9f1;
+  /* Ambar de estado: "vai acontecer". Distinto de --pq-gold, que e ambar de
+     sinalizacao (estrelas, cartao amarelo, Time B) — ajustar um nao move o outro. */
+  --pq-amber: #ea580c;
+  --pq-amber-strong: #9a3412;
+  --pq-amber-soft: #ffedd5;
   --pq-coral: #4cb77b;
   --pq-sky: #219565;
   --pq-app-bg: #f3f8f4;

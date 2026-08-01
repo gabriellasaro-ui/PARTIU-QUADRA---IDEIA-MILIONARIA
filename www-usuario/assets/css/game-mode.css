@@ -159,6 +159,27 @@
   transition: width 1s linear;
 }
 
+/* Proxima partida: laranja = ainda vai acontecer. Verde fica reservado ao ao-vivo.
+   Alfas mais altos que os do verde: o laranja e mais claro e .game-card__meta tem 9.5px. */
+.game-card--next {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--pq-amber-strong, #9a3412), var(--pq-amber, #ea580c));
+  color: #fff;
+}
+
+.game-card--next .game-card__icon {
+  background: rgba(255, 255, 255, .22);
+}
+
+.game-card--next .game-card__label,
+.game-card--next .game-card__countdown small {
+  color: rgba(255, 255, 255, .88);
+}
+
+.game-card--next .game-card__meta {
+  color: rgba(255, 255, 255, .92);
+}
+
 /* Encerrada: neutra, so convida a avaliar */
 .game-card--done .game-card__icon {
   background: var(--pq-signal);
