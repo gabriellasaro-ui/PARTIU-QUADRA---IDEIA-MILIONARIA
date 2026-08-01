@@ -268,7 +268,11 @@ function renderBookingCalendar(root) {
     }
     const date = new Date(month.getFullYear(), month.getMonth(), day, 12, 0, 0);
     const value = localDateValue(date);
-    const disabled = date < today || date > maxDate;
+    // No mensalista a data escolhida e a PRIMEIRA sessao, entao so os dias
+    // que caem no dia da semana do plano ficam clicaveis.
+    const foraDoPlano = booking.dataset.planKind === 'mensalista'
+      && date.getDay() !== Number(booking.dataset.planWeekday || 3);
+    const disabled = date < today || date > maxDate || foraDoPlano;
     const selected = value === booking.dataset.date;
     const isToday = value === localDateValue(today);
     const spoken = new Intl.DateTimeFormat('pt-BR', {
@@ -647,6 +651,14 @@ async function renderVenue(root, route) {
   renderBooking(root);
 }
 
+/* Proxima ocorrencia do dia da semana (hoje conta, se ainda nao passou). */
+function nextWeekdayDate(weekday) {
+  const base = parseLocalDate(localDateValue());
+  const delta = (Number(weekday) - base.getDay() + 7) % 7;
+  base.setDate(base.getDate() + delta);
+  return localDateValue(base);
+}
+
 const WEEKDAY_NAMES = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 /* O mensalista cobra por mes (4 sessoes no mesmo dia e horario); o avulso,
@@ -747,12 +759,17 @@ function renderBooking(root) {
     button.classList.toggle('on', Number(button.dataset.weekday) === weekday);
   });
 
-  const calendar = root.querySelector('[data-booking-calendar]');
+  // O calendario fica nos dois planos: no mensalista ele escolhe a data da
+  // PRIMEIRA sessao, com so os dias do plano clicaveis.
   const weekdayBox = root.querySelector('[data-weekday-choice]');
-  if (calendar) calendar.hidden = isMensalista;
   if (weekdayBox) weekdayBox.hidden = !isMensalista;
   const dayTitle = root.querySelector('[data-step-day-title]');
   if (dayTitle) dayTitle.textContent = isMensalista ? 'Escolha o dia da semana' : 'Escolha o dia';
+  const dayHint = root.querySelector('[data-step-day-hint]');
+  if (dayHint) {
+    dayHint.hidden = !isMensalista;
+    dayHint.textContent = `Sua primeira pelada: ${bookingDateLabel(booking.dataset.date)}`;
+  }
 
   const avulsoLabel = root.querySelector('[data-plan-price-avulso]');
   if (avulsoLabel) avulsoLabel.textContent = `${formatCurrency(priceHour)} /hora`;
@@ -1653,6 +1670,11 @@ export function initMobileActions() {
       const root = document.querySelector('[data-route-view]');
       const booking = root.querySelector('[data-booking]');
       booking.dataset.planKind = plan.dataset.plan;
+      if (plan.dataset.plan === 'mensalista') {
+        booking.dataset.date = nextWeekdayDate(Number(booking.dataset.planWeekday || 3));
+        booking.dataset.calendarMonth = calendarMonthValue(parseLocalDate(booking.dataset.date));
+      }
+      renderBookingCalendar(root);
       renderBooking(root);
       window.pqRefreshIcons?.(root);
       return;
@@ -1661,7 +1683,13 @@ export function initMobileActions() {
     const weekday = event.target.closest('[data-weekday]');
     if (weekday) {
       const root = document.querySelector('[data-route-view]');
-      root.querySelector('[data-booking]').dataset.planWeekday = weekday.dataset.weekday;
+      const booking = root.querySelector('[data-booking]');
+      booking.dataset.planWeekday = weekday.dataset.weekday;
+      // A data de inicio pula para a proxima ocorrencia do dia escolhido —
+      // senao ficaria apontando para uma data que o calendario nem aceita.
+      booking.dataset.date = nextWeekdayDate(Number(weekday.dataset.weekday));
+      booking.dataset.calendarMonth = calendarMonthValue(parseLocalDate(booking.dataset.date));
+      renderBookingCalendar(root);
       renderBooking(root);
       return;
     }

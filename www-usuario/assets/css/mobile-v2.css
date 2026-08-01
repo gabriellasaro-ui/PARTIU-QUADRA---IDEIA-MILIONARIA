@@ -3365,6 +3365,10 @@ html[data-route="mapa"] .phone {
 .sport-rail {
   gap: 9px;
   padding: 0 16px 3px;
+  /* "safe" e o detalhe que importa: centraliza enquanto couber e volta a
+     alinhar no inicio se a lista crescer, senao os primeiros itens ficariam
+     fora de alcance na rolagem. */
+  justify-content: safe center;
 }
 
 .sport-item {
