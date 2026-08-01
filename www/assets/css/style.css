@@ -437,10 +437,10 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
   border-top: 1px solid var(--line);
   padding: 10px 8px 16px;
 }
-.tabbar a { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--muted); padding: 4px 12px; border-radius: 12px; }
-.tabbar a .ic { width: 22px; height: 22px; }
-.tabbar a.on { color: var(--green-600); }
-.tabbar a.on .ic { stroke-width: 2.3; }
+.tabbar a, .tabbar button { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--muted); padding: 4px 12px; border-radius: 12px; background: transparent; font-family: inherit; }
+.tabbar a .ic, .tabbar button .ic { width: 22px; height: 22px; }
+.tabbar a.on, .tabbar button.on { color: var(--green-600); }
+.tabbar a.on .ic, .tabbar button.on .ic { stroke-width: 2.3; }
 
 /* ---------- banner instalar PWA ---------- */
 .pwa-prompt {

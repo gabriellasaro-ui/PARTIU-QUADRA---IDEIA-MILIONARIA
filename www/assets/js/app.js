@@ -55,37 +55,37 @@ const MOBILE_ROUTES = {
     header: null,
     page: './pages/favoritos.html',
     title: 'Favoritos - Qadras',
-    nav: 'favoritos'
+    nav: 'menu'
   },
   carteira: {
     header: null,
     page: './pages/carteira.html',
     title: 'Carteira - Qadras',
-    nav: 'perfil'
+    nav: 'menu'
   },
   carteiraAcao: {
     header: null,
     page: './pages/carteira-acao.html',
     title: 'Carteira - Qadras',
-    nav: 'perfil'
+    nav: 'menu'
   },
   perfil: {
     header: null,
     page: './pages/perfil.html',
     title: 'Perfil - Qadras',
-    nav: 'perfil'
+    nav: 'menu'
   },
   config: {
     header: null,
     page: './pages/config.html',
     title: 'Configurações - Qadras',
-    nav: 'perfil'
+    nav: 'menu'
   },
   mensagens: {
     header: null,
     page: './pages/mensagens.html',
     title: 'Mensagens - Qadras',
-    nav: 'perfil'
+    nav: 'menu'
   },
   game: {
     header: null,

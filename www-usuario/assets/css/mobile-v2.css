@@ -255,6 +255,7 @@ html[data-route="mapa"] .mobile-map-route {
 .btn-mini:focus-visible,
 .chip:focus-visible,
 .tabbar a:focus-visible,
+.tabbar button:focus-visible,
 .icon-btn:focus-visible {
   outline: 3px solid rgba(200, 240, 90, .9);
   outline-offset: 2px;
@@ -455,7 +456,8 @@ html[data-route="mapa"] .mobile-map-route {
   display: none;
 }
 
-.tabbar a {
+.tabbar a,
+.tabbar button {
   min-height: 54px;
   min-width: 0;
   padding: 4px 2px;
@@ -463,7 +465,8 @@ html[data-route="mapa"] .mobile-map-route {
   color: #68726d;
 }
 
-.tabbar a span {
+.tabbar a span,
+.tabbar button span {
   max-width: 100%;
   overflow: hidden;
   font-size: 10px;
@@ -471,13 +474,15 @@ html[data-route="mapa"] .mobile-map-route {
   white-space: nowrap;
 }
 
-.tabbar a.on {
+.tabbar a.on,
+.tabbar button.on {
   color: var(--pq-green);
   background: transparent;
   font-weight: 900;
 }
 
-.tabbar a.on .ic {
+.tabbar a.on .ic,
+.tabbar button.on .ic {
   stroke-width: 2.4;
 }
 
@@ -1841,7 +1846,8 @@ button .ic,
     font-size: 26px;
   }
 
-  .tabbar a span {
+  .tabbar a span,
+  .tabbar button span {
     font-size: 9px;
   }
 
@@ -3789,7 +3795,8 @@ html[data-route="mapa"] .phone {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.tabbar > a {
+.tabbar > a,
+.tabbar > button {
   min-height: 54px;
   gap: 4px;
   padding: 5px 2px;
@@ -3799,16 +3806,19 @@ html[data-route="mapa"] .phone {
   font-weight: 750;
 }
 
-.tabbar > a > .ic {
+.tabbar > a > .ic,
+.tabbar > button > .ic {
   width: 21px;
   height: 21px;
 }
 
-.tabbar > a > span {
+.tabbar > a > span,
+.tabbar > button > span {
   font-size: 9.5px;
 }
 
-.tabbar > a.on {
+.tabbar > a.on,
+.tabbar > button.on {
   background: transparent;
   color: var(--pq-brand-strong);
 }
@@ -5375,6 +5385,7 @@ html[data-route="mapa"] .phone {
   }
 
   .tabbar > a > span,
+  .tabbar > button > span,
   .tabbar .tabbar-map em {
     font-size: 9px;
   }

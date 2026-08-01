@@ -97,3 +97,28 @@
     </form>
   </section>
 </div>
+
+<!-- Menu da conta — acionado pelo hamburguer da tabbar.
+     Fica aqui (e nao dentro de um fragmento de pagina) porque este arquivo e
+     montado em index.html fora de [data-route-view]: sobrevive a navegacao. -->
+<div class="market-sheet" id="menu-sheet" data-market-sheet hidden>
+  <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar menu"></button>
+  <section class="market-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="menu-sheet-title">
+    <header class="market-sheet__head">
+      <div>
+        <span>Sua conta</span>
+        <h2 id="menu-sheet-title">Menu</h2>
+      </div>
+      <button class="market-sheet__close" type="button" data-sheet-close aria-label="Fechar">
+        <i class="ic" data-lucide="x"></i>
+      </button>
+    </header>
+    <nav class="account-menu" aria-label="Menu da conta">
+      <a href="#perfil" data-sheet-close><span class="menu-icon"><i class="ic" data-lucide="user-round"></i></span><span><strong>Perfil</strong><small>Seus dados e estatísticas</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+      <a href="#carteira" data-sheet-close><span class="menu-icon"><i class="ic" data-lucide="wallet-cards"></i></span><span><strong>Carteira</strong><small>Saldo, cartões e cupons</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+      <a href="#favoritos" data-sheet-close><span class="menu-icon"><i class="ic" data-lucide="heart"></i></span><span><strong>Favoritos</strong><small>Suas quadras salvas</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+      <a href="#mensagens" data-sheet-close><span class="menu-icon"><i class="ic" data-lucide="message-circle"></i></span><span><strong>Mensagens</strong><small>Fale direto com as arenas</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+      <a href="#config" data-sheet-close><span class="menu-icon"><i class="ic" data-lucide="sliders-horizontal"></i></span><span><strong>Configurações</strong><small>Notificações e privacidade</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+    </nav>
+  </section>
+</div>
