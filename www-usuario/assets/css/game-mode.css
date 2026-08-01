@@ -1442,3 +1442,61 @@ body.game-tv-open { overflow: hidden; }
 }
 
 .game-queue__item[data-team-accent] { border-left-color: var(--team-color); }
+
+/* ── Fatos da partida (lista, nao cards) ────────────────── */
+.game-facts {
+  margin-top: 16px;
+  padding: 4px 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+}
+
+.game-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--pq-line);
+}
+
+.game-facts > div:last-child { border-bottom: 0; }
+
+.game-facts dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.game-facts dt .ic {
+  width: 15px;
+  height: 15px;
+  color: var(--pq-brand-strong);
+}
+
+.game-facts dd {
+  overflow: hidden;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 850;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Montagem dos times num bloco so, para a aba nao parecer tres ilhas soltas */
+.game-teams-setup {
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+}
+
+.game-teams-setup .game-section-title { margin: 0 0 10px; }
+.game-teams-setup .game-shuffle { margin-top: 12px; background: var(--pq-signal-soft); }

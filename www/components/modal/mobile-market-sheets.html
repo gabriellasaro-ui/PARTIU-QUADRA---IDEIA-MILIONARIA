@@ -70,13 +70,10 @@
       <fieldset>
         <legend>Esporte</legend>
         <div class="filter-choice-grid filter-choice-grid--sports">
-          <label><input type="radio" name="esporte" value="" checked><span><i class="ic" data-lucide="sparkles"></i>Todos</span></label>
+          <label><input type="radio" name="esporte" value="" checked><span><i class="ic" data-lucide="layout-grid"></i>Todos</span></label>
           <label><input type="radio" name="esporte" value="Futebol Society"><span><i class="ic" data-lucide="goal"></i>Futebol</span></label>
-          <label><input type="radio" name="esporte" value="Beach Tennis"><span><i class="ic" data-lucide="circle-dot"></i>Beach</span></label>
-          <label><input type="radio" name="esporte" value="Volei"><span><i class="ic" data-lucide="volleyball"></i>Volei</span></label>
-          <label><input type="radio" name="esporte" value="Basquete"><span><i class="ic" data-lucide="target"></i>Basquete</span></label>
-          <label><input type="radio" name="esporte" value="Tenis"><span><i class="ic" data-lucide="activity"></i>Tenis</span></label>
           <label><input type="radio" name="esporte" value="Futsal"><span><i class="ic" data-lucide="trophy"></i>Futsal</span></label>
+          <label><input type="radio" name="esporte" value="Volei"><span><i class="ic" data-lucide="volleyball"></i>Volei</span></label>
         </div>
       </fieldset>
       <fieldset>
@@ -85,6 +82,11 @@
           <label><input type="radio" name="raio" value="2"><span>2 km</span></label>
           <label><input type="radio" name="raio" value="5" checked><span>5 km</span></label>
           <label><input type="radio" name="raio" value="10"><span>10 km</span></label>
+          <label><input type="radio" name="raio" value="custom" data-raio-custom><span>Personalizado</span></label>
+        </div>
+        <div class="filter-range" data-raio-range hidden>
+          <input type="range" name="raioKm" min="1" max="30" step="1" value="5" aria-label="Distancia maxima em quilometros">
+          <output data-raio-output>5 km</output>
         </div>
       </fieldset>
       <label class="filter-now">

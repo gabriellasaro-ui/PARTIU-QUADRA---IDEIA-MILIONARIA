@@ -3365,10 +3365,6 @@ html[data-route="mapa"] .phone {
 .sport-rail {
   gap: 9px;
   padding: 0 16px 3px;
-  /* "safe" e o detalhe que importa: centraliza enquanto couber e volta a
-     alinhar no inicio se a lista crescer, senao os primeiros itens ficariam
-     fora de alcance na rolagem. */
-  justify-content: safe center;
 }
 
 .sport-item {
@@ -5470,6 +5466,21 @@ html[data-route="mapa"] .phone {
 /* Reaproveita .profile-hero (identidade), .profile-stats, .res-card (pelada),
    .payment-row (membro), .seg (presenca) e .mobile-bubbles (conversa).
    O que segue e so o que esses idiomas nao cobrem. */
+/* Cabecalho do clube centralizado: e uma identidade, nao um formulario —
+   o eixo central da o ar de "escudo do time". */
+.clube-page .profile-identity {
+  text-align: center;
+}
+
+.clube-page .profile-avatar-wrap {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.clube-page .profile-location {
+  justify-content: center;
+}
+
 .clube-page .profile-identity-copy p {
   margin-top: 4px;
   color: var(--pq-muted);
@@ -5859,4 +5870,32 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 .venue-hero-track:focus-visible {
   outline: 3px solid rgba(207, 255, 71, .9);
   outline-offset: -3px;
+}
+
+/* Distancia personalizada no filtro */
+.filter-range {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  background: var(--pq-panel);
+}
+
+.filter-range[hidden] { display: none; }
+
+.filter-range input[type="range"] {
+  width: 100%;
+  accent-color: var(--pq-brand);
+}
+
+.filter-range output {
+  min-width: 56px;
+  color: var(--pq-brand-deep);
+  font-size: 13px;
+  font-weight: 900;
+  text-align: right;
 }

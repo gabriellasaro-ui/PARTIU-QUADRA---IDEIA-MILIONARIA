@@ -49,36 +49,26 @@
           <div class="game-countdown__unit" id="gameCountdownUnit" data-game-countdown-unit>minutos</div>
         </div>
 
-        <div class="game-info-grid">
-          <div class="game-info-item">
-            <div class="game-info-item__label">Esporte</div>
-            <div class="game-info-item__value">
-              <i class="ic" data-lucide="zap"></i>
-              <span id="gameSport"></span>
-            </div>
+        <!-- Lista, nao cards: sao quatro dados de leitura, nao quatro acoes.
+             Em card cada um pedia atencao igual e o bloco virava ruido. -->
+        <dl class="game-facts">
+          <div>
+            <dt><i class="ic" data-lucide="zap"></i>Esporte</dt>
+            <dd id="gameSport"></dd>
           </div>
-          <div class="game-info-item">
-            <div class="game-info-item__label">Horário</div>
-            <div class="game-info-item__value">
-              <i class="ic" data-lucide="clock"></i>
-              <span id="gameTime"></span>
-            </div>
+          <div>
+            <dt><i class="ic" data-lucide="clock"></i>Horário</dt>
+            <dd id="gameTime"></dd>
           </div>
-          <div class="game-info-item">
-            <div class="game-info-item__label">Duração</div>
-            <div class="game-info-item__value">
-              <i class="ic" data-lucide="hourglass"></i>
-              <span id="gameDuration"></span>
-            </div>
+          <div>
+            <dt><i class="ic" data-lucide="hourglass"></i>Duração</dt>
+            <dd id="gameDuration"></dd>
           </div>
-          <div class="game-info-item">
-            <div class="game-info-item__label">Organizador</div>
-            <div class="game-info-item__value">
-              <i class="ic" data-lucide="user"></i>
-              <span id="gameOrganizer"></span>
-            </div>
+          <div>
+            <dt><i class="ic" data-lucide="user"></i>Organizador</dt>
+            <dd id="gameOrganizer"></dd>
           </div>
-        </div>
+        </dl>
 
         <div class="game-actions">
           <button class="game-btn game-btn--outline" id="gameBtnMap" type="button">
@@ -277,6 +267,7 @@
     <!-- ═════════ Aba: Times ═════════ -->
     <section class="game-tabpanel" id="gameTabTimes" role="tabpanel"
              aria-labelledby="gameTabBtnTimes" data-game-panel="times" hidden>
+      <div class="game-teams-setup">
       <div class="game-section-title">Quantos times</div>
       <div class="game-chips" data-team-counts>
         <button class="game-chip is-on" type="button" data-team-count="2">2</button>
@@ -294,6 +285,8 @@
         </span>
         <i class="ic" data-lucide="chevron-right"></i>
       </button>
+
+      </div>
 
       <div class="game-section-title">Em quadra</div>
       <div class="game-teams" id="gameTeamsDisplay">

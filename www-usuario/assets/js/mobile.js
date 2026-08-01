@@ -659,6 +659,19 @@ function nextWeekdayDate(weekday) {
   return localDateValue(base);
 }
 
+/* Primeira ocorrencia do dia da semana dentro do mes visivel — nunca no
+   passado. Mantem a pessoa no mes que ela navegou. */
+function firstWeekdayInMonth(weekday, monthValue) {
+  const month = calendarMonthDate(monthValue);
+  const hoje = parseLocalDate(localDateValue());
+  const cursor = new Date(month.getFullYear(), month.getMonth(), 1, 12, 0, 0);
+  cursor.setDate(cursor.getDate() + ((Number(weekday) - cursor.getDay() + 7) % 7));
+  while (cursor < hoje) cursor.setDate(cursor.getDate() + 7);
+  // Se o mes visivel nao tem mais aquele dia, cai na proxima ocorrencia real.
+  if (cursor.getMonth() !== month.getMonth()) return nextWeekdayDate(weekday);
+  return localDateValue(cursor);
+}
+
 const WEEKDAY_NAMES = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 /* O mensalista cobra por mes (4 sessoes no mesmo dia e horario); o avulso,
@@ -1360,7 +1373,8 @@ export function initMobileActions() {
       const data = new FormData(filter);
       const query = new URLSearchParams();
       const sport = data.get('esporte');
-      const radius = data.get('raio');
+      // "Personalizado" manda o valor da barra em vez do preset.
+      const radius = data.get('raio') === 'custom' ? data.get('raioKm') : data.get('raio');
       const now = data.get('agora');
       const currentQuery = routeQuery(currentRoute);
       const term = currentQuery.get('q');
@@ -1501,6 +1515,28 @@ export function initMobileActions() {
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-game-reload]')) location.reload();
+  });
+
+  // A barra de km so aparece quando "Personalizado" esta marcado.
+  document.addEventListener('change', (event) => {
+    const radio = event.target.closest('[name="raio"]');
+    if (radio) {
+      const range = document.querySelector('[data-raio-range]');
+      if (range) range.hidden = radio.value !== 'custom';
+      return;
+    }
+    const km = event.target.closest('[name="raioKm"]');
+    if (km) {
+      const output = document.querySelector('[data-raio-output]');
+      if (output) output.textContent = `${km.value} km`;
+    }
+  });
+
+  document.addEventListener('input', (event) => {
+    const km = event.target.closest('[name="raioKm"]');
+    if (!km) return;
+    const output = document.querySelector('[data-raio-output]');
+    if (output) output.textContent = `${km.value} km`;
   });
 
   document.addEventListener('click', async (event) => {
@@ -1685,10 +1721,13 @@ export function initMobileActions() {
       const root = document.querySelector('[data-route-view]');
       const booking = root.querySelector('[data-booking]');
       booking.dataset.planWeekday = weekday.dataset.weekday;
-      // A data de inicio pula para a proxima ocorrencia do dia escolhido —
-      // senao ficaria apontando para uma data que o calendario nem aceita.
-      booking.dataset.date = nextWeekdayDate(Number(weekday.dataset.weekday));
-      booking.dataset.calendarMonth = calendarMonthValue(parseLocalDate(booking.dataset.date));
+      // A data de inicio vai para a proxima ocorrencia do dia escolhido
+      // DENTRO DO MES QUE A PESSOA ESTA OLHANDO. Antes eu jogava sempre para
+      // a proxima ocorrencia a partir de hoje e reescrevia o calendarMonth —
+      // entao quem navegava ate setembro e escolhia um dia era chutado de
+      // volta para agosto.
+      booking.dataset.date = firstWeekdayInMonth(
+        Number(weekday.dataset.weekday), booking.dataset.calendarMonth);
       renderBookingCalendar(root);
       renderBooking(root);
       return;
