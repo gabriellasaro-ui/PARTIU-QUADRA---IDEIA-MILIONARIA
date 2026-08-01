@@ -1207,14 +1207,79 @@ async function renderConfirmation(root, route) {
   await tickApproval();
 }
 
+/* Um plano mensalista sao 4 sessoes, mas UMA assinatura. Listar as quatro
+   soltas junto das avulsas escondia justamente o que a pessoa quer saber:
+   qual e o compromisso e quando e a proxima. */
+function planoCard(plano) {
+  const proxima = plano.sessoes.find((sessao) => sessao.dateISO >= localDateValue());
+  const restantes = plano.sessoes.filter((sessao) => sessao.dateISO >= localDateValue()).length;
+  return `<article class="plan-card">
+    <div class="plan-card__head">
+      <span class="plan-card__tag">Mensalista</span>
+      <strong>${escapeHtml(plano.venueName)}</strong>
+    </div>
+    <div class="plan-card__when">
+      ${icon('repeat')}
+      <span>Toda ${WEEKDAY_NAMES[plano.weekday]} às ${escapeHtml(plano.startTime)}</span>
+    </div>
+    <div class="plan-card__next">
+      <div>
+        <small>Próxima pelada</small>
+        <strong>${proxima ? peladaDateLabel(proxima) : 'Nenhuma agendada'}</strong>
+      </div>
+      <div>
+        <small>Restam no mês</small>
+        <strong>${restantes} de ${plano.sessoes.length}</strong>
+      </div>
+    </div>
+    <ol class="plan-card__sessions">
+      ${plano.sessoes.map((sessao) => {
+        const passou = sessao.dateISO < localDateValue();
+        return `<li class="${passou ? 'is-done' : ''}">
+          <span>${peladaDateLabel(sessao)}</span>
+          <em>${escapeHtml(sessao.startTime)}</em>
+        </li>`;
+      }).join('')}
+    </ol>
+  </article>`;
+}
+
 async function renderReservations(root) {
-  const reservations = await venueService.reservations();
-  const venues = await venueService.list();
+  const [reservations, venues, peladas] = await Promise.all([
+    venueService.reservations(),
+    venueService.list(),
+    venueService.peladas()
+  ]);
+
+  // Agrupa as sessoes de mensalista pela reserva que as gerou.
+  const planos = new Map();
+  peladas.filter((p) => p.plan === 'mensalista' && p.reservationCode).forEach((p) => {
+    const atual = planos.get(p.reservationCode) || {
+      venueName: p.venueName,
+      startTime: p.startTime,
+      weekday: parseLocalDate(p.dateISO).getDay(),
+      sessoes: []
+    };
+    atual.sessoes.push(p);
+    planos.set(p.reservationCode, atual);
+  });
+  planos.forEach((plano) => plano.sessoes.sort((a, b) => a.dateISO.localeCompare(b.dateISO)));
+
+  const planosBox = root.querySelector('[data-plan-list]');
+  const planosHead = root.querySelector('[data-plan-head]');
+  if (planosBox) {
+    planosBox.innerHTML = [...planos.values()].map(planoCard).join('');
+    if (planosHead) planosHead.hidden = planos.size === 0;
+  }
+
   const list = root.querySelector('[data-reservation-list]');
-  list.innerHTML = reservations.map((reservation) => {
-    const venue = venues.find((item) => item.id === reservation.venueId);
-    return venue ? reservationCard(reservation, venue) : '';
-  }).join('');
+  // A reserva que virou plano ja aparece no card do plano.
+  list.innerHTML = reservations
+    .filter((reservation) => !planos.has(reservation.code))
+    .map((reservation) => {
+      const venue = venues.find((item) => item.id === reservation.venueId);
+      return venue ? reservationCard(reservation, venue) : '';
+    }).join('');
 }
 
 async function renderFavorites(root) {

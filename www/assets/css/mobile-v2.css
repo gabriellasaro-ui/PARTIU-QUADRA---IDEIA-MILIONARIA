@@ -5906,3 +5906,110 @@ html[data-bottombar="game"] .game-tabs { display: none; }
   font-weight: 900;
   text-align: right;
 }
+
+/* ---------- mensalidade do jogador ---------- */
+.plan-card {
+  margin-bottom: 12px;
+  padding: 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+}
+
+.plan-card__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.plan-card__tag {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--pq-amber-soft, #ffedd5);
+  color: var(--pq-amber-strong, #9a3412);
+  font-size: 8.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.plan-card__head strong {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-card__when {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plan-card__when .ic {
+  width: 15px;
+  height: 15px;
+  color: var(--pq-brand-strong);
+}
+
+.plan-card__next {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--pq-signal-soft);
+}
+
+.plan-card__next small {
+  display: block;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.plan-card__next strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--pq-brand-deep);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.plan-card__sessions {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-card__sessions li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--pq-line);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.plan-card__sessions li:last-child { border-bottom: 0; }
+
+.plan-card__sessions li.is-done {
+  color: var(--pq-muted);
+  text-decoration: line-through;
+}
+
+.plan-card__sessions em {
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  font-style: normal;
+  font-weight: 800;
+}
