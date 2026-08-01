@@ -75,7 +75,7 @@ h3,
 
 .screen {
   background: var(--pq-paper);
-  padding-bottom: calc(84px + var(--pq-safe-bottom));
+  padding-bottom: calc(var(--pq-tabbar-height) + 6px + var(--pq-safe-bottom));
 }
 
 html[data-route="mapa"] .screen {
@@ -501,7 +501,7 @@ button .ic,
   position: fixed;
   right: 14px;
   left: 14px;
-  bottom: calc(88px + var(--pq-safe-bottom));
+  bottom: calc(var(--pq-tabbar-height) + 6px + var(--pq-safe-bottom));
   width: auto;
   max-width: none;
   min-height: 48px;
@@ -557,7 +557,7 @@ button .ic,
 .pwa-prompt {
   left: 12px;
   right: 12px;
-  bottom: calc(84px + var(--pq-safe-bottom));
+  bottom: calc(var(--pq-tabbar-height) + 6px + var(--pq-safe-bottom));
 }
 
 /* ---------- fluxo completo do jogador ---------- */
@@ -4982,7 +4982,7 @@ html[data-route="mapa"] .phone {
 .toast {
   right: 12px;
   left: 12px;
-  bottom: calc(84px + var(--pq-safe-bottom));
+  bottom: calc(var(--pq-tabbar-height) + 6px + var(--pq-safe-bottom));
   min-height: 52px;
   border: 0;
   border-radius: 18px;
@@ -5617,6 +5617,11 @@ html[data-route="mapa"] .phone {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+/* Hero com uma acao so (o Agendar do clube mudou para a barra inferior) */
+.wallet-actions--single {
+  grid-template-columns: 1fr;
 }
 
 /* ---------- barra contextual (clube / partida) ----------
