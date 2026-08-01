@@ -1470,10 +1470,13 @@ export async function renderPlayerDesktopPage(route, root) {
 }
 
 async function renderGame(root) {
-  const ok = await loadGame();
-  if (!ok) {
-    root.innerHTML = '<div class="empty"><h3>Nenhuma partida ativa</h3><p>Quando voce tiver um jogo marcado ele aparece aqui.</p><a class="btn" href="#quadras">Encontrar uma quadra</a></div>';
-  }
+  const status = await loadGame();
+  if (status === 'ok') return;
+  // 'empty' = nao ha partida. 'error' = a tela nao montou — nao mentir dizendo
+  // que nao ha jogo; o motivo real fica no console.
+  root.innerHTML = status === 'empty'
+    ? '<div class="empty"><h3>Nenhuma partida ativa</h3><p>Quando você tiver um jogo marcado ele aparece aqui.</p><a class="btn" href="#quadras">Encontrar uma quadra</a></div>'
+    : '<div class="empty"><h3>Não foi possível abrir a partida</h3><p>Recarregue a tela. Se continuar, feche e abra o app.</p><button class="btn" type="button" data-game-reload>Recarregar</button></div>';
 }
 
 export function initPlayerDesktopActions() {

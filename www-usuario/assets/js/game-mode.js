@@ -335,11 +335,24 @@ function initGameTabs() {
   selectGameTab(match?.phase === 'during-game' ? 'cronometro' : 'partida');
 }
 
+/**
+ * Retorna 'ok' | 'empty' | 'error'.
+ *
+ * A distincao importa: um try/catch unico transformava qualquer excecao de
+ * montagem em "nenhuma partida ativa", ou seja, um bug de codigo aparecia
+ * para a pessoa como um estado de dados legitimo. Falha de montagem agora
+ * diz que falhou.
+ */
 export async function loadGame(matchId) {
   try {
     match = await venueService.getActiveMatch();
-    if (!match) return false;
+  } catch (error) {
+    console.error('[game] falha ao buscar a partida:', error);
+    return 'error';
+  }
+  if (!match) return 'empty';
 
+  try {
     $id('gameVenueImg').src = match.venueImage;
     $id('gameVenueName').textContent = match.venueName;
     $id('gameVenueAddress').textContent = match.address;
@@ -362,10 +375,10 @@ export async function loadGame(matchId) {
       window.gameMatch = match;
     }
 
-    return true;
-  } catch (e) {
-    console.error('Erro ao carregar partida:', e);
-    return false;
+    return 'ok';
+  } catch (error) {
+    console.error('[game] falha ao montar a tela da partida:', error);
+    return 'error';
   }
 }
 

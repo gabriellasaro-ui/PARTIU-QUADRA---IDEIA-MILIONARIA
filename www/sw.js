@@ -6,7 +6,7 @@
      UI é injetada por JS a tela ficava totalmente em branco.
    - Assets imutáveis (imagens, ícones, fontes): cache-first com atualização em background.
    - CDNs externas (fontes, Leaflet, imagens Unsplash) passam direto pela rede. */
-const CACHE = 'pq-v3';
+const CACHE = 'pq-v4';
 const SHELL = [
   '/',
   '/index.html',
