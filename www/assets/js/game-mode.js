@@ -44,23 +44,11 @@ function renderPlayers(list, container, showBadge) {
   }).join('');
 }
 
-function renderChat(msgs) {
-  const container = $id('gameChatMsgs');
-  container.innerHTML = msgs.map(m => {
-    if (m.from === 'system') {
-      return `<div class="game-chat__msg game-chat__msg--system">${m.text}</div>`;
-    }
-    const name = m.from === 'organizer' ? '' : `<div class="game-chat__msg-name">${m.name || m.from}</div>`;
-    const cls = m.from === 'organizer' ? 'game-chat__msg--organizer' : 'game-chat__msg--player';
-    return `<div class="game-chat__msg ${cls}">${name}${m.text}</div>`;
-  }).join('');
-  container.scrollTop = container.scrollHeight;
+// O relogio e o placar aparecem em mais de uma aba. Um unico ponto de escrita
+// mantem tudo em sincronia sem criar um interval por aba.
+function setAll(selector, value) {
+  document.querySelectorAll(selector).forEach((el) => { el.textContent = value; });
 }
-
-const TEAM_SLOTS = [
-  { a: 'teamAPlayers', b: 'teamBPlayers' },
-  { a: 'preTeamAPlayers', b: 'preTeamBPlayers' }
-];
 
 function teamListHtml(players) {
   return players.map(p =>
@@ -68,16 +56,13 @@ function teamListHtml(players) {
   ).join('');
 }
 
-// Os times aparecem no pre-jogo e durante a partida — os dois blocos ficam em sincronia.
 function renderTeams(teams) {
   const empty = '<div class="game-team-card__empty">Aguardando sorteio...</div>';
-  TEAM_SLOTS.forEach(slot => {
-    const a = $id(slot.a);
-    const b = $id(slot.b);
-    if (!a || !b) return;
-    a.innerHTML = teams ? teamListHtml(teams.teamA) : empty;
-    b.innerHTML = teams ? teamListHtml(teams.teamB) : empty;
-  });
+  const a = $id('teamAPlayers');
+  const b = $id('teamBPlayers');
+  if (!a || !b) return;
+  a.innerHTML = teams ? teamListHtml(teams.teamA) : empty;
+  b.innerHTML = teams ? teamListHtml(teams.teamB) : empty;
 }
 
 function renderEvents(events) {
@@ -102,6 +87,9 @@ function renderEvents(events) {
 }
 
 function renderPhaseDots(phase) {
+  // A fase vira atributo no container: o CSS esconde o placar da aba Cronometro
+  // fora de "em campo" sem precisar de branch em JS.
+  $id('gameScreen')?.setAttribute('data-phase', phase);
   const steps = qsa('.game-phase__step');
   const phases = ['pre-game', 'during-game', 'post-game'];
   const idx = phases.indexOf(phase);
@@ -123,6 +111,7 @@ function updatePreGame(m) {
   renderPlayers(m.players.confirmed, $id('gameConfirmedList'), true);
   renderPlayers(m.players.pending, $id('gamePendingList'), false);
   renderTeams(m.teams);
+  setAll('[data-game-clock-label]', 'Sua partida começa em');
 
   if (countdownInterval) clearInterval(countdownInterval);
   updateCountdown(m);
@@ -132,8 +121,8 @@ function updatePreGame(m) {
 function updateCountdown(m) {
   const diff = m.startTimestamp - Date.now();
   if (diff <= 0) {
-    $id('gameCountdown').textContent = '00:00';
-    $id('gameCountdownUnit').textContent = 'Hora do jogo!';
+    setAll('[data-game-countdown]', '00:00');
+    setAll('[data-game-countdown-unit]', 'Hora do jogo!');
     if (match && match.phase === 'pre-game') {
       match.phase = 'during-game';
       switchPhase('during-game');
@@ -146,11 +135,11 @@ function updateCountdown(m) {
   if (min >= 60) {
     const h = Math.floor(min / 60);
     const m = min % 60;
-    $id('gameCountdown').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-    $id('gameCountdownUnit').textContent = 'horas';
+    setAll('[data-game-countdown]', `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    setAll('[data-game-countdown-unit]', 'horas');
   } else {
-    $id('gameCountdown').textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-    $id('gameCountdownUnit').textContent = min === 1 ? 'minuto' : 'minutos';
+    setAll('[data-game-countdown]', `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`);
+    setAll('[data-game-countdown-unit]', min === 1 ? 'minuto' : 'minutos');
   }
 }
 
@@ -160,10 +149,12 @@ function updateDuringGame(m) {
   $id('gamePostPhase').style.display = 'none';
   renderPhaseDots('during-game');
 
+  setAll('[data-game-clock-label]', 'Tempo restante');
+  setAll('[data-game-countdown-unit]', '');  // o valor ja e mm:ss
   const halfNames = ['', '1º tempo', '2º tempo'];
   $id('gameHalf').textContent = halfNames[m.currentHalf] || `${m.currentHalf}º tempo`;
-  $id('teamAScore').textContent = m.score.teamA;
-  $id('teamBScore').textContent = m.score.teamB;
+  setAll('[data-team-score="A"]', m.score.teamA);
+  setAll('[data-team-score="B"]', m.score.teamB);
 
   renderTeams(m.teams);
   renderEvents(m.goals);
@@ -176,7 +167,7 @@ function updateDuringGame(m) {
 function updateGameTimer(m) {
   const now = Date.now();
   if (now >= m.endTimestamp) {
-    $id('gameTimer').textContent = '00:00';
+    setAll('[data-game-timer]', '00:00');
     match.phase = 'post-game';
     switchPhase('post-game');
     return;
@@ -187,9 +178,13 @@ function updateGameTimer(m) {
   const remaining = Math.max(0, total - elapsed);
   const min = Math.floor(remaining / 60);
   const sec = remaining % 60;
-  $id('gameTimer').textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-  // Ultimos 5 minutos: destaca o cronometro sobre o placar verde.
-  $id('gameTimer').style.color = remaining <= 300 && remaining > 0 ? '#ffd88a' : '';
+  setAll('[data-game-timer]', `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`);
+  // Ultimos 5 minutos: destaca o cronometro. So no placar verde — na aba
+  // Cronometro o fundo e claro, entao la o realce vem do CSS.
+  const warn = remaining <= 300 && remaining > 0;
+  const board = $id('gameTimer');
+  if (board) board.style.color = warn ? '#ffd88a' : '';
+  $id('gameScreen')?.classList.toggle('is-ending', warn);
 }
 
 function updatePostGame(m) {
@@ -198,6 +193,9 @@ function updatePostGame(m) {
   $id('gamePostPhase').style.display = '';
   renderPhaseDots('post-game');
 
+  setAll('[data-game-clock-label]', 'Partida encerrada');
+  setAll('[data-game-countdown]', '00:00');
+  setAll('[data-game-countdown-unit]', '');
   $id('gameFinalScoreA').textContent = m.score.teamA;
   $id('gameFinalScoreB').textContent = m.score.teamB;
 
@@ -270,14 +268,8 @@ function shuffleTeams() {
   match.teams = { teamA, teamB, teamAName, teamBName };
   renderTeams(match.teams);
   venueService.setMatchTeams?.(match.id, match.teams);
-  ['teamAName', 'teamAShort', 'teamACard', 'preTeamACard'].forEach(id => {
-    const el = $id(id);
-    if (el) el.textContent = teamAName;
-  });
-  ['teamBName', 'teamBShort', 'teamBCard', 'preTeamBCard'].forEach(id => {
-    const el = $id(id);
-    if (el) el.textContent = teamBName;
-  });
+  setAll('[data-team-label="A"]', teamAName);
+  setAll('[data-team-label="B"]', teamBName);
   window.pqToast?.('Times sorteados!');
 }
 
@@ -294,8 +286,8 @@ function addGoal(team) {
     text: `${scorer || 'Alguém'} marcou para o ${team === 'A' ? (match.teams?.teamAName || 'Time A') : (match.teams?.teamBName || 'Time B')}${assist ? ` (assist: ${assist})` : ''}`
   };
   match.goals.push(goal);
-  $id('teamAScore').textContent = match.score.teamA;
-  $id('teamBScore').textContent = match.score.teamB;
+  setAll('[data-team-score="A"]', match.score.teamA);
+  setAll('[data-team-score="B"]', match.score.teamB);
   renderEvents(match.goals);
 }
 
@@ -324,6 +316,25 @@ function endMatch() {
   switchPhase('post-game');
 }
 
+function selectGameTab(name) {
+  qsa('[data-game-tab]').forEach((tab) => {
+    const on = tab.dataset.gameTab === name;
+    tab.classList.toggle('is-active', on);
+    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  qsa('[data-game-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset.gamePanel !== name;
+  });
+}
+
+function initGameTabs() {
+  qsa('[data-game-tab]').forEach((tab) => {
+    tab.addEventListener('click', () => selectGameTab(tab.dataset.gameTab));
+  });
+  // Com a bola rolando o cronometro e o que interessa; fora isso, a partida.
+  selectGameTab(match?.phase === 'during-game' ? 'cronometro' : 'partida');
+}
+
 export async function loadGame(matchId) {
   try {
     match = await venueService.getActiveMatch();
@@ -336,20 +347,15 @@ export async function loadGame(matchId) {
     $id('gameTime').textContent = `${match.date} às ${match.startTime}`;
     $id('gameDuration').textContent = `${match.duration} min`;
     $id('gameOrganizer').textContent = match.organizer.name;
-    $id('teamAName').textContent = 'Time A';
-    $id('teamBName').textContent = 'Time B';
-    $id('teamAShort').textContent = 'Time A';
-    $id('teamBShort').textContent = 'Time B';
-    $id('teamACard').textContent = 'Time A';
-    $id('teamBCard').textContent = 'Time B';
-
-    renderChat(match.chat);
+    setAll('[data-team-label="A"]', match.teams?.teamAName || 'Time A');
+    setAll('[data-team-label="B"]', match.teams?.teamBName || 'Time B');
 
     if (match.phase === 'during-game') updateDuringGame(match);
     else if (match.phase === 'post-game') updatePostGame(match);
     else updatePreGame(match);
 
     bindEvents();
+    initGameTabs();
     isGameActive = true;
 
     if (typeof window !== 'undefined') {
@@ -404,14 +410,8 @@ function bindEvents() {
   });
 
   $('gameShuffleBtn')?.addEventListener('click', shuffleTeams);
-  $('gamePreShuffleBtn')?.addEventListener('click', shuffleTeams);
 
   $('gameBtnEndMatch')?.addEventListener('click', endMatch);
-
-  $('gameChatSend')?.addEventListener('click', sendChatMessage);
-  $('gameChatInput')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') sendChatMessage();
-  });
 
   $('gamePhotoAdd')?.addEventListener('click', () => {
     const input = document.createElement('input');
@@ -445,20 +445,6 @@ function bindEvents() {
     const text = encodeURIComponent(`🏟 Partiu Quadra!\n${match.venueName}: ${match.score.teamA} × ${match.score.teamB}`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   });
-}
-
-function sendChatMessage() {
-  const input = $id('gameChatInput');
-  const text = input.value.trim();
-  if (!text || !match) return;
-  match.chat.push({
-    from: 'player',
-    name: 'Gabriel Lisboa',
-    text,
-    time: 'agora'
-  });
-  renderChat(match.chat);
-  input.value = '';
 }
 
 export function getActiveMatch() {

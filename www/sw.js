@@ -12,6 +12,7 @@ const SHELL = [
   '/index.html',
   '/pc.html',
   '/dashboard.html',
+  '/assets/css/tokens.css',
   '/assets/css/style.css',
   '/assets/css/mobile-v2.css',
   '/assets/css/desktop.css',
