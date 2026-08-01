@@ -1,7 +1,8 @@
 <!-- Clube — o grupo que organiza a pelada recorrente.
-     Usa os mesmos idiomas das outras telas do app: .navbar, .mobile-wallet
-     (hero), .mobile-section-head, .res-card e .payment-row. Nada de classes
-     da tela de jogo aqui. -->
+
+     O cabecalho usa o idioma de IDENTIDADE do app (.profile-hero), nao o da
+     carteira: um clube tem nome, foto e cidade, nao um saldo. As secoes
+     Peladas / Membros / Chat sao alternadas pela barra inferior. -->
 <div class="route-page clube-page">
   <div class="navbar">
     <a class="icon-btn" href="#home" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
@@ -10,19 +11,13 @@
 
   <!-- ───────── Sem clube ───────── -->
   <div class="container" data-club-empty hidden>
-    <section class="mobile-wallet club-hero">
-      <span>Comece por aqui</span>
-      <strong>Monte seu clube</strong>
+    <div class="empty">
+      <span class="empty-ic"><i class="ic" data-lucide="users"></i></span>
+      <h3>Você ainda não tem um clube</h3>
       <p>O clube guarda seu time e organiza a pelada de sempre: quem entra, quando joga e quem confirmou.</p>
-      <div class="wallet-actions">
-        <button class="btn wallet-primary" type="button" data-sheet-open="club-edit-sheet">
-          <i class="ic" data-lucide="plus"></i>Criar clube
-        </button>
-        <button class="btn wallet-secondary" type="button" data-sheet-open="pelada-sheet">
-          <i class="ic" data-lucide="calendar-plus"></i>Pelada avulsa
-        </button>
-      </div>
-    </section>
+      <button class="btn block" type="button" data-sheet-open="club-edit-sheet">Criar meu clube</button>
+      <button class="btn outline block" type="button" data-sheet-open="pelada-sheet">Agendar pelada avulsa</button>
+    </div>
 
     <div class="mobile-section-head">
       <h2>Peladas avulsas</h2>
@@ -33,28 +28,41 @@
 
   <!-- ───────── Com clube ───────── -->
   <div class="container" data-club-view hidden>
-    <section class="mobile-wallet club-hero">
-      <span data-club-sport></span>
-      <strong data-club-name></strong>
-      <p data-club-description></p>
-      <div class="club-hero__meta">
-        <span><i class="ic" data-lucide="map-pin"></i><span data-club-city></span></span>
-        <span><i class="ic" data-lucide="users"></i><span data-club-members-count></span></span>
+    <section class="profile-hero">
+      <div class="profile-cover">
+        <span class="profile-role"><i class="ic" data-lucide="shield-check"></i><span data-club-sport></span></span>
       </div>
-      <!-- Agendar vive na barra inferior; aqui sobraria como segunda copia -->
-      <div class="wallet-actions wallet-actions--single">
-        <button class="btn wallet-secondary" type="button" data-club-edit>
-          <i class="ic" data-lucide="pencil"></i>Editar clube
+      <div class="profile-identity">
+        <div class="profile-avatar-wrap">
+          <span class="profile-avatar" data-club-avatar>C</span>
+        </div>
+        <button class="profile-edit-action" type="button" data-club-edit>
+          <i class="ic" data-lucide="pencil"></i><span>Editar</span>
         </button>
+        <div class="profile-identity-copy">
+          <h1 data-club-name></h1>
+          <p data-club-description></p>
+          <span class="profile-location"><i class="ic" data-lucide="map-pin"></i><span data-club-city></span></span>
+        </div>
       </div>
     </section>
+
+    <div class="profile-stats">
+      <div><strong data-club-members-count></strong><span>membros</span></div>
+      <div><strong data-pelada-count></strong><span>peladas</span></div>
+      <div><strong data-club-going-count></strong><span>confirmados</span></div>
+    </div>
+
+    <button class="btn block club-schedule" type="button" data-sheet-open="pelada-sheet">
+      <i class="ic" data-lucide="calendar-plus"></i>Agendar pelada
+    </button>
 
     <!-- Seções alternadas pela barra inferior. Mesmo idioma das abas da
          partida: [data-*-panel] + o atributo hidden. -->
     <section data-club-panel="peladas">
       <div class="mobile-section-head">
         <h2>Próximas peladas</h2>
-        <span data-pelada-count></span>
+        <span data-pelada-label></span>
       </div>
       <div data-pelada-list></div>
     </section>
@@ -62,9 +70,23 @@
     <section data-club-panel="membros" hidden>
       <div class="mobile-section-head">
         <h2>Membros</h2>
-        <span data-member-count></span>
+        <span data-member-label></span>
       </div>
       <div class="payment-list" data-member-list></div>
+    </section>
+
+    <section data-club-panel="chat" hidden>
+      <div class="mobile-section-head">
+        <h2>Conversa do clube</h2>
+        <span>Combine a pelada aqui</span>
+      </div>
+      <div class="club-chat">
+        <div class="mobile-bubbles" data-club-bubbles></div>
+        <form class="mobile-composer" data-club-chat-form>
+          <input type="text" name="message" placeholder="Escreva para o time..." autocomplete="off" maxlength="500" required>
+          <button type="submit" aria-label="Enviar"><i class="ic" data-lucide="send"></i></button>
+        </form>
+      </div>
     </section>
   </div>
 </div>

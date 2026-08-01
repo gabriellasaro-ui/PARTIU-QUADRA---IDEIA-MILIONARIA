@@ -5498,35 +5498,56 @@ html[data-route="mapa"] .phone {
 }
 
 /* ---------- clube ---------- */
-/* Reaproveita .mobile-wallet (hero), .res-card (pelada), .payment-row
-   (membro) e .seg (presenca). O que segue e so o que esses idiomas nao
-   cobrem — nada de card novo. */
-.club-hero p {
-  margin-top: 6px;
-  color: rgba(255, 255, 255, .78);
+/* Reaproveita .profile-hero (identidade), .profile-stats, .res-card (pelada),
+   .payment-row (membro), .seg (presenca) e .mobile-bubbles (conversa).
+   O que segue e so o que esses idiomas nao cobrem. */
+.clube-page .profile-identity-copy p {
+  margin-top: 4px;
+  color: var(--pq-muted);
   font-size: 12px;
   line-height: 1.45;
 }
 
-.club-hero__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 10px;
-  color: rgba(255, 255, 255, .8);
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-.club-hero__meta > span {
+.club-schedule {
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
 }
 
-.club-hero__meta .ic {
-  width: 14px;
-  height: 14px;
+.club-schedule .ic {
+  width: 17px;
+  height: 17px;
+}
+
+/* Conversa do clube — mesmas bolhas do chat com as arenas, numa caixa que
+   cabe na secao em vez de ocupar a tela inteira. */
+.club-chat {
+  overflow: hidden;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+}
+
+.club-chat .mobile-bubbles {
+  max-height: 46vh;
+  min-height: 180px;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.club-chat .mobile-composer {
+  border-top: 1px solid var(--pq-line);
+}
+
+.bub-name {
+  margin-bottom: 3px;
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .03em;
 }
 
 /* Presenca dentro do card da pelada: o mesmo controle segmentado das
@@ -5617,11 +5638,6 @@ html[data-route="mapa"] .phone {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-}
-
-/* Hero com uma acao so (o Agendar do clube mudou para a barra inferior) */
-.wallet-actions--single {
-  grid-template-columns: 1fr;
 }
 
 /* ---------- barra contextual (clube / partida) ----------

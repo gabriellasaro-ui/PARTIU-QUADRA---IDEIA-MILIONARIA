@@ -11,7 +11,8 @@ import {
   VENUES,
   WALLET,
   CLUBS,
-  PELADAS
+  PELADAS,
+  CLUB_CHAT
 } from '../config/mock-data.js';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -226,6 +227,23 @@ export const venueService = {
     const next = [...list.filter((p) => p.id !== id), { ...pelada, id }];
     storage.set('peladas', next);
     return clone(next.find((p) => p.id === id));
+  },
+
+  async clubChat(clubId) {
+    if (API_BASE_URL) {
+      const data = await api.get(`/api/clubes/${clubId}/mensagens`);
+      return data?.mensagens || [];
+    }
+    const all = storage.get('club_chat', clone(CLUB_CHAT));
+    return all.filter((m) => m.clubId === Number(clubId));
+  },
+
+  async sendClubMessage(clubId, message) {
+    if (API_BASE_URL) return api.post(`/api/clubes/${clubId}/mensagens`, message);
+    const all = storage.get('club_chat', clone(CLUB_CHAT));
+    const next = [...all, { ...message, clubId: Number(clubId) }];
+    storage.set('club_chat', next);
+    return clone(message);
   },
 
   async setPeladaAttendance(peladaId, memberId, value) {

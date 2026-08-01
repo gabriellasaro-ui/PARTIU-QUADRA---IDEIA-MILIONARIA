@@ -1349,6 +1349,27 @@ export function initMobileActions() {
       return;
     }
 
+    const clubChatForm = event.target.closest('[data-club-chat-form]');
+    if (clubChatForm) {
+      event.preventDefault();
+      const input = clubChatForm.elements.message;
+      const text = input.value.trim();
+      if (!text) return;
+      const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
+      if (!club) return;
+      await venueService.sendClubMessage(club.id, {
+        memberId: user.id,
+        name: user.name,
+        text,
+        time: 'agora'
+      });
+      input.value = '';
+      const view = document.querySelector('[data-route-view]');
+      await renderClub(view);
+      window.pqRefreshIcons?.(view);
+      return;
+    }
+
     const demo = event.target.closest('[data-demo-form]');
     if (demo) {
       event.preventDefault();
@@ -1875,6 +1896,26 @@ function selectClubSection(name) {
   });
 }
 
+/* Reusa .mobile-bubbles / .bubble / .mobile-composer — o mesmo chat das
+   mensagens com as arenas. "me" sai pelo memberId, nao pelo nome: o nome
+   muda quando a pessoa edita o perfil. */
+function renderClubChat(root, messages, userId) {
+  const box = root.querySelector('[data-club-bubbles]');
+  if (!box) return;
+  box.innerHTML = messages.length
+    ? messages.map((m) => {
+        const mine = m.memberId === userId;
+        const name = mine ? '' : `<div class="bub-name">${escapeHtml(m.name || '')}</div>`;
+        return `<div class="bubble ${mine ? 'me' : 'them'}">
+          ${name}
+          <div class="bub-txt">${escapeHtml(m.text)}</div>
+          <div class="bub-time">${escapeHtml(m.time || '')}</div>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><h3>Nenhuma mensagem</h3><p>Comece a combinar a próxima pelada.</p></div>';
+  box.scrollTop = box.scrollHeight;
+}
+
 async function renderClub(root) {
   const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
   const emptyView = root.querySelector('[data-club-empty]');
@@ -1915,9 +1956,14 @@ async function renderClub(root) {
   root.querySelector('[data-club-sport]').textContent = club.sport;
   root.querySelector('[data-club-city]').textContent = club.city;
   root.querySelector('[data-club-description]').textContent = club.description || '';
-  root.querySelector('[data-club-members-count]').textContent = `${club.members.length} membros`;
-  root.querySelector('[data-member-count]').textContent = `${club.members.length} no time`;
-  root.querySelector('[data-pelada-count]').textContent = upcoming.length === 1 ? '1 marcada' : `${upcoming.length} marcadas`;
+  root.querySelector('[data-club-avatar]').textContent = club.name.charAt(0).toUpperCase();
+  // A faixa de estatisticas mostra numero puro; o rotulo vem do HTML.
+  root.querySelector('[data-club-members-count]').textContent = club.members.length;
+  root.querySelector('[data-pelada-count]').textContent = upcoming.length;
+  root.querySelector('[data-club-going-count]').textContent = upcoming.reduce(
+    (total, p) => total + Object.values(p.attendance || {}).filter((v) => v === 'sim').length, 0);
+  root.querySelector('[data-member-label]').textContent = club.members.length === 1 ? '1 no time' : `${club.members.length} no time`;
+  root.querySelector('[data-pelada-label]').textContent = upcoming.length === 1 ? '1 marcada' : `${upcoming.length} marcadas`;
   root.querySelector('[data-member-list]').innerHTML = club.members.map(memberRow).join('');
   root.querySelector('[data-pelada-list]').innerHTML = upcoming.length
     ? upcoming.map((p) => peladaCard(p, user.id, venueOf(p))).join('')
@@ -1927,6 +1973,7 @@ async function renderClub(root) {
   if (clubNameLabel) clubNameLabel.textContent = club.name;
 
   prefillClubForm(club);
+  renderClubChat(root, await venueService.clubChat(club.id), user.id);
   selectClubSection(clubSection);
   window.pqRefreshIcons?.(root);
 }

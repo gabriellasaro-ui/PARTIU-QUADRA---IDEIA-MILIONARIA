@@ -441,3 +441,14 @@ export const PELADAS = [
     attendance: { 'u-gabriel': 'sim' }
   }
 ];
+
+/* Conversa do clube — o mural onde a pelada e combinada. E o chat que saiu
+   da tela de jogo: la ele nao tinha proposito, aqui tem. */
+export const CLUB_CHAT = [
+  { clubId: 1, memberId: 'u-gabriel', name: 'Gabriel Lisboa', text: 'Fechou a quinta! Já reservei a Arena.', time: '3 dias atrás' },
+  { clubId: 1, memberId: 'u-rafael', name: 'Rafael Costa', text: 'Boa! Levo a churrasqueira depois do jogo.', time: '3 dias atrás' },
+  { clubId: 1, memberId: 'u-mariana', name: 'Mariana Alves', text: 'Chego 20h15, saio do trampo 19h30.', time: '2 dias atrás' },
+  { clubId: 1, memberId: 'u-joao', name: 'João Pedro', text: 'Tranquilo, a gente aquece antes.', time: '2 dias atrás' },
+  { clubId: 1, memberId: 'u-camila', name: 'Camila Rocha', text: 'Alguém pode levar colete claro e escuro?', time: '1 dia atrás' },
+  { clubId: 1, memberId: 'u-gabriel', name: 'Gabriel Lisboa', text: 'Levo eu. Confirmem presença aí, galera.', time: '1 dia atrás' }
+];
