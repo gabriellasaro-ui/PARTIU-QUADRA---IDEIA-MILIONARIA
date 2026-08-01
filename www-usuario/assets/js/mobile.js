@@ -560,6 +560,24 @@ async function renderMap(root, route) {
   setTimeout(() => activeMobileMap?.invalidateSize(), 50);
 }
 
+/* O indice sai da posicao da rolagem — assim arrastar, clicar num ponto e
+   navegar por teclado convergem para o mesmo estado, sem variavel a parte. */
+function bindHeroTrack(root, track, total) {
+  const dots = () => [...root.querySelectorAll('[data-gallery-index]')];
+  const counter = root.querySelector('[data-venue-photo-current]');
+  let last = -1;
+  const sync = () => {
+    const index = Math.min(total - 1, Math.max(0, Math.round(track.scrollLeft / (track.clientWidth || 1))));
+    if (index === last) return;
+    last = index;
+    if (counter) counter.textContent = String(index + 1);
+    dots().forEach((dot, i) => dot.classList.toggle('on', i === index));
+  };
+  // sync() ja sai cedo quando o indice nao mudou, entao nao precisa de rAF.
+  track.addEventListener('scroll', sync, { passive: true });
+  sync();
+}
+
 async function renderVenue(root, route) {
   const venue = await venueService.get(route.params.id);
   if (!venue) {
@@ -573,8 +591,10 @@ async function renderVenue(root, route) {
 
   const gallery = Array.isArray(venue.gallery) && venue.gallery.length ? venue.gallery : [venue.image];
   const amenities = [...new Set([...venue.tags, 'Bola inclusa', 'Wi-Fi no local'])];
-  root.querySelector('[data-venue-hero]').src = gallery[0];
-  root.querySelector('[data-venue-hero]').alt = venue.name;
+  const track = root.querySelector('[data-venue-track]');
+  track.innerHTML = gallery.map((photo, index) => `
+    <img src="${escapeHtml(photo)}" alt="${escapeHtml(venue.name)} — foto ${index + 1}" loading="${index ? 'lazy' : 'eager'}">`).join('');
+  bindHeroTrack(root, track, gallery.length);
   root.querySelector('[data-venue-distance]').textContent = `${formatDistance(venue.distance)} km`;
   root.querySelector('[data-venue-name]').textContent = venue.name;
   root.querySelector('[data-venue-meta]').textContent = `${displayText(venue.sport)} - ${displayText(venue.neighborhood)}`;
@@ -584,9 +604,6 @@ async function renderVenue(root, route) {
   root.querySelector('[data-venue-logo]').textContent = venueInitials(venue.name);
   root.querySelector('[data-venue-photo-count]').textContent = gallery.length;
   root.querySelector('[data-venue-photo-current]').textContent = '1';
-  root.querySelectorAll('[data-gallery-step]').forEach((button) => {
-    button.hidden = gallery.length < 2;
-  });
   root.querySelector('[data-venue-review-rating]').textContent = venue.rating;
   root.querySelector('[data-venue-review-count]').textContent = `${venue.reviews} avaliações verificadas`;
   root.querySelectorAll('.venue-review-stars .ic').forEach((star, index) => {
@@ -594,7 +611,7 @@ async function renderVenue(root, route) {
   });
   root.querySelector('[data-venue-gallery]').innerHTML = gallery.map((photo, index) => `
     <button type="button" class="venue-hero-dot ${index === 0 ? 'on' : ''}"
-            data-gallery-image="${escapeHtml(photo)}" aria-label="Ver foto ${index + 1} de ${gallery.length}"></button>`).join('');
+            data-gallery-index="${index}" aria-label="Ver foto ${index + 1} de ${gallery.length}"></button>`).join('');
   root.querySelector('[data-venue-amenities]').innerHTML = amenities.map((item) => `
     <div class="venue-amenity">
       <span>${icon(amenityIcon(item))}</span>
@@ -1685,6 +1702,15 @@ export function initMobileActions() {
       const currentIndex = Math.max(0, photos.findIndex((button) => button.classList.contains('on')));
       const nextIndex = (currentIndex + Number(galleryStep.dataset.galleryStep) + photos.length) % photos.length;
       photos[nextIndex].click();
+      return;
+    }
+
+    const galleryDot = event.target.closest('[data-gallery-index]');
+    if (galleryDot) {
+      const root = galleryDot.closest('[data-venue-page]');
+      const track = root?.querySelector('[data-venue-track]');
+      if (!track) return;
+      track.scrollTo({ left: track.clientWidth * Number(galleryDot.dataset.galleryIndex), behavior: 'smooth' });
       return;
     }
 

@@ -3469,11 +3469,16 @@ html[data-route="mapa"] .phone {
 
 .venue-rail {
   gap: 12px;
+  /* scroll-padding acompanha o padding: sem ele o encaixe cola o card na
+     borda, que era a sensacao de "encostando na lateral". */
   padding: 0 16px 6px;
+  scroll-padding-left: 16px;
 }
 
 .venue-rail .venue-card {
-  flex: 0 0 min(82vw, 318px);
+  /* 78vw deixa uma espiada folgada do proximo card em vez de corta-lo
+     rente a borda da tela. */
+  flex: 0 0 min(78vw, 300px);
   margin: 0;
   scroll-snap-align: start;
 }
@@ -3890,36 +3895,6 @@ html[data-route="mapa"] .phone {
   bottom: 14px;
   min-height: 34px;
   border-radius: 999px;
-}
-
-.venue-hero-step {
-  position: absolute;
-  z-index: 4;
-  top: 50%;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  transform: translateY(-50%);
-  border: 1px solid rgba(255, 255, 255, .5);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .92);
-  color: var(--pq-ink);
-  box-shadow: 0 5px 18px rgba(6, 18, 11, .16);
-}
-
-.venue-hero-step--previous {
-  left: 14px;
-}
-
-.venue-hero-step--next {
-  right: 14px;
-}
-
-.venue-hero-step .ic {
-  width: 18px;
-  height: 18px;
 }
 
 .venue-hero-photo-count {
@@ -5850,3 +5825,34 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 }
 
 .weekday:active { transform: translateY(1px); }
+
+/* ---------- galeria da arena: arrastavel ----------
+   Antes eram duas setas sobre a foto: ficavam no caminho do polegar e
+   escondiam parte da imagem. Arrastar e o gesto que a pessoa ja tenta. */
+.venue-hero-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.venue-hero-track::-webkit-scrollbar { display: none; }
+
+.venue-hero-track img {
+  width: 100%;
+  height: 100%;
+  flex: 0 0 100%;
+  object-fit: cover;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.venue-hero-track:focus-visible {
+  outline: 3px solid rgba(207, 255, 71, .9);
+  outline-offset: -3px;
+}

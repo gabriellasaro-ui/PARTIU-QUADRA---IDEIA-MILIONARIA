@@ -6,13 +6,9 @@
       <i class="ic" data-lucide="heart"></i>
     </button>
     <span class="pill tr venue-distance"><i class="ic" data-lucide="navigation"></i><span data-venue-distance></span></span>
-    <img data-venue-hero alt="">
-    <button class="venue-hero-step venue-hero-step--previous" type="button" data-gallery-step="-1" aria-label="Foto anterior">
-      <i class="ic" data-lucide="chevron-left"></i>
-    </button>
-    <button class="venue-hero-step venue-hero-step--next" type="button" data-gallery-step="1" aria-label="Próxima foto">
-      <i class="ic" data-lucide="chevron-right"></i>
-    </button>
+    <!-- Faixa rolavel com encaixe: arrastar e o gesto natural numa galeria.
+         As setas saiam do caminho do polegar e escondiam parte da foto. -->
+    <div class="venue-hero-track" data-venue-track tabindex="0" aria-label="Fotos da arena"></div>
     <span class="venue-hero-photo-count">
       <i class="ic" data-lucide="images"></i>
       <b data-venue-photo-current>1</b>/<span data-venue-photo-count></span>
