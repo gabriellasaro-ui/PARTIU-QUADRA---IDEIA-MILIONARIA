@@ -350,7 +350,7 @@ function routeQuery(route) {
 }
 
 async function renderHome(root) {
-  const [sports, venues] = await Promise.all([venueService.sports(), venueService.featured()]);
+  const [sports, venues] = await Promise.all([venueService.featuredSports(), venueService.featured()]);
   const greeting = root.querySelector('[data-home-greeting]');
   const chips = root.querySelector('[data-sport-chips]');
   const featured = root.querySelector('[data-featured-list]');
@@ -617,6 +617,9 @@ async function renderVenue(root, route) {
   const booking = root.querySelector('[data-booking]');
   booking.dataset.venueId = venue.id;
   booking.dataset.price = venue.price;
+  booking.dataset.priceMonthly = venue.priceMonthly || venue.price * 4;
+  booking.dataset.planKind = 'avulso';
+  booking.dataset.planWeekday = '3';
   booking.dataset.availability = JSON.stringify(availability);
   booking.dataset.dayIndex = '0';
   booking.dataset.duration = '1';
@@ -625,6 +628,17 @@ async function renderVenue(root, route) {
   booking.dataset.calendarMonth = calendarMonthValue(parseLocalDate(booking.dataset.date));
   renderBookingCalendar(root);
   renderBooking(root);
+}
+
+const WEEKDAY_NAMES = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+
+/* O mensalista cobra por mes (4 sessoes no mesmo dia e horario); o avulso,
+   por hora. A duracao multiplica os dois igual, entao o unico que muda e a
+   base — o resto do checkout segue identico. */
+function planPriceBase(venue, plan) {
+  return plan === 'mensalista'
+    ? Number(venue.priceMonthly || venue.price * 4)
+    : Number(venue.price);
 }
 
 function isPastSlot(hour, dateValue) {
@@ -656,7 +670,11 @@ function renderBooking(root) {
     }
     return true;
   };
-  const isPast = (hour) => isPastSlot(hour, booking.dataset.date);
+  // No mensalista o compromisso e semanal: "ja passou hoje" nao faz sentido —
+  // a primeira sessao cai no proximo dia da semana escolhido.
+  const isPast = (hour) => booking.dataset.planKind === 'mensalista'
+    ? false
+    : isPastSlot(hour, booking.dataset.date);
 
   if (selectedHour && (!canStartAt(Number(selectedHour.slice(0, 2))) || isPast(selectedHour))) {
     selectedHour = '';
@@ -695,16 +713,58 @@ function renderBooking(root) {
     button.setAttribute('aria-pressed', String(value === duration));
   });
 
-  const price = Number(booking.dataset.price || 0);
-  const { subtotal, serviceFee, total } = calculateCheckoutAmounts(price, duration);
+  const plan = booking.dataset.planKind === 'mensalista' ? 'mensalista' : 'avulso';
+  const isMensalista = plan === 'mensalista';
+  const weekday = Number(booking.dataset.planWeekday || 3);
+  const priceHour = Number(booking.dataset.price || 0);
+  const priceMonth = Number(booking.dataset.priceMonthly || priceHour * 4);
+  const { subtotal, serviceFee, total } = calculateCheckoutAmounts(
+    isMensalista ? priceMonth : priceHour, duration);
+
+  root.querySelectorAll('[data-plan]').forEach((button) => {
+    const on = button.dataset.plan === plan;
+    button.classList.toggle('on', on);
+    button.setAttribute('aria-pressed', String(on));
+  });
+  root.querySelectorAll('[data-weekday]').forEach((button) => {
+    button.classList.toggle('on', Number(button.dataset.weekday) === weekday);
+  });
+
+  const calendar = root.querySelector('[data-booking-calendar]');
+  const weekdayBox = root.querySelector('[data-weekday-choice]');
+  if (calendar) calendar.hidden = isMensalista;
+  if (weekdayBox) weekdayBox.hidden = !isMensalista;
+  const dayTitle = root.querySelector('[data-step-day-title]');
+  if (dayTitle) dayTitle.textContent = isMensalista ? 'Escolha o dia da semana' : 'Escolha o dia';
+
+  const avulsoLabel = root.querySelector('[data-plan-price-avulso]');
+  if (avulsoLabel) avulsoLabel.textContent = `${formatCurrency(priceHour)} /hora`;
+  const mensalLabel = root.querySelector('[data-plan-price-mensalista]');
+  if (mensalLabel) mensalLabel.textContent = `${formatCurrency(priceMonth)} /mês`;
+  const saving = root.querySelector('[data-plan-saving]');
+  if (saving) {
+    const economia = priceHour * 4 - priceMonth;
+    saving.textContent = economia > 0 ? `Economize ${formatCurrency(economia)}` : '';
+    saving.hidden = economia <= 0;
+  }
+  const planHelp = root.querySelector('[data-plan-help]');
+  if (planHelp) {
+    planHelp.textContent = isMensalista
+      ? 'A quadra fica reservada toda semana no mesmo horário, e você paga uma vez por mês.'
+      : 'Você reserva apenas esta partida. Pode virar mensalista depois.';
+  }
   const freeCount = availability.filter((slot) => canStartAt(Number(slot.hour.slice(0, 2))) && !isPast(slot.hour)).length;
   root.querySelector('[data-availability-copy]').textContent = freeCount === 1 ? '1 início livre' : `${freeCount} inícios livres`;
   root.querySelector('[data-duration-help]').textContent = duration === 1
     ? 'Ideal para um treino rápido. Escolha abaixo o melhor início.'
     : `Os horários abaixo já garantem ${duration} horas consecutivas de quadra.`;
-  root.querySelector('[data-bk-date]').textContent = bookingDateLabel(booking.dataset.date);
+  root.querySelector('[data-bk-date]').textContent = isMensalista
+    ? `Toda ${WEEKDAY_NAMES[weekday]}`
+    : bookingDateLabel(booking.dataset.date);
   root.querySelector('[data-bk-range]').textContent = selectedHour ? `${selectedHour} a ${addHours(selectedHour, duration)}` : 'Escolha um horário';
-  root.querySelector('[data-bk-hours]').textContent = selectedHour ? `(${duration}h)` : '';
+  root.querySelector('[data-bk-hours]').textContent = selectedHour
+    ? (isMensalista ? `(${duration}h por semana)` : `(${duration}h)`)
+    : '';
   root.querySelector('[data-bk-sub]').textContent = selectedHour ? formatCurrency(subtotal) : '-';
   const fee = root.querySelector('[data-bk-fee]');
   if (fee) fee.textContent = selectedHour ? formatCurrency(serviceFee) : '-';
@@ -717,8 +777,10 @@ function renderBooking(root) {
     const query = new URLSearchParams({
       date: booking.dataset.date || localDateValue(),
       hora: selectedHour,
-      dur: String(duration)
+      dur: String(duration),
+      plano: plan
     });
+    if (isMensalista) query.set('dia', String(weekday));
     cta.href = `#pagamento/${booking.dataset.venueId}?${query}`;
   } else {
     cta.removeAttribute('href');
@@ -732,11 +794,17 @@ async function bookingContext(route) {
   const hour = query.get('hora') || '19:00';
   const duration = Math.max(1, Math.min(3, Number(query.get('dur') || 1)));
   const date = query.get('date') || localDateValue();
-  const amounts = calculateCheckoutAmounts(venue.price, duration);
+  const plan = query.get('plano') === 'mensalista' ? 'mensalista' : 'avulso';
+  const weekday = Number(query.get('dia') || 3);
+  const amounts = calculateCheckoutAmounts(planPriceBase(venue, plan), duration);
   return {
     venue,
     date,
-    dateLabel: bookingDateLabel(date),
+    plan,
+    weekday,
+    dateLabel: plan === 'mensalista'
+      ? `Toda ${WEEKDAY_NAMES[weekday]}`
+      : bookingDateLabel(date),
     hour,
     duration,
     endHour: addHours(hour, duration),
@@ -792,8 +860,13 @@ async function renderPayment(root, route) {
   root.querySelector('[data-payment-meta]').textContent = `${displayText(venue.sport)} - ${displayText(venue.neighborhood)}`;
   root.querySelector('[data-payment-date]').textContent = dateLabel;
   root.querySelector('[data-payment-hour]').textContent = `${hour} a ${endHour}`;
-  root.querySelector('[data-payment-duration]').textContent = duration === 1 ? '1 hora' : `${duration} horas`;
-  root.querySelector('[data-payment-rent-label]').textContent = `Aluguel da quadra (${duration}h)`;
+  const isMensal = context.plan === 'mensalista';
+  root.querySelector('[data-payment-duration]').textContent = isMensal
+    ? `${duration === 1 ? '1 hora' : duration + ' horas'} por semana`
+    : (duration === 1 ? '1 hora' : `${duration} horas`);
+  root.querySelector('[data-payment-rent-label]').textContent = isMensal
+    ? `Mensalidade da quadra (${duration}h/semana)`
+    : `Aluguel da quadra (${duration}h)`;
   root.querySelector('[data-payment-rent]').textContent = formatCurrency(subtotal);
   root.querySelector('[data-payment-fee]').textContent = formatCurrency(serviceFee);
   root.querySelector('[data-payment-total]').textContent = formatCurrency(total);
@@ -809,6 +882,7 @@ async function renderPayment(root, route) {
     date,
     hora: hour,
     dur: String(duration),
+    plano: context.plan,
     deadline: String(Date.now() + APPROVAL_WINDOW_MS)
   });
   const requestedResult = routeQuery(route).get('resultado');
@@ -1557,6 +1631,24 @@ export function initMobileActions() {
       return;
     }
 
+    const plan = event.target.closest('[data-plan]');
+    if (plan) {
+      const root = document.querySelector('[data-route-view]');
+      const booking = root.querySelector('[data-booking]');
+      booking.dataset.planKind = plan.dataset.plan;
+      renderBooking(root);
+      window.pqRefreshIcons?.(root);
+      return;
+    }
+
+    const weekday = event.target.closest('[data-weekday]');
+    if (weekday) {
+      const root = document.querySelector('[data-route-view]');
+      root.querySelector('[data-booking]').dataset.planWeekday = weekday.dataset.weekday;
+      renderBooking(root);
+      return;
+    }
+
     const slot = event.target.closest('[data-slot-hour]');
     if (slot && !slot.disabled) {
       const root = slot.closest('[data-venue-page]');
@@ -1957,11 +2049,6 @@ async function renderClub(root) {
   root.querySelector('[data-club-city]').textContent = club.city;
   root.querySelector('[data-club-description]').textContent = club.description || '';
   root.querySelector('[data-club-avatar]').textContent = club.name.charAt(0).toUpperCase();
-  // A faixa de estatisticas mostra numero puro; o rotulo vem do HTML.
-  root.querySelector('[data-club-members-count]').textContent = club.members.length;
-  root.querySelector('[data-pelada-count]').textContent = upcoming.length;
-  root.querySelector('[data-club-going-count]').textContent = upcoming.reduce(
-    (total, p) => total + Object.values(p.attendance || {}).filter((v) => v === 'sim').length, 0);
   root.querySelector('[data-member-label]').textContent = club.members.length === 1 ? '1 no time' : `${club.members.length} no time`;
   root.querySelector('[data-pelada-label]').textContent = upcoming.length === 1 ? '1 marcada' : `${upcoming.length} marcadas`;
   root.querySelector('[data-member-list]').innerHTML = club.members.map(memberRow).join('');

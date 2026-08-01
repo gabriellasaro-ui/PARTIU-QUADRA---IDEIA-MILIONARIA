@@ -8,6 +8,7 @@ import {
   DEFAULT_AVAILABILITY,
   INITIAL_RESERVATIONS,
   SPORTS,
+  FEATURED_SPORTS,
   VENUES,
   WALLET,
   CLUBS,
@@ -45,6 +46,14 @@ export const venueService = {
       return data?.quadra || data || null;
     }
     return clone(VENUES.find((venue) => venue.id === Number(id)) || null);
+  },
+
+  async featuredSports() {
+    if (API_BASE_URL) {
+      const data = await api.get('/api/quadras/esportes?destaque=1');
+      return data?.esportes || FEATURED_SPORTS;
+    }
+    return FEATURED_SPORTS;
   },
 
   async sports() {

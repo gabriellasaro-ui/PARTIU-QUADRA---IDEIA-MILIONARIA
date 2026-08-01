@@ -55,14 +55,52 @@
     <header class="booking-intro">
       <span>Monte sua partida</span>
       <h2>Escolha quando jogar</h2>
-      <p>Selecione o dia, a duração e o horário de início da sua partida.</p>
+      <p>Comece decidindo se é um jogo avulso ou a sua pelada fixa da semana.</p>
     </header>
 
+    <!-- Passo 0: e a escolha que muda todo o resto do fluxo, entao vem antes
+         de tudo. No mensalista o calendario da lugar ao dia da semana. -->
     <section class="booking-step">
       <div class="booking-step__head">
         <span class="booking-step__number">1</span>
-        <div><small>Primeiro</small><h2>Escolha o dia</h2></div>
+        <div><small>Primeiro</small><h2>Como você quer jogar?</h2></div>
       </div>
+      <div class="plan-choice" data-plan-choice>
+        <button type="button" class="plan-option on" data-plan="avulso" aria-pressed="true">
+          <span class="plan-option__icon"><i class="ic" data-lucide="calendar-days"></i></span>
+          <strong>Avulso</strong>
+          <small>Uma partida só, no dia que você escolher</small>
+          <em data-plan-price-avulso></em>
+        </button>
+        <button type="button" class="plan-option" data-plan="mensalista" aria-pressed="false">
+          <span class="plan-option__icon"><i class="ic" data-lucide="repeat"></i></span>
+          <strong>Mensalista</strong>
+          <small>Todo mês, no mesmo dia e horário — a quadra fica sua</small>
+          <em data-plan-price-mensalista></em>
+          <span class="plan-option__tag" data-plan-saving></span>
+        </button>
+      </div>
+      <p class="duration-help" data-plan-help></p>
+    </section>
+
+    <section class="booking-step">
+      <div class="booking-step__head">
+        <span class="booking-step__number">2</span>
+        <div><small>Depois</small><h2 data-step-day-title>Escolha o dia</h2></div>
+      </div>
+
+      <!-- Mensalista: o compromisso e semanal, entao a escolha e o dia da
+           semana, nao uma data. -->
+      <div class="weekday-choice" data-weekday-choice hidden>
+        <button type="button" class="weekday" data-weekday="1">Seg</button>
+        <button type="button" class="weekday" data-weekday="2">Ter</button>
+        <button type="button" class="weekday on" data-weekday="3">Qua</button>
+        <button type="button" class="weekday" data-weekday="4">Qui</button>
+        <button type="button" class="weekday" data-weekday="5">Sex</button>
+        <button type="button" class="weekday" data-weekday="6">Sáb</button>
+        <button type="button" class="weekday" data-weekday="0">Dom</button>
+      </div>
+
       <div class="booking-calendar" data-booking-calendar>
         <div class="booking-calendar__head">
           <button type="button" class="calendar-nav" data-calendar-nav="-1" aria-label="Mes anterior">
@@ -82,7 +120,7 @@
 
     <section class="booking-step">
       <div class="booking-step__head">
-        <span class="booking-step__number">2</span>
+        <span class="booking-step__number">3</span>
         <div><small>Depois</small><h2>Defina a duração</h2></div>
       </div>
       <div class="dur-seg">
@@ -95,7 +133,7 @@
 
     <section class="booking-step">
       <div class="booking-step__head">
-        <span class="booking-step__number">3</span>
+        <span class="booking-step__number">4</span>
         <div><small>Por último</small><h2>Escolha o horário</h2></div>
         <span class="booking-step__status" data-availability-copy></span>
       </div>

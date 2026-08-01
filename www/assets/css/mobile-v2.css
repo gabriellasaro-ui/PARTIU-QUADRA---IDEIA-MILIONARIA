@@ -5738,3 +5738,115 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
 /* Na partida as abas moram no rodape. A fileira de pilulas do topo passa a
    ser so do desktop — o pc.html nao carrega este arquivo. */
 html[data-bottombar="game"] .game-tabs { display: none; }
+
+/* ---------- plano da reserva: avulso x mensalista ----------
+   E a primeira escolha do fluxo, entao pesa mais que os passos seguintes:
+   dois cartoes lado a lado em vez de chips. */
+.plan-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.plan-option {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 14px 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 20px;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plan-option.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-signal-soft);
+  box-shadow: 0 8px 20px rgba(7, 94, 58, .1);
+}
+
+.plan-option:active { transform: translateY(1px); }
+
+.plan-option__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--pq-surface-2, #f3f5f1);
+  color: var(--pq-brand-strong);
+}
+
+.plan-option.on .plan-option__icon {
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.plan-option__icon .ic { width: 18px; height: 18px; }
+
+.plan-option strong {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.plan-option small {
+  color: var(--pq-muted);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.plan-option em {
+  margin-top: 6px;
+  color: var(--pq-brand-deep);
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.plan-option__tag {
+  margin-top: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--pq-amber-soft, #ffedd5);
+  color: var(--pq-amber-strong, #9a3412);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.plan-option__tag[hidden] { display: none; }
+
+/* Dia da semana — o compromisso do mensalista e semanal, nao uma data */
+.weekday-choice {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weekday-choice[hidden] { display: none; }
+
+.weekday {
+  min-height: 46px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-panel);
+  color: var(--pq-ink-soft);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.weekday.on {
+  border-color: transparent;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.weekday:active { transform: translateY(1px); }

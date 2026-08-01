@@ -9,6 +9,16 @@ export const SPORTS = [
   'Futsal'
 ];
 
+/* A home mostra so os esportes mais jogados — o rail nao e um indice, e um
+   atalho. Beach Tennis e Basquete continuam em SPORTS e seguem achaveis por
+   "Ver todos" e pelos filtros de Explorar. */
+export const FEATURED_SPORTS = [
+  'Futebol Society',
+  'Futsal',
+  'Volei',
+  'Tenis'
+];
+
 export const VENUES = [
   {
     id: 1,
@@ -19,6 +29,7 @@ export const VENUES = [
     rating: 4.8,
     reviews: 214,
     price: 120,
+    priceMonthly: 408,
     image: 'https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80',
     gallery: [
       'https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=1200&q=82',
@@ -37,6 +48,7 @@ export const VENUES = [
     rating: 4.9,
     reviews: 388,
     price: 90,
+    priceMonthly: 306,
     image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=900&q=80',
     gallery: [
       'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=1200&q=82',
@@ -55,6 +67,7 @@ export const VENUES = [
     rating: 4.5,
     reviews: 97,
     price: 80,
+    priceMonthly: 272,
     image: 'https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=900&q=80',
     gallery: [
       'https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=1200&q=82',
@@ -73,6 +86,7 @@ export const VENUES = [
     rating: 4.7,
     reviews: 142,
     price: 70,
+    priceMonthly: 238,
     image: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=900&q=80',
     gallery: [
       'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=1200&q=82',
@@ -91,6 +105,7 @@ export const VENUES = [
     rating: 4.6,
     reviews: 73,
     price: 110,
+    priceMonthly: 374,
     image: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=900&q=80',
     gallery: [
       'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=1200&q=82',
@@ -109,6 +124,7 @@ export const VENUES = [
     rating: 4.4,
     reviews: 51,
     price: 75,
+    priceMonthly: 255,
     image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=900&q=80',
     gallery: [
       'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1200&q=82',
