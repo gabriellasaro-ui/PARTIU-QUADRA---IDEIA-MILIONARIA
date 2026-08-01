@@ -1221,3 +1221,224 @@ body.game-tv-open { overflow: hidden; }
   width: 100%;
   margin-top: 10px;
 }
+
+/* ── Chips (duracao da rodada, quantidade de times) ─────── */
+.game-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.game-chip {
+  min-width: 52px;
+  padding: 9px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.game-chip.is-on {
+  border-color: transparent;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.game-chip:active { transform: translateY(1px); }
+
+/* ── Controles do cronometro ────────────────────────────── */
+.game-clock-actions {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ── Teclado do placar ──────────────────────────────────── */
+.game-scorepad {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+  text-align: center;
+}
+
+.game-scorepad__side { min-width: 0; }
+
+.game-scorepad__name {
+  overflow: hidden;
+  color: var(--pq-muted);
+  font-size: 10.5px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-scorepad__value {
+  margin: 2px 0 10px;
+  font-size: 46px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.game-scorepad__value.team-a { color: var(--pq-brand-deep); }
+.game-scorepad__value.team-b { color: #8a6008; }
+
+.game-scorepad__btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* 46px de alvo: e para acertar de primeira com a mao suada, no meio do jogo */
+.game-scorepad__btn {
+  min-height: 46px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-surface-2, #f3f5f1);
+  color: var(--pq-ink);
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.game-scorepad__btn.is-plus {
+  border-color: transparent;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.game-scorepad__btn:active { transform: translateY(1px); }
+
+.game-scorepad > em {
+  color: var(--pq-muted);
+  font-size: 18px;
+  font-style: normal;
+}
+
+/* ── Nota de rodape (tempo de quadra) ───────────────────── */
+.game-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.game-note .ic { width: 13px; height: 13px; flex-shrink: 0; }
+.game-note b { color: var(--pq-ink); font-weight: 850; }
+
+/* ── Atalho para a aba de operacao ──────────────────────── */
+.game-jump {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  margin-top: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  text-decoration: none;
+}
+
+.game-jump__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.game-jump__icon .ic { width: 20px; height: 20px; }
+.game-jump > span:nth-child(2) { display: flex; min-width: 0; flex-direction: column; }
+.game-jump strong { font-size: 12.5px; font-weight: 900; }
+.game-jump small { margin-top: 2px; color: var(--pq-muted); font-size: 9.5px; }
+.game-jump > .ic { width: 18px; height: 18px; color: var(--pq-brand-strong); }
+
+/* ── Fila de times ──────────────────────────────────────── */
+.game-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-queue__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  border: 1px solid var(--pq-line);
+  border-left: 4px solid var(--pq-line-strong, #ccd5cb);
+  border-radius: 16px;
+  background: var(--pq-panel);
+}
+
+.game-queue__pos {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--pq-surface-2, #f3f5f1);
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.game-queue__info { display: flex; min-width: 0; flex-direction: column; }
+.game-queue__info strong { font-size: 12.5px; font-weight: 900; }
+
+.game-queue__info small {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-queue__next {
+  flex-shrink: 0;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-deep);
+  font-size: 8.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* ── Cores dos times (ate 6) — todas ja existentes na paleta ── */
+[data-team-accent="0"] { --team-color: var(--pq-brand); }
+[data-team-accent="1"] { --team-color: var(--pq-gold, #e4a11b); }
+[data-team-accent="2"] { --team-color: var(--pq-blue, #2563eb); }
+[data-team-accent="3"] { --team-color: var(--pq-rose, #e85d75); }
+[data-team-accent="4"] { --team-color: var(--pq-brand-deep); }
+[data-team-accent="5"] { --team-color: var(--pq-ink-soft, #315742); }
+
+.game-team-card__header[data-team-accent] {
+  border-bottom-color: var(--team-color);
+  color: var(--team-color);
+}
+
+.game-queue__item[data-team-accent] { border-left-color: var(--team-color); }

@@ -134,16 +134,14 @@
           </div>
         </div>
 
-        <div class="game-score-controls">
-          <button class="game-score-btn game-score-btn--a" data-team="A" type="button">
-            <b>+1</b>
-            <small id="teamAShort" data-team-label="A">Time A</small>
-          </button>
-          <button class="game-score-btn game-score-btn--b" data-team="B" type="button">
-            <b>+1</b>
-            <small id="teamBShort" data-team-label="B">Time B</small>
-          </button>
-        </div>
+        <a class="game-jump" href="#game" data-goto-tab="cronometro">
+          <span class="game-jump__icon"><i class="ic" data-lucide="timer"></i></span>
+          <span>
+            <strong>Operar a partida</strong>
+            <small>Cronômetro, placar e rodadas</small>
+          </span>
+          <i class="ic" data-lucide="chevron-right"></i>
+        </a>
 
         <div class="game-section-title">
           Eventos da partida
@@ -209,37 +207,95 @@
       </div>
     </section>
 
-    <!-- ═════════ Aba: Cronômetro ═════════ -->
+    <!-- ═════════ Aba: Cronômetro — painel de operação da partida ═════════ -->
     <section class="game-tabpanel" id="gameTabCronometro" role="tabpanel"
              aria-labelledby="gameTabBtnCronometro" data-game-panel="cronometro" hidden>
       <div class="game-bigclock">
-        <div class="game-bigclock__label" data-game-clock-label>Sua partida começa em</div>
+        <div class="game-bigclock__label" data-game-clock-label>Tempo de jogo</div>
         <div class="game-bigclock__value" data-game-countdown data-game-timer>00:00</div>
-        <div class="game-bigclock__unit" data-game-countdown-unit>minutos</div>
+        <div class="game-bigclock__unit"><span data-round-label>Rodada 1</span></div>
       </div>
 
-      <!-- Placar so faz sentido em campo; escondido pelo data-phase do .game-page -->
-      <div class="game-clock-score">
-        <div class="game-clock-score__team">
-          <span data-team-label="A">Time A</span>
-          <b class="team-a" data-team-score="A">0</b>
+      <div class="game-clock-actions">
+        <button class="game-btn game-btn--primary" type="button" data-round-toggle>
+          <i class="ic" data-lucide="play"></i>
+          <span data-round-toggle-label>Iniciar</span>
+        </button>
+        <button class="game-btn game-btn--outline" type="button" data-round-reset>
+          <i class="ic" data-lucide="rotate-ccw"></i>
+          Zerar
+        </button>
+      </div>
+
+      <div class="game-section-title">Tempo da rodada</div>
+      <div class="game-chips" data-round-durations>
+        <button class="game-chip" type="button" data-round-duration="5">5 min</button>
+        <button class="game-chip" type="button" data-round-duration="7">7 min</button>
+        <button class="game-chip is-on" type="button" data-round-duration="10">10 min</button>
+        <button class="game-chip" type="button" data-round-duration="15">15 min</button>
+        <button class="game-chip" type="button" data-round-duration="20">20 min</button>
+      </div>
+
+      <div class="game-section-title">Placar</div>
+      <div class="game-scorepad">
+        <div class="game-scorepad__side">
+          <div class="game-scorepad__name" data-team-label="A">Time A</div>
+          <div class="game-scorepad__value team-a" data-team-score="A">0</div>
+          <div class="game-scorepad__btns">
+            <button class="game-scorepad__btn" type="button" data-score-step="A:-1" aria-label="Tirar um gol do time A">−</button>
+            <button class="game-scorepad__btn is-plus" type="button" data-score-step="A:1" aria-label="Somar um gol ao time A">+</button>
+          </div>
         </div>
         <em>×</em>
-        <div class="game-clock-score__team">
-          <span data-team-label="B">Time B</span>
-          <b class="team-b" data-team-score="B">0</b>
+        <div class="game-scorepad__side">
+          <div class="game-scorepad__name" data-team-label="B">Time B</div>
+          <div class="game-scorepad__value team-b" data-team-score="B">0</div>
+          <div class="game-scorepad__btns">
+            <button class="game-scorepad__btn" type="button" data-score-step="B:-1" aria-label="Tirar um gol do time B">−</button>
+            <button class="game-scorepad__btn is-plus" type="button" data-score-step="B:1" aria-label="Somar um gol ao time B">+</button>
+          </div>
         </div>
       </div>
 
-      <button class="game-btn game-btn--primary game-tv-open" id="gameTvBtn" type="button">
-        <i class="ic" data-lucide="maximize"></i>
-        Modo placar (tela cheia)
-      </button>
+      <div class="game-actions">
+        <button class="game-btn game-btn--outline" type="button" data-round-end>
+          <i class="ic" data-lucide="flag"></i>
+          Encerrar rodada
+        </button>
+        <button class="game-btn game-btn--primary game-tv-open" id="gameTvBtn" type="button">
+          <i class="ic" data-lucide="maximize"></i>
+          Modo placar
+        </button>
+      </div>
+
+      <p class="game-note">
+        <i class="ic" data-lucide="clock"></i>
+        Quadra reservada até <b id="gameVenueEnd">--:--</b> · restam <b data-venue-remaining>--</b>
+      </p>
     </section>
 
     <!-- ═════════ Aba: Times ═════════ -->
     <section class="game-tabpanel" id="gameTabTimes" role="tabpanel"
              aria-labelledby="gameTabBtnTimes" data-game-panel="times" hidden>
+      <div class="game-section-title">Quantos times</div>
+      <div class="game-chips" data-team-counts>
+        <button class="game-chip is-on" type="button" data-team-count="2">2</button>
+        <button class="game-chip" type="button" data-team-count="3">3</button>
+        <button class="game-chip" type="button" data-team-count="4">4</button>
+        <button class="game-chip" type="button" data-team-count="5">5</button>
+        <button class="game-chip" type="button" data-team-count="6">6</button>
+      </div>
+
+      <button class="game-shuffle" id="gameShuffleBtn" type="button">
+        <span class="game-shuffle__icon"><i class="ic" data-lucide="shuffle"></i></span>
+        <span>
+          <strong>Sortear times</strong>
+          <small>Equilibrado por nível técnico</small>
+        </span>
+        <i class="ic" data-lucide="chevron-right"></i>
+      </button>
+
+      <div class="game-section-title">Em quadra</div>
       <div class="game-teams" id="gameTeamsDisplay">
         <div class="game-team-card">
           <div class="game-team-card__header team-a" id="teamACard" data-team-label="A">Time A</div>
@@ -251,14 +307,13 @@
         </div>
       </div>
 
-      <button class="game-shuffle" id="gameShuffleBtn" type="button">
-        <span class="game-shuffle__icon"><i class="ic" data-lucide="shuffle"></i></span>
-        <span>
-          <strong>Sortear times</strong>
-          <small>Equilibrado por nível técnico</small>
-        </span>
-        <i class="ic" data-lucide="chevron-right"></i>
-      </button>
+      <div data-queue-block hidden>
+        <div class="game-section-title">
+          Na fila
+          <span data-queue-count></span>
+        </div>
+        <div class="game-queue" data-queue-list></div>
+      </div>
     </section>
   </div>
 

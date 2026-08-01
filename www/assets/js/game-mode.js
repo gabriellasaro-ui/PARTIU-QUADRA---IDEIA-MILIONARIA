@@ -1,4 +1,5 @@
 import venueService from '../../services/venues.js';
+import storage from '../../storage/storage.js';
 import { qsa } from '../../utils/helpers.js';
 
 let match = null;
@@ -57,13 +58,35 @@ function teamListHtml(players) {
   ).join('');
 }
 
-function renderTeams(teams) {
+function renderTeams() {
   const empty = '<div class="game-team-card__empty">Aguardando sorteio...</div>';
   const a = $id('teamAPlayers');
   const b = $id('teamBPlayers');
-  if (!a || !b) return;
-  a.innerHTML = teams ? teamListHtml(teams.teamA) : empty;
-  b.innerHTML = teams ? teamListHtml(teams.teamB) : empty;
+  if (a) a.innerHTML = teamOnSide('A') ? teamListHtml(teamOnSide('A').players) : empty;
+  if (b) b.innerHTML = teamOnSide('B') ? teamListHtml(teamOnSide('B').players) : empty;
+  renderQueue();
+}
+
+function renderQueue() {
+  const block = document.querySelector('[data-queue-block]');
+  const list = document.querySelector('[data-queue-list]');
+  if (!block || !list) return;
+  const queue = match?.teams?.queue || [];
+  block.hidden = queue.length === 0;
+  document.querySelector('[data-queue-count]') &&
+    (document.querySelector('[data-queue-count]').textContent =
+      queue.length === 1 ? '1 time' : queue.length + ' times');
+  list.innerHTML = queue.map((id, i) => {
+    const team = teamById(id);
+    if (!team) return '';
+    const badge = i === 0 ? '<span class="game-queue__next">Próximo</span>' : '';
+    const names = team.players.map((p) => p.name.split(' ')[0]).join(', ');
+    return '<div class="game-queue__item" data-team-accent="' + team.accent + '">' +
+      '<span class="game-queue__pos">' + (i + 1) + '</span>' +
+      '<span class="game-queue__info"><strong>' + team.name + '</strong><small>' + names + '</small></span>' +
+      badge +
+    '</div>';
+  }).join('');
 }
 
 function renderEvents(events) {
@@ -111,7 +134,7 @@ function updatePreGame(m) {
   $id('gamePendingCount').textContent = `${m.players.pending.length} pendentes`;
   renderPlayers(m.players.confirmed, $id('gameConfirmedList'), true);
   renderPlayers(m.players.pending, $id('gamePendingList'), false);
-  renderTeams(m.teams);
+  renderTeams();
   setAll('[data-game-clock-label]', 'Sua partida começa em');
 
   if (countdownInterval) clearInterval(countdownInterval);
@@ -157,35 +180,35 @@ function updateDuringGame(m) {
   setAll('[data-team-score="A"]', m.score.teamA);
   setAll('[data-team-score="B"]', m.score.teamB);
 
-  renderTeams(m.teams);
+  renderTeams();
   renderEvents(m.goals);
 
+  renderScore();
+  renderRounds();
+  renderRoundClock();
+  renderRoundControls();
+  syncTeamLabels();
+
   if (gameTimerInterval) clearInterval(gameTimerInterval);
-  updateGameTimer(m);
-  gameTimerInterval = setInterval(() => updateGameTimer(m), 1000);
+  tickDuringGame(m);
+  gameTimerInterval = setInterval(() => tickDuringGame(m), 500);
 }
 
-function updateGameTimer(m) {
-  const now = Date.now();
-  if (now >= m.endTimestamp) {
-    setAll('[data-game-timer]', '00:00');
+/* Dois relogios com papeis distintos: o da rodada (controlavel, e o que
+   aparece grande) e o da reserva, que so vira nota de rodape e decide
+   quando a partida acaba de vez. */
+function tickDuringGame(m) {
+  renderRoundClock();
+  const left = m.endTimestamp - Date.now();
+  if (left <= 0) {
     match.phase = 'post-game';
     switchPhase('post-game');
     return;
   }
-  const elapsed = Math.floor((now - m.startTimestamp) / 1000);
-  m.elapsedSeconds = elapsed;
-  const total = m.duration * 60;
-  const remaining = Math.max(0, total - elapsed);
-  const min = Math.floor(remaining / 60);
-  const sec = remaining % 60;
-  setAll('[data-game-timer]', `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`);
-  // Ultimos 5 minutos: destaca o cronometro. So no placar verde — na aba
-  // Cronometro o fundo e claro, entao la o realce vem do CSS.
-  const warn = remaining <= 300 && remaining > 0;
-  const board = $id('gameTimer');
-  if (board) board.style.color = warn ? '#ffd88a' : '';
-  $id('gameScreen')?.classList.toggle('is-ending', warn);
+  const min = Math.floor(left / 60000);
+  setAll('[data-venue-remaining]', min >= 60
+    ? Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0')
+    : min + ' min');
 }
 
 function updatePostGame(m) {
@@ -201,9 +224,9 @@ function updatePostGame(m) {
   $id('gameFinalScoreB').textContent = m.score.teamB;
 
   if (m.score.teamA > m.score.teamB) {
-    $id('gameResultWinner').textContent = `${m.teams?.teamAName || 'Time A'} venceu!`;
+    $id('gameResultWinner').textContent = `${teamNameOnSide('A')} venceu!`;
   } else if (m.score.teamB > m.score.teamA) {
-    $id('gameResultWinner').textContent = `${m.teams?.teamBName || 'Time B'} venceu!`;
+    $id('gameResultWinner').textContent = `${teamNameOnSide('B')} venceu!`;
   } else {
     $id('gameResultWinner').textContent = 'Empate!';
   }
@@ -241,6 +264,59 @@ function switchPhase(phase) {
   else updatePreGame(match);
 }
 
+/* ═══════════════ Persistencia ═══════════════
+   Sem isto, sair de #game e voltar apagava o sorteio e o placar — o
+   getActiveMatch() do mock reclona a semente a cada chamada e todo metodo de
+   escrita e um no-op {ok:true}.
+
+   A chave inclui startTimestamp de proposito: demoMatchOffsetMinutes()
+   recalcula os timestamps por query string, entao ?partida=aovivo e
+   ?partida=fim sao partidas diferentes — sem isso o placar de um demo
+   vazaria para o outro. */
+function matchStateKey() {
+  return match ? `${match.id}:${match.startTimestamp}` : null;
+}
+
+function saveMatchState() {
+  const key = matchStateKey();
+  if (!key) return;
+  storage.set('match_state', {
+    key,
+    teams: match.teams,
+    score: match.score,
+    goals: match.goals,
+    rounds: match.rounds,
+    roundNumber: match.roundNumber,
+    round: match.round
+  });
+}
+
+function restoreMatchState() {
+  const key = matchStateKey();
+  if (!key) return;
+  const saved = storage.get('match_state', null);
+  if (!saved || saved.key !== key) return;
+  match.teams = normalizeTeams(saved.teams);
+  match.score = saved.score || match.score;
+  match.goals = saved.goals || match.goals;
+  match.rounds = saved.rounds || [];
+  match.roundNumber = saved.roundNumber || 1;
+  match.round = saved.round || match.round;
+  // Um cronometro que ficou "rodando" enquanto o app estava fechado
+  // contaria o tempo parado — retoma pausado, com o acumulado certo.
+  if (match.round?.running) {
+    match.round.elapsedMs += Date.now() - (match.round.startedAt || Date.now());
+    match.round.startedAt = null;
+    match.round.running = false;
+  }
+}
+
+export function clearMatchState() {
+  storage.remove('match_state');
+}
+
+const TEAM_ACCENTS = 6;
+
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -249,64 +325,282 @@ function shuffleArray(arr) {
   return arr;
 }
 
+/* ═══════════════ Times ═══════════════
+   match.score continua {teamA, teamB} de proposito: o app inteiro fala
+   "lado A / lado B" (data-team-score, .team-a, buildGameCard na home).
+   O que muda e QUEM ocupa cada lado — onCourt. Assim mobile.js nao muda. */
+
+function normalizeTeams(raw) {
+  if (!raw) return null;
+  if (Array.isArray(raw.list)) return raw;
+  if (raw.teamA || raw.teamB) {
+    return {
+      version: 2,
+      rule: 'winner-stays',
+      list: [
+        { id: 't1', name: raw.teamAName || 'Time 1', accent: 0, players: raw.teamA || [] },
+        { id: 't2', name: raw.teamBName || 'Time 2', accent: 1, players: raw.teamB || [] }
+      ],
+      onCourt: { A: 't1', B: 't2' },
+      queue: []
+    };
+  }
+  return null;
+}
+
+function teamById(id) {
+  return match?.teams?.list.find((t) => t.id === id) || null;
+}
+
+function teamOnSide(side) {
+  return teamById(match?.teams?.onCourt?.[side]);
+}
+
+function teamNameOnSide(side) {
+  return teamOnSide(side)?.name || (side === 'A' ? 'Time A' : 'Time B');
+}
+
+function syncTeamLabels() {
+  setAll('[data-team-label="A"]', teamNameOnSide('A'));
+  setAll('[data-team-label="B"]', teamNameOnSide('B'));
+  const accentA = teamOnSide('A')?.accent ?? 0;
+  const accentB = teamOnSide('B')?.accent ?? 1;
+  const cardA = $id('teamACard');
+  const cardB = $id('teamBCard');
+  if (cardA) cardA.dataset.teamAccent = accentA;
+  if (cardB) cardB.dataset.teamAccent = accentB;
+}
+
+/* Serpentina: para 2 times reproduz a distribuicao anterior (0->A, 1->B,
+   2->B, 3->A), entao o caso padrao nao regride. */
+function snakeDraft(sorted, teamCount) {
+  const buckets = Array.from({ length: teamCount }, () => []);
+  sorted.forEach((player, i) => {
+    const round = Math.floor(i / teamCount);
+    const pos = i % teamCount;
+    buckets[round % 2 === 0 ? pos : teamCount - 1 - pos].push(player);
+  });
+  return buckets;
+}
+
+function selectedTeamCount() {
+  const on = document.querySelector('[data-team-count].is-on');
+  return Math.min(6, Math.max(2, Number(on?.dataset.teamCount) || 2));
+}
+
 function shuffleTeams() {
   if (!match) return;
-  const players = [...match.players.confirmed];
-  if (players.length < 2) {
-    window.pqToast?.('Confirme pelo menos 2 jogadores para sortear');
+  const count = selectedTeamCount();
+  const players = [...(match.players?.confirmed || [])];
+  if (players.length < count) {
+    window.pqToast?.('Confirme pelo menos ' + count + ' jogadores para ' + count + ' times');
     return;
   }
-  // Embaralha e distribui em serpentina por nivel, para os times sairem equilibrados.
   const sorted = shuffleArray(players).sort((a, b) => b.rating - a.rating);
-  const teamA = [];
-  const teamB = [];
-  sorted.forEach((player, index) => {
-    const toA = index % 4 === 0 || index % 4 === 3;
-    (toA ? teamA : teamB).push(player);
-  });
-  const teamAName = 'Time A';
-  const teamBName = 'Time B';
-  match.teams = { teamA, teamB, teamAName, teamBName };
-  renderTeams(match.teams);
+  const list = snakeDraft(sorted, count).map((squad, i) => ({
+    id: 't' + (i + 1),
+    name: 'Time ' + (i + 1),
+    accent: i % TEAM_ACCENTS,
+    players: squad
+  }));
+
+  match.teams = {
+    version: 2,
+    rule: 'winner-stays',
+    list,
+    onCourt: { A: list[0].id, B: list[1].id },
+    queue: list.slice(2).map((t) => t.id)
+  };
+  match.score = { teamA: 0, teamB: 0 };
+  match.roundNumber = 1;
+  match.rounds = [];
+  resetRound({ silent: true });
+
+  renderTeams();
+  syncTeamLabels();
+  renderScore();
+  renderRounds();
   venueService.setMatchTeams?.(match.id, match.teams);
-  setAll('[data-team-label="A"]', teamAName);
-  setAll('[data-team-label="B"]', teamBName);
-  window.pqToast?.('Times sorteados!');
+  saveMatchState();
+  window.pqToast?.(count === 2 ? 'Times sorteados!' : count + ' times sorteados!');
 }
 
-function addGoal(team) {
-  if (!match || match.phase !== 'during-game') return;
-  match.score[`team${team}`]++;
-  const scorer = prompt(`Quem marcou o gol? (Time ${team})`);
-  const assist = prompt(`Assistência de (opcional):`);
-  const goal = {
-    type: 'goal',
-    team,
-    scorer: scorer || 'Desconhecido',
-    assist: assist || null,
-    text: `${scorer || 'Alguém'} marcou para o ${team === 'A' ? (match.teams?.teamAName || 'Time A') : (match.teams?.teamBName || 'Time B')}${assist ? ` (assist: ${assist})` : ''}`
-  };
-  match.goals.push(goal);
-  setAll('[data-team-score="A"]', match.score.teamA);
-  setAll('[data-team-score="B"]', match.score.teamB);
-  renderEvents(match.goals);
+/* Invariante que dispensa contador de sequencia: o lado A e sempre quem esta
+   em quadra ha mais tempo. Por isso, no empate, quem sai e o A. */
+function endRound() {
+  if (!match?.teams) {
+    window.pqToast?.('Sorteie os times primeiro');
+    return;
+  }
+  const { A, B } = match.teams.onCourt;
+  const a = match.score.teamA;
+  const b = match.score.teamB;
+  const winner = a > b ? A : (b > a ? B : null);
+
+  match.rounds = match.rounds || [];
+  match.rounds.push({
+    number: match.roundNumber || 1,
+    a: A,
+    b: B,
+    score: { a, b },
+    winner,
+    endedAt: Date.now()
+  });
+  match.roundNumber = (match.roundNumber || 1) + 1;
+  match.score = { teamA: 0, teamB: 0 };
+
+  const queue = match.teams.queue;
+  if (queue.length) {
+    const stays = winner || B;
+    const leaves = stays === A ? B : A;
+    const next = queue.shift();
+    queue.push(leaves);
+    match.teams.onCourt = { A: stays, B: next };
+    window.pqToast?.(winner
+      ? teamById(winner).name + ' fica em quadra'
+      : 'Empate — ' + teamById(leaves).name + ' sai');
+  } else {
+    window.pqToast?.('Rodada encerrada');
+  }
+
+  resetRound({ silent: true });
+  renderTeams();
+  syncTeamLabels();
+  renderScore();
+  renderRounds();
+  saveMatchState();
 }
 
-function addCard(type) {
-  if (!match || match.phase !== 'during-game') return;
-  const player = prompt(`Jogador que recebeu o cartão ${type}:`);
-  if (!player) return;
-  const team = prompt('Time (A ou B):').toUpperCase();
-  if (team !== 'A' && team !== 'B') return;
-  const card = {
-    type,
-    player,
-    team,
-    text: `🟨 ${player} (${team === 'A' ? (match.teams?.teamAName || 'Time A') : (match.teams?.teamBName || 'Time B')})`
-  };
-  if (type === 'red') card.text = `🟥 ${player} (${team})`;
-  match.goals.push(card);
+function stepScore(side, delta) {
+  if (!match) return;
+  const key = 'team' + side;
+  const next = Math.max(0, (match.score[key] || 0) + delta);
+  if (next === match.score[key]) return;
+  match.score[key] = next;
+  match.goals = match.goals || [];
+  if (delta > 0) {
+    match.goals.push({
+      type: 'goal',
+      team: side,
+      text: 'Gol do ' + teamNameOnSide(side) + ' · rodada ' + (match.roundNumber || 1)
+    });
+  } else {
+    // desfaz o ultimo gol daquele lado (correcao de toque errado)
+    const back = [...match.goals].reverse().findIndex((g) => g.type === 'goal' && g.team === side);
+    if (back >= 0) match.goals.splice(match.goals.length - 1 - back, 1);
+  }
+  renderScore();
   renderEvents(match.goals);
+  saveMatchState();
+}
+
+function renderScore() {
+  setAll('[data-team-score="A"]', match?.score?.teamA ?? 0);
+  setAll('[data-team-score="B"]', match?.score?.teamB ?? 0);
+}
+
+function renderRounds() {
+  setAll('[data-round-label]', 'Rodada ' + (match?.roundNumber || 1));
+}
+
+/* ═══════════════ Cronometro da rodada ═══════════════
+   Independente do relogio da reserva: a pessoa define a duracao, inicia,
+   pausa e zera. O tempo de quadra vira nota de rodape. */
+
+function roundState() {
+  if (!match.round) {
+    match.round = { durationMin: 10, elapsedMs: 0, startedAt: null, running: false };
+  }
+  return match.round;
+}
+
+function roundRemainingMs() {
+  const r = roundState();
+  const live = r.running && r.startedAt ? Date.now() - r.startedAt : 0;
+  return Math.max(0, r.durationMin * 60000 - (r.elapsedMs + live));
+}
+
+function formatMs(ms) {
+  const total = Math.ceil(ms / 1000);
+  const min = Math.floor(total / 60);
+  const sec = total % 60;
+  return String(min).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+
+function renderRoundClock() {
+  if (!match) return;
+  const remaining = roundRemainingMs();
+  setAll('[data-game-timer]', formatMs(remaining));
+  setAll('[data-game-countdown]', formatMs(remaining));
+  $id('gameScreen')?.classList.toggle('is-ending', remaining <= 60000 && remaining > 0);
+  if (remaining <= 0 && roundState().running) {
+    pauseRound();
+    window.pqToast?.('Fim do tempo!');
+    navigator.vibrate?.([200, 100, 200]);
+  }
+}
+
+function renderRoundControls() {
+  const r = roundState();
+  setAll('[data-round-toggle-label]', r.running ? 'Pausar' : (r.elapsedMs > 0 ? 'Retomar' : 'Iniciar'));
+  const toggle = document.querySelector('[data-round-toggle]');
+  const icon = toggle?.querySelector('.ic');
+  if (icon) {
+    icon.setAttribute('data-lucide', r.running ? 'pause' : 'play');
+    window.pqRefreshIcons?.(toggle);
+  }
+  qsa('[data-round-duration]').forEach((chip) => {
+    chip.classList.toggle('is-on', Number(chip.dataset.roundDuration) === r.durationMin);
+  });
+}
+
+function startRound() {
+  const r = roundState();
+  if (r.running) return;
+  if (roundRemainingMs() <= 0) r.elapsedMs = 0;
+  r.startedAt = Date.now();
+  r.running = true;
+  renderRoundControls();
+  saveMatchState();
+}
+
+function pauseRound() {
+  const r = roundState();
+  if (!r.running) return;
+  r.elapsedMs += Date.now() - (r.startedAt || Date.now());
+  r.startedAt = null;
+  r.running = false;
+  renderRoundControls();
+  saveMatchState();
+}
+
+function toggleRound() {
+  if (roundState().running) pauseRound();
+  else startRound();
+}
+
+function resetRound(opts) {
+  const r = roundState();
+  r.elapsedMs = 0;
+  r.startedAt = null;
+  r.running = false;
+  renderRoundClock();
+  renderRoundControls();
+  if (!opts || !opts.silent) {
+    window.pqToast?.('Cronometro zerado');
+    saveMatchState();
+  }
+}
+
+function setRoundDuration(min) {
+  const r = roundState();
+  r.durationMin = Math.min(60, Math.max(1, Number(min) || 10));
+  r.elapsedMs = 0;
+  r.startedAt = null;
+  r.running = false;
+  renderRoundClock();
+  renderRoundControls();
+  saveMatchState();
 }
 
 function endMatch() {
@@ -388,8 +682,13 @@ export async function loadGame(matchId) {
     $id('gameTime').textContent = `${match.date} às ${match.startTime}`;
     $id('gameDuration').textContent = `${match.duration} min`;
     $id('gameOrganizer').textContent = match.organizer.name;
-    setAll('[data-team-label="A"]', match.teams?.teamAName || 'Time A');
-    setAll('[data-team-label="B"]', match.teams?.teamBName || 'Time B');
+    const endEl = $id('gameVenueEnd');
+    if (endEl) endEl.textContent = match.endTime || '--:--';
+
+    match.teams = normalizeTeams(match.teams);
+    restoreMatchState();
+    syncTeamLabels();
+    renderRounds();
 
     if (match.phase === 'during-game') updateDuringGame(match);
     else if (match.phase === 'post-game') updatePostGame(match);
@@ -446,8 +745,30 @@ function bindEvents() {
     }
   });
 
-  qsa('.game-score-btn').forEach(btn => {
-    btn.addEventListener('click', () => addGoal(btn.dataset.team));
+  qsa('[data-score-step]').forEach((btn) => {
+    const [side, delta] = btn.dataset.scoreStep.split(':');
+    btn.addEventListener('click', () => stepScore(side, Number(delta)));
+  });
+
+  qsa('[data-round-toggle]').forEach((btn) => btn.addEventListener('click', toggleRound));
+  qsa('[data-round-reset]').forEach((btn) => btn.addEventListener('click', () => resetRound()));
+  qsa('[data-round-end]').forEach((btn) => btn.addEventListener('click', endRound));
+
+  qsa('[data-round-duration]').forEach((chip) => {
+    chip.addEventListener('click', () => setRoundDuration(chip.dataset.roundDuration));
+  });
+
+  qsa('[data-team-count]').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      qsa('[data-team-count]').forEach((c) => c.classList.toggle('is-on', c === chip));
+    });
+  });
+
+  qsa('[data-goto-tab]').forEach((el) => {
+    el.addEventListener('click', (event) => {
+      event.preventDefault();
+      selectGameTab(el.dataset.gotoTab);
+    });
   });
 
   $('gameShuffleBtn')?.addEventListener('click', shuffleTeams);
