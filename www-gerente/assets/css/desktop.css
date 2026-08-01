@@ -3644,3 +3644,245 @@ html[data-player-desktop] .desktop-booking-aside .bc-note small {
   .chat:not(.has-active) .chat-list { border-right: 0; }
   .chat-mobile-back { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--bg); color: var(--green-ink); }
 }
+
+/* ---------- quadras da arena: precos e editor ---------- */
+.qcard-prices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0 12px;
+  padding: 12px;
+  border: 1px solid var(--pq-line, #dce9df);
+  border-radius: 14px;
+  background: #f7faf8;
+}
+
+.qcard-prices small {
+  display: block;
+  color: #6b7f72;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.qcard-prices strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.qcard-prices strong span {
+  color: #6b7f72;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.qcard-prices em {
+  display: block;
+  margin-top: 2px;
+  color: #0c8b52;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.field-block {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field-block > span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.field-block input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--pq-line, #dce9df);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.field-block small {
+  display: block;
+  margin-top: 5px;
+  color: #6b7f72;
+  font-size: 11px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* ---------- mensalistas na visao da arena ---------- */
+.mensal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.mensal-card {
+  padding: 16px;
+  border: 1px solid var(--pq-line, #dce9df);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.mensal-card__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mensal-card__top > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.mensal-card__top strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.mensal-card__top small {
+  display: block;
+  color: #6b7f72;
+  font-size: 11.5px;
+}
+
+.mensal-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pq-line, #dce9df);
+}
+
+.mensal-card__grid small {
+  display: block;
+  color: #6b7f72;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.mensal-card__grid strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+/* ---------- dashboard: classes que nunca tiveram estilo ----------
+   O markup do dashboard usava dashboard-hero, overview-* e ops-* desde o
+   inicio, mas nenhuma delas existia no CSS. O resultado era a "Prioridades"
+   com rotulo, descricao e numero grudados numa linha so, e o hero sem
+   respiro. Nao havia nada de errado com o HTML — faltava a folha. */
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.overview-panel {
+  padding: 26px;
+  border: 1px solid var(--pq-line, #dce9df);
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--pq-brand-deep, #075e3a), var(--pq-brand-strong, #0c8b52));
+  color: #fff;
+}
+
+.overview-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, .82);
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.overview-panel h2 {
+  margin-top: 12px;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.22;
+}
+
+.overview-panel p {
+  margin-top: 8px;
+  max-width: 60ch;
+  color: rgba(255, 255, 255, .8);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.overview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ops-panel { margin: 0; }
+
+/* Cada prioridade e uma linha: descricao a esquerda, numero a direita.
+   Era isso que faltava — sem grid, tudo virava texto corrido. */
+.ops-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ops-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--pq-line, #dce9df);
+}
+
+.ops-item:last-child { border-bottom: 0; }
+
+.ops-item strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 850;
+}
+
+.ops-item span {
+  display: block;
+  margin-top: 2px;
+  color: #6b7f72;
+  font-size: 11.5px;
+}
+
+.ops-item b {
+  font-family: 'Archivo', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A area sob a linha do grafico ja vem com fill inline; aqui so garantimos
+   que ela nao herde traco de .lc-line. */
+.lc-area { stroke: none; }
+
+@media (max-width: 1080px) {
+  .dashboard-hero { grid-template-columns: 1fr; }
+}
