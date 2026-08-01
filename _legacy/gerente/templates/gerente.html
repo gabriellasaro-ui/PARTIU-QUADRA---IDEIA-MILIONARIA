@@ -1,0 +1,17 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'dashboard' %}
+{% block title %}Visão geral · Qadras{% endblock %}
+{% block page_title %}Visão geral{% endblock %}
+{% block page_sub %}Arena Bola na Rede · {{ g.data_hoje }}{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<button type="button" class="btn btn-primary manager-primary-action" data-open-modal="modal-horario">
+  <svg class="ic sm"><use href="#i-plus"/></svg><span>Novo horário</span>
+</button>
+{% endblock %}
+
+{% block content %}
+{% include "components/manager_dashboard.html" %}
+{% endblock %}

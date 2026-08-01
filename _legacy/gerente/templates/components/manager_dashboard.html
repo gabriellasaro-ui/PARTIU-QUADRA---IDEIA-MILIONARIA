@@ -1,0 +1,180 @@
+<!-- TODO: substituir os dados Jinja por consultas aos endpoints da API FastAPI -->
+<section class="manager-welcome">
+  <div class="manager-welcome__copy">
+    <span class="manager-eyebrow"><i></i> Operação ativa</span>
+    <h2>Arena Bola na Rede</h2>
+    <p>Veja o que precisa da sua atenção e mantenha a agenda rodando sem perder reservas.</p>
+  </div>
+  <div class="manager-welcome__actions">
+    {% if nav.solicitacoes %}
+    <a class="manager-request-cta" href="{{ url_for('pc_gerente_reservas') }}">
+      <span><svg class="ic"><use href="#i-bell"/></svg></span>
+      <div><strong>{{ nav.solicitacoes }} {{ 'solicitação aguardando' if nav.solicitacoes == 1 else 'solicitações aguardando' }}</strong><small>Responder agora</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    {% else %}
+    <a class="manager-request-cta is-clear" href="{{ url_for('pc_gerente_agenda') }}">
+      <span><svg class="ic"><use href="#i-check-circle"/></svg></span>
+      <div><strong>Tudo em dia por aqui</strong><small>Conferir agenda</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="manager-summary" aria-label="Resumo da arena">
+  <article class="manager-balance">
+    <span class="manager-balance__icon"><svg class="ic"><use href="#i-wallet"/></svg></span>
+    <div class="manager-balance__copy">
+      <span>Repasse estimado · 7 dias</span>
+      <strong class="num">R$ {{ '%.2f'|format(g.repasse)|replace('.', ',') }}</strong>
+      <small>De R$ {{ '%.2f'|format(g.bruto)|replace('.', ',') }} em reservas</small>
+    </div>
+    <span class="manager-trend"><svg class="ic sm"><use href="#i-trend"/></svg> 11%</span>
+  </article>
+
+  <div class="manager-metrics">
+    <article>
+      <span><svg class="ic"><use href="#i-calendar"/></svg></span>
+      <div class="manager-metric-copy">
+        <strong class="num">{{ g.reservas_hoje }}</strong>
+        <small>Reservas hoje</small>
+      </div>
+    </article>
+    <article>
+      <span><svg class="ic"><use href="#i-dollar"/></svg></span>
+      <div class="manager-metric-copy">
+        <strong class="num">R$ {{ g.faturamento_hoje }}</strong>
+        <small>Faturamento hoje</small>
+      </div>
+    </article>
+    <article>
+      <span><svg class="ic"><use href="#i-clock"/></svg></span>
+      <div class="manager-metric-copy">
+        <strong class="num">{{ g.ocupacao }}%</strong>
+        <small>Ocupação média</small>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="manager-section">
+  <div class="manager-section__head">
+    <div><span>Atalhos</span><h2>Central da arena</h2></div>
+  </div>
+  <nav class="manager-tools" aria-label="Ferramentas da arena">
+    <a href="{{ url_for('pc_gerente_reservas') }}">
+      <span><svg class="ic"><use href="#i-calendar"/></svg></span>
+      <div><strong>Reservas</strong><small>Aprovar e acompanhar</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    <a href="{{ url_for('pc_gerente_agenda') }}">
+      <span><svg class="ic"><use href="#i-clock"/></svg></span>
+      <div><strong>Grade horária</strong><small>Abrir e bloquear horários</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    <a href="{{ url_for('pc_gerente_reservas') }}#mensalistas">
+      <span><svg class="ic"><use href="#i-user"/></svg></span>
+      <div><strong>Mensalistas</strong><small>Recorrências e vencimentos</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+    <a href="{{ url_for('pc_gerente_quadras') }}#vitrine">
+      <span><svg class="ic"><use href="#i-map"/></svg></span>
+      <div><strong>Vitrine</strong><small>Presença no Explorar</small></div>
+      <svg class="ic sm"><use href="#i-right"/></svg>
+    </a>
+  </nav>
+</section>
+
+<div class="manager-dashboard-grid">
+  <section class="manager-panel manager-panel--bookings">
+    <div class="manager-panel__head">
+      <div><span>Movimento</span><h2>Próximas reservas</h2></div>
+      <a href="{{ url_for('pc_gerente_reservas') }}">Ver todas</a>
+    </div>
+    <div class="manager-upcoming">
+      {% for r in g.reservas[:4] %}
+      <article>
+        <span class="manager-avatar">{{ r.cliente[0] }}</span>
+        <div class="manager-upcoming__person"><strong>{{ r.cliente }}</strong><small>{{ r.data }} · {{ r.horario }}</small></div>
+        <div class="manager-upcoming__value"><strong class="num">R$ {{ r.valor }}</strong><span class="status {{ r.status|lower }}">{{ r.status }}</span></div>
+      </article>
+      {% else %}
+      <div class="manager-empty-inline"><svg class="ic"><use href="#i-calendar"/></svg><span>Nenhuma reserva próxima.</span></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="manager-panel manager-panel--occupancy">
+    <div class="manager-panel__head">
+      <div><span>Disponibilidade</span><h2>Ritmo da agenda</h2></div>
+      <a href="{{ url_for('pc_gerente_agenda') }}">Abrir agenda</a>
+    </div>
+    <div class="manager-occupancy">
+      {% for f in g.faixas %}
+      <div>
+        <p><span>{{ f.lab }} <small>{{ f.sub }}</small></span><strong>{{ f.occ }}%</strong></p>
+        <span class="manager-progress"><i style="width: {{ f.occ }}%;"></i></span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="manager-heatmap-head">
+      <div><span>Mapa de calor</span><strong>Dias e horários mais ocupados</strong></div>
+      <small>Últimos 7 dias</small>
+    </div>
+    <div class="manager-heatmap" aria-label="Mapa de calor da ocupação por dia e horário">
+      <div class="manager-heatmap__grid">
+        <span class="manager-heatmap__corner" aria-hidden="true"></span>
+        {% for dia in g.heat_dias %}
+        <strong class="manager-heatmap__day">{{ dia }}</strong>
+        {% endfor %}
+        {% for row in g.heat %}
+        <small class="manager-heatmap__hour">{{ row.hora }}</small>
+          {% for cell in row.cells %}
+          <span class="manager-heatmap__cell b{{ cell.b }}" role="img" aria-label="{{ cell.dia }}, {{ cell.hora }}: {{ cell.occ }}% de ocupação" title="{{ cell.dia }} · {{ cell.hora }} · {{ cell.occ }}%"></span>
+          {% endfor %}
+        {% endfor %}
+      </div>
+      <div class="manager-heatmap__legend" aria-hidden="true">
+        <span>Menor</span><i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><span>Maior</span>
+      </div>
+    </div>
+  </section>
+
+<section class="manager-panel manager-panel--intelligence">
+  <div class="manager-panel__head">
+    <div><span>Inteligência da arena</span><h2>Faturamento e oportunidades</h2></div>
+    <a href="{{ url_for('pc_gerente_financeiro') }}">Abrir financeiro</a>
+  </div>
+  <div class="manager-intelligence-grid">
+    <div class="manager-chart">
+      <svg class="lc" viewBox="0 0 {{ g.chart.w }} {{ g.chart.h }}" role="img" aria-label="Faturamento dos últimos sete dias">
+        <defs>
+          <linearGradient id="manager-chart-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#16a765" stop-opacity=".22"/>
+            <stop offset="1" stop-color="#16a765" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        {% for gl in g.chart.grid %}
+          <line class="lc-grid" x1="{{ g.chart.plot_x0 }}" y1="{{ gl.y }}" x2="{{ g.chart.plot_x1 }}" y2="{{ gl.y }}"/>
+          <text class="lc-yl" x="{{ g.chart.plot_x0 - 9 }}" y="{{ gl.y + 3 }}">{{ gl.lab }}</text>
+        {% endfor %}
+        <path class="lc-area" d="{{ g.chart.area }}" fill="url(#manager-chart-fill)"/>
+        <path class="lc-line" d="{{ g.chart.line }}"/>
+        {% for p in g.chart.points %}
+          <circle class="lc-dot {{ 'peak' if loop.index0 == g.chart.peak }}" cx="{{ p.x }}" cy="{{ p.y }}" r="{{ 5 if loop.index0 == g.chart.peak else 3.4 }}"/>
+          <text class="lc-xl" x="{{ p.x }}" y="{{ g.chart.h - 9 }}" style="text-anchor: {{ 'start' if loop.first else ('end' if loop.last else 'middle') }};">{{ p.lab }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+    <div class="manager-insights">
+      {% for it in g.insights[:3] %}
+      <article class="{{ it.tone }}">
+        <span><svg class="ic"><use href="#{{ it.icon }}"/></svg></span>
+        <div><strong>{{ it.title }}</strong><p>{{ it.text }}</p></div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+</div>

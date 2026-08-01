@@ -1,0 +1,55 @@
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="top"><span class="ico"><svg class="ic"><use href="#i-dollar"/></svg></span><span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +12%</span></div>
+    <div class="val num">R$ 4.820</div>
+    <div class="lbl">Receita da semana</div>
+  </div>
+  <div class="kpi">
+    <div class="top"><span class="ico"><svg class="ic"><use href="#i-wallet"/></svg></span><span class="delta"><svg class="ic"><use href="#i-check"/></svg> Hoje</span></div>
+    <div class="val num">R$ 685</div>
+    <div class="lbl">A receber</div>
+  </div>
+  <div class="kpi">
+    <div class="top"><span class="ico"><svg class="ic"><use href="#i-card"/></svg></span><span class="delta"><svg class="ic"><use href="#i-trend"/></svg> 97%</span></div>
+    <div class="val num">32</div>
+    <div class="lbl">Pagamentos OK</div>
+  </div>
+</div>
+
+<div class="dash-cols">
+  <div class="panel">
+    <div class="panel-head">
+      <div><h2>Receita por dia</h2><span class="panel-sub">Ultimos 7 dias</span></div>
+      <button class="btn btn-soft btn-xs" data-csv-table="#finance-table" data-csv-name="financeiro.csv">Exportar CSV</button>
+    </div>
+    <svg class="lc" viewBox="0 0 620 220" role="img" aria-label="Receita semanal">
+      <path class="lc-area" d="M40 168 L120 132 L200 150 L280 102 L360 116 L440 62 L560 84 L560 190 L40 190 Z" fill="rgba(21,115,71,.14)"/>
+      <path class="lc-line" d="M40 168 L120 132 L200 150 L280 102 L360 116 L440 62 L560 84"/>
+      <circle class="lc-dot" cx="40" cy="168" r="3.4"/>
+      <circle class="lc-dot" cx="120" cy="132" r="3.4"/>
+      <circle class="lc-dot" cx="200" cy="150" r="3.4"/>
+      <circle class="lc-dot peak" cx="440" cy="62" r="5"/>
+    </svg>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><div><h2>Repasses</h2><span class="panel-sub">Resumo operacional</span></div></div>
+    <div class="faixas">
+      <div class="faixa"><div class="faixa-top"><span>Pago <small>cartao e Pix</small></span><b>97%</b></div><div class="faixa-bar"><span style="width: 97%;"></span></div></div>
+      <div class="faixa"><div class="faixa-top"><span>Pendente <small>confirmacao manual</small></span><b>3%</b></div><div class="faixa-bar"><span style="width: 3%;"></span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:16px;">
+  <div class="panel-head"><h2>Movimentacoes</h2><span class="panel-sub">Entradas recentes</span></div>
+  <table class="tbl" id="finance-table">
+    <thead><tr><th>Codigo</th><th>Cliente</th><th>Metodo</th><th>Valor</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td class="num">PQ-1934</td><td>Matheus Rocha</td><td>Pix</td><td class="val num">R$ 140</td><td><span class="status pago">Pago</span></td></tr>
+      <tr><td class="num">PQ-1935</td><td>Bruno Lima</td><td>Cartao</td><td class="val num">R$ 120</td><td><span class="status confirmado">Confirmado</span></td></tr>
+      <tr><td class="num">PQ-1936</td><td>Carol Souza</td><td>Pix</td><td class="val num">R$ 110</td><td><span class="status pendente">Pendente</span></td></tr>
+    </tbody>
+  </table>
+</div>

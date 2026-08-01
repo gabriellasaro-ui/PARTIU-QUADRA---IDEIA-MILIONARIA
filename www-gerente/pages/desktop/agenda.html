@@ -1,0 +1,58 @@
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="cal-toolbar">
+  <div class="cal-range">
+    <a class="cal-nav" href="./dashboard.html#agenda" aria-label="Semana anterior"><svg class="ic sm"><use href="#i-left"/></svg></a>
+    <strong>Semana atual</strong>
+    <a class="cal-nav" href="./dashboard.html#agenda" aria-label="Proxima semana"><svg class="ic sm"><use href="#i-right"/></svg></a>
+  </div>
+  <div class="cal-legend">
+    <span><i class="pago"></i> Pago</span>
+    <span><i class="confirmado"></i> Confirmado</span>
+    <span><i class="pendente"></i> Aguardando</span>
+  </div>
+</div>
+
+<div class="cal">
+  <div class="cal-head">
+    <div class="ch-gut"></div>
+    <div class="ch-day today"><div class="d">Seg</div><div class="n">28</div></div>
+    <div class="ch-day"><div class="d">Ter</div><div class="n">29</div></div>
+    <div class="ch-day"><div class="d">Qua</div><div class="n">30</div></div>
+    <div class="ch-day"><div class="d">Qui</div><div class="n">31</div></div>
+    <div class="ch-day"><div class="d">Sex</div><div class="n">01</div></div>
+    <div class="ch-day"><div class="d">Sab</div><div class="n">02</div></div>
+    <div class="ch-day"><div class="d">Dom</div><div class="n">03</div></div>
+  </div>
+
+  <div class="cal-body" style="--hourh: 58px;">
+    <div class="cal-gutter">
+      <div class="hr"><span>08:00</span></div>
+      <div class="hr"><span>09:00</span></div>
+      <div class="hr"><span>10:00</span></div>
+      <div class="hr"><span>11:00</span></div>
+      <div class="hr"><span>12:00</span></div>
+      <div class="hr"><span>13:00</span></div>
+      <div class="hr"><span>14:00</span></div>
+      <div class="hr"><span>15:00</span></div>
+      <div class="hr"><span>16:00</span></div>
+      <div class="hr"><span>17:00</span></div>
+      <div class="hr"><span>18:00</span></div>
+      <div class="hr"><span>19:00</span></div>
+    </div>
+    <div class="cal-col today" style="min-height: 696px;">
+      <button class="cal-ev pago" style="top: 570px; height: 52px;" data-toast="Reserva de Matheus Rocha"><span class="t">Matheus Rocha</span><span class="h">19:00</span></button>
+    </div>
+    <div class="cal-col" style="min-height: 696px;">
+      <button class="cal-ev confirmado" style="top: 512px; height: 52px;" data-toast="Reserva de Bruno Lima"><span class="t">Bruno Lima</span><span class="h">18:00</span></button>
+    </div>
+    <div class="cal-col" style="min-height: 696px;">
+      <button class="cal-ev pendente" style="top: 570px; height: 52px;" data-toast="Reserva pendente"><span class="t">Carol Souza</span><span class="h">19:00</span></button>
+    </div>
+    <div class="cal-col" style="min-height: 696px;"></div>
+    <div class="cal-col" style="min-height: 696px;">
+      <button class="cal-ev pago" style="top: 628px; height: 52px;" data-toast="Reserva de Rafael Mendes"><span class="t">Rafael Mendes</span><span class="h">20:00</span></button>
+    </div>
+    <div class="cal-col" style="min-height: 696px;"></div>
+    <div class="cal-col" style="min-height: 696px;"></div>
+  </div>
+</div>

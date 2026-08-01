@@ -1,0 +1,220 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'explorar' %}
+{% set avaliacoes_mock = [
+  {'autor': 'Mariana Alves', 'data': 'Há 2 semanas', 'nota': 5, 'texto': 'Quadra muito bem cuidada, iluminação ótima e atendimento rápido.'},
+  {'autor': 'João Pedro', 'data': 'Há 1 mês', 'nota': 5, 'texto': 'A reserva foi tranquila. O vestiário estava limpo e o horário começou pontualmente.'},
+  {'autor': 'Rafael Costa', 'data': 'Há 2 meses', 'nota': 4, 'texto': 'Boa estrutura para jogar com a turma. Voltaria a reservar sem dúvida.'}
+] %}
+{% block title %}{{ quadra.nome }} - Qadras{% endblock %}
+{% block page_title %}{{ quadra.nome }}{% endblock %}
+{% block page_sub %}{{ quadra.esporte }} - {{ quadra.bairro }}{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<a href="{{ url_for('pc_explorar') }}" class="back-link"><i class="ic sm" data-lucide="arrow-left"></i>Voltar para explorar</a>
+
+<section class="desktop-booking-hero">
+  <div class="desktop-venue-gallery__grid">
+    <img class="desktop-venue-gallery__main" src="{{ galeria[0] }}" alt="{{ quadra.nome }}" data-venue-hero-image>
+    <div class="desktop-venue-gallery__side">
+      {% for foto in galeria[1:3] %}
+      <button type="button" data-gallery-image="{{ foto }}" data-gallery-swap aria-label="Abrir foto {{ loop.index + 1 }}">
+        <img src="{{ foto }}" alt="" loading="lazy">
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="desktop-booking-hero__badges">
+    <span><i class="ic sm" data-lucide="images"></i>{{ galeria|length }} fotos</span>
+    <span><i class="ic sm" data-lucide="navigation"></i>{{ quadra.distancia }} km</span>
+  </div>
+</section>
+
+<section class="desktop-arena-identity">
+  <span class="desktop-arena-logo" aria-hidden="true">{{ quadra.nome.split()[0][0] }}{{ quadra.nome.split()[-1][0] }}</span>
+  <div class="desktop-arena-identity__copy">
+    <span><i class="ic sm" data-lucide="badge-check"></i>Arena verificada</span>
+    <h1>{{ quadra.nome }}</h1>
+    <p><i class="ic sm" data-lucide="map-pin"></i>{{ quadra.esporte }} - {{ quadra.bairro }}</p>
+  </div>
+  <div class="desktop-arena-facts">
+    <span><i class="ic sm" data-lucide="star"></i><b>{{ quadra.nota }}</b><small>{{ quadra.avaliacoes }} avaliações</small></span>
+    <span><i class="ic sm" data-lucide="circle-dollar-sign"></i><b>R$ {{ '%.2f'|format(quadra.preco)|replace('.', ',') }}</b><small>por hora</small></span>
+  </div>
+</section>
+
+<section class="venue-information venue-information--overview">
+  <div>
+    <span>Sobre a arena</span>
+    <h2>Estrutura para a sua partida</h2>
+    <p>Quadra de {{ quadra.esporte|lower }} no {{ quadra.bairro }}, com estrutura completa para jogos, treinos e campeonatos.</p>
+  </div>
+  <div class="amenities">
+    {% for tag in quadra.tags %}<div class="amenity"><span><i class="ic sm" data-lucide="circle-check"></i></span>{{ tag }}</div>{% endfor %}
+    <div class="amenity"><span><i class="ic sm" data-lucide="circle-dot"></i></span>Bola inclusa</div>
+    <div class="amenity"><span><i class="ic sm" data-lucide="wifi"></i></span>Wi-Fi no local</div>
+  </div>
+</section>
+
+<section class="desktop-request-progress" aria-label="Etapa 1 de 4: escolha do horário">
+  <div><span>Etapa 1 de 4</span><strong>Escolha quando jogar</strong></div>
+  <div class="desktop-request-progress__track" aria-hidden="true"><span></span></div>
+  <p>Depois você revisa o pagamento e a arena confirma a solicitação.</p>
+</section>
+
+<div class="desktop-booking-layout" data-booking
+     data-price="{{ quadra.preco }}" data-fee-rate="0.05" data-base="{{ url_for('pc_checkout', quadra_id=quadra.id) }}"
+     data-booking-stage="date">
+  <main class="desktop-booking-main">
+    <section class="booking-selector">
+      <header class="booking-selector__head">
+        <div>
+          <span>Agendamento</span>
+          <h1>Uma escolha por vez</h1>
+          <p>Defina o dia, a duração e, por último, o melhor horário.</p>
+        </div>
+      </header>
+
+      <nav class="booking-wizard-nav" aria-label="Passos para escolher o horário">
+        <button type="button" class="is-active" data-booking-stage-go="date" aria-current="step"><span>1</span><strong>Dia</strong></button>
+        <button type="button" data-booking-stage-go="duration"><span>2</span><strong>Duração</strong></button>
+        <button type="button" data-booking-stage-go="time"><span>3</span><strong>Horário</strong></button>
+      </nav>
+
+      <div class="desktop-booking-step is-active" data-booking-stage-panel="date">
+        <div class="desktop-booking-step__head">
+          <span>1</span>
+          <div><small>Primeiro</small><h2>Em qual dia você quer jogar?</h2></div>
+        </div>
+        <div class="booking-calendar desktop-booking-calendar" data-booking-calendar>
+          <div class="booking-calendar__head">
+            <button type="button" class="calendar-nav" data-calendar-nav="-1" aria-label="Mês anterior"><i class="ic" data-lucide="chevron-left"></i></button>
+            <strong data-calendar-label></strong>
+            <button type="button" class="calendar-nav" data-calendar-nav="1" aria-label="Próximo mês"><i class="ic" data-lucide="chevron-right"></i></button>
+          </div>
+          <div class="booking-calendar__weekdays" aria-hidden="true">
+            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span>
+          </div>
+          <div class="booking-calendar__grid" data-calendar-grid></div>
+        </div>
+        <footer class="booking-wizard-actions">
+          <p>Você pode reservar com até 60 dias de antecedência.</p>
+          <button type="button" class="btn btn-primary" data-booking-stage-go="duration">Escolher duração<i class="ic sm" data-lucide="arrow-right"></i></button>
+        </footer>
+      </div>
+
+      <div class="desktop-booking-step" data-booking-stage-panel="duration" hidden>
+        <div class="desktop-booking-step__head">
+          <span>2</span>
+          <div><small>Agora</small><h2>Quanto tempo de quadra?</h2></div>
+        </div>
+        <div class="dur-seg desktop-duration">
+          <button type="button" class="dur on" data-dur="1"><strong>1 hora</strong><span>Jogo rápido</span></button>
+          <button type="button" class="dur" data-dur="2"><strong>2 horas</strong><span>Partida completa</span></button>
+          <button type="button" class="dur" data-dur="3"><strong>3 horas</strong><span>Turma ou evento</span></button>
+        </div>
+        <p class="desktop-duration-help" data-duration-help>Mostraremos apenas os horários que comportam sua partida.</p>
+        <footer class="booking-wizard-actions">
+          <button type="button" class="btn btn-soft" data-booking-stage-go="date"><i class="ic sm" data-lucide="arrow-left"></i>Voltar</button>
+          <button type="button" class="btn btn-primary" data-booking-stage-go="time">Ver horários<i class="ic sm" data-lucide="arrow-right"></i></button>
+        </footer>
+      </div>
+
+      <div class="desktop-booking-step" data-booking-stage-panel="time" hidden>
+        <div class="desktop-booking-step__head">
+          <span>3</span>
+          <div><small>Por último</small><h2>Qual horário funciona melhor?</h2></div>
+          <em data-availability-copy></em>
+        </div>
+        <div class="legend">
+          <span><i class="dot free"></i> Disponível</span>
+          <span><i class="dot busy"></i> Não comporta a duração</span>
+        </div>
+        {% macro slot(item) %}
+          {%- if item.status == 'livre' -%}
+            <a href="{{ url_for('pc_checkout', quadra_id=quadra.id, hora=item.hora, dur=1) }}" class="slot free" data-hora="{{ item.hora }}" aria-pressed="false">{{ item.hora }}</a>
+          {%- else -%}
+            <span class="slot busy" data-hora="{{ item.hora }}" aria-disabled="true">{{ item.hora }}</span>
+          {%- endif -%}
+        {% endmacro %}
+        <div class="avail" data-slots>
+          <div class="avail-group">
+            <div class="avail-lbl">Manhã</div>
+            <div class="avail-slots">{% for item in horarios if item.hora[:2]|int < 12 %}{{ slot(item) }}{% endfor %}</div>
+          </div>
+          <div class="avail-group">
+            <div class="avail-lbl">Tarde</div>
+            <div class="avail-slots">{% for item in horarios if item.hora[:2]|int >= 12 and item.hora[:2]|int < 18 %}{{ slot(item) }}{% endfor %}</div>
+          </div>
+          <div class="avail-group">
+            <div class="avail-lbl">Noite</div>
+            <div class="avail-slots">{% for item in horarios if item.hora[:2]|int >= 18 %}{{ slot(item) }}{% endfor %}</div>
+          </div>
+        </div>
+        <footer class="booking-wizard-actions booking-wizard-actions--time">
+          <button type="button" class="btn btn-soft" data-booking-stage-go="duration"><i class="ic sm" data-lucide="arrow-left"></i>Voltar</button>
+          <p>Escolha um horário para liberar a revisão da reserva.</p>
+        </footer>
+      </div>
+    </section>
+
+    <section class="desktop-venue-reviews">
+      <div>
+        <span>Experiências reais</span>
+        <h2>Avaliações da arena</h2>
+        <p>A nota é publicada apenas depois que o jogador conclui uma reserva.</p>
+      </div>
+      <div class="desktop-review-score">
+        <strong>{{ quadra.nota }}</strong>
+        <span>{% for _ in range(5) %}<i class="ic sm {{ 'is-empty' if loop.index > quadra.nota|int }}" data-lucide="star"></i>{% endfor %}</span>
+        <small>{{ quadra.avaliacoes }} avaliações verificadas</small>
+      </div>
+      <div class="desktop-review-trust"><i class="ic sm" data-lucide="badge-check"></i>Opiniões de jogadores que estiveram nesta arena.</div>
+      <div class="desktop-review-list">
+        {% for review in avaliacoes_mock %}
+        <article class="desktop-review-item">
+          <header>
+            <span class="desktop-review-avatar">{{ review.autor[0] }}</span>
+            <div><strong>{{ review.autor }}</strong><small>{{ review.data }}</small></div>
+            <span class="desktop-review-stars" aria-label="{{ review.nota }} de 5 estrelas">
+              {% for _ in range(5) %}<i class="ic sm {{ 'is-empty' if loop.index > review.nota }}" data-lucide="star"></i>{% endfor %}
+            </span>
+          </header>
+          <p>{{ review.texto }}</p>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  <aside class="desktop-booking-aside">
+    <div class="booking-card">
+      <span class="booking-card__eyebrow">Resumo da reserva</span>
+      <h2>Sua partida</h2>
+      <div class="bc-fields">
+        <div class="bc-field"><span class="k"><i class="ic sm" data-lucide="calendar-days"></i>Data</span><span class="v" data-bk-date>Hoje</span></div>
+        <div class="bc-field"><span class="k"><i class="ic sm" data-lucide="clock-3"></i>Horário</span><span class="v" data-bk-range>Escolha um horário</span></div>
+      </div>
+      <div class="bc-summary">
+        <div class="line"><span class="muted">Aluguel da quadra <span data-bk-hours></span></span><span data-bk-sub>-</span></div>
+        <div class="line"><span class="muted">Taxa de serviço (5%)</span><span data-bk-fee>-</span></div>
+        <div class="line total"><span>Total</span><span data-bk-total>-</span></div>
+        <small>Pagamento, suporte e proteção da reserva.</small>
+      </div>
+      <a class="btn btn-primary btn-lg btn-block is-disabled" data-bk-cta>
+        <span data-bk-cta-label>Escolha um horário</span><i class="ic sm" data-lucide="arrow-right"></i>
+      </a>
+      <div class="booking-chat-lock">
+        <i class="ic" data-lucide="lock-keyhole"></i>
+        <span><strong>Chat após o pagamento</strong><small>O contato com a arena é liberado quando a reserva for confirmada.</small></span>
+      </div>
+      <div class="bc-note"><i class="ic sm" data-lucide="shield-check"></i><span><strong>Reserva protegida</strong><small>Você revisa todos os dados antes de enviar a solicitação.</small></span></div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
+{% endblock %}

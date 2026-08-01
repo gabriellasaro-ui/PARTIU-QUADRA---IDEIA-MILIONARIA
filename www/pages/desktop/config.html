@@ -1,0 +1,46 @@
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="settings">
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Perfil da arena</h2>
+      <p>Informacoes exibidas para jogadores no aplicativo.</p>
+    </div>
+    <div class="set-fields">
+      <div class="set-avatar">
+        <span class="ava" id="arena-logo-preview">A</span>
+        <div>
+          <button class="btn btn-soft" data-file-trigger="#arena-logo">Trocar logo</button>
+          <input id="arena-logo" type="file" accept="image/*" data-preview="#arena-logo-preview" hidden>
+          <div class="av-meta">PNG ou JPG ate 2 MB</div>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="inp"><label>Nome da arena</label><input value="Arena Bola na Rede"></div>
+        <div class="inp"><label>Telefone</label><input value="(11) 99999-0000"></div>
+      </div>
+      <div class="inp"><label>Endereco</label><input value="Rua das Quadras, 120 - Sao Paulo"></div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Operacao</h2>
+      <p>Preferencias de atendimento e confirmacao.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row"><span>Confirmacao automatica<small>Reservas pagas entram direto na agenda.</small></span><span class="switch on"></span></label>
+      <label class="switch-row"><span>Receber alerta de reserva<small>Notificacao para novas solicitacoes.</small></span><span class="switch on"></span></label>
+      <label class="switch-row"><span>Permitir reagendamento<small>Jogadores podem pedir novo horario.</small></span><span class="switch"></span></label>
+    </div>
+  </section>
+
+  <section class="set-card danger">
+    <div class="set-aside">
+      <h2>Conta</h2>
+      <p>Acoes sensiveis ficam protegidas na etapa de API.</p>
+    </div>
+    <div class="set-fields">
+      <button class="btn btn-danger" data-toast="Acao protegida">Desativar arena</button>
+    </div>
+  </section>
+</div>

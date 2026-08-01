@@ -1,0 +1,50 @@
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="chat has-active">
+  <aside class="chat-list">
+    <div class="chat-list-head">Conversas</div>
+    <a class="conv on" href="./dashboard.html#mensagens">
+      <span class="conv-av">M</span>
+      <span class="conv-main">
+        <span class="conv-top"><strong>Matheus Rocha</strong><span class="conv-time">14:20</span></span>
+        <span class="conv-prev">Pode confirmar a quadra das 19h?</span>
+      </span>
+      <span class="conv-dot"></span>
+    </a>
+    <a class="conv unread" href="./dashboard.html#mensagens">
+      <span class="conv-av">C</span>
+      <span class="conv-main">
+        <span class="conv-top"><strong>Carol Souza</strong><span class="conv-time">13:48</span></span>
+        <span class="conv-prev">Tem raquete para alugar?</span>
+      </span>
+      <span class="conv-dot"></span>
+    </a>
+    <a class="conv" href="./dashboard.html#mensagens">
+      <span class="conv-av">R</span>
+      <span class="conv-main">
+        <span class="conv-top"><strong>Rafael Mendes</strong><span class="conv-time">Ontem</span></span>
+        <span class="conv-prev">Obrigado, ate a proxima.</span>
+      </span>
+    </a>
+  </aside>
+
+  <section class="chat-thread">
+    <div class="thread-head">
+      <span class="conv-av">M</span>
+      <div>
+        <strong>Matheus Rocha</strong>
+        <div class="thread-sub">Reserva #PQ-1934 - Society 1</div>
+      </div>
+      <button class="btn btn-soft th-act" data-toast="Ligacao preparada para a API"><svg class="ic sm"><use href="#i-phone"/></svg> Ligar</button>
+    </div>
+    <div class="bubbles">
+      <span class="day-sep">Hoje</span>
+      <div class="bubble them">Boa tarde! A reserva das 19h esta confirmada?<div class="bub-time">14:18</div></div>
+      <div class="bubble me">Esta sim. Chegue 10 minutos antes para liberar o acesso.<div class="bub-time">14:19</div></div>
+      <div class="bubble them">Fechado, obrigado!<div class="bub-time">14:20</div></div>
+    </div>
+    <div class="composer">
+      <input type="text" placeholder="Escrever mensagem">
+      <button class="btn btn-primary" type="button" data-toast="Mensagem enviada"><svg class="ic sm"><use href="#i-send"/></svg> Enviar</button>
+    </div>
+  </section>
+</div>

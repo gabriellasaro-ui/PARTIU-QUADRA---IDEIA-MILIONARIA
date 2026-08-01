@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-player-desktop>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar - Qadras</title>
+  <meta name="theme-color" content="#129653">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/desktop.css">
+  <link rel="stylesheet" href="./assets/css/player-web.css">
+</head>
+<body class="web-login-page">
+  <header class="web-login-bar">
+    <a href="./pc.html#quadras" class="web-brand" aria-label="Qadras">
+      <span class="web-brand__mark"><i class="ic" data-lucide="goal"></i></span>
+      <span>Qadras</span>
+    </a>
+    <a class="back-link" href="./pc.html#quadras"><i class="ic sm" data-lucide="arrow-left"></i>Voltar</a>
+  </header>
+
+  <main class="web-login-main">
+    <form class="web-login-card" data-web-login-form>
+      <h1>Entrar na sua conta</h1>
+      <p>Acesse suas reservas, favoritos e mensagens.</p>
+      <div class="inp">
+        <label for="web-login-email">E-mail</label>
+        <input id="web-login-email" type="email" name="email" autocomplete="email" placeholder="voce@email.com" required>
+      </div>
+      <div class="inp">
+        <label for="web-login-password">Senha</label>
+        <input id="web-login-password" type="password" name="password" autocomplete="current-password" placeholder="Sua senha" required>
+      </div>
+      <button class="btn btn-primary btn-lg" type="submit">Entrar</button>
+      <div class="web-login-card__footer">Ainda não tem conta? <a href="./login.html">Criar conta</a></div>
+    </form>
+  </main>
+
+  <script src="./assets/vendor/lucide/lucide.min.js"></script>
+  <script>
+    window.lucide && window.lucide.createIcons();
+    document.querySelector('[data-web-login-form]').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var email = new FormData(event.currentTarget).get('email');
+      localStorage.setItem('auth_token', 'qadras-local-session');
+      localStorage.setItem('auth_user', JSON.stringify({ name: 'Gabriel', email: email }));
+      location.href = './pc.html#quadras';
+    });
+  </script>
+</body>
+</html>

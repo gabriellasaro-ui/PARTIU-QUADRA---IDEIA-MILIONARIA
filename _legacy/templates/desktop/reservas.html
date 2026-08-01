@@ -1,0 +1,51 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'reservas' %}
+{% block title %}Minhas reservas · Qadras{% endblock %}
+{% block page_title %}Minhas reservas{% endblock %}
+{% block page_sub %}Acompanhe seus jogos agendados{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<section class="desktop-reservations-view">
+<div class="tabs" data-seg data-target="#jog-res">
+  <a class="on" data-filter="proxima">Próximas</a>
+  <a data-filter="historico">Histórico</a>
+  <a data-filter="cancelada">Canceladas</a>
+</div>
+
+<div class="rlist" id="jog-res">
+  {% for r in reservas %}
+  <div class="ritem" data-status="proxima">
+    <img src="{{ r.foto }}" alt="{{ r.nome }}">
+    <div class="info">
+      <h3>{{ r.nome }}</h3>
+      <div class="meta">
+        <span><svg class="ic"><use href="#i-grid"/></svg>{{ r.esporte }}</span>
+        <span><svg class="ic"><use href="#i-pin"/></svg>{{ r.bairro }}</span>
+        <span><svg class="ic"><use href="#i-calendar"/></svg>{{ r.data }}</span>
+        <span><svg class="ic"><use href="#i-clock"/></svg>{{ r.hora }}</span>
+      </div>
+      <span class="status {{ r.status_class }}" style="margin-top:10px;">{{ r.status }}</span>
+    </div>
+    <div class="col-r">
+      <div class="amt">R$ {{ '%.2f'|format(r.valor) }}</div>
+      <div class="acts">
+        <a href="{{ url_for('pc_quadra', quadra_id=r.id) }}" class="btn btn-soft">Detalhes</a>
+        {% if r.status_class in ['pago', 'confirmado'] %}
+        <a href="{{ url_for('pc_mensagens') }}" class="btn btn-outline"><i class="ic sm" data-lucide="message-circle"></i>Chat</a>
+        {% endif %}
+        <a href="{{ url_for('pc_quadra', quadra_id=r.id) }}" class="btn btn-outline">Reagendar</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  <div data-empty hidden class="empty" style="grid-column:1/-1;">
+    <div class="empty-ic"><svg class="ic lg"><use href="#i-calendar"/></svg></div>
+    <h3>Nada por aqui ainda</h3>
+    <p>Suas reservas nesta aba vão aparecer aqui.</p>
+  </div>
+</div>
+</section>
+{% endblock %}

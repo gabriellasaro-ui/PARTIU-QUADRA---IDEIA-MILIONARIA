@@ -1,0 +1,3339 @@
+/* =========================================================
+   Qadras - aplicativo do gerente
+   Camada isolada para preservar o frontend do jogador.
+   ========================================================= */
+html[data-manager-app] {
+  --manager-bg: #f3f8f4;
+  --manager-panel: #ffffff;
+  --manager-panel-soft: #edf8f1;
+  --manager-line: #dce9df;
+  --manager-line-strong: #c7ddce;
+  --manager-ink: #143523;
+  --manager-ink-soft: #315742;
+  --manager-muted: #6b7f72;
+  --manager-green: #16a765;
+  --manager-green-strong: #0c8b52;
+  --manager-green-deep: #075e3a;
+  --manager-green-light: #b9edcb;
+  --manager-warning: #e8a02f;
+  --manager-danger: #c94151;
+  --manager-blue: #2774d9;
+  --manager-radius-sm: 14px;
+  --manager-radius: 20px;
+  --manager-radius-lg: 26px;
+  --manager-shadow: 0 2px 4px rgba(7, 94, 58, .03), 0 14px 34px rgba(7, 94, 58, .07);
+  --manager-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --manager-safe-top: env(safe-area-inset-top, 0px);
+  scroll-behavior: smooth;
+}
+
+html[data-manager-app] *,
+html[data-manager-app] h1,
+html[data-manager-app] h2,
+html[data-manager-app] h3,
+html[data-manager-app] h4 {
+  letter-spacing: 0;
+}
+
+html[data-manager-app] body {
+  overflow-x: hidden;
+  background: var(--manager-bg);
+  color: var(--manager-ink);
+}
+
+html[data-manager-app] .app {
+  grid-template-columns: 248px minmax(0, 1fr);
+}
+
+html[data-manager-app] .sidebar {
+  padding: 18px 13px;
+  border-color: var(--manager-line);
+  background: #edf8f1;
+}
+
+html[data-manager-app] .sb-top {
+  padding: 2px 5px 17px;
+}
+
+html[data-manager-app] .sb-logo {
+  color: var(--manager-ink);
+  font-size: 17px;
+}
+
+html[data-manager-app] .sb-logo .mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--manager-green);
+  box-shadow: 0 8px 20px rgba(22, 167, 101, .18);
+}
+
+html[data-manager-app] .sb-collapse {
+  border-color: var(--manager-line);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .75);
+}
+
+html[data-manager-app] .sb-group {
+  padding: 15px 12px 7px;
+  color: #718178;
+  font-size: 9.5px;
+  letter-spacing: 0;
+}
+
+html[data-manager-app] .sb-link {
+  min-height: 43px;
+  margin-bottom: 2px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  color: #52705e;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+html[data-manager-app] .sb-link:hover {
+  background: rgba(255, 255, 255, .72);
+  color: var(--manager-ink);
+}
+
+html[data-manager-app] .sb-link.on {
+  background: var(--manager-panel);
+  color: var(--manager-green-deep);
+  box-shadow: 0 7px 18px rgba(7, 94, 58, .07);
+}
+
+html[data-manager-app] .sb-link.on .ic {
+  color: var(--manager-green);
+}
+
+html[data-manager-app] .sb-link .badge {
+  min-width: 22px;
+  padding: 2px 7px;
+  background: var(--manager-green);
+  color: #fff;
+  text-align: center;
+}
+
+html[data-manager-app] .sb-foot {
+  padding-top: 12px;
+}
+
+html[data-manager-app] .sb-user {
+  border: 1px solid rgba(199, 221, 206, .75);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .58);
+}
+
+html[data-manager-app] .sb-user .av {
+  border-radius: 50%;
+  background: var(--manager-green-deep);
+}
+
+html[data-manager-app] .main {
+  min-width: 0;
+}
+
+html[data-manager-app] .topbar {
+  min-height: 72px;
+  padding: 13px 28px;
+  border-color: var(--manager-line);
+  background: rgba(255, 255, 255, .94);
+  backdrop-filter: blur(14px) saturate(150%);
+}
+
+html[data-manager-app] .topbar .pt h1 {
+  color: var(--manager-ink);
+  font-size: 20px;
+}
+
+html[data-manager-app] .topbar .pt .sub {
+  color: var(--manager-muted);
+  font-size: 12.5px;
+}
+
+html[data-manager-app] .topbar .actions {
+  position: relative;
+  gap: 9px;
+}
+
+html[data-manager-app] .icon-btn {
+  border-color: var(--manager-line);
+  border-radius: 50%;
+  background: var(--manager-panel);
+  color: var(--manager-ink-soft);
+}
+
+html[data-manager-app] .icon-btn:hover {
+  border-color: var(--manager-line-strong);
+  background: var(--manager-panel-soft);
+}
+
+html[data-manager-app] .content {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 26px 28px 56px;
+}
+
+html[data-manager-app] .btn {
+  min-height: 42px;
+  border-radius: 999px;
+  font-weight: 750;
+}
+
+html[data-manager-app] .btn-primary {
+  background: var(--manager-green);
+  box-shadow: 0 7px 16px rgba(22, 167, 101, .15);
+}
+
+html[data-manager-app] .btn-primary:hover {
+  background: var(--manager-green-strong);
+}
+
+html[data-manager-app] .btn-outline,
+html[data-manager-app] .btn-soft {
+  border-color: var(--manager-line);
+  background: var(--manager-panel);
+  color: var(--manager-green-deep);
+}
+
+html[data-manager-app] .btn-danger {
+  border: 1px solid #f0cdd2;
+  background: #fff1f3;
+  color: var(--manager-danger);
+}
+
+html[data-manager-app] .period {
+  border-color: var(--manager-line);
+  border-radius: 999px;
+  background: var(--manager-bg);
+}
+
+html[data-manager-app] .period a,
+html[data-manager-app] .period button {
+  min-height: 34px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  color: var(--manager-muted);
+  font-size: 12.5px;
+  font-weight: 750;
+}
+
+html[data-manager-app] .period a.on,
+html[data-manager-app] .period button.on {
+  background: var(--manager-green);
+  color: #fff;
+}
+
+html[data-manager-app] .panel,
+html[data-manager-app] .card,
+html[data-manager-app] .set-card,
+html[data-manager-app] .review,
+html[data-manager-app] .qcard {
+  border-color: var(--manager-line);
+  border-radius: var(--manager-radius);
+  background: var(--manager-panel);
+  box-shadow: none;
+}
+
+html[data-manager-app] .panel {
+  padding: 21px;
+}
+
+html[data-manager-app] .panel-head h2,
+html[data-manager-app] .set-card h2 {
+  color: var(--manager-ink);
+}
+
+html[data-manager-app] .panel-head .lk,
+html[data-manager-app] .back-link {
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .inp label {
+  color: var(--manager-ink-soft);
+  font-weight: 750;
+}
+
+html[data-manager-app] .inp input,
+html[data-manager-app] .inp select,
+html[data-manager-app] .inp textarea {
+  min-height: 46px;
+  border-color: var(--manager-line);
+  border-radius: var(--manager-radius-sm);
+  background: #fbfdfb;
+  color: var(--manager-ink);
+}
+
+html[data-manager-app] .inp input:focus,
+html[data-manager-app] .inp select:focus,
+html[data-manager-app] .inp textarea:focus {
+  border-color: var(--manager-green);
+  box-shadow: 0 0 0 4px rgba(22, 167, 101, .1);
+}
+
+/* Notificações */
+html[data-manager-app] .manager-notification-wrap {
+  position: relative;
+}
+
+html[data-manager-app] .manager-notification-menu {
+  position: absolute;
+  z-index: 90;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(360px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid var(--manager-line);
+  border-radius: 22px;
+  background: var(--manager-panel);
+  box-shadow: 0 22px 60px rgba(12, 36, 23, .18);
+}
+
+html[data-manager-app] .manager-notification-menu[hidden] {
+  display: none;
+}
+
+html[data-manager-app] .manager-notification-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 17px 18px 14px;
+  border-bottom: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-notification-head div {
+  display: grid;
+  gap: 1px;
+}
+
+html[data-manager-app] .manager-notification-head span {
+  color: var(--manager-green-strong);
+  font-size: 9px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .manager-notification-head strong {
+  font-size: 16px;
+}
+
+html[data-manager-app] .manager-notification-head button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+  color: var(--manager-ink-soft);
+}
+
+html[data-manager-app] .manager-notification-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
+  padding: 14px 17px;
+  border-bottom: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-notification-item:last-child {
+  border-bottom: 0;
+}
+
+html[data-manager-app] .manager-notification-item:hover {
+  background: #f8fbf8;
+}
+
+html[data-manager-app] .manager-notification-item > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-notification-item > span .ic {
+  width: 18px;
+  height: 18px;
+}
+
+html[data-manager-app] .manager-notification-item div {
+  display: grid;
+  gap: 3px;
+}
+
+html[data-manager-app] .manager-notification-item strong {
+  font-size: 12.5px;
+}
+
+html[data-manager-app] .manager-notification-item small {
+  color: var(--manager-muted);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+html[data-manager-app] .manager-notification-item.is-new > span {
+  background: #dff4e7;
+  color: var(--manager-green);
+}
+
+html[data-manager-app] .manager-tabbar {
+  display: none;
+}
+
+/* Dashboard */
+html[data-manager-app] .manager-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--manager-green-strong);
+  font-size: 9.5px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .manager-eyebrow i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--manager-green);
+  box-shadow: 0 0 0 5px rgba(22, 167, 101, .1);
+}
+
+html[data-manager-app] .manager-welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, .65fr);
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 18px;
+  padding: 24px 26px;
+  border: 1px solid #cfe7d7;
+  border-radius: var(--manager-radius-lg);
+  background: #eaf7ee;
+}
+
+html[data-manager-app] .manager-welcome__copy h2 {
+  margin-top: 8px;
+  color: var(--manager-green-deep);
+  font-size: 28px;
+}
+
+html[data-manager-app] .manager-welcome__copy p {
+  max-width: 620px;
+  margin-top: 5px;
+  color: var(--manager-ink-soft);
+  font-size: 13.5px;
+}
+
+html[data-manager-app] .manager-request-cta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1px solid rgba(22, 167, 101, .16);
+  border-radius: 18px;
+  background: var(--manager-panel);
+  box-shadow: 0 12px 26px rgba(7, 94, 58, .08);
+}
+
+html[data-manager-app] .manager-request-cta > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #dcf4e5;
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-request-cta > div {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-request-cta strong {
+  font-size: 13px;
+}
+
+html[data-manager-app] .manager-request-cta small {
+  color: var(--manager-green-strong);
+  font-size: 10.5px;
+  font-weight: 750;
+}
+
+html[data-manager-app] .manager-request-cta > .ic {
+  color: var(--manager-muted);
+}
+
+html[data-manager-app] .manager-request-cta.is-clear > span {
+  background: #e6f7ec;
+}
+
+html[data-manager-app] .manager-summary {
+  display: grid;
+  grid-template-columns: minmax(330px, .85fr) minmax(0, 1.5fr);
+  gap: 16px;
+}
+
+html[data-manager-app] .manager-balance {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 13px;
+  overflow: hidden;
+  min-height: 132px;
+  padding: 21px;
+  border-radius: var(--manager-radius);
+  background: var(--manager-green-strong);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(12, 139, 82, .16);
+}
+
+html[data-manager-app] .manager-balance__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .15);
+}
+
+html[data-manager-app] .manager-balance__copy {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-balance__copy > span,
+html[data-manager-app] .manager-balance__copy small {
+  color: rgba(255, 255, 255, .76);
+  font-size: 10.5px;
+}
+
+html[data-manager-app] .manager-balance__copy strong {
+  margin: 2px 0;
+  font-size: 27px;
+}
+
+html[data-manager-app] .manager-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .13);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+html[data-manager-app] .manager-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--manager-line);
+  border-radius: var(--manager-radius);
+  background: var(--manager-panel);
+}
+
+html[data-manager-app] .manager-metrics article {
+  display: grid;
+  grid-template-rows: 34px minmax(46px, auto);
+  align-content: center;
+  justify-items: center;
+  row-gap: 10px;
+  min-width: 0;
+  min-height: 132px;
+  padding: 19px;
+  border-right: 1px solid var(--manager-line);
+  text-align: center;
+}
+
+html[data-manager-app] .manager-metrics article:last-child {
+  border-right: 0;
+}
+
+html[data-manager-app] .manager-metrics article > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 0;
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-metrics article > span .ic {
+  width: 17px;
+  height: 17px;
+}
+
+html[data-manager-app] .manager-metric-copy {
+  display: grid;
+  grid-template-rows: minmax(24px, auto) minmax(22px, auto);
+  align-content: start;
+  justify-items: center;
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-metrics strong {
+  overflow: hidden;
+  font-size: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .manager-metrics small {
+  margin-top: 2px;
+  color: var(--manager-muted);
+  font-size: 10.5px;
+}
+
+html[data-manager-app] .manager-section {
+  margin-top: 28px;
+  scroll-margin-top: 92px;
+}
+
+html[data-manager-app] .manager-section__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+html[data-manager-app] .manager-section__head > div:first-child {
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-section__head > div:first-child > span,
+html[data-manager-app] .manager-panel__head > div > span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--manager-green-strong);
+  font-size: 9px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .manager-section__head h2,
+html[data-manager-app] .manager-panel__head h2 {
+  color: var(--manager-ink);
+  font-size: 18px;
+}
+
+html[data-manager-app] .manager-section__head p {
+  margin-top: 2px;
+  color: var(--manager-muted);
+  font-size: 11.5px;
+}
+
+html[data-manager-app] .manager-tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--manager-line);
+  border-radius: var(--manager-radius);
+  background: var(--manager-panel);
+}
+
+html[data-manager-app] .manager-tools a {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 82px;
+  padding: 15px;
+  border-right: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-tools a:last-child {
+  border-right: 0;
+}
+
+html[data-manager-app] .manager-tools a:hover {
+  background: #f8fbf8;
+}
+
+html[data-manager-app] .manager-tools a:focus-visible {
+  z-index: 1;
+  outline: 3px solid rgba(22, 167, 101, .22);
+  outline-offset: -3px;
+}
+
+html[data-manager-app] .manager-tools a > span {
+  display: grid;
+  place-items: center;
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-tools a > span .ic {
+  width: 19px;
+  height: 19px;
+}
+
+html[data-manager-app] .manager-tools a > div {
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-tools strong,
+html[data-manager-app] .manager-tools small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .manager-tools strong {
+  font-size: 12.5px;
+}
+
+html[data-manager-app] .manager-tools small {
+  margin-top: 2px;
+  color: var(--manager-muted);
+  font-size: 9.5px;
+}
+
+html[data-manager-app] .manager-tools > a > .ic {
+  box-sizing: border-box;
+  width: 27px;
+  height: 27px;
+  padding: 7px;
+  border-radius: 50%;
+  background: #edf7f0;
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
+  grid-template-areas:
+    "bookings occupancy"
+    "intelligence occupancy";
+  align-items: stretch;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+html[data-manager-app] .manager-panel--bookings {
+  grid-area: bookings;
+}
+
+html[data-manager-app] .manager-panel--occupancy {
+  grid-area: occupancy;
+}
+
+html[data-manager-app] .manager-panel {
+  padding: 20px;
+  border: 1px solid var(--manager-line);
+  border-radius: var(--manager-radius);
+  background: var(--manager-panel);
+}
+
+html[data-manager-app] .manager-panel__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+html[data-manager-app] .manager-panel__head > a {
+  color: var(--manager-green-strong);
+  font-size: 11.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .manager-upcoming article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-upcoming article:first-child {
+  padding-top: 0;
+}
+
+html[data-manager-app] .manager-upcoming article:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+html[data-manager-app] .manager-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e1f4e7;
+  color: var(--manager-green-deep);
+  font-size: 13px;
+  font-weight: 850;
+  flex: 0 0 auto;
+}
+
+html[data-manager-app] .manager-upcoming__person,
+html[data-manager-app] .manager-upcoming__value {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-upcoming__person strong {
+  font-size: 12.5px;
+}
+
+html[data-manager-app] .manager-upcoming__person small {
+  color: var(--manager-muted);
+  font-size: 10px;
+}
+
+html[data-manager-app] .manager-upcoming__value {
+  justify-items: end;
+}
+
+html[data-manager-app] .manager-upcoming__value strong {
+  font-size: 11.5px;
+}
+
+html[data-manager-app] .manager-occupancy {
+  display: grid;
+  gap: 17px;
+}
+
+html[data-manager-app] .manager-occupancy p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+  font-size: 11.5px;
+}
+
+html[data-manager-app] .manager-occupancy p span {
+  font-weight: 750;
+}
+
+html[data-manager-app] .manager-occupancy p small {
+  color: var(--manager-muted);
+  font-weight: 550;
+}
+
+html[data-manager-app] .manager-progress {
+  display: block;
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: #e8f1eb;
+}
+
+html[data-manager-app] .manager-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--manager-green);
+}
+
+html[data-manager-app] .manager-heatmap-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-heatmap-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-heatmap-head span {
+  color: var(--manager-green-strong);
+  font-size: 8.5px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .manager-heatmap-head strong {
+  font-size: 11.5px;
+}
+
+html[data-manager-app] .manager-heatmap-head > small {
+  color: var(--manager-muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .manager-heatmap {
+  width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+}
+
+html[data-manager-app] .manager-heatmap__grid {
+  display: grid;
+  grid-template-columns: 34px repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-heatmap__day,
+html[data-manager-app] .manager-heatmap__hour {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  color: var(--manager-muted);
+  font-size: 7.5px;
+  font-weight: 750;
+}
+
+html[data-manager-app] .manager-heatmap__hour {
+  justify-content: start;
+}
+
+html[data-manager-app] .manager-heatmap__cell {
+  display: block;
+  min-width: 0;
+  height: 16px;
+  border-radius: 4px;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+html[data-manager-app] .manager-heatmap__cell:hover {
+  z-index: 1;
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px var(--manager-panel), 0 0 0 3px var(--manager-green);
+}
+
+html[data-manager-app] .manager-heatmap__cell.b0,
+html[data-manager-app] .manager-heatmap__legend .b0 {
+  background: #edf5ef;
+}
+
+html[data-manager-app] .manager-heatmap__cell.b1,
+html[data-manager-app] .manager-heatmap__legend .b1 {
+  background: #ccebd7;
+}
+
+html[data-manager-app] .manager-heatmap__cell.b2,
+html[data-manager-app] .manager-heatmap__legend .b2 {
+  background: #91d9aa;
+}
+
+html[data-manager-app] .manager-heatmap__cell.b3,
+html[data-manager-app] .manager-heatmap__legend .b3 {
+  background: #3fba78;
+}
+
+html[data-manager-app] .manager-heatmap__cell.b4,
+html[data-manager-app] .manager-heatmap__legend .b4 {
+  background: #087345;
+}
+
+html[data-manager-app] .manager-heatmap__legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 9px;
+  color: var(--manager-muted);
+  font-size: 7.5px;
+}
+
+html[data-manager-app] .manager-heatmap__legend i {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+
+html[data-manager-app] .manager-panel--intelligence {
+  grid-area: intelligence;
+  margin-top: 0;
+}
+
+html[data-manager-app] .manager-intelligence-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(290px, .65fr);
+  align-items: center;
+  gap: 24px;
+}
+
+html[data-manager-app] .manager-chart {
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-chart .lc {
+  max-height: 245px;
+}
+
+html[data-manager-app] .manager-insights {
+  display: grid;
+  gap: 10px;
+}
+
+html[data-manager-app] .manager-insights article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-insights article:last-child {
+  border-bottom: 0;
+}
+
+html[data-manager-app] .manager-insights article > span {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-insights article.warn > span {
+  background: #fff4df;
+  color: #b36d0d;
+}
+
+html[data-manager-app] .manager-insights strong {
+  font-size: 11.5px;
+}
+
+html[data-manager-app] .manager-insights p {
+  margin-top: 3px;
+  color: var(--manager-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+html[data-manager-app] .manager-empty-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 80px;
+  color: var(--manager-muted);
+  font-size: 11px;
+}
+
+/* Reservas e mensalistas */
+html[data-manager-app] .req-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #cbe7d4;
+  border-radius: var(--manager-radius);
+  background: #e8f7ed;
+  color: var(--manager-green-deep);
+}
+
+html[data-manager-app] .req-banner .ico {
+  border-radius: 50%;
+  background: var(--manager-panel);
+  color: var(--manager-green);
+}
+
+html[data-manager-app] .req-banner div {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .req-banner b {
+  font-size: 12.5px;
+}
+
+html[data-manager-app] .req-banner small {
+  color: var(--manager-ink-soft);
+  font-size: 10.5px;
+  font-weight: 550;
+}
+
+html[data-manager-app] .manager-reservation-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  margin-top: 16px;
+  border: 1px solid var(--manager-line);
+  border-radius: var(--manager-radius);
+  background: var(--manager-panel);
+}
+
+html[data-manager-app] .manager-reservation-overview article {
+  display: grid;
+  grid-template-rows: 38px minmax(39px, auto);
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  min-height: 94px;
+  padding: 17px;
+  border-right: 1px solid var(--manager-line);
+  text-align: center;
+}
+
+html[data-manager-app] .manager-reservation-overview article:last-child {
+  border-right: 0;
+}
+
+html[data-manager-app] .manager-reservation-overview article > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-reservation-overview article > span .ic {
+  width: 18px;
+  height: 18px;
+}
+
+html[data-manager-app] .manager-reservation-overview article > div {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+}
+
+html[data-manager-app] .manager-reservation-overview strong {
+  font-size: 19px;
+}
+
+html[data-manager-app] .manager-reservation-overview small {
+  color: var(--manager-muted);
+  font-size: 10.5px;
+}
+
+html[data-manager-app] .manager-reservation-overview .has-pending > span {
+  background: #dff4e7;
+  color: var(--manager-green);
+}
+
+html[data-manager-app] .manager-section__head--stack {
+  align-items: center;
+}
+
+html[data-manager-app] .manager-filter-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: min(100%, 570px);
+  max-width: 100%;
+  margin: 0;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--manager-panel);
+}
+
+html[data-manager-app] .manager-filter-tabs button {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--manager-muted);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+html[data-manager-app] .manager-filter-tabs button.on {
+  background: var(--manager-green);
+  color: #fff;
+}
+
+html[data-manager-app] .manager-bookings,
+html[data-manager-app] .manager-members {
+  overflow: hidden;
+  border: 1px solid var(--manager-line);
+  border-radius: var(--manager-radius);
+  background: var(--manager-panel);
+}
+
+html[data-manager-app] .manager-booking-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(120px, .8fr) minmax(160px, 1fr) minmax(90px, .55fr) auto minmax(120px, auto);
+  align-items: center;
+  gap: 16px;
+  min-height: 82px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-booking-row:last-of-type {
+  border-bottom: 0;
+}
+
+html[data-manager-app] .manager-booking-row.is-request {
+  background: #fbfefc;
+}
+
+html[data-manager-app] .manager-booking-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-booking-person > div,
+html[data-manager-app] .manager-booking-fact {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-booking-person strong,
+html[data-manager-app] .manager-booking-fact strong {
+  overflow: hidden;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .manager-booking-person small,
+html[data-manager-app] .manager-booking-fact > span {
+  color: var(--manager-muted);
+  font-size: 9.5px;
+}
+
+html[data-manager-app] .manager-booking-status {
+  justify-self: start;
+}
+
+html[data-manager-app] .manager-booking-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+html[data-manager-app] .manager-booking-actions form {
+  display: inline-flex;
+}
+
+html[data-manager-app] .manager-empty-list {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 44px 18px;
+  color: var(--manager-muted);
+  text-align: center;
+}
+
+html[data-manager-app] .manager-empty-list[hidden] {
+  display: none;
+}
+
+html[data-manager-app] .manager-empty-list .ic {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 3px;
+  color: var(--manager-green);
+}
+
+html[data-manager-app] .manager-empty-list strong {
+  color: var(--manager-ink);
+  font-size: 13px;
+}
+
+html[data-manager-app] .manager-empty-list span {
+  font-size: 10.5px;
+}
+
+html[data-manager-app] .manager-member {
+  display: grid;
+  grid-template-columns: auto minmax(150px, 1fr) minmax(180px, 1fr) minmax(130px, .7fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 78px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-member:last-child {
+  border-bottom: 0;
+}
+
+html[data-manager-app] .manager-member > div {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-member > div > span,
+html[data-manager-app] .manager-member small {
+  color: var(--manager-muted);
+  font-size: 9.5px;
+}
+
+html[data-manager-app] .manager-member strong {
+  font-size: 11.5px;
+}
+
+html[data-manager-app] .manager-row-actions {
+  display: flex !important;
+  grid-auto-flow: column;
+  gap: 5px !important;
+}
+
+html[data-manager-app] .manager-row-menu {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+  color: var(--manager-green-deep);
+}
+
+html[data-manager-app] .manager-row-menu .ic {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-manager-app] .manager-row-menu.is-danger {
+  background: #fff1f3;
+  color: var(--manager-danger);
+}
+
+/* Agenda */
+html[data-manager-app] .cal-toolbar {
+  padding: 13px 15px;
+  border: 1px solid var(--manager-line);
+  border-radius: var(--manager-radius);
+  background: var(--manager-panel);
+}
+
+html[data-manager-app] .cal-nav {
+  border-color: var(--manager-line);
+  border-radius: 50%;
+}
+
+html[data-manager-app] .cal {
+  border-color: var(--manager-line);
+  border-radius: var(--manager-radius);
+}
+
+html[data-manager-app] .cal-ev {
+  border-radius: 10px;
+}
+
+html[data-manager-app] .cal-ev.pago {
+  background: #def3e5;
+  border-color: var(--manager-green);
+  color: var(--manager-green-deep);
+}
+
+html[data-manager-app] .manager-agenda-mobile {
+  display: none;
+}
+
+html[data-manager-app] .manager-agenda-court-filter {
+  display: none;
+}
+
+/* Financeiro */
+html[data-manager-app] .manager-finance-summary {
+  display: grid;
+  grid-template-columns: minmax(340px, .95fr) minmax(0, 1.25fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+html[data-manager-app] .manager-finance-balance {
+  padding: 22px;
+  border-radius: var(--manager-radius);
+  background: var(--manager-green-strong);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(12, 139, 82, .16);
+}
+
+html[data-manager-app] .manager-finance-balance .manager-eyebrow {
+  color: #d8f5e2;
+}
+
+html[data-manager-app] .manager-finance-balance .manager-eyebrow i {
+  background: #fff;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, .12);
+}
+
+html[data-manager-app] .manager-finance-balance > strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 31px;
+}
+
+html[data-manager-app] .manager-finance-balance > p {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, .75);
+  font-size: 11px;
+}
+
+html[data-manager-app] .manager-finance-balance > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(255, 255, 255, .18);
+  font-size: 10px;
+}
+
+html[data-manager-app] .manager-finance-balance > div span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 750;
+}
+
+html[data-manager-app] .manager-finance-balance > div small {
+  color: rgba(255, 255, 255, .68);
+}
+
+html[data-manager-app] .manager-finance-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--manager-line);
+  border-radius: var(--manager-radius);
+  background: var(--manager-panel);
+}
+
+html[data-manager-app] .manager-finance-metrics article {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 20px;
+  border-right: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-finance-metrics article:last-child {
+  border-right: 0;
+}
+
+html[data-manager-app] .manager-finance-metrics article > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-finance-metrics article > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-finance-metrics small {
+  color: var(--manager-muted);
+  font-size: 10px;
+}
+
+html[data-manager-app] .manager-finance-metrics strong {
+  overflow: hidden;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .commission-box {
+  border-color: var(--manager-line);
+  border-radius: 16px;
+  background: #f8fbf8;
+}
+
+html[data-manager-app] .manager-mobile-period {
+  display: none;
+}
+
+html[data-manager-app] .manager-finance-analytics {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, .55fr);
+  align-items: stretch;
+  gap: 24px;
+}
+
+html[data-manager-app] .manager-finance-chart {
+  min-width: 0;
+  padding-right: 24px;
+  border-right: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-finance-chart > .manager-panel__head > small {
+  color: var(--manager-muted);
+  font-size: 9.5px;
+}
+
+html[data-manager-app] .manager-finance-chart .lc {
+  width: 100%;
+  min-width: 0;
+  max-height: 260px;
+}
+
+html[data-manager-app] .manager-finance-breakdown {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+html[data-manager-app] .manager-finance-donut-wrap {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+
+html[data-manager-app] .manager-finance-donut {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 128px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(var(--manager-green) 0 var(--manager-net), #bfe4cc var(--manager-net) 100%);
+}
+
+html[data-manager-app] .manager-finance-donut::after {
+  position: absolute;
+  width: 82px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--manager-panel);
+  content: "";
+}
+
+html[data-manager-app] .manager-finance-donut > span {
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+}
+
+html[data-manager-app] .manager-finance-donut strong {
+  color: var(--manager-green-deep);
+  font-size: 24px;
+}
+
+html[data-manager-app] .manager-finance-donut small {
+  color: var(--manager-muted);
+  font-size: 8.5px;
+  font-weight: 750;
+}
+
+html[data-manager-app] .manager-finance-legend {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-finance-legend p {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+}
+
+html[data-manager-app] .manager-finance-legend p > i {
+  width: 9px;
+  height: 9px;
+  margin-top: 3px;
+  border-radius: 50%;
+}
+
+html[data-manager-app] .manager-finance-legend .is-net {
+  background: var(--manager-green);
+}
+
+html[data-manager-app] .manager-finance-legend .is-fee {
+  background: #bfe4cc;
+}
+
+html[data-manager-app] .manager-finance-legend p > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-finance-legend strong {
+  font-size: 10px;
+}
+
+html[data-manager-app] .manager-finance-legend small {
+  overflow: hidden;
+  color: var(--manager-muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .manager-finance-health {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+html[data-manager-app] .manager-finance-health div {
+  display: grid;
+  gap: 3px;
+  padding-top: 11px;
+  border-top: 1px solid var(--manager-line);
+}
+
+html[data-manager-app] .manager-finance-health span {
+  color: var(--manager-muted);
+  font-size: 8.5px;
+}
+
+html[data-manager-app] .manager-finance-health strong {
+  font-size: 14px;
+}
+
+html[data-manager-app] .manager-finance-ledger {
+  margin-top: 16px;
+}
+
+html[data-manager-app] .manager-finance-ledger .manager-panel__head p {
+  margin-top: 3px;
+  color: var(--manager-muted);
+  font-size: 9.5px;
+}
+
+html[data-manager-app] .manager-table-wrap {
+  width: 100%;
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-finance-table th {
+  padding-right: 9px;
+  padding-left: 9px;
+}
+
+html[data-manager-app] .manager-finance-table td {
+  padding-right: 9px;
+  padding-left: 9px;
+  font-size: 11.5px;
+}
+
+html[data-manager-app] .manager-finance-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--manager-line);
+  color: var(--manager-muted);
+  font-size: 9.5px;
+  text-align: center;
+}
+
+html[data-manager-app] .manager-finance-note .ic {
+  flex: 0 0 auto;
+  color: var(--manager-green);
+}
+
+/* Vitrine e quadras */
+html[data-manager-app] .manager-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .68fr);
+  gap: 28px;
+  scroll-margin-top: 92px;
+  margin-bottom: 28px;
+  padding: 25px;
+  border: 1px solid #cfe7d7;
+  border-radius: var(--manager-radius-lg);
+  background: #eaf7ee;
+}
+
+html[data-manager-app] .manager-showcase__copy > h2 {
+  margin-top: 8px;
+  color: var(--manager-green-deep);
+  font-size: 23px;
+}
+
+html[data-manager-app] .manager-showcase__copy > p {
+  max-width: 590px;
+  margin-top: 5px;
+  color: var(--manager-ink-soft);
+  font-size: 12px;
+}
+
+html[data-manager-app] .manager-showcase__stats {
+  display: flex;
+  gap: 28px;
+  margin-top: 18px;
+}
+
+html[data-manager-app] .manager-showcase__stats div {
+  display: grid;
+  gap: 1px;
+}
+
+html[data-manager-app] .manager-showcase__stats strong {
+  font-size: 19px;
+}
+
+html[data-manager-app] .manager-showcase__stats small {
+  color: var(--manager-muted);
+  font-size: 9.5px;
+}
+
+html[data-manager-app] .manager-showcase__settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 18px;
+}
+
+html[data-manager-app] .manager-setting-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid rgba(199, 221, 206, .9);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, .72);
+  color: var(--manager-ink);
+  text-align: left;
+}
+
+html[data-manager-app] .manager-setting-toggle > span {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #e4f4e9;
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-setting-toggle > span .ic {
+  width: 17px;
+  height: 17px;
+}
+
+html[data-manager-app] .manager-setting-toggle > div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+html[data-manager-app] .manager-setting-toggle strong,
+html[data-manager-app] .manager-setting-toggle small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .manager-setting-toggle strong {
+  font-size: 10.5px;
+}
+
+html[data-manager-app] .manager-setting-toggle small {
+  color: var(--manager-muted);
+  font-size: 8.5px;
+}
+
+html[data-manager-app] .manager-setting-toggle > i {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: #cdd8d0;
+  transition: background .18s;
+}
+
+html[data-manager-app] .manager-setting-toggle > i::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .14);
+  transition: transform .18s;
+}
+
+html[data-manager-app] .manager-setting-toggle.is-on > i {
+  background: var(--manager-green);
+}
+
+html[data-manager-app] .manager-setting-toggle.is-on > i::after {
+  transform: translateX(14px);
+}
+
+html[data-manager-app] .manager-showcase-preview {
+  align-self: center;
+  padding: 11px;
+  border: 1px solid rgba(199, 221, 206, .9);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .72);
+}
+
+html[data-manager-app] .manager-showcase-preview__label {
+  display: block;
+  margin: 1px 4px 8px;
+  color: var(--manager-muted);
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .manager-showcase-preview article {
+  overflow: hidden;
+  border-radius: 17px;
+  background: var(--manager-panel);
+  box-shadow: 0 10px 24px rgba(7, 94, 58, .1);
+}
+
+html[data-manager-app] .manager-showcase-preview__image {
+  position: relative;
+  height: 126px;
+}
+
+html[data-manager-app] .manager-showcase-preview__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+html[data-manager-app] .manager-showcase-preview__image > span {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .94);
+  color: var(--manager-green-deep);
+  font-size: 8.5px;
+  font-weight: 850;
+}
+
+html[data-manager-app] .manager-showcase-preview__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+}
+
+html[data-manager-app] .manager-showcase-preview__body > div {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-showcase-preview__body strong {
+  font-size: 11px;
+}
+
+html[data-manager-app] .manager-showcase-preview__body small {
+  color: var(--manager-muted);
+  font-size: 8.5px;
+}
+
+html[data-manager-app] .manager-showcase-preview__body > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--manager-green-deep);
+  font-size: 9.5px;
+  font-weight: 850;
+}
+
+html[data-manager-app] .manager-showcase-preview__body > span .ic {
+  color: #e5a31b;
+  fill: #e5a31b;
+  stroke: none;
+}
+
+html[data-manager-app] .manager-courts-head {
+  margin-bottom: 12px;
+}
+
+html[data-manager-app] .qcard {
+  border-radius: 22px;
+  box-shadow: var(--manager-shadow);
+}
+
+html[data-manager-app] .qcard .ph {
+  height: 178px;
+}
+
+html[data-manager-app] .qcard .pill,
+html[data-manager-app] .status {
+  border-radius: 999px;
+}
+
+html[data-manager-app] .add-card {
+  min-height: 300px;
+  border-radius: 22px;
+  background: #edf6f0;
+  box-shadow: none;
+}
+
+/* Cupons e configurações */
+html[data-manager-app] .settings {
+  max-width: 1080px;
+}
+
+html[data-manager-app] .set-card {
+  grid-template-columns: minmax(190px, .65fr) minmax(0, 1.6fr);
+  gap: 30px;
+  padding: 23px;
+}
+
+html[data-manager-app] .set-aside p {
+  color: var(--manager-muted);
+}
+
+html[data-manager-app] .set-hint {
+  border-radius: 15px;
+  background: var(--manager-panel-soft);
+  color: var(--manager-green-deep);
+}
+
+html[data-manager-app] .manager-coupon-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+
+html[data-manager-app] .manager-coupon-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-coupon-head strong {
+  font-size: 12px;
+}
+
+html[data-manager-app] .manager-coupon-head small {
+  color: var(--manager-muted);
+  font-size: 9.5px;
+}
+
+html[data-manager-app] .manager-coupons {
+  display: grid;
+  gap: 8px;
+}
+
+html[data-manager-app] .manager-coupon {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px dashed #b9d9c4;
+  border-radius: 16px;
+  background: #f0faf3;
+}
+
+html[data-manager-app] .manager-coupon > span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #dcf4e5;
+  color: var(--manager-green-strong);
+}
+
+html[data-manager-app] .manager-coupon > div {
+  display: grid;
+  gap: 2px;
+}
+
+html[data-manager-app] .manager-coupon strong {
+  color: var(--manager-green-deep);
+  font-size: 11px;
+}
+
+html[data-manager-app] .manager-coupon small {
+  color: var(--manager-muted);
+  font-size: 9px;
+}
+
+html[data-manager-app] .manager-coupon > button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--manager-muted);
+}
+
+html[data-manager-app] .manager-coupon > button:hover {
+  background: #fff;
+  color: var(--manager-danger);
+}
+
+/* Avaliações, detalhe, chat e modais */
+html[data-manager-app] .rating-big {
+  border-color: var(--manager-line);
+}
+
+html[data-manager-app] .review .av,
+html[data-manager-app] .conv-av {
+  border-radius: 50%;
+  background: var(--manager-green-deep);
+}
+
+html[data-manager-app] .review {
+  padding: 17px;
+}
+
+html[data-manager-app] .chat {
+  height: calc(100vh - 154px);
+  border-color: var(--manager-line);
+  border-radius: var(--manager-radius);
+}
+
+html[data-manager-app] .chat-list,
+html[data-manager-app] .thread-head,
+html[data-manager-app] .composer {
+  border-color: var(--manager-line);
+}
+
+html[data-manager-app] .conv.on {
+  background: var(--manager-panel-soft);
+}
+
+html[data-manager-app] .bubbles {
+  background: #f3f8f4;
+}
+
+html[data-manager-app] .bubble {
+  border-radius: 18px;
+}
+
+html[data-manager-app] .bubble.me {
+  background: var(--manager-green);
+}
+
+html[data-manager-app] .composer input {
+  border-color: var(--manager-line);
+  border-radius: 999px;
+}
+
+html[data-manager-app] .chat-mobile-back {
+  display: none;
+}
+
+html[data-manager-app] .modal {
+  z-index: 140;
+}
+
+html[data-manager-app] .modal-box {
+  overflow: hidden;
+  border-radius: 24px;
+  box-shadow: 0 24px 80px rgba(12, 36, 23, .22);
+}
+
+html[data-manager-app] .modal-head,
+html[data-manager-app] .modal-foot {
+  border-color: var(--manager-line);
+}
+
+html[data-manager-app] .manager-modal-eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--manager-green-strong);
+  font-size: 8.5px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .modal-x {
+  border-radius: 50%;
+  background: var(--manager-panel-soft);
+}
+
+html[data-manager-app] .toast {
+  border: 0;
+  border-radius: 18px;
+  background: var(--manager-green-deep);
+  color: #fff;
+}
+
+@media (min-width: 821px) {
+  html[data-manager-app] .app.collapsed {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1180px) {
+  html[data-manager-app] .manager-welcome {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr);
+  }
+
+  html[data-manager-app] .manager-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-manager-app] .manager-tools a:nth-child(2) {
+    border-right: 0;
+  }
+
+  html[data-manager-app] .manager-tools a:nth-child(-n+2) {
+    border-bottom: 1px solid var(--manager-line);
+  }
+
+  html[data-manager-app] .manager-booking-row {
+    grid-template-columns: minmax(170px, 1fr) minmax(120px, .75fr) minmax(140px, .85fr) auto auto;
+  }
+
+  html[data-manager-app] .manager-booking-fact:nth-of-type(3) {
+    display: none;
+  }
+
+  html[data-manager-app] .manager-member {
+    grid-template-columns: auto minmax(150px, 1fr) minmax(170px, 1fr) auto auto;
+  }
+
+  html[data-manager-app] .manager-member > div:nth-of-type(3) {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  html[data-manager-app] .manager-summary,
+  html[data-manager-app] .manager-finance-summary,
+  html[data-manager-app] .manager-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  html[data-manager-app] .manager-intelligence-grid {
+    grid-template-columns: 1fr;
+  }
+
+  html[data-manager-app] .manager-showcase-preview {
+    width: min(100%, 430px);
+  }
+}
+
+@media (max-width: 820px) {
+  html[data-manager-app] body {
+    min-height: 100dvh;
+    background: var(--manager-bg);
+  }
+
+  html[data-manager-app] .app {
+    display: block;
+    min-height: 100dvh;
+  }
+
+  html[data-manager-app] .sidebar {
+    z-index: 100;
+    width: min(86vw, 316px);
+    height: 100dvh;
+    padding: calc(16px + var(--manager-safe-top)) 14px calc(18px + var(--manager-safe-bottom));
+    box-shadow: 28px 0 70px rgba(12, 36, 23, .2);
+  }
+
+  html[data-manager-app] .app.nav-open .sb-backdrop {
+    z-index: 99;
+    background: rgba(8, 28, 17, .42);
+    backdrop-filter: blur(2px);
+  }
+
+  html[data-manager-app] .sidebar .sb-collapse {
+    display: none;
+  }
+
+  html[data-manager-app] .sidebar .sb-top {
+    padding-bottom: 12px;
+  }
+
+  html[data-manager-app] .sidebar .sb-group {
+    padding-top: 13px;
+  }
+
+  html[data-manager-app] .sidebar .sb-link {
+    min-height: 42px;
+  }
+
+  html[data-manager-app] .main {
+    min-height: 100dvh;
+  }
+
+  html[data-manager-app] .topbar {
+    min-height: calc(68px + var(--manager-safe-top));
+    padding: calc(10px + var(--manager-safe-top)) 13px 10px;
+    gap: 10px;
+  }
+
+  html[data-manager-app] .topbar .hamb {
+    display: none;
+  }
+
+  html[data-manager-app] .topbar .pt {
+    min-width: 0;
+  }
+
+  html[data-manager-app] .topbar .pt h1 {
+    overflow: hidden;
+    font-size: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html[data-manager-app] .topbar .pt .sub {
+    overflow: hidden;
+    max-width: 190px;
+    font-size: 9.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html[data-manager-app] .topbar .actions {
+    gap: 6px;
+  }
+
+  html[data-manager-app] .topbar .actions .period,
+  html[data-manager-app] .manager-secondary-action {
+    display: none;
+  }
+
+  html[data-manager-app] .manager-primary-action {
+    width: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  html[data-manager-app] .manager-primary-action span {
+    display: none;
+  }
+
+  html[data-manager-app] .manager-primary-action .ic {
+    width: 18px;
+    height: 18px;
+  }
+
+  html[data-manager-app] .icon-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  html[data-manager-app] .manager-notification-menu {
+    position: fixed;
+    top: calc(64px + var(--manager-safe-top));
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-height: calc(100dvh - 154px - var(--manager-safe-top) - var(--manager-safe-bottom));
+    overflow-y: auto;
+  }
+
+  html[data-manager-app] .content {
+    padding: 14px 13px calc(104px + var(--manager-safe-bottom));
+  }
+
+  html[data-manager-app] .manager-tabbar {
+    position: fixed;
+    z-index: 80;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-height: calc(76px + var(--manager-safe-bottom));
+    padding: 7px 6px max(7px, var(--manager-safe-bottom));
+    border-top: 1px solid var(--manager-line);
+    border-radius: 24px 24px 0 0;
+    background: rgba(255, 255, 255, .98);
+    box-shadow: 0 -9px 28px rgba(7, 94, 58, .09);
+    backdrop-filter: blur(14px);
+  }
+
+  html[data-manager-app] .manager-tabbar > a,
+  html[data-manager-app] .manager-tabbar > button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 54px;
+    padding: 4px 1px;
+    border-radius: 16px;
+    color: #718078;
+  }
+
+  html[data-manager-app] .manager-tabbar .ic {
+    width: 21px;
+    height: 21px;
+  }
+
+  html[data-manager-app] .manager-tabbar > a > span:last-child,
+  html[data-manager-app] .manager-tabbar > button > span {
+    font-size: 9px;
+    font-weight: 750;
+  }
+
+  html[data-manager-app] .manager-tabbar > .on {
+    color: var(--manager-green-strong);
+  }
+
+  html[data-manager-app] .manager-tabbar > .on > .ic,
+  html[data-manager-app] .manager-tabbar > .on .manager-tabbar-icon {
+    color: var(--manager-green);
+  }
+
+  html[data-manager-app] .manager-tabbar-icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  html[data-manager-app] .manager-tabbar-icon b {
+    position: absolute;
+    top: -6px;
+    right: -9px;
+    display: grid;
+    place-items: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: var(--manager-green);
+    color: #fff;
+    font-size: 8px;
+  }
+
+  html[data-manager-app] .manager-welcome {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 13px;
+    padding: 19px 17px;
+    border-radius: 24px;
+  }
+
+  html[data-manager-app] .manager-welcome__copy h2 {
+    font-size: 24px;
+  }
+
+  html[data-manager-app] .manager-welcome__copy p {
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+
+  html[data-manager-app] .manager-request-cta {
+    padding: 11px;
+  }
+
+  html[data-manager-app] .manager-summary {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  html[data-manager-app] .manager-balance {
+    min-height: 122px;
+    padding: 18px;
+  }
+
+  html[data-manager-app] .manager-balance__copy strong {
+    font-size: 24px;
+  }
+
+  html[data-manager-app] .manager-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  html[data-manager-app] .manager-metrics article {
+    grid-template-rows: 31px minmax(42px, auto);
+    row-gap: 7px;
+    min-height: 106px;
+    padding: 13px 10px;
+  }
+
+  html[data-manager-app] .manager-metrics article > span {
+    width: 31px;
+    height: 31px;
+    margin-bottom: 8px;
+  }
+
+  html[data-manager-app] .manager-metrics strong {
+    font-size: 15px;
+  }
+
+  html[data-manager-app] .manager-metric-copy {
+    grid-template-rows: 20px minmax(22px, auto);
+  }
+
+  html[data-manager-app] .manager-metrics small {
+    font-size: 8.5px;
+    line-height: 1.25;
+  }
+
+  html[data-manager-app] .manager-section {
+    margin-top: 23px;
+    scroll-margin-top: 78px;
+  }
+
+  html[data-manager-app] .manager-section__head {
+    align-items: start;
+  }
+
+  html[data-manager-app] .manager-section__head h2,
+  html[data-manager-app] .manager-panel__head h2 {
+    font-size: 16px;
+  }
+
+  html[data-manager-app] .manager-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-radius: 20px;
+  }
+
+  html[data-manager-app] .manager-tools a {
+    grid-template-columns: 36px minmax(0, 1fr) 25px;
+    min-height: 82px;
+    padding: 12px 11px;
+  }
+
+  html[data-manager-app] .manager-tools a:nth-child(2) {
+    border-right: 0;
+  }
+
+  html[data-manager-app] .manager-tools a:nth-child(-n+2) {
+    border-bottom: 1px solid var(--manager-line);
+  }
+
+  html[data-manager-app] .manager-tools a > span {
+    width: 36px;
+    height: 36px;
+  }
+
+  html[data-manager-app] .manager-tools > a > .ic {
+    display: block;
+    width: 25px;
+    height: 25px;
+    padding: 6px;
+  }
+
+  html[data-manager-app] .manager-tools strong {
+    font-size: 11px;
+  }
+
+  html[data-manager-app] .manager-tools small {
+    font-size: 8px;
+  }
+
+  html[data-manager-app] .manager-dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "bookings"
+      "occupancy"
+      "intelligence";
+    gap: 11px;
+    margin-top: 11px;
+  }
+
+  html[data-manager-app] .manager-panel {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  html[data-manager-app] .manager-panel--intelligence {
+    margin-top: 0;
+  }
+
+  html[data-manager-app] .manager-panel__head {
+    align-items: start;
+    margin-bottom: 13px;
+  }
+
+  html[data-manager-app] .manager-upcoming article {
+    gap: 9px;
+  }
+
+  html[data-manager-app] .manager-upcoming__person strong {
+    font-size: 11px;
+  }
+
+  html[data-manager-app] .manager-upcoming__value .status {
+    display: none;
+  }
+
+  html[data-manager-app] .manager-intelligence-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  html[data-manager-app] .manager-chart .lc {
+    width: 100%;
+    min-width: 0;
+  }
+
+  html[data-manager-app] .manager-chart {
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+
+  html[data-manager-app] .req-banner {
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 19px;
+  }
+
+  html[data-manager-app] .req-banner b {
+    font-size: 11px;
+  }
+
+  html[data-manager-app] .req-banner small {
+    font-size: 9px;
+  }
+
+  html[data-manager-app] .manager-reservation-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 11px;
+  }
+
+  html[data-manager-app] .manager-reservation-overview article {
+    display: grid;
+    align-content: center;
+    gap: 7px;
+    min-height: 102px;
+    padding: 11px 8px;
+  }
+
+  html[data-manager-app] .manager-reservation-overview article > span {
+    width: 31px;
+    height: 31px;
+  }
+
+  html[data-manager-app] .manager-reservation-overview strong {
+    font-size: 15px;
+  }
+
+  html[data-manager-app] .manager-reservation-overview small {
+    font-size: 8px;
+    line-height: 1.25;
+  }
+
+  html[data-manager-app] .manager-section__head--stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+    justify-items: stretch;
+    gap: 11px;
+    width: 100%;
+  }
+
+  html[data-manager-app] .manager-filter-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+    overflow: hidden;
+    padding: 4px;
+    border-radius: 999px;
+  }
+
+  html[data-manager-app] .manager-filter-tabs button {
+    min-height: 38px;
+    padding: 7px 2px;
+    border-radius: 999px;
+    font-size: 8.5px;
+    white-space: nowrap;
+  }
+
+  html[data-manager-app] .manager-bookings,
+  html[data-manager-app] .manager-members {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  html[data-manager-app] .manager-booking-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 11px 12px;
+    min-height: 0;
+    margin-bottom: 10px;
+    padding: 14px;
+    border: 1px solid var(--manager-line);
+    border-radius: 19px;
+    background: var(--manager-panel);
+    box-shadow: 0 8px 22px rgba(7, 94, 58, .05);
+  }
+
+  html[data-manager-app] .manager-booking-row:last-of-type {
+    margin-bottom: 0;
+    border: 1px solid var(--manager-line);
+  }
+
+  html[data-manager-app] .manager-booking-person {
+    grid-column: 1;
+  }
+
+  html[data-manager-app] .manager-booking-status {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  html[data-manager-app] .manager-booking-fact {
+    grid-column: 1 / -1;
+    grid-template-columns: 86px minmax(0, 1fr);
+    align-items: baseline;
+    padding-top: 9px;
+    border-top: 1px solid var(--manager-line);
+  }
+
+  html[data-manager-app] .manager-booking-fact:nth-of-type(3) {
+    display: grid;
+  }
+
+  html[data-manager-app] .manager-booking-fact strong {
+    text-align: right;
+  }
+
+  html[data-manager-app] .manager-booking-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: 2px;
+  }
+
+  html[data-manager-app] .manager-booking-actions > a,
+  html[data-manager-app] .manager-booking-actions form,
+  html[data-manager-app] .manager-booking-actions button {
+    width: 100%;
+  }
+
+  html[data-manager-app] .manager-members-section .manager-section__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  html[data-manager-app] .manager-members-section .manager-section__head .btn {
+    width: 42px;
+    min-width: 42px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  html[data-manager-app] .manager-members-section .manager-section__head .btn .ic {
+    width: 18px;
+    height: 18px;
+  }
+
+  html[data-manager-app] .manager-member {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 9px 11px;
+    margin-bottom: 10px;
+    padding: 14px;
+    border: 1px solid var(--manager-line);
+    border-radius: 19px;
+    background: var(--manager-panel);
+  }
+
+  html[data-manager-app] .manager-member:last-child {
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--manager-line);
+  }
+
+  html[data-manager-app] .manager-member > div:nth-of-type(2),
+  html[data-manager-app] .manager-member > div:nth-of-type(3) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    align-items: baseline;
+    padding-top: 9px;
+    border-top: 1px solid var(--manager-line);
+  }
+
+  html[data-manager-app] .manager-member > div:nth-of-type(2) strong,
+  html[data-manager-app] .manager-member > div:nth-of-type(3) strong {
+    text-align: right;
+  }
+
+  html[data-manager-app] .manager-member > .status {
+    grid-column: 1 / 3;
+    justify-self: start;
+  }
+
+  html[data-manager-app] .manager-member > .manager-row-menu,
+  html[data-manager-app] .manager-member > .manager-row-actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  html[data-manager-app] .cal-toolbar {
+    padding: 11px;
+  }
+
+  html[data-manager-app] .cal-legend {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 9.5px;
+  }
+
+  html[data-manager-app] .manager-agenda-desktop {
+    display: none;
+  }
+
+  html[data-manager-app] .manager-agenda-mobile {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  html[data-manager-app] .manager-agenda-court-filter {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 10px;
+    padding: 4px;
+    border: 1px solid var(--manager-line);
+    border-radius: 18px;
+    background: var(--manager-panel);
+  }
+
+  html[data-manager-app] .manager-agenda-court-filter button {
+    min-width: 0;
+    min-height: 38px;
+    padding: 7px;
+    border-radius: 14px;
+    color: var(--manager-muted);
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  html[data-manager-app] .manager-agenda-court-filter button.on {
+    background: var(--manager-green);
+    color: #fff;
+  }
+
+  html[data-manager-app] .manager-agenda-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+
+  html[data-manager-app] .manager-agenda-days button {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto auto 12px;
+    place-items: center;
+    gap: 2px;
+    min-width: 0;
+    min-height: 70px;
+    padding: 8px 2px 6px;
+    border: 1px solid var(--manager-line);
+    border-radius: 16px;
+    background: var(--manager-panel);
+    color: var(--manager-ink-soft);
+  }
+
+  html[data-manager-app] .manager-agenda-days button small {
+    color: var(--manager-muted);
+    font-size: 7px;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  html[data-manager-app] .manager-agenda-days button strong {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  html[data-manager-app] .manager-agenda-days button > span {
+    display: grid;
+    place-items: center;
+    min-width: 16px;
+    height: 12px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--manager-panel-soft);
+    color: var(--manager-green-strong);
+    font-size: 7px;
+    font-weight: 850;
+  }
+
+  html[data-manager-app] .manager-agenda-days button.on {
+    border-color: var(--manager-green);
+    background: var(--manager-green);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(22, 167, 101, .16);
+  }
+
+  html[data-manager-app] .manager-agenda-days button.on small {
+    color: rgba(255, 255, 255, .78);
+  }
+
+  html[data-manager-app] .manager-agenda-days button.on > span {
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+  }
+
+  html[data-manager-app] .manager-agenda-day-panel {
+    overflow: hidden;
+    border: 1px solid var(--manager-line);
+    border-radius: 20px;
+    background: var(--manager-panel);
+  }
+
+  html[data-manager-app] .manager-agenda-day-panel[hidden] {
+    display: none;
+  }
+
+  html[data-manager-app] .manager-agenda-day-panel > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 64px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--manager-line);
+    background: #fbfdfb;
+  }
+
+  html[data-manager-app] .manager-agenda-day-panel > header > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  html[data-manager-app] .manager-agenda-day-panel > header > div span {
+    color: var(--manager-green-strong);
+    font-size: 8px;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+
+  html[data-manager-app] .manager-agenda-day-panel > header > div strong {
+    font-size: 14px;
+  }
+
+  html[data-manager-app] .manager-agenda-day-panel > header > span {
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: var(--manager-panel-soft);
+    color: var(--manager-green-deep);
+    font-size: 8px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  html[data-manager-app] .manager-day-bookings {
+    padding: 2px 14px;
+  }
+
+  html[data-manager-app] .manager-day-booking {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr) auto 16px;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 68px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--manager-line);
+    color: var(--manager-ink);
+    text-align: left;
+  }
+
+  html[data-manager-app] .manager-day-booking:last-child {
+    border-bottom: 0;
+  }
+
+  html[data-manager-app] .manager-day-booking > .num {
+    color: var(--manager-green-deep);
+    font-size: 9.5px;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+
+  html[data-manager-app] .manager-day-booking > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  html[data-manager-app] .manager-day-booking strong {
+    font-size: 11px;
+  }
+
+  html[data-manager-app] .manager-day-booking small {
+    color: var(--manager-muted);
+    font-size: 8.5px;
+  }
+
+  html[data-manager-app] .manager-day-booking__chevron {
+    color: #91a198;
+  }
+
+  html[data-manager-app] .manager-agenda-empty {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    padding: 30px 16px;
+    color: var(--manager-muted);
+    text-align: center;
+  }
+
+  html[data-manager-app] .manager-agenda-empty > span {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    margin-bottom: 3px;
+    border-radius: 50%;
+    background: var(--manager-panel-soft);
+    color: var(--manager-green);
+  }
+
+  html[data-manager-app] .manager-agenda-empty strong {
+    color: var(--manager-ink);
+    font-size: 11px;
+  }
+
+  html[data-manager-app] .manager-agenda-empty small {
+    font-size: 8.5px;
+  }
+
+  html[data-manager-app] .manager-finance-summary {
+    grid-template-columns: 1fr;
+    gap: 11px;
+    margin-bottom: 11px;
+  }
+
+  html[data-manager-app] .manager-finance-balance {
+    padding: 19px;
+  }
+
+  html[data-manager-app] .manager-finance-balance > strong {
+    font-size: 27px;
+  }
+
+  html[data-manager-app] .manager-finance-metrics article {
+    display: grid;
+    grid-template-rows: 35px minmax(43px, auto);
+    align-content: center;
+    gap: 8px;
+    padding: 14px 12px;
+  }
+
+  html[data-manager-app] .manager-finance-metrics article > span {
+    width: 35px;
+    height: 35px;
+  }
+
+  html[data-manager-app] .manager-finance-metrics strong {
+    font-size: 14px;
+  }
+
+  html[data-manager-app] .manager-mobile-period {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    margin-bottom: 11px;
+    padding: 4px;
+    border: 1px solid var(--manager-line);
+    border-radius: 18px;
+    background: var(--manager-panel);
+  }
+
+  html[data-manager-app] .manager-mobile-period button {
+    min-width: 0;
+    min-height: 38px;
+    padding: 7px;
+    border-radius: 14px;
+    color: var(--manager-muted);
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  html[data-manager-app] .manager-mobile-period button.on {
+    background: var(--manager-green);
+    color: #fff;
+  }
+
+  html[data-manager-app] .manager-finance-analytics {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  html[data-manager-app] .manager-finance-chart {
+    padding-right: 0;
+    padding-bottom: 17px;
+    border-right: 0;
+    border-bottom: 1px solid var(--manager-line);
+  }
+
+  html[data-manager-app] .manager-finance-chart .lc {
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+  }
+
+  html[data-manager-app] .manager-finance-donut-wrap {
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  html[data-manager-app] .manager-finance-donut {
+    width: 112px;
+  }
+
+  html[data-manager-app] .manager-finance-donut::after {
+    width: 72px;
+  }
+
+  html[data-manager-app] .manager-finance-ledger {
+    margin-top: 11px;
+  }
+
+  html[data-manager-app] .manager-finance-ledger .manager-panel__head {
+    align-items: end;
+  }
+
+  html[data-manager-app] .manager-finance-table,
+  html[data-manager-app] .manager-finance-table tbody,
+  html[data-manager-app] .manager-finance-table tr,
+  html[data-manager-app] .manager-finance-table td {
+    display: block;
+    width: 100%;
+  }
+
+  html[data-manager-app] .manager-finance-table thead {
+    display: none;
+  }
+
+  html[data-manager-app] .manager-finance-table tr {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--manager-line);
+  }
+
+  html[data-manager-app] .manager-finance-table tr:last-child {
+    border-bottom: 0;
+  }
+
+  html[data-manager-app] .manager-finance-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 5px 0;
+    border: 0;
+    text-align: right;
+  }
+
+  html[data-manager-app] .manager-finance-table td::before {
+    content: attr(data-label);
+    color: var(--manager-muted);
+    font-size: 9.5px;
+    font-weight: 650;
+    text-align: left;
+  }
+
+  html[data-manager-app] .manager-finance-note {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  html[data-manager-app] .manager-heatmap-head {
+    margin-top: 18px;
+    padding-top: 16px;
+  }
+
+  html[data-manager-app] .manager-heatmap__grid {
+    grid-template-columns: 27px repeat(7, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  html[data-manager-app] .manager-heatmap__day,
+  html[data-manager-app] .manager-heatmap__hour {
+    font-size: 7px;
+  }
+
+  html[data-manager-app] .manager-heatmap__cell {
+    height: 17px;
+    border-radius: 4px;
+  }
+
+  html[data-manager-app] .manager-showcase {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-bottom: 23px;
+    padding: 18px 16px;
+    border-radius: 23px;
+  }
+
+  html[data-manager-app] .manager-showcase__copy > h2 {
+    font-size: 20px;
+  }
+
+  html[data-manager-app] .manager-showcase__settings {
+    grid-template-columns: 1fr;
+  }
+
+  html[data-manager-app] .manager-showcase-preview {
+    width: 100%;
+  }
+
+  html[data-manager-app] .grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  html[data-manager-app] .qcard {
+    border-radius: 21px;
+  }
+
+  html[data-manager-app] .qcard .ph {
+    height: 184px;
+  }
+
+  html[data-manager-app] .add-card {
+    min-height: 190px;
+  }
+
+  html[data-manager-app] .settings {
+    gap: 11px;
+  }
+
+  html[data-manager-app] .set-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 17px;
+    border-radius: 20px;
+  }
+
+  html[data-manager-app] .set-aside p {
+    font-size: 10.5px;
+  }
+
+  html[data-manager-app] .input-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  html[data-manager-app] .manager-coupon-head {
+    align-items: start;
+  }
+
+  html[data-manager-app] .manager-coupon-head .btn {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  html[data-manager-app] .manager-coupon-head .btn .ic {
+    width: 17px;
+    height: 17px;
+  }
+
+  html[data-manager-app] .split-2 {
+    grid-template-columns: 1fr !important;
+    gap: 11px;
+  }
+
+  html[data-manager-app] .card {
+    padding: 17px;
+    border-radius: 20px;
+  }
+
+  html[data-manager-app] .chat {
+    height: calc(100dvh - 164px - var(--manager-safe-bottom));
+    min-height: 420px;
+    border-radius: 20px;
+  }
+
+  html[data-manager-app] .chat.has-active .chat-list {
+    display: none;
+  }
+
+  html[data-manager-app] .chat-mobile-back {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--manager-panel-soft);
+    color: var(--manager-green-deep);
+  }
+
+  html[data-manager-app] .thread-head {
+    padding: 10px 12px;
+  }
+
+  html[data-manager-app] .bubbles {
+    padding: 15px 12px;
+  }
+
+  html[data-manager-app] .bubble {
+    max-width: 86%;
+    font-size: 12px;
+  }
+
+  html[data-manager-app] .composer {
+    padding: 10px;
+  }
+
+  html[data-manager-app] .composer .btn {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  html[data-manager-app] .modal {
+    align-items: end;
+    padding: 0;
+  }
+
+  html[data-manager-app] .modal-box {
+    width: 100%;
+    max-width: none;
+    max-height: min(88dvh, 760px);
+    overflow-y: auto;
+    border-radius: 26px 26px 0 0;
+  }
+
+  html[data-manager-app] .modal-head {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    background: var(--manager-panel);
+  }
+
+  html[data-manager-app] .modal-foot {
+    position: sticky;
+    z-index: 2;
+    bottom: 0;
+    padding-bottom: max(14px, var(--manager-safe-bottom));
+    background: var(--manager-panel);
+  }
+
+  html[data-manager-app] .toast {
+    right: 12px;
+    bottom: calc(88px + var(--manager-safe-bottom));
+    left: 12px;
+  }
+}
+
+@media (max-width: 370px) {
+  html[data-manager-app] .manager-metrics strong,
+  html[data-manager-app] .manager-reservation-overview strong {
+    font-size: 13px;
+  }
+
+  html[data-manager-app] .manager-tools a {
+    grid-template-columns: 32px minmax(0, 1fr) 22px;
+    gap: 7px;
+    padding: 10px 8px;
+    text-align: left;
+  }
+
+  html[data-manager-app] .manager-tools a > div {
+    width: auto;
+  }
+
+  html[data-manager-app] .manager-tools a > span {
+    width: 32px;
+    height: 32px;
+  }
+
+  html[data-manager-app] .manager-tools strong {
+    font-size: 10px;
+  }
+
+  html[data-manager-app] .manager-tools small {
+    font-size: 7px;
+  }
+
+  html[data-manager-app] .manager-heatmap__grid {
+    grid-template-columns: 24px repeat(7, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  html[data-manager-app] .manager-finance-metrics article {
+    padding: 12px 8px;
+  }
+
+  html[data-manager-app] .manager-finance-metrics strong {
+    font-size: 12px;
+  }
+
+  html[data-manager-app] .manager-filter-tabs button {
+    font-size: 7.5px;
+  }
+
+  html[data-manager-app] .manager-agenda-days {
+    gap: 2px;
+  }
+
+  html[data-manager-app] .manager-agenda-days button {
+    min-height: 66px;
+    border-radius: 14px;
+  }
+
+  html[data-manager-app] .manager-day-booking {
+    grid-template-columns: 68px minmax(0, 1fr) auto 14px;
+    gap: 7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-manager-app] *,
+  html[data-manager-app] *::before,
+  html[data-manager-app] *::after {
+    scroll-behavior: auto;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Acoes sem brilho excessivo no painel da arena. */
+html[data-manager-app] .btn,
+html[data-manager-app] .btn-primary {
+  box-shadow: 0 2px 6px rgba(7, 94, 58, .07);
+}
+
+html[data-manager-app] .manager-filter-tabs button.on,
+html[data-manager-app] .manager-agenda-days button.on,
+html[data-manager-app] .period a.on,
+html[data-manager-app] .period button.on {
+  box-shadow: none !important;
+}

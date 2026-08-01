@@ -1,0 +1,66 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-reservas' %}
+{% block title %}Nova reserva · Qadras{% endblock %}
+{% block page_title %}Nova reserva{% endblock %}
+{% block page_sub %}Agende manualmente para um cliente{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('pc_gerente_reservas') }}" class="btn btn-soft manager-secondary-action">Cancelar</a>
+<button type="submit" form="reserva-form" class="btn btn-primary manager-primary-action"><svg class="ic sm"><use href="#i-check"/></svg><span>Criar reserva</span></button>
+{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<a href="{{ url_for('pc_gerente_reservas') }}" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para reservas</a>
+
+<form id="reserva-form" method="post" class="settings">
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Cliente</h2>
+      <p>Quem vai jogar. O contato é usado para avisos da reserva.</p>
+    </div>
+    <div class="set-fields">
+      <div class="inp"><label>Nome do cliente</label><input type="text" placeholder="Ex.: Lucas Andrade"></div>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="inp" style="margin-bottom:0;"><label>Telefone / WhatsApp</label><input type="text" placeholder="(62) 90000-0000"></div>
+        <div class="inp" style="margin-bottom:0;"><label>E-mail (opcional)</label><input type="text" placeholder="cliente@email.com"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Reserva</h2>
+      <p>Quadra, dia e horário do jogo.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Quadra</label><select>{% for q in quadras %}<option>{{ q }}</option>{% endfor %}</select></div>
+        <div class="inp"><label>Data</label><input type="text" placeholder="Hoje" value="Hoje"></div>
+      </div>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="inp" style="margin-bottom:0;"><label>Início</label><select>{% for hh in range(6, 24) %}<option {{ 'selected' if hh == 19 }}>{{ '%02d'|format(hh) }}:00</option>{% endfor %}</select></div>
+        <div class="inp" style="margin-bottom:0;"><label>Duração</label><select><option>1 hora</option><option>1h30</option><option>2 horas</option></select></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Pagamento</h2>
+      <p>Como essa reserva será cobrada.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Valor (R$)</label><input type="number" value="120" min="0" step="10"></div>
+        <div class="inp"><label>Status</label><select><option>Pago</option><option>Aguardando pagamento</option><option>Confirmado</option></select></div>
+      </div>
+      <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Reservas manuais entram na sua agenda e no faturamento normalmente.</div>
+    </div>
+  </section>
+
+</form>
+{% endblock %}

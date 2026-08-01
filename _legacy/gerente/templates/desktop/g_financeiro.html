@@ -1,0 +1,128 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-financeiro' %}
+{% block title %}Financeiro · Qadras{% endblock %}
+{% block page_title %}Financeiro{% endblock %}
+{% block page_sub %}Receitas, taxas e conciliação{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<div class="period" data-seg><button type="button">Hoje</button><button type="button" class="on">7 dias</button><button type="button">30 dias</button></div>
+{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="manager-mobile-period" data-seg aria-label="Período financeiro">
+  <button type="button">Hoje</button>
+  <button type="button" class="on">7 dias</button>
+  <button type="button">30 dias</button>
+</div>
+
+<section class="manager-finance-summary">
+  <article class="manager-finance-balance">
+    <span class="manager-eyebrow"><i></i> Próximo repasse</span>
+    <strong class="num">R$ {{ '%.2f'|format(g.repasse)|replace('.', ',') }}</strong>
+    <p>Valor líquido estimado após a comissão da plataforma.</p>
+    <div><span><svg class="ic sm"><use href="#i-trend"/></svg> 11% acima da semana passada</span><small>Atualizado agora</small></div>
+  </article>
+  <div class="manager-finance-metrics">
+    <article><span><svg class="ic"><use href="#i-dollar"/></svg></span><div><small>Faturamento bruto</small><strong class="num">R$ {{ '%.2f'|format(g.bruto)|replace('.', ',') }}</strong></div></article>
+    <article><span><svg class="ic"><use href="#i-shield"/></svg></span><div><small>Comissão ({{ g.taxa }}%)</small><strong class="num">R$ {{ '%.2f'|format(g.comissao)|replace('.', ',') }}</strong></div></article>
+    <article><span><svg class="ic"><use href="#i-calendar"/></svg></span><div><small>Reservas na semana</small><strong class="num">{{ g.reservas_semana }}</strong></div></article>
+  </div>
+</section>
+
+<section class="manager-panel manager-finance-analytics">
+  <div class="manager-finance-chart">
+    <div class="manager-panel__head">
+      <div><span>Desempenho</span><h2>Faturamento na semana</h2></div>
+      <small>Últimos 7 dias</small>
+    </div>
+    <svg class="lc" viewBox="0 0 {{ g.chart.w }} {{ g.chart.h }}" role="img" aria-label="Faturamento por dia">
+      <defs><linearGradient id="lcfin" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#16a765" stop-opacity=".22"/><stop offset="1" stop-color="#16a765" stop-opacity="0"/>
+      </linearGradient></defs>
+      {% for gl in g.chart.grid %}
+        <line class="lc-grid" x1="{{ g.chart.plot_x0 }}" y1="{{ gl.y }}" x2="{{ g.chart.plot_x1 }}" y2="{{ gl.y }}"/>
+        <text class="lc-yl" x="{{ g.chart.plot_x0 - 9 }}" y="{{ gl.y + 3 }}">{{ gl.lab }}</text>
+      {% endfor %}
+      <path class="lc-area" d="{{ g.chart.area }}" fill="url(#lcfin)"/>
+      <path class="lc-line" d="{{ g.chart.line }}"/>
+      {% for p in g.chart.points %}
+        <text class="lc-val {{ 'peak' if loop.index0 == g.chart.peak }}" x="{{ p.x }}" y="{{ p.y - 11 }}">{{ p.val }}</text>
+        <circle class="lc-dot {{ 'peak' if loop.index0 == g.chart.peak }}" cx="{{ p.x }}" cy="{{ p.y }}" r="{{ 5 if loop.index0 == g.chart.peak else 3.4 }}"/>
+        <text class="lc-xl" x="{{ p.x }}" y="{{ g.chart.h - 9 }}"
+              style="text-anchor: {{ 'start' if loop.first else ('end' if loop.last else 'middle') }};">{{ p.lab }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+
+  <div class="manager-finance-breakdown">
+    <div class="manager-panel__head">
+      <div><span>Composição</span><h2>Destino da receita</h2></div>
+    </div>
+    <div class="manager-finance-donut-wrap">
+      <div class="manager-finance-donut" style="--manager-net: {{ 100 - g.taxa }}%;" role="img" aria-label="{{ 100 - g.taxa }}% líquido para a arena e {{ g.taxa }}% de comissão">
+        <span><strong>{{ 100 - g.taxa }}%</strong><small>líquido</small></span>
+      </div>
+      <div class="manager-finance-legend">
+        <p><i class="is-net"></i><span><strong>Arena</strong><small class="num">R$ {{ '%.2f'|format(g.repasse)|replace('.', ',') }}</small></span></p>
+        <p><i class="is-fee"></i><span><strong>Comissão Qadras</strong><small class="num">R$ {{ '%.2f'|format(g.comissao)|replace('.', ',') }}</small></span></p>
+      </div>
+    </div>
+    <div class="manager-finance-health">
+      <div><span>Ticket médio</span><strong class="num">R$ {{ g.ticket_medio }}</strong></div>
+      <div><span>Ocupação média</span><strong class="num">{{ g.ocupacao }}%</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="manager-panel manager-finance-ledger">
+  <div class="manager-panel__head">
+    <div><span>Receitas</span><h2>Reservas financeiras</h2></div>
+    <a href="#" data-csv-table="#tbl-receitas" data-csv-name="receitas-qadras.csv">Exportar CSV</a>
+  </div>
+  <div class="manager-table-wrap">
+    <table class="tbl manager-finance-table" id="tbl-receitas">
+      <thead><tr><th>Cliente</th><th>Data</th><th>Bruto</th><th>Comissão</th><th>Líquido</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for r in g.reservas %}
+        {% set taxa_reserva = r.valor * g.taxa / 100 %}
+        <tr>
+          <td data-label="Cliente"><strong>{{ r.cliente }}</strong></td>
+          <td data-label="Data">{{ r.data }} · <span class="num">{{ r.horario }}</span></td>
+          <td data-label="Bruto" class="num">R$ {{ '%.2f'|format(r.valor)|replace('.', ',') }}</td>
+          <td data-label="Comissão" class="num">− R$ {{ '%.2f'|format(taxa_reserva)|replace('.', ',') }}</td>
+          <td data-label="Líquido" class="val num">R$ {{ '%.2f'|format(r.valor - taxa_reserva)|replace('.', ',') }}</td>
+          <td data-label="Status"><span class="status {{ r.status|lower }}">{{ r.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="manager-panel manager-finance-ledger manager-finance-payouts">
+  <div class="manager-panel__head">
+    <div><span>Conciliação</span><h2>Repasses da Qadras</h2><p>Confira o que já entrou e os valores que ainda serão recebidos.</p></div>
+    <a href="#" data-csv-table="#tbl-repasses" data-csv-name="repasses-qadras.csv">Exportar CSV</a>
+  </div>
+  <div class="manager-table-wrap">
+  <table class="tbl manager-finance-table" id="tbl-repasses">
+    <thead><tr><th>Período</th><th>Bruto</th><th>Comissão</th><th>Líquido</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for r in repasses %}
+      <tr>
+        <td data-label="Período">{{ r.periodo }}</td>
+        <td data-label="Bruto" class="num">R$ {{ '%.2f'|format(r.bruto)|replace('.', ',') }}</td>
+        <td data-label="Comissão" class="num">− R$ {{ '%.2f'|format(r.comissao)|replace('.', ',') }}</td>
+        <td data-label="Líquido" class="val num">R$ {{ '%.2f'|format(r.liquido)|replace('.', ',') }}</td>
+        <td data-label="Status"><span class="status {{ r.cls }}">{{ r.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="manager-finance-note"><svg class="ic sm"><use href="#i-shield"/></svg><span>A comissão incide somente sobre reservas faturadas. Cada repasse permanece disponível para conferência e exportação.</span></p>
+</section>
+{% endblock %}

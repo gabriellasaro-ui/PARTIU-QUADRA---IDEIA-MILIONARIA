@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-page="quadras" data-player-desktop>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explorar quadras - Qadras</title>
+  <script>
+    (function () {
+      var mobileMedia = window.matchMedia('(max-width: 899px)');
+
+      function openMobile() {
+        var capacitor = window.Capacitor;
+        var nativeApp = Boolean(capacitor && capacitor.isNativePlatform && capacitor.isNativePlatform());
+        if (!nativeApp && !mobileMedia.matches) return;
+
+        var mobileUrl = new URL('./index.html', window.location.href);
+        mobileUrl.search = window.location.search;
+        mobileUrl.hash = window.location.hash;
+        window.location.replace(mobileUrl.href);
+      }
+
+      openMobile();
+      if (mobileMedia.addEventListener) mobileMedia.addEventListener('change', openMobile);
+    })();
+  </script>
+  <meta name="theme-color" content="#16a765">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="./assets/css/desktop.css">
+  <link rel="stylesheet" href="./assets/css/player-web.css">
+  <link rel="stylesheet" href="./assets/css/game-mode.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <div data-component="./components/header/player-topbar.html"></div>
+    <div class="main">
+      <div class="content">
+        <main data-player-desktop-route-view data-current-route="">
+          <div data-component="./pages/player-desktop/explorar.html"></div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <div data-component="./components/toast/toast.html"></div>
+  <script src="./assets/vendor/lucide/lucide.min.js" defer></script>
+  <script src="./assets/vendor/leaflet/leaflet.js" defer></script>
+  <script src="./assets/js/ui.js" defer></script>
+  <script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>

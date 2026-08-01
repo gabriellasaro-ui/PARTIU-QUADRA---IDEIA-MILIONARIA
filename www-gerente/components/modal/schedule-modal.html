@@ -1,0 +1,60 @@
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="modal" id="modal-horario" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Abrir novo horario</h3>
+      <button class="modal-x" type="button" data-close-modal aria-label="Fechar">
+        <svg class="ic"><use href="#i-x"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="input-row">
+        <div class="inp">
+          <label>Dia</label>
+          <select id="nh-dia">
+            <option>Hoje</option>
+            <option>Amanha</option>
+            <option>Seg</option>
+            <option>Ter</option>
+            <option>Qua</option>
+            <option>Qui</option>
+            <option>Sex</option>
+            <option>Sab</option>
+            <option>Dom</option>
+          </select>
+        </div>
+        <div class="inp">
+          <label>Horario</label>
+          <select id="nh-hora">
+            <option>06:00</option>
+            <option>07:00</option>
+            <option>08:00</option>
+            <option>18:00</option>
+            <option>19:00</option>
+            <option>20:00</option>
+            <option>21:00</option>
+          </select>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="inp">
+          <label>Duracao</label>
+          <select id="nh-dur">
+            <option>1 hora</option>
+            <option>1h30</option>
+            <option>2 horas</option>
+          </select>
+        </div>
+        <div class="inp" style="margin-bottom:0;">
+          <label>Preco (R$)</label>
+          <input type="number" id="nh-preco" value="120" min="0" step="10">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-close-modal>Cancelar</button>
+      <button class="btn btn-primary" type="button" id="add-horario">Abrir horario</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,87 @@
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<section class="dashboard-hero" aria-label="Resumo operacional">
+  <div class="overview-panel">
+    <span class="overview-kicker"><svg class="ic sm"><use href="#i-chart"/></svg> Hoje na arena</span>
+    <h2>Agenda cheia, caixa claro e reservas sob controle.</h2>
+    <p>Visao preparada para receber dados da API: faturamento, ocupacao, proximas reservas e alertas operacionais entram pelos services.</p>
+    <div class="overview-actions">
+      <button type="button" class="btn btn-volt" data-open-modal="modal-horario"><svg class="ic sm"><use href="#i-plus"/></svg> Novo horario</button>
+      <a class="btn btn-soft" href="./dashboard.html#financeiro"><svg class="ic sm"><use href="#i-dollar"/></svg> Financeiro</a>
+    </div>
+  </div>
+
+  <div class="panel ops-panel">
+    <div class="panel-head">
+      <div>
+        <h2>Prioridades</h2>
+        <span class="panel-sub">Fila operacional para a API</span>
+      </div>
+    </div>
+    <div class="ops-list">
+      <div class="ops-item"><div><strong>Reservas pendentes</strong><span>Aprovar ou recusar</span></div><b>3</b></div>
+      <div class="ops-item"><div><strong>Pagamento aguardando</strong><span>Confirmacao manual</span></div><b>1</b></div>
+      <div class="ops-item"><div><strong>Horarios nobres</strong><span>18h ate 23h</span></div><b>86%</b></div>
+    </div>
+  </div>
+</section>
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="top">
+      <span class="ico"><svg class="ic"><use href="#i-dollar"/></svg></span>
+      <span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +12%</span>
+    </div>
+    <div class="val num">R$ 4.820</div>
+    <div class="lbl">Faturamento</div>
+  </div>
+  <div class="kpi">
+    <div class="top">
+      <span class="ico"><svg class="ic"><use href="#i-calendar"/></svg></span>
+      <span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +8%</span>
+    </div>
+    <div class="val num">32</div>
+    <div class="lbl">Reservas na semana</div>
+  </div>
+  <div class="kpi">
+    <div class="top">
+      <span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span>
+      <span class="delta"><svg class="ic"><use href="#i-trend"/></svg> 86%</span>
+    </div>
+    <div class="val num">18h</div>
+    <div class="lbl">Periodo mais forte</div>
+  </div>
+</div>
+
+<div class="dash-cols">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Faturamento na semana</h2>
+        <span class="panel-sub">Ultimos 7 dias</span>
+      </div>
+      <a class="lk" href="./dashboard.html#financeiro">Ver relatorio</a>
+    </div>
+    <svg class="lc" viewBox="0 0 620 220" role="img" aria-label="Faturamento por dia da semana">
+      <path class="lc-area" d="M40 170 L120 140 L200 155 L280 88 L360 104 L440 66 L560 92 L560 190 L40 190 Z" fill="rgba(27,122,62,.12)"/>
+      <path class="lc-line" d="M40 170 L120 140 L200 155 L280 88 L360 104 L440 66 L560 92"/>
+      <circle class="lc-dot" cx="40" cy="170" r="3.4"/>
+      <circle class="lc-dot" cx="120" cy="140" r="3.4"/>
+      <circle class="lc-dot" cx="200" cy="155" r="3.4"/>
+      <circle class="lc-dot peak" cx="440" cy="66" r="5"/>
+    </svg>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><div><h2>Ocupacao por periodo</h2><span class="panel-sub">Media de lotacao na semana</span></div></div>
+    <div class="faixas">
+      <div class="faixa">
+        <div class="faixa-top"><span>Manha <small>06h-12h</small></span><b>42%</b></div>
+        <div class="faixa-bar"><span style="width: 42%;"></span></div>
+      </div>
+      <div class="faixa">
+        <div class="faixa-top"><span>Noite <small>18h-23h</small></span><b>86%</b></div>
+        <div class="faixa-bar"><span style="width: 86%;"></span></div>
+      </div>
+    </div>
+  </div>
+</div>

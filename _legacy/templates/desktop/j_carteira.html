@@ -1,0 +1,66 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'carteira' %}
+{% block title %}Carteira · Qadras{% endblock %}
+{% block page_title %}Carteira{% endblock %}
+{% block page_sub %}Saldo, extrato e formas de pagamento{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="split-2">
+  <div>
+    <div class="wallet-hero">
+      <div>
+        <div class="wh-label">Saldo disponível</div>
+        <div class="wh-val num">R$ {{ '%.2f'|format(saldo) }}</div>
+      </div>
+      <div class="wh-actions">
+        <a href="{{ url_for('pc_carteira_adicionar') }}" class="btn btn-volt">+ Adicionar saldo</a>
+        <a href="{{ url_for('pc_carteira_cupom') }}" class="btn btn-ghost">Usar cupom</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Extrato</h2><a class="lk" data-csv-table="#extrato" data-csv-name="extrato-partiu-quadra.csv">Exportar CSV</a></div>
+      <table class="tbl" id="extrato">
+        <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead>
+        <tbody>
+          {% for t in transacoes %}
+          <tr>
+            <td>{{ t.data }}</td>
+            <td>{{ t.desc }}</td>
+            <td class="val num" style="color: {{ 'var(--green-600)' if t.valor > 0 else 'var(--ink)' }};">
+              {{ '+ ' if t.valor > 0 }}R$ {{ '%.2f'|format(t.valor|abs) }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h2>Formas de pagamento</h2>
+      <div class="method on">
+        <span class="badge-ic"><svg class="ic"><use href="#i-zap"/></svg></span>
+        <span>Pix <small>· aprovação na hora</small></span>
+        <span class="ck"><svg class="ic"><use href="#i-check"/></svg></span>
+      </div>
+      <div class="method">
+        <span class="badge-ic"><svg class="ic"><use href="#i-card"/></svg></span>
+        <span>Cartão •••• 4321 <small>· Visa</small></span>
+        <span class="ck"><svg class="ic"><use href="#i-check"/></svg></span>
+      </div>
+      <a href="{{ url_for('pc_carteira_cartao') }}" class="btn btn-outline btn-block" style="margin-top:6px;"><svg class="ic sm"><use href="#i-plus"/></svg> Adicionar cartão</a>
+    </div>
+
+    <div class="card" style="margin-bottom:0;">
+      <h2>Indique e ganhe</h2>
+      <p style="font-size:14px; color:var(--ink-2); line-height:1.6;">Cada amigo que reservar pela sua indicação vira <b>R$ 20 de cashback</b> na sua carteira.</p>
+      <button type="button" class="btn btn-primary btn-block" data-copy="https://partiu.app/r/GABRIEL20" data-copy-msg="Link de indicação copiado!" style="margin-top:8px;"><svg class="ic sm"><use href="#i-gift"/></svg> Copiar meu link</button>
+    </div>
+  </aside>
+</div>
+{% endblock %}

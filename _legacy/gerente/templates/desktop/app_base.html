@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-manager-app data-manager-view="{{ active|default('dashboard') }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f8f4">
+  <title>{% block title %}Qadras · Gerente{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- TODO: substituir renderizacao Jinja/url_for por rotas e assets relativos no frontend Capacitor -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manager-app.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<!-- TODO: transformar includes Jinja em componentes carregados pelo frontend -->
+{% include 'desktop/_icons.html' %}
+
+<div class="app" id="app">
+  <div class="sb-backdrop" data-nav-close></div>
+  <!-- SIDEBAR -->
+  <!-- TODO: substituir url_for/active/nav por config/routes.js e dados da API -->
+  <aside class="sidebar">
+    <div class="sb-top">
+      <a href="{{ url_for('pc_gerente') }}" class="sb-logo">
+        <span class="mark"><svg class="ic"><use href="#i-chart"/></svg></span>
+        <span class="brandtx">Qadras</span>
+      </a>
+      <button class="sb-collapse" data-collapse type="button" aria-label="Recolher menu" title="Recolher menu">
+        <svg class="ic"><use href="#i-collapse"/></svg>
+      </button>
+    </div>
+
+    <div class="sb-group">Operação</div>
+    <a class="sb-link {{ 'on' if active == 'dashboard' }}" href="{{ url_for('pc_gerente') }}" title="Visão geral"><svg class="ic"><use href="#i-chart"/></svg> <span class="sb-tx">Visão geral</span></a>
+    <a class="sb-link {{ 'on' if active == 'g-reservas' }}" href="{{ url_for('pc_gerente_reservas') }}" title="Reservas"><svg class="ic"><use href="#i-calendar"/></svg> <span class="sb-tx">Reservas</span> {% if nav.solicitacoes %}<span class="badge">{{ nav.solicitacoes }}</span>{% endif %}</a>
+    <a class="sb-link {{ 'on' if active == 'g-agenda' }}" href="{{ url_for('pc_gerente_agenda') }}" title="Agenda"><svg class="ic"><use href="#i-clock"/></svg> <span class="sb-tx">Agenda</span></a>
+    <a class="sb-link {{ 'on' if active == 'g-mensagens' }}" href="{{ url_for('pc_gerente_mensagens') }}" title="Mensagens"><svg class="ic"><use href="#i-chat"/></svg> <span class="sb-tx">Mensagens</span> {% if nav.msg_ger %}<span class="badge">{{ nav.msg_ger }}</span>{% endif %}</a>
+
+    <div class="sb-group">Negócio</div>
+    <a class="sb-link {{ 'on' if active == 'g-financeiro' }}" href="{{ url_for('pc_gerente_financeiro') }}" title="Financeiro"><svg class="ic"><use href="#i-dollar"/></svg> <span class="sb-tx">Financeiro</span></a>
+    <a class="sb-link {{ 'on' if active == 'g-quadras' }}" href="{{ url_for('pc_gerente_quadras') }}" title="Minhas quadras"><svg class="ic"><use href="#i-grid"/></svg> <span class="sb-tx">Minhas quadras</span></a>
+    <a class="sb-link {{ 'on' if active == 'g-avaliacoes' }}" href="{{ url_for('pc_gerente_avaliacoes') }}" title="Avaliações"><svg class="ic"><use href="#i-star"/></svg> <span class="sb-tx">Avaliações</span></a>
+
+    <div class="sb-group">Crescimento</div>
+    <a class="sb-link" href="{{ url_for('pc_gerente_reservas') }}#mensalistas" title="Mensalistas"><svg class="ic"><use href="#i-user"/></svg> <span class="sb-tx">Mensalistas</span></a>
+    <a class="sb-link" href="{{ url_for('pc_gerente_quadras') }}#vitrine" title="Vitrine no Explorar"><svg class="ic"><use href="#i-map"/></svg> <span class="sb-tx">Vitrine no Explorar</span></a>
+    <a class="sb-link" href="{{ url_for('pc_gerente_config') }}#promocoes" title="Cupons e descontos"><svg class="ic"><use href="#i-gift"/></svg> <span class="sb-tx">Cupons e descontos</span></a>
+
+    <div class="sb-group">Conta</div>
+    <a class="sb-link {{ 'on' if active == 'g-config' }}" href="{{ url_for('pc_gerente_config') }}" title="Configurações"><svg class="ic"><use href="#i-sliders"/></svg> <span class="sb-tx">Configurações</span></a>
+
+    <div class="sb-foot">
+      <a class="sb-user" href="{{ config.CLIENTE_URL }}" title="Sair da Arena Bola na Rede">
+        <span class="av">A</span>
+        <div class="uinfo">
+          <div class="nm">Arena Bola na Rede</div>
+          <div class="rl">Gerente</div>
+        </div>
+        <svg class="ic"><use href="#i-logout"/></svg>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn hamb" data-nav-open aria-label="Abrir menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+      <div class="pt">
+        <h1>{% block page_title %}{% endblock %}</h1>
+        <div class="sub">{% block page_sub %}{% endblock %}</div>
+      </div>
+      {% block topbar_search %}
+      <div class="search">
+        <svg class="ic"><use href="#i-search"/></svg>
+        <input type="text" placeholder="Buscar cliente, reserva, quadra...">
+      </div>
+      {% endblock %}
+      <div class="actions">
+        {% block topbar_actions %}{% endblock %}
+        <div class="manager-notification-wrap">
+          <button class="icon-btn" type="button" data-manager-notifications aria-label="Abrir notificações" aria-expanded="false">
+            <svg class="ic"><use href="#i-bell"/></svg>
+            {% if nav.solicitacoes or nav.msg_ger %}<span class="ndot"></span>{% endif %}
+          </button>
+          <div class="manager-notification-menu" data-manager-notification-menu hidden>
+            <div class="manager-notification-head">
+              <div><span>Central da arena</span><strong>Notificações</strong></div>
+              <button type="button" data-manager-notifications-close aria-label="Fechar notificações"><svg class="ic sm"><use href="#i-x"/></svg></button>
+            </div>
+            {% if nav.solicitacoes %}
+            <a href="{{ url_for('pc_gerente_reservas') }}" class="manager-notification-item is-new">
+              <span><svg class="ic"><use href="#i-calendar"/></svg></span>
+              <div><strong>{{ nav.solicitacoes }} {{ 'reserva aguarda' if nav.solicitacoes == 1 else 'reservas aguardam' }} aprovação</strong><small>Responda antes que o tempo da solicitação termine.</small></div>
+            </a>
+            {% endif %}
+            {% if nav.msg_ger %}
+            <a href="{{ url_for('pc_gerente_mensagens') }}" class="manager-notification-item is-new">
+              <span><svg class="ic"><use href="#i-chat"/></svg></span>
+              <div><strong>{{ nav.msg_ger }} {{ 'mensagem nova' if nav.msg_ger == 1 else 'mensagens novas' }}</strong><small>Seus clientes estão esperando uma resposta.</small></div>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('pc_gerente_financeiro') }}" class="manager-notification-item">
+              <span><svg class="ic"><use href="#i-wallet"/></svg></span>
+              <div><strong>Repasse semanal em acompanhamento</strong><small>Confira valores, comissão e previsão de recebimento.</small></div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- TODO: substituir renderizacao Jinja por dados da API -->
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+<nav class="manager-tabbar" aria-label="Navegação principal">
+  <a class="{{ 'on' if active == 'dashboard' }}" href="{{ url_for('pc_gerente') }}">
+    <svg class="ic"><use href="#i-home"/></svg><span>Início</span>
+  </a>
+  <a class="{{ 'on' if active == 'g-reservas' }}" href="{{ url_for('pc_gerente_reservas') }}">
+    <span class="manager-tabbar-icon"><svg class="ic"><use href="#i-calendar"/></svg>{% if nav.solicitacoes %}<b>{{ nav.solicitacoes }}</b>{% endif %}</span><span>Reservas</span>
+  </a>
+  <a class="{{ 'on' if active == 'g-agenda' }}" href="{{ url_for('pc_gerente_agenda') }}">
+    <svg class="ic"><use href="#i-clock"/></svg><span>Agenda</span>
+  </a>
+  <a class="{{ 'on' if active == 'g-financeiro' }}" href="{{ url_for('pc_gerente_financeiro') }}">
+    <svg class="ic"><use href="#i-wallet"/></svg><span>Financeiro</span>
+  </a>
+  <button class="{{ 'on' if active in ['g-mensagens', 'g-quadras', 'g-avaliacoes', 'g-config'] }}" type="button" data-nav-open aria-label="Abrir mais opções">
+    <svg class="ic"><use href="#i-menu"/></svg><span>Mais</span>
+  </button>
+</nav>
+
+<div class="modal" id="modal-horario" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Abrir novo horário</h3>
+      <button class="modal-x" type="button" data-close-modal aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="input-row">
+        <div class="inp">
+          <label>Dia</label>
+          <select id="nh-dia">
+            <option>Hoje</option><option>Amanhã</option>
+            <option>Seg</option><option>Ter</option><option>Qua</option>
+            <option>Qui</option><option>Sex</option><option>Sáb</option><option>Dom</option>
+          </select>
+        </div>
+        <div class="inp">
+          <label>Horário</label>
+          <select id="nh-hora">
+            {% for hh in range(6, 24) %}<option>{{ '%02d'|format(hh) }}:00</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="inp">
+          <label>Duração</label>
+          <select id="nh-dur"><option>1 hora</option><option>1h30</option><option>2 horas</option></select>
+        </div>
+        <div class="inp" style="margin-bottom:0;">
+          <label>Preço (R$)</label>
+          <input type="number" id="nh-preco" value="120" min="0" step="10">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-close-modal>Cancelar</button>
+      <button class="btn btn-primary" type="button" id="add-horario">Abrir horário</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="pq-toast" hidden>
+  <svg class="ic"><use href="#i-check"/></svg>
+  <span data-toast-msg></span>
+</div>
+
+<script>
+  (function () {
+    var app = document.getElementById('app');
+    if (!app) return;
+    function open() { app.classList.add('nav-open'); }
+    function close() { app.classList.remove('nav-open'); }
+    document.querySelectorAll('[data-nav-open]').forEach(function (b) { b.addEventListener('click', open); });
+    document.querySelectorAll('[data-nav-close]').forEach(function (b) { b.addEventListener('click', close); });
+    document.querySelectorAll('.sidebar a').forEach(function (a) { a.addEventListener('click', close); });
+    window.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+    try { if (localStorage.getItem('pq-rail') === '1') app.classList.add('collapsed'); } catch (e) {}
+    document.querySelectorAll('[data-collapse]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var on = app.classList.toggle('collapsed');
+        b.setAttribute('title', on ? 'Expandir menu' : 'Recolher menu');
+        b.setAttribute('aria-label', on ? 'Expandir menu' : 'Recolher menu');
+        try { localStorage.setItem('pq-rail', on ? '1' : '0'); } catch (e) {}
+      });
+    });
+
+    function closeModals() { document.querySelectorAll('.modal').forEach(function (m) { m.hidden = true; }); }
+    document.querySelectorAll('[data-open-modal]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var m = document.getElementById(b.getAttribute('data-open-modal'));
+        if (m) m.hidden = false;
+      });
+    });
+    document.querySelectorAll('[data-close-modal]').forEach(function (b) { b.addEventListener('click', closeModals); });
+    window.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModals(); });
+
+    window.addEventListener('load', function () {
+      try {
+        var p = new URLSearchParams(location.search);
+        var msg = p.get('toast');
+        if (msg && window.pqToast) {
+          window.pqToast(msg);
+          p.delete('toast');
+          var qs = p.toString();
+          history.replaceState({}, '', location.pathname + (qs ? '?' + qs : ''));
+        }
+      } catch (e) {}
+    });
+
+    var addBtn = document.getElementById('add-horario');
+    if (addBtn) {
+      addBtn.addEventListener('click', function () {
+        var hora = (document.getElementById('nh-hora') || {}).value || '';
+        var dia = (document.getElementById('nh-dia') || {}).value || '';
+        var grid = document.querySelector('[data-slots-add]');
+        if (grid && hora) {
+          var s = document.createElement('span');
+          s.className = 'slot free';
+          s.textContent = hora;
+          grid.appendChild(s);
+        }
+        closeModals();
+        if (window.pqToast) window.pqToast('Horário ' + hora + ' (' + dia + ') aberto com sucesso');
+      });
+    }
+  })();
+</script>
+<script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/manager-app.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

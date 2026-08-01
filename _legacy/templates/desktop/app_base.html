@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-player-desktop>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#129653">
+  <title>{% block title %}Qadras{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- TODO: substituir renderização Jinja/url_for por rotas e assets relativos no frontend Capacitor -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/player-web.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body data-player-page="{{ active }}">
+<!-- TODO: transformar includes Jinja em componentes carregados pelo frontend -->
+{% include 'desktop/_icons.html' %}
+
+<div class="app" id="app">
+  <!-- TODO: substituir url_for/active/nav por config/routes.js e dados da API -->
+  <header class="web-header">
+    <div class="web-header__main">
+      <a href="{{ url_for('pc_explorar') }}" class="web-brand" aria-label="Qadras - explorar quadras">
+        <span class="web-brand__mark"><svg class="ic"><use href="#i-pin"/></svg></span>
+        <span>Qadras</span>
+      </a>
+
+      <nav class="web-nav" aria-label="Navegação principal">
+        <a class="{{ 'on' if active == 'explorar' }}" href="{{ url_for('pc_explorar') }}">Explorar</a>
+        <a class="{{ 'on' if active == 'reservas' }}" href="{{ url_for('pc_reservas') }}">
+          Reservas
+          <span class="web-nav__count" aria-label="2 reservas em andamento">2</span>
+        </a>
+        <a class="{{ 'on' if active == 'favoritos' }}" href="{{ url_for('pc_favoritos') }}">Favoritos</a>
+      </nav>
+
+      {% block topbar_search %}{% endblock %}
+
+      <div class="web-header__actions">
+        <a class="web-icon-button {{ 'on' if active == 'mensagens' }}" href="{{ url_for('pc_mensagens') }}" aria-label="Mensagens das reservas" title="Mensagens das reservas">
+          <i class="ic" data-lucide="inbox"></i>
+          {% if nav.msg_jog %}<span class="web-action-dot" aria-label="{{ nav.msg_jog }} mensagem não lida">{{ nav.msg_jog }}</span>{% endif %}
+        </a>
+        <a class="web-login" data-auth-guest href="{{ url_for('static', filename='login.html') }}">
+          <span>Entrar</span>
+          <i class="ic" data-lucide="log-in"></i>
+        </a>
+        <a class="web-app-cta" href="{{ url_for('index', modo='app') }}">
+          <i class="ic" data-lucide="qr-code"></i>
+          <span>Abrir no celular</span>
+        </a>
+        <details class="web-account" data-auth-user hidden>
+          <summary aria-label="Abrir conta de Gabriel" title="Minha conta">
+            <span class="web-account__avatar">G</span>
+            <i class="ic" data-lucide="chevron-down"></i>
+          </summary>
+          <div class="web-account__menu">
+            <div class="web-account__intro">
+              <span class="web-account__avatar">G</span>
+              <span><strong>Gabriel Lisboa</strong><small>Jogador Qadras</small></span>
+            </div>
+            <div class="web-account__links">
+              <a class="{{ 'on' if active == 'perfil' }}" href="{{ url_for('pc_perfil') }}"><i class="ic" data-lucide="user-round"></i><span>Perfil</span></a>
+              <a class="{{ 'on' if active == 'carteira' }}" href="{{ url_for('pc_carteira') }}"><i class="ic" data-lucide="wallet-cards"></i><span>Carteira</span></a>
+              <a class="{{ 'on' if active == 'config' }}" href="{{ url_for('pc_config') }}"><i class="ic" data-lucide="sliders-horizontal"></i><span>Ajustes</span></a>
+            </div>
+            <a class="web-account__logout" data-auth-logout href="{{ url_for('pc_logout') }}"><i class="ic" data-lucide="log-out"></i>Sair da conta</a>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="web-context">
+      <div class="web-context__copy">
+        <h1>{% block page_title %}{% endblock %}</h1>
+        <p>{% block page_sub %}{% endblock %}</p>
+      </div>
+      <div class="web-context__actions">{% block topbar_actions %}{% endblock %}</div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="content">
+      <!-- TODO: substituir renderização Jinja por dados da API -->
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="pq-toast" hidden>
+  <svg class="ic"><use href="#i-check"/></svg>
+  <span data-toast-msg></span>
+</div>
+
+<script>
+  (function () {
+    document.addEventListener('click', function (event) {
+      document.querySelectorAll('.web-account[open]').forEach(function (menu) {
+        if (!menu.contains(event.target)) menu.removeAttribute('open');
+      });
+    });
+
+    // Toast pós-redirect: formulários redirecionam com ?toast=Mensagem
+    window.addEventListener('load', function () {
+      try {
+        var params = new URLSearchParams(location.search);
+        var message = params.get('toast');
+        if (message && window.pqToast) {
+          window.pqToast(message);
+          params.delete('toast');
+          var query = params.toString();
+          history.replaceState({}, '', location.pathname + (query ? '?' + query : ''));
+        }
+      } catch (error) {}
+    });
+  })();
+</script>
+<script src="{{ url_for('static', filename='vendor/lucide/lucide.min.js') }}"></script>
+<script type="module">
+  import { refreshIcons } from "{{ url_for('static', filename='js/component-loader.js') }}";
+
+  window.pqRefreshIcons = refreshIcons;
+  refreshIcons(document);
+</script>
+<script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,1055 @@
+/* =========================================================
+   Modo jogo — Qadras
+   Usa os mesmos tokens do app (verde/claro, radius 22, shadow-1).
+   Nada de tema proprio: o modo jogo e uma tela do app, nao um app a parte.
+   ========================================================= */
+
+/* ── Card da partida na home ──────────────────────────────
+   Ocupa a vaga do antigo pulso de disponibilidade e segue a
+   mesma caixa: margin 22/16, min-height 68, radius 22. */
+.game-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-height: 68px;
+  margin: 22px 16px 0;
+  padding: 11px 13px;
+  overflow: hidden;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+  color: var(--pq-ink);
+  text-decoration: none;
+}
+
+.game-card:active {
+  transform: translateY(1px);
+}
+
+.game-card__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.game-card__icon .ic {
+  width: 20px;
+  height: 20px;
+}
+
+.game-card__info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.game-card__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.game-card__title {
+  overflow: hidden;
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-card__countdown {
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 17px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.game-card__countdown small {
+  display: block;
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.game-card__chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--pq-brand-strong);
+}
+
+/* Em andamento: unica variante preenchida, para chamar atencao sem sair da marca */
+.game-card--live {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--pq-brand-strong), var(--pq-brand));
+  color: #fff;
+}
+
+.game-card--live .game-card__icon {
+  background: rgba(255, 255, 255, .22);
+}
+
+.game-card--live .game-card__label,
+.game-card--live .game-card__countdown small {
+  color: rgba(255, 255, 255, .82);
+}
+
+.game-card--live .game-card__meta {
+  color: rgba(255, 255, 255, .88);
+}
+
+.game-card__dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: gameCardDot 1.4s ease-in-out infinite;
+}
+
+.game-card__score {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-card__progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, .25);
+}
+
+.game-card__progress span {
+  display: block;
+  height: 100%;
+  background: #fff;
+  transition: width 1s linear;
+}
+
+/* Encerrada: neutra, so convida a avaliar */
+.game-card--done .game-card__icon {
+  background: var(--pq-signal);
+  color: var(--pq-brand-deep);
+}
+
+.game-card--done .game-card__label {
+  color: var(--pq-muted);
+}
+
+@keyframes gameCardDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card__dot { animation: none; }
+}
+
+/* ── Tela do jogo ─────────────────────────────────────────
+   Pagina normal dentro da rota (nao e overlay fixo). */
+.game-page {
+  padding-bottom: 24px;
+  background: var(--pq-app-bg);
+}
+
+.game-hero {
+  position: relative;
+  height: 190px;
+  overflow: hidden;
+  background: #dce5dd;
+}
+
+.game-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-hero__overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 30px 16px 14px;
+  background: linear-gradient(to top, rgba(9, 40, 25, .88), rgba(9, 40, 25, 0));
+  color: #fff;
+}
+
+.game-hero__title {
+  overflow: hidden;
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.18;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-hero__sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  margin-top: 3px;
+  font-size: 11px;
+  opacity: .9;
+}
+
+.game-hero__sub .ic {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.game-hero__sub span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Passos da partida */
+.game-phase {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 14px 16px 0;
+}
+
+.game-phase__step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 6px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.game-phase__step i {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--pq-line-strong, #ccd5cb);
+}
+
+.game-phase__step.done {
+  border-color: var(--pq-signal);
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-deep);
+}
+
+.game-phase__step.done i {
+  background: var(--pq-brand);
+}
+
+.game-phase__step.active {
+  border-color: transparent;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.game-phase__step.active i {
+  background: #fff;
+}
+
+.game-content {
+  padding: 0 16px;
+}
+
+.game-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 20px 0 10px;
+  font-size: 13.5px;
+  font-weight: 900;
+}
+
+.game-section-title span {
+  color: var(--pq-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Contagem regressiva */
+.game-countdown {
+  margin-top: 16px;
+  padding: 20px 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+  text-align: center;
+}
+
+.game-countdown__label {
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.game-countdown__time {
+  margin-top: 6px;
+  color: var(--pq-ink);
+  font-size: 44px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.game-countdown__unit {
+  margin-top: 4px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Grade de informacoes */
+.game-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.game-info-item {
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  background: var(--pq-panel);
+}
+
+.game-info-item__label {
+  color: var(--pq-muted);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.game-info-item__value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.game-info-item__value .ic {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--pq-brand-strong);
+}
+
+.game-info-item__value span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Botoes */
+.game-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.game-actions > .game-btn:only-child {
+  grid-column: 1 / -1;
+}
+
+.game-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.game-btn .ic {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.game-btn:active {
+  transform: translateY(1px);
+}
+
+.game-btn--primary {
+  background: var(--pq-brand-strong);
+  color: #fff;
+}
+
+.game-btn--outline {
+  border-color: var(--pq-line);
+  background: var(--pq-panel);
+  color: var(--pq-brand-deep);
+}
+
+.game-btn--danger {
+  background: #e85d75;
+  color: #fff;
+}
+
+.game-btn[disabled] {
+  opacity: .55;
+}
+
+/* Jogadores */
+.game-players {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-player {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  background: var(--pq-panel);
+}
+
+.game-player__avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-deep);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.game-player__info {
+  min-width: 0;
+}
+
+.game-player__name {
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-player__meta {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+.game-player__badge {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-deep);
+  font-size: 8.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* Times */
+.game-teams {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.game-team-card {
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  background: var(--pq-panel);
+}
+
+.game-team-card__header {
+  margin-bottom: 8px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid var(--pq-line);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.game-team-card__header.team-a {
+  border-bottom-color: var(--pq-brand);
+  color: var(--pq-brand-deep);
+}
+
+.game-team-card__header.team-b {
+  border-bottom-color: var(--pq-gold, #e4a11b);
+  color: #8a6008;
+}
+
+.game-team-card__player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.game-team-card__player > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-team-card__position {
+  flex-shrink: 0;
+  color: var(--pq-muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.game-team-card__empty {
+  padding: 4px 0;
+  color: var(--pq-muted);
+  font-size: 10.5px;
+}
+
+/* Sortear times */
+.game-shuffle {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  margin-top: 10px;
+  padding: 11px 13px;
+  border: 1px dashed var(--pq-line-strong, #ccd5cb);
+  border-radius: 22px;
+  background: var(--pq-signal-soft);
+  color: var(--pq-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.game-shuffle:active {
+  transform: translateY(1px);
+}
+
+.game-shuffle__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.game-shuffle__icon .ic {
+  width: 20px;
+  height: 20px;
+}
+
+.game-shuffle > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.game-shuffle strong {
+  font-size: 12.5px;
+  font-weight: 900;
+}
+
+.game-shuffle small {
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+}
+
+.game-shuffle > .ic {
+  width: 18px;
+  height: 18px;
+  color: var(--pq-brand-strong);
+}
+
+/* Placar */
+.game-scoreboard {
+  margin-top: 16px;
+  padding: 18px 16px;
+  border: 1px solid transparent;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--pq-brand-deep), var(--pq-brand-strong));
+  color: #fff;
+  text-align: center;
+}
+
+.game-scoreboard__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  font-size: 8.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.game-scoreboard__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: gameCardDot 1.4s ease-in-out infinite;
+}
+
+.game-scoreboard__timer {
+  margin-top: 8px;
+  font-size: 40px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.game-scoreboard__half {
+  margin-top: 3px;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  opacity: .8;
+}
+
+.game-scoreboard__scores {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, .18);
+}
+
+.game-scoreboard__team {
+  min-width: 0;
+}
+
+.game-scoreboard__team-name {
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: .85;
+}
+
+.game-scoreboard__team-score {
+  margin-top: 2px;
+  font-size: 38px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.game-scoreboard__divider {
+  font-size: 18px;
+  font-weight: 700;
+  opacity: .55;
+}
+
+/* Botoes de gol */
+.game-score-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.game-score-btn {
+  display: flex;
+  min-width: 0;
+  min-height: 60px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  background: var(--pq-panel);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.game-score-btn b {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.game-score-btn small {
+  overflow: hidden;
+  max-width: 100%;
+  padding: 0 8px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-score-btn:active {
+  transform: translateY(1px);
+}
+
+.game-score-btn--a {
+  border-color: var(--pq-signal);
+  background: var(--pq-signal-soft);
+}
+
+.game-score-btn--a b {
+  color: var(--pq-brand-deep);
+}
+
+.game-score-btn--b {
+  border-color: #f5e2b8;
+  background: #fdf6e6;
+}
+
+.game-score-btn--b b {
+  color: #8a6008;
+}
+
+/* Eventos */
+.game-events {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-event {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-panel);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.game-event__icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--pq-muted);
+}
+
+.game-event__icon.goal-a { color: var(--pq-brand); }
+.game-event__icon.goal-b { color: var(--pq-gold, #e4a11b); }
+.game-event__icon.yellow { color: #e4a11b; }
+.game-event__icon.red { color: #e85d75; }
+
+.game-empty {
+  padding: 14px;
+  border: 1px dashed var(--pq-line-strong, #ccd5cb);
+  border-radius: 16px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Resultado */
+.game-result {
+  margin-top: 16px;
+  padding: 22px 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+  text-align: center;
+}
+
+.game-result__winner {
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.game-result__score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 42px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.game-result__score .team-a { color: var(--pq-brand-deep); }
+.game-result__score .team-b { color: #8a6008; }
+
+.game-result__x {
+  color: var(--pq-muted);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.game-result__mvp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-deep);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.game-result__mvp .ic {
+  width: 15px;
+  height: 15px;
+}
+
+/* Avaliacao */
+.game-rating {
+  margin-top: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+}
+
+.game-rating__title {
+  font-size: 12.5px;
+  font-weight: 900;
+}
+
+.game-rating__sub {
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 10px;
+}
+
+.game-rating__stars {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.game-rating__star {
+  border: none;
+  background: none;
+  color: var(--pq-line-strong, #ccd5cb);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.game-rating__star.active {
+  color: var(--pq-gold, #e4a11b);
+}
+
+/* Fotos */
+.game-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.game-photo-item {
+  overflow: hidden;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  background: var(--pq-surface-2, #f3f5f1);
+}
+
+.game-photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-photo-add {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--pq-line-strong, #ccd5cb);
+  background: var(--pq-panel);
+  color: var(--pq-brand-strong);
+  cursor: pointer;
+}
+
+.game-photo-add .ic {
+  width: 22px;
+  height: 22px;
+}
+
+/* Chat */
+.game-chat {
+  margin-top: 8px;
+}
+
+.game-chat__msgs {
+  display: flex;
+  max-height: 300px;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px 22px 8px 8px;
+  background: var(--pq-panel);
+}
+
+.game-chat__msg {
+  max-width: 82%;
+  padding: 8px 11px;
+  border-radius: 16px;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.game-chat__msg--player {
+  align-self: flex-end;
+  background: var(--pq-signal-soft);
+  color: var(--pq-ink);
+}
+
+.game-chat__msg--organizer {
+  align-self: flex-start;
+  background: var(--pq-brand-strong);
+  color: #fff;
+}
+
+.game-chat__msg--system {
+  align-self: center;
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--pq-surface-2, #f3f5f1);
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.game-chat__msg-name {
+  margin-bottom: 2px;
+  color: var(--pq-muted);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.game-chat__input-wrap {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.game-chat__input {
+  min-width: 0;
+  flex: 1;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  font-family: inherit;
+  font-size: 12.5px;
+}
+
+.game-chat__input::placeholder {
+  color: var(--pq-muted);
+}
+
+.game-chat__send {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 16px;
+  background: var(--pq-brand-strong);
+  color: #fff;
+  cursor: pointer;
+}
+
+.game-chat__send .ic {
+  width: 18px;
+  height: 18px;
+}

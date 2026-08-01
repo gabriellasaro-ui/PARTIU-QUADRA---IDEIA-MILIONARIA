@@ -1,0 +1,151 @@
+<!-- TODO: substituir dados locais por GET /quadras/{id} e /horarios na API FastAPI -->
+<div class="route-page" data-venue-page>
+  <div class="hero venue-hero">
+    <a class="back" href="#quadras" aria-label="Voltar para quadras"><i class="ic" data-lucide="chevron-left"></i></a>
+    <button class="hero-favorite" type="button" data-favorite-toggle aria-label="Salvar nos favoritos">
+      <i class="ic" data-lucide="heart"></i>
+    </button>
+    <span class="pill tr venue-distance"><i class="ic" data-lucide="navigation"></i><span data-venue-distance></span></span>
+    <img data-venue-hero alt="">
+    <button class="venue-hero-step venue-hero-step--previous" type="button" data-gallery-step="-1" aria-label="Foto anterior">
+      <i class="ic" data-lucide="chevron-left"></i>
+    </button>
+    <button class="venue-hero-step venue-hero-step--next" type="button" data-gallery-step="1" aria-label="Próxima foto">
+      <i class="ic" data-lucide="chevron-right"></i>
+    </button>
+    <span class="venue-hero-photo-count">
+      <i class="ic" data-lucide="images"></i>
+      <b data-venue-photo-current>1</b>/<span data-venue-photo-count></span>
+    </span>
+    <div class="venue-hero-dots" data-venue-gallery aria-label="Fotos da arena"></div>
+  </div>
+
+  <div class="detail-head">
+    <div class="arena-identity">
+      <span class="arena-logo" data-venue-logo aria-hidden="true"></span>
+      <div class="arena-identity__copy">
+        <span class="verified-label"><i class="ic" data-lucide="badge-check"></i>Arena verificada</span>
+        <h1 data-venue-name></h1>
+        <p class="meta"><i class="ic" data-lucide="map-pin"></i><span data-venue-meta></span></p>
+      </div>
+    </div>
+    <div class="arena-facts">
+      <span class="arena-rating"><i class="ic" data-lucide="star"></i><b data-venue-rating></b><small data-venue-reviews></small></span>
+      <span><i class="ic" data-lucide="circle-dollar-sign"></i><b data-venue-price></b><small>por hora</small></span>
+    </div>
+  </div>
+
+  <div class="container venue-catalog">
+    <section class="venue-catalog__section">
+      <div class="venue-section-head">
+        <div><span>Estrutura</span><h2>O que a arena oferece</h2></div>
+      </div>
+      <div class="venue-amenities" data-venue-amenities></div>
+    </section>
+  </div>
+
+  <div class="container venue-booking" data-booking>
+    <ol class="booking-flow" aria-label="Etapas da reserva">
+      <li class="is-current"><span>1</span><small>Reserva</small></li>
+      <li><span>2</span><small>Pagamento</small></li>
+      <li><span>3</span><small>Aprovação</small></li>
+      <li><span>4</span><small>Confirmação</small></li>
+    </ol>
+
+    <header class="booking-intro">
+      <span>Monte sua partida</span>
+      <h2>Escolha quando jogar</h2>
+      <p>Selecione o dia, a duração e o horário de início da sua partida.</p>
+    </header>
+
+    <section class="booking-step">
+      <div class="booking-step__head">
+        <span class="booking-step__number">1</span>
+        <div><small>Primeiro</small><h2>Escolha o dia</h2></div>
+      </div>
+      <div class="booking-calendar" data-booking-calendar>
+        <div class="booking-calendar__head">
+          <button type="button" class="calendar-nav" data-calendar-nav="-1" aria-label="Mes anterior">
+            <i class="ic" data-lucide="chevron-left"></i>
+          </button>
+          <strong data-calendar-label></strong>
+          <button type="button" class="calendar-nav" data-calendar-nav="1" aria-label="Proximo mes">
+            <i class="ic" data-lucide="chevron-right"></i>
+          </button>
+        </div>
+        <div class="booking-calendar__weekdays" aria-hidden="true">
+          <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span>
+        </div>
+        <div class="booking-calendar__grid" data-calendar-grid></div>
+      </div>
+    </section>
+
+    <section class="booking-step">
+      <div class="booking-step__head">
+        <span class="booking-step__number">2</span>
+        <div><small>Depois</small><h2>Defina a duração</h2></div>
+      </div>
+      <div class="dur-seg">
+        <button type="button" class="dur on" data-duration="1"><strong>1h</strong><span>Jogo rápido</span></button>
+        <button type="button" class="dur" data-duration="2"><strong>2h</strong><span>Partida completa</span></button>
+        <button type="button" class="dur" data-duration="3"><strong>3h</strong><span>Turma ou evento</span></button>
+      </div>
+      <p class="duration-help" data-duration-help>Mostraremos apenas os horários que comportam sua partida.</p>
+    </section>
+
+    <section class="booking-step">
+      <div class="booking-step__head">
+        <span class="booking-step__number">3</span>
+        <div><small>Por último</small><h2>Escolha o horário</h2></div>
+        <span class="booking-step__status" data-availability-copy></span>
+      </div>
+      <div class="legend">
+        <span><i class="dot free"></i> Disponível</span>
+        <span><i class="dot busy"></i> Não comporta a duração</span>
+      </div>
+      <div class="avail" data-slots></div>
+    </section>
+
+    <aside class="book-bar" aria-live="polite">
+      <div class="book-bar__selection">
+        <span class="book-bar__icon"><i class="ic" data-lucide="calendar-check-2"></i></span>
+        <span><small>Sua partida</small><strong data-bk-date></strong><em data-bk-range>Escolha um horário</em></span>
+      </div>
+      <div class="book-bar__price">
+        <span>Total estimado <span data-bk-hours></span><small>Inclui taxa de serviço de 5%</small></span>
+        <strong data-bk-total>-</strong>
+      </div>
+      <span hidden data-bk-sub></span>
+      <span hidden data-bk-fee></span>
+      <a class="btn block is-disabled" data-bk-cta>
+        <span data-bk-cta-label>Escolha um horário</span>
+        <i class="ic" data-lucide="arrow-right"></i>
+      </a>
+      <div class="book-bar__assurance">
+        <i class="ic" data-lucide="shield-check"></i>
+        <span><strong>Reserva protegida</strong><small>Você revisa todos os dados antes de enviar a solicitação.</small></span>
+      </div>
+    </aside>
+  </div>
+
+  <div class="container venue-reviews-wrap">
+    <section class="venue-reviews">
+      <div class="venue-section-head">
+        <div><span>Experiências reais</span><h2>Avaliações da arena</h2></div>
+      </div>
+      <div class="venue-review-summary">
+        <div class="venue-review-score">
+          <strong data-venue-review-rating></strong>
+          <span class="venue-review-stars" aria-label="Nota da arena">
+            <i class="ic" data-lucide="star"></i><i class="ic" data-lucide="star"></i>
+            <i class="ic" data-lucide="star"></i><i class="ic" data-lucide="star"></i>
+            <i class="ic" data-lucide="star"></i>
+          </span>
+          <small data-venue-review-count></small>
+        </div>
+        <p><i class="ic" data-lucide="badge-check"></i>Avaliações publicadas por quem concluiu uma reserva.</p>
+      </div>
+      <div class="venue-review-list" data-venue-review-list></div>
+    </section>
+  </div>
+</div>

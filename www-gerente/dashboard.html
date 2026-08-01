@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-page="dashboard">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Dashboard - Qadras</title>
+  <meta name="theme-color" content="#1b7a3e">
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/desktop.css">
+</head>
+<body>
+  <div data-component="./components/icons/sprite.html"></div>
+  <div class="app" id="app">
+    <div class="sb-backdrop" data-nav-close></div>
+    <div data-component="./components/sidebar/manager-sidebar.html"></div>
+    <div class="main">
+      <div data-component="./components/header/app-topbar.html"></div>
+      <div class="content">
+        <main data-desktop-route-view data-current-route="dashboard">
+          <div data-component="./pages/dashboard.html"></div>
+        </main>
+      </div>
+    </div>
+  </div>
+  <div data-component="./components/modal/schedule-modal.html"></div>
+  <div data-component="./components/toast/toast.html"></div>
+  <script src="./assets/js/ui.js" defer></script>
+  <script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% set active = 'mapa' %}
+{% set selected_date = request.args.get('date', '') %}
+{% set service_fee = (subtotal * 0.05)|round(2) %}
+{% set checkout_total = (subtotal + service_fee)|round(2) %}
+{% block title %}Solicitar reserva{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderização Jinja e solicitação simulada pela API -->
+<div class="route-page" data-payment-flow>
+  <div class="navbar checkout-navbar">
+    <a class="icon-btn" href="{{ url_for('quadra', quadra_id=quadra.id) }}" aria-label="Voltar"><svg class="ic"><use href="#i-left"/></svg></a>
+    <div><div class="title">Solicitar reserva</div><div class="sub">Confira os dados antes de enviar</div></div>
+  </div>
+
+  <div class="container checkout-mobile">
+    <ol class="booking-flow booking-flow--checkout" aria-label="Etapas da reserva">
+      <li class="is-done"><span><i class="ic" data-lucide="check"></i></span><small>Horário</small></li>
+      <li class="is-current"><span>2</span><small>Pagamento</small></li>
+      <li><span>3</span><small>Aprovação</small></li>
+      <li><span>4</span><small>Confirmação</small></li>
+    </ol>
+
+    <section class="checkout-recap">
+      <div class="mini-card">
+        <img src="{{ quadra.foto }}" alt="{{ quadra.nome }}">
+        <div>
+          <span class="checkout-recap__eyebrow">Sua partida</span>
+          <h3>{{ quadra.nome }}</h3>
+          <p class="meta">{{ quadra.esporte }} - {{ quadra.bairro }}</p>
+        </div>
+      </div>
+      <div class="info-rows">
+        <div class="row">
+          <span class="k"><i class="ic" data-lucide="calendar-days"></i>Data</span>
+          <span class="v" data-booking-date-label data-booking-date="{{ selected_date }}">Hoje</span>
+        </div>
+        <div class="row">
+          <span class="k"><i class="ic" data-lucide="clock-3"></i>Horário</span>
+          <span class="v">{{ hora }} a {{ hora_fim }}</span>
+        </div>
+        <div class="row">
+          <span class="k"><i class="ic" data-lucide="timer"></i>Duração</span>
+          <span class="v">{{ dur }} {{ 'hora' if dur == 1 else 'horas' }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="checkout-section">
+      <div class="checkout-section__head">
+        <div><span>Como quer pagar?</span><h2>Forma de pagamento</h2></div>
+        <i class="ic" data-lucide="shield-check"></i>
+      </div>
+      <div class="pay-methods">
+        <button type="button" class="method on" data-payment-method="pix">
+          <span class="badge-ic"><svg class="ic"><use href="#i-zap"/></svg></span>
+          <span><strong>Pix</strong><small>Validação imediata</small></span>
+          <span class="check"><svg class="ic"><use href="#i-check"/></svg></span>
+        </button>
+        <button type="button" class="method" data-payment-method="card">
+          <span class="badge-ic"><svg class="ic"><use href="#i-card"/></svg></span>
+          <span><strong>Cartão de crédito</strong><small>Final 4321</small></span>
+          <span class="check"><svg class="ic"><use href="#i-check"/></svg></span>
+        </button>
+        <button type="button" class="method is-unavailable" data-payment-method="wallet" disabled>
+          <span class="badge-ic"><svg class="ic"><use href="#i-wallet"/></svg></span>
+          <span><strong>Saldo Qadras</strong><small>Saldo indisponível</small></span>
+          <span class="check"><svg class="ic"><use href="#i-check"/></svg></span>
+        </button>
+      </div>
+    </section>
+
+    <div class="approval-policy">
+      <span><i class="ic" data-lucide="timer"></i></span>
+      <div>
+        <strong>A arena responde em até 15 minutos</strong>
+        <p>Validamos a forma de pagamento agora. A cobrança só é concluída se a arena aceitar.</p>
+      </div>
+    </div>
+
+    <section class="checkout-total">
+      <div class="line"><span>Aluguel da quadra ({{ dur }}h)</span><span>R$ {{ '%.2f'|format(subtotal)|replace('.', ',') }}</span></div>
+      <div class="line"><span>Taxa de serviço (5%)</span><span>R$ {{ '%.2f'|format(service_fee)|replace('.', ',') }}</span></div>
+      <div class="line total"><span>Total</span><span>R$ {{ '%.2f'|format(checkout_total)|replace('.', ',') }}</span></div>
+      <p><i class="ic" data-lucide="info"></i>A taxa mantém o pagamento, o suporte e a proteção da reserva.</p>
+    </section>
+
+    <div class="checkout-action">
+      <a href="{{ url_for('confirmado', quadra_id=quadra.id, date=selected_date, hora=hora, dur=dur) }}"
+         class="btn block" data-payment-cta>
+        <span>Enviar solicitação - R$ {{ '%.2f'|format(checkout_total)|replace('.', ',') }}</span>
+        <i class="ic" data-lucide="arrow-right"></i>
+      </a>
+      <p class="note"><i class="ic" data-lucide="shield-check"></i><span>Nenhuma cobrança será concluída se a arena não aceitar.</span></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/booking-flow.js') }}"></script>
+{% endblock %}

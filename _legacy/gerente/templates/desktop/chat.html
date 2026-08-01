@@ -1,0 +1,82 @@
+{% extends "desktop/app_base.html" %}
+{% set active = 'g-mensagens' if me == 'gerente' else 'mensagens' %}
+{% set requested_cid = request.view_args.get('cid') if request.view_args else none %}
+{% set ativa_ui = ativa if requested_cid else none %}
+{% macro safe_message(text) -%}
+{{- text
+  |replace('Me chama aqui que a gente acha outro horário.', 'Abra a reserva na Qadras e escolha outro horário disponível.')
+  |replace('me chama aqui para remarcar.', 'reagende pela Qadras com pagamento e confirmação protegidos.') -}}
+{%- endmacro %}
+{% block title %}Mensagens · Qadras{% endblock %}
+{% block page_title %}Mensagens{% endblock %}
+{% block page_sub %}Atenda seus clientes sem sair da Qadras{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="chat {{ 'has-active' if ativa_ui }}">
+  <aside class="chat-list">
+    <div class="chat-list-head"><div><strong>Caixa de entrada</strong><span>{{ convs|length }} {{ 'conversa' if convs|length == 1 else 'conversas' }}</span></div></div>
+    {% for c in convs %}
+      {% set outro = c.arena if me == 'jogador' else c.jogador %}
+      {% set ultima = c.mensagens[-1] if c.mensagens else None %}
+      {% set naolida = ultima and ultima.de != me %}
+      <a class="conv {{ 'on' if ativa_ui and c.id == ativa_ui.id }} {{ 'unread' if naolida }}" href="{{ url_for(ep_thread, cid=c.id) }}">
+        <span class="conv-av">{{ outro[0] }}</span>
+        <div class="conv-main">
+          <div class="conv-top"><strong>{{ outro }}</strong><span class="conv-time">{{ ultima.hora if ultima else '' }}</span></div>
+          <div class="conv-prev">{% if ultima %}{{ 'Você: ' if ultima.de == me }}{{ safe_message(ultima.texto) }}{% else %}Sem mensagens{% endif %}</div>
+        </div>
+        {% if naolida %}<span class="conv-dot"></span>{% endif %}
+      </a>
+    {% else %}
+      <div class="chat-empty">Nenhuma conversa ainda.</div>
+    {% endfor %}
+  </aside>
+
+  <section class="chat-thread">
+    {% if ativa_ui %}
+      {% set outro = ativa_ui.arena if me == 'jogador' else ativa_ui.jogador %}
+      <header class="thread-head">
+        <a class="chat-mobile-back" href="{{ url_for(ep_thread) }}" aria-label="Voltar para conversas"><svg class="ic"><use href="#i-left"/></svg></a>
+        <span class="conv-av">{{ outro[0] }}</span>
+        <div>
+          <strong>{{ outro }}</strong>
+          <div class="thread-sub">{{ ativa_ui.assunto }} · {{ ativa_ui.quadra }}</div>
+        </div>
+      </header>
+      <div class="bubbles" id="bubbles">
+        {% for m in ativa_ui.mensagens %}
+        <div class="bubble {{ 'me' if m.de == me else 'them' }}">
+          <div class="bub-txt">{{ safe_message(m.texto) }}</div>
+          <div class="bub-time">{{ m.hora }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <form class="composer" method="post" action="{{ url_for(ep_send, cid=ativa_ui.id) }}">
+        <input type="text" name="texto" placeholder="Escreva pela Qadras..." autocomplete="off" required>
+        <button type="submit" class="btn btn-primary" aria-label="Enviar"><svg class="ic"><use href="#i-send"/></svg></button>
+      </form>
+    {% else %}
+      <div class="chat-empty">
+        <div>
+          <div class="empty-ic"><svg class="ic lg"><use href="#i-chat"/></svg></div>
+          <h3 style="font-family:var(--display);">Atendimento pela Qadras</h3>
+          <p>Selecione uma conversa para acompanhar tudo dentro do aplicativo.</p>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var b = document.getElementById('bubbles');
+    if (b) b.scrollTop = b.scrollHeight;
+    var inp = document.querySelector('.composer input');
+    if (inp) inp.focus();
+  })();
+</script>
+{% endblock %}

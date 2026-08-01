@@ -1,0 +1,101 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'explorar' %}
+{% block title %}Explorar quadras · Qadras{% endblock %}
+{% block page_title %}Explorar quadras{% endblock %}
+{% block page_sub %}{{ quadras|length }} quadras disponíveis perto de {{ local }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<section class="desktop-market-hero">
+  <div class="desktop-market-hero__top">
+    <div class="desktop-market-hero__copy">
+      <span><svg class="ic sm"><use href="#i-pin"/></svg>{{ local }}</span>
+      <h2>Quadras perto de você</h2>
+      <p>Escolha o esporte e encontre o melhor horário.</p>
+    </div>
+  </div>
+
+  <form action="{{ url_for('pc_explorar') }}" method="get" class="toolbar desktop-market-search">
+    <div class="field grow">
+      <svg class="ic"><use href="#i-search"/></svg>
+      <input type="text" name="local" value="{{ local }}" placeholder="Bairro, CEP ou cidade">
+    </div>
+    <div class="desktop-sport-picker" data-sport-select data-submit-on-select>
+      <input type="hidden" name="esporte" value="{{ esporte }}">
+      <button class="desktop-sport-trigger" type="button" data-sport-trigger
+              aria-haspopup="listbox" aria-expanded="false">
+        <i class="ic" data-lucide="trophy"></i>
+        <span data-sport-label>{{ esporte or 'Todos os esportes' }}</span>
+        <i class="ic desktop-sport-chevron" data-lucide="chevron-down"></i>
+      </button>
+      <div class="desktop-sport-menu" data-sport-menu role="listbox" aria-label="Escolha um esporte" hidden>
+        <button type="button" class="{{ 'is-selected' if not esporte }}" data-sport-option="" role="option" aria-selected="{{ 'true' if not esporte else 'false' }}">
+          <i class="ic" data-lucide="sparkles"></i><span>Todos os esportes</span><i class="ic desktop-sport-check" data-lucide="check"></i>
+        </button>
+        {% for e in esportes %}
+        <button type="button" class="{{ 'is-selected' if esporte == e }}" data-sport-option="{{ e }}" role="option" aria-selected="{{ 'true' if esporte == e else 'false' }}">
+          <i class="ic" data-lucide="trophy"></i><span>{{ e }}</span><i class="ic desktop-sport-check" data-lucide="check"></i>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="btn btn-primary" type="submit"><svg class="ic"><use href="#i-search"/></svg>Buscar</button>
+  </form>
+</section>
+
+<div class="res-bar" id="resultados">
+  <div class="res-count"><b>{{ quadras|length }}</b> resultados{% if esporte %} para {{ esporte }}{% endif %} · ordenado por distância</div>
+  <div class="view-seg">
+    <button class="view-btn on" data-view="list"><svg class="ic sm"><use href="#i-list"/></svg> Lista</button>
+    <button class="view-btn" data-view="map"><svg class="ic sm"><use href="#i-map"/></svg> Mapa</button>
+  </div>
+</div>
+
+<div data-pane="map" class="map-pane hidden">
+  <div id="pq-map" class="pq-map"
+       data-user-lat="{{ user_loc[0] }}" data-user-lng="{{ user_loc[1] }}"
+       data-detail-base="/pc/quadra/"></div>
+</div>
+
+<div class="grid" data-pane="list">
+  {% for q in quadras %}
+  <a href="{{ url_for('pc_quadra', quadra_id=q.id) }}">
+    <div class="qcard">
+      <div class="ph">
+        <span class="pill tr"><svg class="ic"><use href="#i-pin"/></svg>{{ q.distancia }} km</span>
+        <span class="pill star tl"><svg class="ic"><use href="#i-star"/></svg>{{ q.nota }} ({{ q.avaliacoes }})</span>
+        <img src="{{ q.foto }}" alt="{{ q.nome }}" loading="lazy">
+      </div>
+      <div class="bd">
+        <h3>{{ q.nome }}</h3>
+        <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>{{ q.esporte }} · {{ q.bairro }}</p>
+        <div class="tags">{% for t in q.tags %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+        <div class="foot">
+          <div class="price">R$ {{ q.preco }}<small> /hora</small></div>
+          <span class="btn btn-outline">Ver horários</span>
+        </div>
+      </div>
+    </div>
+  </a>
+  {% else %}
+    <div class="empty">
+      <div class="empty-ic"><svg class="ic lg"><use href="#i-search"/></svg></div>
+      <h3>Nenhuma quadra nesse filtro</h3>
+      <p>Tente aumentar a distância ou trocar o esporte.</p>
+      <a href="{{ url_for('pc_explorar', local=local) }}" class="btn btn-outline">Limpar filtros</a>
+    </div>
+  {% endfor %}
+</div>
+
+<script type="application/json" id="pq-map-data">{{ quadras|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/findmap.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,78 @@
+<!-- TODO: substituir dados locais por GET/PATCH /perfil na API FastAPI -->
+<div class="route-page profile-page">
+  <div class="navbar">
+    <div><div class="title">Perfil</div><div class="sub">Sua conta no Qadras</div></div>
+    <span class="spacer"></span>
+    <a class="icon-btn" href="#config" aria-label="Configurações"><i class="ic" data-lucide="sliders-horizontal"></i></a>
+  </div>
+
+  <div class="container">
+    <section class="profile-hero">
+      <div class="profile-cover">
+        <span class="profile-role"><i class="ic" data-lucide="user-round-check"></i>Jogador</span>
+      </div>
+      <div class="profile-identity">
+        <div class="profile-avatar-wrap">
+          <span class="profile-avatar" data-profile-avatar>G</span>
+          <label class="profile-avatar-edit" for="profile-photo-input" aria-label="Alterar foto do perfil">
+            <i class="ic" data-lucide="camera"></i>
+            <input id="profile-photo-input" type="file" accept="image/*" data-profile-photo-input hidden>
+          </label>
+        </div>
+        <button class="profile-edit-action" type="button" data-sheet-open="profile-edit-sheet" aria-expanded="false">
+          <i class="ic" data-lucide="pencil"></i><span>Editar perfil</span>
+        </button>
+        <div class="profile-identity-copy">
+          <h1 data-profile-name></h1>
+          <p data-profile-since></p>
+          <span class="profile-location"><i class="ic" data-lucide="map-pin"></i><span data-profile-city></span></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="profile-stats">
+      <div><strong data-profile-games></strong><span>jogos</span></div>
+      <div><strong data-profile-reservations></strong><span>reservas</span></div>
+      <div><strong data-profile-favorites></strong><span>favoritas</span></div>
+    </div>
+    <div class="favorite-sport"><i class="ic" data-lucide="trophy"></i>Esporte favorito: <strong data-profile-sport></strong></div>
+
+    <nav class="account-menu" aria-label="Menu da conta">
+      <a href="#mensagens"><span class="menu-icon"><i class="ic" data-lucide="message-circle"></i></span><span><strong>Mensagens</strong><small>Disponíveis após uma reserva confirmada</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+      <a href="#carteira"><span class="menu-icon"><i class="ic" data-lucide="wallet-cards"></i></span><span><strong>Carteira</strong><small>Saldo, cartoes e cupons</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+      <a href="#favoritos"><span class="menu-icon"><i class="ic" data-lucide="heart"></i></span><span><strong>Favoritos</strong><small>Suas quadras salvas</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+      <a href="#config"><span class="menu-icon"><i class="ic" data-lucide="sliders-horizontal"></i></span><span><strong>Configurações</strong><small>Notificações e privacidade</small></span><i class="ic" data-lucide="chevron-right"></i></a>
+    </nav>
+  </div>
+
+  <section id="profile-edit-sheet" class="market-sheet" data-market-sheet hidden aria-label="Editar perfil">
+    <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar edicao"></button>
+    <div class="market-sheet__panel profile-edit-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
+      <div class="market-sheet__head">
+        <div>
+          <span>Minha conta</span>
+          <h2 id="profile-edit-title">Editar perfil</h2>
+        </div>
+        <button class="market-sheet__close" type="button" data-sheet-close aria-label="Fechar">
+          <i class="ic" data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form class="profile-edit-form" data-profile-edit-form>
+        <label class="profile-edit-photo" for="profile-photo-input">
+          <span><i class="ic" data-lucide="camera"></i></span>
+          <span><strong>Alterar foto</strong><small>Escolha uma imagem do aparelho</small></span>
+          <i class="ic" data-lucide="chevron-right"></i>
+        </label>
+        <div class="field"><label>Nome completo</label><input type="text" name="name" autocomplete="name" required></div>
+        <div class="field"><label>E-mail</label><input type="email" name="email" autocomplete="email" required></div>
+        <div class="field"><label>Celular</label><input type="tel" name="phone" autocomplete="tel" required></div>
+        <div class="field"><label>Cidade</label><input type="text" name="city" autocomplete="address-level2" required></div>
+        <div class="profile-edit-actions">
+          <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
+          <button class="btn" type="submit"><i class="ic" data-lucide="check"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>

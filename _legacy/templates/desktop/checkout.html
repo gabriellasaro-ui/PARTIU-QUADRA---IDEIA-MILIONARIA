@@ -1,0 +1,105 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'explorar' %}
+{% set selected_date = request.args.get('date', '') %}
+{% set service_fee = (subtotal * 0.05)|round(2) %}
+{% set checkout_total = (subtotal + service_fee)|round(2) %}
+{% block title %}Solicitar reserva - Qadras{% endblock %}
+{% block page_title %}Solicitar reserva{% endblock %}
+{% block page_sub %}{{ quadra.nome }} - {{ hora }}{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja e pagamento simulado pela API -->
+<div class="desktop-checkout-page" data-payment-flow>
+  <a href="{{ url_for('pc_quadra', quadra_id=quadra.id) }}" class="back-link"><i class="ic sm" data-lucide="arrow-left"></i>Voltar para a quadra</a>
+
+  <ol class="desktop-reservation-flow desktop-reservation-flow--checkout" aria-label="Etapas da reserva">
+    <li class="is-done"><span><i class="ic sm" data-lucide="check"></i></span><div><strong>Horário</strong><small>{{ hora }} - {{ hora_fim }}</small></div></li>
+    <li class="is-current"><span>2</span><div><strong>Pagamento</strong><small>Escolha como pagar</small></div></li>
+    <li><span>3</span><div><strong>Aprovação</strong><small>Resposta da arena</small></div></li>
+    <li><span>4</span><div><strong>Confirmação</strong><small>Horário garantido</small></div></li>
+  </ol>
+
+  <div class="desktop-checkout-layout">
+    <main class="desktop-checkout-main">
+      <section class="card desktop-checkout-recap">
+        <div class="desktop-checkout-section-head">
+          <div><span>Sua partida</span><h2>Revise a reserva</h2></div>
+          <a href="{{ url_for('pc_quadra', quadra_id=quadra.id) }}"><i class="ic sm" data-lucide="pencil"></i>Alterar horário</a>
+        </div>
+        <div class="desktop-checkout-venue">
+          <img src="{{ quadra.foto }}" alt="{{ quadra.nome }}">
+          <div><h3>{{ quadra.nome }}</h3><p>{{ quadra.esporte }} - {{ quadra.bairro }}</p></div>
+          <div class="desktop-checkout-facts">
+            <span><i class="ic sm" data-lucide="calendar-days"></i><b data-booking-date-label data-booking-date="{{ selected_date }}">Hoje</b></span>
+            <span><i class="ic sm" data-lucide="clock-3"></i><b>{{ hora }} - {{ hora_fim }}</b></span>
+            <span><i class="ic sm" data-lucide="timer"></i><b>{{ dur }} {{ 'hora' if dur == 1 else 'horas' }}</b></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card desktop-payment-card">
+        <div class="desktop-checkout-section-head">
+          <div><span>Pagamento seguro</span><h2>Como você quer pagar?</h2></div>
+          <i class="ic" data-lucide="shield-check"></i>
+        </div>
+        <div class="desktop-payment-methods">
+          <button type="button" class="method on" data-payment-method="pix">
+            <span class="badge-ic"><svg class="ic"><use href="#i-zap"/></svg></span>
+            <span><strong>Pix</strong><small>Validação imediata</small></span>
+            <span class="ck"><svg class="ic"><use href="#i-check"/></svg></span>
+          </button>
+          <button type="button" class="method" data-payment-method="card">
+            <span class="badge-ic"><svg class="ic"><use href="#i-card"/></svg></span>
+            <span><strong>Cartão de crédito</strong><small>Final 4321</small></span>
+            <span class="ck"><svg class="ic"><use href="#i-check"/></svg></span>
+          </button>
+          <button type="button" class="method is-unavailable" data-payment-method="wallet" disabled>
+            <span class="badge-ic"><svg class="ic"><use href="#i-wallet"/></svg></span>
+            <span><strong>Saldo Qadras</strong><small>Saldo indisponível</small></span>
+            <span class="ck"><svg class="ic"><use href="#i-check"/></svg></span>
+          </button>
+        </div>
+      </section>
+
+      <section class="desktop-approval-policy">
+        <span><i class="ic" data-lucide="timer"></i></span>
+        <div>
+          <strong>A arena responde em até 15 minutos</strong>
+          <p>A forma de pagamento é validada agora. A cobrança só é concluída após o aceite.</p>
+        </div>
+      </section>
+
+      <section class="card desktop-player-check">
+        <div class="desktop-player-check__avatar">G</div>
+        <div><span>Jogador da reserva</span><strong>Gabriel Lisboa</strong><small>gabriel@email.com - (62) 99999-0000</small></div>
+        <span class="desktop-player-check__verified"><i class="ic sm" data-lucide="badge-check"></i>Dados verificados</span>
+        <a class="icon-btn" href="{{ url_for('pc_perfil') }}" aria-label="Editar dados do perfil" title="Editar dados do perfil"><i class="ic" data-lucide="pencil"></i></a>
+      </section>
+    </main>
+
+    <aside>
+      <div class="order-card">
+        <div class="order-card__head">
+          <span>Resumo do pagamento</span>
+          <h2>Total da reserva</h2>
+        </div>
+        <div class="line"><span class="muted">Aluguel ({{ dur }}h)</span><span>R$ {{ '%.2f'|format(subtotal)|replace('.', ',') }}</span></div>
+        <div class="line"><span class="muted">Taxa de serviço (5%)</span><span>R$ {{ '%.2f'|format(service_fee)|replace('.', ',') }}</span></div>
+        <div class="line total"><span>Total</span><span>R$ {{ '%.2f'|format(checkout_total)|replace('.', ',') }}</span></div>
+        <div class="order-card__fee-note"><i class="ic sm" data-lucide="info"></i>A taxa mantém o pagamento, o suporte e a proteção da reserva.</div>
+        <a href="{{ url_for('pc_reserva_ok', quadra_id=quadra.id, date=selected_date, hora=hora, dur=dur) }}"
+           class="btn btn-primary btn-lg btn-block" data-payment-cta>
+          <span>Enviar solicitação - R$ {{ '%.2f'|format(checkout_total)|replace('.', ',') }}</span><i class="ic sm" data-lucide="arrow-right"></i>
+        </a>
+        <div class="bc-note"><i class="ic sm" data-lucide="shield-check"></i><span>Se a arena não aceitar, nenhuma cobrança será concluída.</span></div>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/booking-flow.js') }}"></script>
+{% endblock %}

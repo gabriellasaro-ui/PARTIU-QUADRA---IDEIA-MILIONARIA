@@ -1,0 +1,270 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'perfil' %}
+{% block title %}Perfil - Qadras{% endblock %}
+{% block page_title %}Perfil{% endblock %}
+{% block page_sub %}Sua identidade, jogos e preferências{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="desktop-profile-page" data-flask-profile>
+  <section class="desktop-profile-header">
+    <div class="desktop-profile-identity">
+      <div class="desktop-profile-avatar-wrap">
+        <span class="prof-av" data-flask-profile-avatar>G</span>
+        <label class="desktop-profile-photo" for="flask-profile-photo" aria-label="Alterar foto do perfil">
+          <i class="ic" data-lucide="camera"></i>
+          <input id="flask-profile-photo" type="file" accept="image/*" data-flask-profile-photo hidden>
+        </label>
+      </div>
+
+      <div class="desktop-profile-copy">
+        <span class="desktop-profile-role">
+          <i class="ic sm" data-lucide="user-round-check"></i>
+          Jogador
+        </span>
+        <h2 data-flask-profile-name>Gabriel Lisboa</h2>
+        <p>Jogador desde jun/2025</p>
+        <div class="desktop-profile-meta">
+          <span><i class="ic sm" data-lucide="map-pin"></i><span data-flask-profile-city>Goiânia</span></span>
+          <span><i class="ic sm" data-lucide="mail"></i><span data-flask-profile-email>gabriel@email.com</span></span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="desktop-profile-side">
+      <button class="btn btn-outline desktop-profile-edit" type="button" data-flask-profile-edit>
+        <i class="ic sm" data-lucide="pencil"></i>
+        Editar perfil
+      </button>
+      <div class="prof-stats desktop-profile-stats">
+        <div><b class="num">{{ stats.jogos }}</b><span>jogos</span></div>
+        <div><b class="num">{{ stats.reservas }}</b><span>reservas</span></div>
+        <div><b class="num">{{ stats.favoritas }}</b><span>favoritas</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="desktop-profile-grid">
+    <section class="card desktop-profile-activity">
+      <div class="desktop-profile-section-head">
+        <div>
+          <h2>Sua atividade</h2>
+          <p>Acompanhe sua próxima partida e seu progresso.</p>
+        </div>
+        <a class="desktop-profile-link" href="{{ url_for('pc_reservas') }}">
+          Ver reservas
+          <i class="ic sm" data-lucide="chevron-right"></i>
+        </a>
+      </div>
+
+      <div class="desktop-profile-next">
+        <span class="desktop-profile-eyebrow">Próximo jogo</span>
+        <a href="{{ url_for('pc_quadra', quadra_id=proximo.id) }}" class="next-game">
+          <img src="{{ proximo.foto }}" alt="{{ proximo.nome }}">
+          <div class="ng-info">
+            <strong>{{ proximo.nome }}</strong>
+            <div class="ng-meta">
+              <span><svg class="ic sm"><use href="#i-calendar"/></svg>{{ proximo.data }}</span>
+              <span><svg class="ic sm"><use href="#i-clock"/></svg>{{ proximo.hora }}</span>
+            </div>
+            <span class="status {{ proximo.status_class }}">{{ proximo.status }}</span>
+          </div>
+          <i class="ic desktop-profile-next__arrow" data-lucide="chevron-right"></i>
+        </a>
+      </div>
+
+      <div class="desktop-profile-achievements">
+        <h3>Conquistas</h3>
+        <div class="achv-grid">
+          {% for c in conquistas %}
+          <div class="achv {{ '' if c.on else 'locked' }}">
+            <span class="ic-wrap"><svg class="ic"><use href="#{{ c.icon }}"/></svg></span>
+            <div><strong>{{ c.title }}</strong><small>{{ c.desc }}</small></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card desktop-profile-about">
+      <div class="desktop-profile-section-head">
+        <div>
+          <h2>Sobre você</h2>
+          <p>Informações usadas nas suas reservas.</p>
+        </div>
+        <button class="icon-btn" type="button" data-flask-profile-edit aria-label="Editar dados pessoais" title="Editar dados pessoais">
+          <i class="ic" data-lucide="pencil"></i>
+        </button>
+      </div>
+      <div class="desktop-profile-details">
+        <div><span>E-mail</span><strong data-flask-profile-email>gabriel@email.com</strong></div>
+        <div><span>Celular</span><strong data-flask-profile-phone>(62) 99999-0000</strong></div>
+        <div><span>Cidade</span><strong data-flask-profile-city>Goiânia</strong></div>
+        <div><span>Esporte favorito</span><strong>{{ stats.esporte_fav }}</strong></div>
+      </div>
+    </section>
+  </div>
+
+  <form id="perfil-form" method="post" class="card desktop-profile-editor" data-flask-profile-form hidden>
+    <div class="desktop-profile-section-head">
+      <div>
+        <h2>Editar perfil</h2>
+        <p>Atualize como suas informações aparecem no aplicativo.</p>
+      </div>
+      <button class="icon-btn" type="button" data-flask-profile-cancel aria-label="Fechar edição">
+        <i class="ic" data-lucide="x"></i>
+      </button>
+    </div>
+
+    <div class="inp">
+      <label>Nome completo</label>
+      <input type="text" name="name" value="Gabriel Lisboa" autocomplete="name" required>
+    </div>
+    <div class="input-row">
+      <div class="inp"><label>E-mail</label><input type="email" name="email" value="gabriel@email.com" autocomplete="email" required></div>
+      <div class="inp"><label>Celular</label><input type="tel" name="phone" value="(62) 99999-0000" autocomplete="tel" required></div>
+    </div>
+    <div class="input-row">
+      <div class="inp"><label>Cidade</label><input type="text" name="city" value="Goiânia" autocomplete="address-level2" required></div>
+      <div class="inp"><label>CPF</label><input type="text" value="000.000.000-00" disabled></div>
+    </div>
+
+    <label class="field-lbl">Esportes que você curte</label>
+    <div class="chips">
+      {% for e in esportes %}
+      <button type="button" class="chip {{ 'on' if e in ['Futebol Society', 'Beach Tennis'] }}" data-chip-toggle>{{ e }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="desktop-profile-editor__actions">
+      <button class="btn btn-outline" type="button" data-flask-profile-cancel>Cancelar</button>
+      <button class="btn btn-primary" type="submit">
+        <i class="ic sm" data-lucide="check"></i>
+        Salvar alterações
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var root = document.querySelector('[data-flask-profile]');
+    var form = root && root.querySelector('[data-flask-profile-form]');
+    var storageKey = 'pq:player_profile';
+    if (!root || !form) return;
+
+    function readProfile() {
+      try {
+        return JSON.parse(localStorage.getItem(storageKey) || '{}');
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function writeProfile(profile) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(profile));
+      } catch (error) {}
+    }
+
+    function setText(selector, value) {
+      root.querySelectorAll(selector).forEach(function (element) {
+        element.textContent = value;
+      });
+    }
+
+    function setAvatar(profile) {
+      var avatar = root.querySelector('[data-flask-profile-avatar]');
+      avatar.replaceChildren();
+      if (profile.photo) {
+        var image = document.createElement('img');
+        image.src = profile.photo;
+        image.alt = 'Foto de ' + (profile.name || 'Gabriel Lisboa');
+        avatar.appendChild(image);
+        avatar.classList.add('has-photo');
+      } else {
+        avatar.textContent = (profile.name || 'Gabriel Lisboa').slice(0, 1);
+        avatar.classList.remove('has-photo');
+      }
+    }
+
+    function applyProfile(profile) {
+      var name = profile.name || 'Gabriel Lisboa';
+      var email = profile.email || 'gabriel@email.com';
+      var phone = profile.phone || '(62) 99999-0000';
+      var city = profile.city || 'Goiânia';
+      setText('[data-flask-profile-name]', name);
+      setText('[data-flask-profile-email]', email);
+      setText('[data-flask-profile-phone]', phone);
+      setText('[data-flask-profile-city]', city);
+      form.elements.name.value = name;
+      form.elements.email.value = email;
+      form.elements.phone.value = phone;
+      form.elements.city.value = city;
+      setAvatar(Object.assign({}, profile, { name: name }));
+    }
+
+    function openEditor() {
+      form.hidden = false;
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.setTimeout(function () { form.elements.name.focus(); }, 250);
+    }
+
+    document.querySelectorAll('[data-flask-profile-edit]').forEach(function (button) {
+      button.addEventListener('click', openEditor);
+    });
+
+    root.querySelectorAll('[data-flask-profile-cancel]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        form.hidden = true;
+        document.querySelector('[data-flask-profile-edit]').focus();
+      });
+    });
+
+    form.addEventListener('submit', function () {
+      var current = readProfile();
+      current.name = form.elements.name.value.trim();
+      current.email = form.elements.email.value.trim();
+      current.phone = form.elements.phone.value.trim();
+      current.city = form.elements.city.value.trim();
+      writeProfile(current);
+    });
+
+    root.querySelector('[data-flask-profile-photo]').addEventListener('change', function (event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      if (file.size > 10 * 1024 * 1024) {
+        window.pqToast && window.pqToast('Escolha uma imagem de até 10 MB');
+        event.target.value = '';
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function () {
+        var image = new Image();
+        image.onload = function () {
+          var scale = Math.min(1, 512 / Math.max(image.naturalWidth, image.naturalHeight));
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+          var current = readProfile();
+          current.photo = canvas.toDataURL('image/jpeg', .86);
+          writeProfile(current);
+          applyProfile(current);
+          event.target.value = '';
+        };
+        image.src = String(reader.result);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    applyProfile(readProfile());
+  })();
+</script>
+{% endblock %}

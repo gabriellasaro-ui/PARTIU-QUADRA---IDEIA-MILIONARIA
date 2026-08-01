@@ -1,0 +1,1692 @@
+import venueService from '../../services/venues.js';
+import storage from '../../storage/storage.js';
+import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
+import { imageFileToDataUrl } from '../../utils/helpers.js';
+import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
+
+let currentRoute = null;
+let activeMobileMap = null;
+let activeUserMarker = null;
+let activeMobileApprovalTimer = null;
+let gameCardTicker = null;
+const DEFAULT_LOCATION = [-16.6950, -49.2550];
+const APPROVAL_WINDOW_MS = 15 * 60 * 1000;
+const MOCK_APPROVAL_DELAY_MS = 5000;
+const LOCATION_COORDINATES = {
+  'Goiania, GO': DEFAULT_LOCATION,
+  'Goiânia, GO': DEFAULT_LOCATION,
+  'Aparecida de Goiania, GO': [-16.8233, -49.2434],
+  'Aparecida de Goiânia, GO': [-16.8233, -49.2434]
+};
+const SPORT_ICONS = {
+  'Futebol Society': 'goal',
+  'Beach Tennis': 'circle-dot',
+  Volei: 'volleyball',
+  Basquete: 'target',
+  Tenis: 'activity',
+  Futsal: 'trophy'
+};
+const PAYMENT_METHOD_LABELS = {
+  pix: 'Pix',
+  card: 'Cartão de crédito',
+  wallet: 'Saldo Qadras'
+};
+
+function icon(name, className = 'ic') {
+  return `<i class="${className}" data-lucide="${name}"></i>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function formatDistance(value) {
+  return Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+}
+
+function normalizeSearch(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function displayText(value) {
+  const replacements = {
+    Volei: 'Vôlei',
+    Tenis: 'Tênis',
+    'Jardim Goias': 'Jardim Goiás',
+    'Alto da Gloria': 'Alto da Glória',
+    'Grama sintetica': 'Grama sintética',
+    Vestiario: 'Vestiário'
+  };
+  return replacements[value] || value;
+}
+
+function currentLocation() {
+  return storage.get('current_location', 'Goiânia, GO');
+}
+
+function currentCoordinates() {
+  const saved = storage.get('current_coordinates');
+  const location = currentLocation();
+  if ((location === 'Localizacao atual' || location === 'Localização atual') && Array.isArray(saved) && saved.length === 2) {
+    return saved.map(Number);
+  }
+  return LOCATION_COORDINATES[location] || DEFAULT_LOCATION;
+}
+
+function syncMarketplaceState(root = document) {
+  const location = currentLocation();
+  root.querySelectorAll('[data-current-location]').forEach((element) => {
+    element.textContent = location;
+  });
+  root.querySelectorAll('[data-search-location]').forEach((input) => {
+    input.value = location;
+  });
+
+  const notificationsRead = storage.get('notifications_read', false);
+  root.querySelectorAll('[data-notification-dot]').forEach((dot) => {
+    dot.hidden = notificationsRead;
+  });
+}
+
+function closeMarketSheet(sheet = document.querySelector('[data-market-sheet]:not([hidden])')) {
+  if (!sheet) return;
+  sheet.hidden = true;
+  document.body.classList.remove('market-sheet-open');
+  document.querySelectorAll(`[data-sheet-open="${sheet.id}"]`).forEach((trigger) => {
+    trigger.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function openMarketSheet(sheetId) {
+  const sheet = document.getElementById(sheetId);
+  if (!sheet) return;
+
+  document.querySelectorAll('[data-market-sheet]:not([hidden])').forEach((active) => {
+    if (active !== sheet) active.hidden = true;
+  });
+  sheet.hidden = false;
+  document.body.classList.add('market-sheet-open');
+  document.querySelectorAll(`[data-sheet-open="${sheetId}"]`).forEach((trigger) => {
+    trigger.setAttribute('aria-expanded', 'true');
+  });
+
+  if (sheetId === 'filter-sheet') {
+    const query = routeQuery(currentRoute);
+    const form = sheet.querySelector('[data-filter-form]');
+    const sport = query.get('esporte') || '';
+    const radius = query.get('raio') || '5';
+    const now = query.get('agora') === '1';
+    form?.querySelectorAll('[name="esporte"]').forEach((input) => {
+      input.checked = input.value === sport;
+    });
+    form?.querySelectorAll('[name="raio"]').forEach((input) => {
+      input.checked = input.value === radius;
+    });
+    const nowInput = form?.querySelector('[name="agora"]');
+    if (nowInput) nowInput.checked = now;
+  }
+}
+
+function addHours(hour, duration) {
+  const start = Number(String(hour).slice(0, 2));
+  return `${String(start + Number(duration)).padStart(2, '0')}:00`;
+}
+
+function localDateValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value) {
+  const [year, month, day] = String(value).split('-').map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
+function bookingDateLabel(value) {
+  const date = parseLocalDate(value);
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  const short = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit'
+  }).format(date);
+
+  if (localDateValue(date) === localDateValue(today)) return `Hoje, ${short}`;
+  if (localDateValue(date) === localDateValue(tomorrow)) return `Amanh\u00e3, ${short}`;
+  const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
+    .format(date)
+    .replace('.', '');
+  return `${weekday}, ${short}`;
+}
+
+function venueInitials(name) {
+  const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return 'PQ';
+  return `${words[0][0]}${words.length > 1 ? words[words.length - 1][0] : ''}`.toUpperCase();
+}
+
+function amenityIcon(label) {
+  const value = normalizeSearch(label);
+  if (value.includes('ilumin')) return 'lightbulb';
+  if (value.includes('vestiario')) return 'shirt';
+  if (value.includes('estacion')) return 'car';
+  if (value.includes('bar')) return 'coffee';
+  if (value.includes('coberta')) return 'home';
+  if (value.includes('arquibanc')) return 'users';
+  if (value.includes('aula')) return 'book-open';
+  if (value.includes('wi-fi') || value.includes('wifi')) return 'wifi';
+  return 'circle-check';
+}
+
+function ratingStars(rating, className = 'ic') {
+  return Array.from({ length: 5 }, (_, index) => (
+    icon('star', `${className} ${index >= Math.round(Number(rating)) ? 'is-empty' : ''}`)
+  )).join('');
+}
+
+function formatApprovalCountdown(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function approvalWaitingVisual() {
+  return `
+    <div class="approval-live-visual" aria-hidden="true">
+      <span class="approval-live-visual__route"></span>
+      <span class="approval-live-visual__endpoint approval-live-visual__user">${icon('user-round')}</span>
+      <span class="approval-live-visual__endpoint approval-live-visual__arena">${icon('goal')}</span>
+      <span class="approval-live-visual__pulse approval-live-visual__pulse--one"></span>
+      <span class="approval-live-visual__pulse approval-live-visual__pulse--two"></span>
+    </div>
+    <div class="approval-live-caption">
+      <span aria-hidden="true"><i></i><i></i><i></i></span>
+      <strong>A arena está analisando</strong>
+    </div>`;
+}
+
+function calendarMonthValue(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function calendarMonthDate(value) {
+  const [year, month] = String(value).split('-').map(Number);
+  return new Date(year, month - 1, 1, 12, 0, 0);
+}
+
+function bookingDayOffset(value) {
+  const today = parseLocalDate(localDateValue());
+  return Math.round((parseLocalDate(value) - today) / 86400000);
+}
+
+function renderBookingCalendar(root) {
+  const booking = root.querySelector('[data-booking]');
+  const calendar = root.querySelector('[data-booking-calendar]');
+  if (!booking || !calendar) return;
+
+  const today = parseLocalDate(localDateValue());
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 60);
+  const minMonth = new Date(today.getFullYear(), today.getMonth(), 1, 12, 0, 0);
+  const maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1, 12, 0, 0);
+  let month = calendarMonthDate(booking.dataset.calendarMonth || calendarMonthValue(parseLocalDate(booking.dataset.date)));
+  if (month < minMonth) month = minMonth;
+  if (month > maxMonth) month = maxMonth;
+  booking.dataset.calendarMonth = calendarMonthValue(month);
+
+  const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(month);
+  calendar.querySelector('[data-calendar-label]').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+
+  const previous = calendar.querySelector('[data-calendar-nav="-1"]');
+  const next = calendar.querySelector('[data-calendar-nav="1"]');
+  previous.disabled = month <= minMonth;
+  next.disabled = month >= maxMonth;
+
+  const firstWeekday = month.getDay();
+  const totalDays = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const cells = [];
+  for (let index = 0; index < 42; index += 1) {
+    const day = index - firstWeekday + 1;
+    if (day < 1 || day > totalDays) {
+      cells.push('<span class="calendar-empty" aria-hidden="true"></span>');
+      continue;
+    }
+    const date = new Date(month.getFullYear(), month.getMonth(), day, 12, 0, 0);
+    const value = localDateValue(date);
+    const disabled = date < today || date > maxDate;
+    const selected = value === booking.dataset.date;
+    const isToday = value === localDateValue(today);
+    const spoken = new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
+    }).format(date);
+    cells.push(`
+      <button type="button" class="calendar-day ${selected ? 'on' : ''} ${isToday ? 'is-today' : ''}"
+              data-calendar-date="${value}" aria-label="${escapeHtml(spoken)}"
+              aria-pressed="${selected}" ${disabled ? 'disabled' : ''}>
+        <span>${day}</span>
+      </button>`);
+  }
+  calendar.querySelector('[data-calendar-grid]').innerHTML = cells.join('');
+  window.pqRefreshIcons?.(calendar);
+}
+
+function venueCard(venue, options = {}) {
+  const action = options.action || 'Ver horários';
+  const removable = options.removable
+    ? `<button class="favorite-float on" type="button" data-favorite-toggle="${venue.id}" aria-label="Remover dos favoritos">${icon('heart', 'ic fill')}</button>`
+    : '';
+  const availability = venue.id % 3 === 0 ? 'Hoje a noite' : 'Livre agora';
+  return `
+    <article class="card venue-card" data-venue-id="${venue.id}">
+      ${removable}
+      <a class="venue-card-link" href="#quadra/${venue.id}">
+        <div class="photo">
+          <span class="venue-distance-pill">${icon('navigation')}${formatDistance(venue.distance)} km</span>
+          <span class="venue-availability">${icon('clock-3')}${availability}</span>
+          <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" loading="lazy">
+        </div>
+        <div class="body">
+          <div class="venue-card-kicker">
+            <span>${escapeHtml(venue.sport)}</span>
+            <b>${icon('star')}${venue.rating}</b>
+          </div>
+          <h3>${escapeHtml(venue.name)}</h3>
+          <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${formatDistance(venue.distance)} km</p>
+          <div class="tags">${venue.tags.slice(0, 2).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
+          <div class="foot">
+            <div class="price">${formatCurrency(venue.price)}<small> /hora</small></div>
+            <span class="btn-mini">${action}${icon('arrow-right')}</span>
+          </div>
+        </div>
+      </a>
+    </article>`;
+}
+
+function reservationCard(reservation, venue) {
+  return `
+    <a href="#quadra/${venue.id}" data-status="${reservation.group}">
+      <article class="res-card">
+        <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" loading="lazy">
+        <div class="res-info">
+          <strong>${escapeHtml(venue.name)}</strong>
+          <span class="res-meta">${icon('map-pin')}${escapeHtml(venue.sport)} - ${escapeHtml(venue.neighborhood)}</span>
+          <span class="res-meta">${icon('calendar-days')}${escapeHtml(reservation.date)} - ${escapeHtml(reservation.hour)} a ${escapeHtml(reservation.endHour)}</span>
+          <div class="res-foot">
+            <span class="status ${escapeHtml(reservation.statusClass)}">${escapeHtml(reservation.status)}</span>
+            <span class="res-val">${formatCurrency(reservation.price)}</span>
+          </div>
+        </div>
+      </article>
+    </a>`;
+}
+
+function availabilityForDay(base, dayIndex) {
+  if (!dayIndex) return base;
+  return base.map((slot, index) => ({
+    ...slot,
+    status: base[(index + dayIndex) % base.length].status
+  }));
+}
+
+function routeQuery(route) {
+  return route?.query instanceof URLSearchParams ? route.query : new URLSearchParams();
+}
+
+async function renderHome(root) {
+  const [sports, venues] = await Promise.all([venueService.sports(), venueService.featured()]);
+  const greeting = root.querySelector('[data-home-greeting]');
+  const chips = root.querySelector('[data-sport-chips]');
+  const featured = root.querySelector('[data-featured-list]');
+
+  if (greeting) {
+    const hour = new Date().getHours();
+    greeting.textContent = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+  }
+  if (chips) {
+    chips.innerHTML = sports
+      .map((sport) => `
+        <a class="sport-item" href="#quadras?esporte=${encodeURIComponent(sport)}">
+          <span>${icon(SPORT_ICONS[sport] || 'trophy')}</span>
+          <strong>${escapeHtml(sport.replace(' Society', ''))}</strong>
+        </a>`)
+      .join('');
+  }
+  if (featured) featured.innerHTML = venues.map((venue) => venueCard(venue, { action: 'Reservar' })).join('');
+  syncMarketplaceState(root);
+
+  await renderHomeGameCard(root);
+}
+
+/** O card da partida fica sempre na home: proxima / em andamento / encerrada. */
+async function renderHomeGameCard(root) {
+  const container = root.querySelector('#gameCardContainer') || document.getElementById('gameCardContainer');
+  if (!container) return;
+
+  let match = null;
+  try {
+    match = await venueService.getActiveMatch();
+  } catch {
+    match = null;
+  }
+
+  container.innerHTML = buildGameCard(match);
+  container.style.display = '';
+  window.pqRefreshIcons?.(container);
+
+  if (match) startGameCardTicker(container, match);
+  else stopGameCardTicker();
+}
+
+async function renderExplore(root, route) {
+  const query = routeQuery(route);
+  const sport = query.get('esporte') || '';
+  const term = query.get('q') || '';
+  const local = query.get('local') || currentLocation();
+  const radius = query.get('raio') || '5';
+  const now = query.get('agora') === '1';
+  const [sports, listedVenues] = await Promise.all([
+    venueService.sports(),
+    venueService.list({ sport })
+  ]);
+  const needle = normalizeSearch(term);
+  const venuesInRadius = listedVenues.filter((venue) => {
+    const insideRadius = venue.distance <= Number(radius);
+    const availableSoon = !now || venue.id % 3 !== 0;
+    return insideRadius && availableSoon;
+  });
+  const venues = needle
+    ? venuesInRadius.filter((venue) => normalizeSearch([
+        venue.name,
+        venue.sport,
+        venue.neighborhood,
+        ...venue.tags
+      ].join(' ')).includes(needle))
+    : venuesInRadius;
+
+  root.querySelector('[data-results-title]').textContent = term
+    ? `Resultados para "${term}"`
+    : now
+      ? 'Partiu agora'
+      : 'Explore quadras';
+  root.querySelector('[data-results-sub]').textContent = now
+    ? `${venues.length} quadras com horários próximos`
+    : `${venues.length} opções em até ${radius} km`;
+  const searchInput = root.querySelector('[data-search-form] [name="q"]');
+  if (searchInput) searchInput.value = term;
+  const radiusInput = root.querySelector('[data-search-form] [name="raio"]');
+  if (radiusInput) radiusInput.value = radius;
+  const locationInput = root.querySelector('[data-search-form] [name="local"]');
+  if (locationInput) locationInput.value = local;
+  const sportInput = root.querySelector('[data-search-sport]');
+  if (sportInput) {
+    sportInput.value = sport;
+    sportInput.disabled = !sport;
+  }
+  const nowInput = root.querySelector('[data-search-now]');
+  if (nowInput) nowInput.disabled = !now;
+  root.querySelectorAll('[data-current-location]').forEach((element) => {
+    element.textContent = local;
+  });
+
+  const persistentQuery = `${term ? `&q=${encodeURIComponent(term)}` : ''}${now ? '&agora=1' : ''}`;
+  root.querySelector('[data-sport-filters]').innerHTML = [
+    `<a class="sport-filter-chip ${sport ? '' : 'on'}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}${persistentQuery}">${icon('sparkles')}Todos</a>`,
+    ...sports.map((item) => {
+      const on = item === sport ? 'on' : '';
+      return `<a class="sport-filter-chip ${on}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}&esporte=${encodeURIComponent(item)}${persistentQuery}">${icon(SPORT_ICONS[item] || 'trophy')}${escapeHtml(item)}</a>`;
+    })
+  ].join('');
+
+  const list = root.querySelector('[data-venue-list]');
+  if (venues.length) {
+    list.innerHTML = venues.map((venue) => venueCard(venue)).join('');
+  } else {
+    list.innerHTML = `
+      <div class="empty">
+        <div class="empty-ic">${icon('search-x', 'ic lg')}</div>
+        <h3>Nenhuma quadra nesse filtro</h3>
+        <p>Tente aumentar a distância ou trocar o esporte.</p>
+        <a href="#quadras" class="btn block">Limpar filtros</a>
+      </div>`;
+  }
+}
+
+function mapPopup(venue) {
+  return `
+    <a class="map-venue-popup" href="#quadra/${venue.id}">
+      <img src="${escapeHtml(venue.image)}" alt="">
+      <span>
+        <strong>${escapeHtml(venue.name)}</strong>
+        <small>${escapeHtml(venue.sport)} - ${escapeHtml(venue.neighborhood)}</small>
+        <b>${formatCurrency(venue.price)} <em>/hora</em></b>
+      </span>
+    </a>`;
+}
+
+async function renderMap(root, route) {
+  const query = routeQuery(route);
+  const sport = query.get('esporte') || '';
+  const [sports, venues] = await Promise.all([
+    venueService.sports(),
+    venueService.list({ sport })
+  ]);
+  const filters = root.querySelector('[data-map-filters]');
+  const summary = root.querySelector('[data-map-summary]');
+  const mapElement = root.querySelector('[data-live-map]');
+  const userLocation = currentCoordinates();
+
+  summary.textContent = sport
+    ? `${venues.length} opções de ${displayText(sport)}`
+    : `${venues.length} quadras perto de você`;
+  filters.innerHTML = [
+    `<a class="chip ${sport ? '' : 'on'}" href="#mapa">Todos</a>`,
+    ...sports.map((item) => `<a class="chip ${item === sport ? 'on' : ''}" href="#mapa?esporte=${encodeURIComponent(item)}">${escapeHtml(item)}</a>`)
+  ].join('');
+
+  if (!window.L) {
+    mapElement.innerHTML = `
+      <div class="map-unavailable">
+        ${icon('map-pin-off', 'ic lg')}
+        <strong>Mapa indisponível</strong>
+        <span>Confira sua conexão e tente novamente.</span>
+      </div>`;
+    return;
+  }
+
+  activeMobileMap = window.L.map(mapElement, {
+    zoomControl: false,
+    attributionControl: true
+  }).setView(userLocation, 13);
+
+  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(activeMobileMap);
+  window.L.control.zoom({ position: 'topright' }).addTo(activeMobileMap);
+
+  activeUserMarker = window.L.marker(userLocation, {
+    icon: window.L.divIcon({
+      className: 'map-user-marker',
+      html: '<span></span>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    })
+  }).addTo(activeMobileMap).bindPopup('Você está aqui');
+
+  const bounds = [userLocation];
+  venues.forEach((venue) => {
+    const position = [venue.map.lat, venue.map.lng];
+    const marker = window.L.marker(position, {
+      icon: window.L.divIcon({
+        className: 'map-price-marker',
+        html: `<span>${formatCurrency(venue.price).replace(',00', '')}</span>`,
+        iconSize: [66, 34],
+        iconAnchor: [33, 34]
+      })
+    }).addTo(activeMobileMap);
+    marker.bindPopup(mapPopup(venue), {
+      closeButton: false,
+      offset: [0, -26],
+      minWidth: 228
+    });
+    bounds.push(position);
+  });
+
+  if (bounds.length > 1) {
+    activeMobileMap.fitBounds(bounds, {
+      paddingTopLeft: [28, 60],
+      paddingBottomRight: [28, 80],
+      maxZoom: 14
+    });
+  }
+  setTimeout(() => activeMobileMap?.invalidateSize(), 50);
+}
+
+async function renderVenue(root, route) {
+  const venue = await venueService.get(route.params.id);
+  if (!venue) {
+    location.hash = 'quadras';
+    return;
+  }
+  const [availability, favoriteIds] = await Promise.all([
+    venueService.availability(venue.id),
+    venueService.favoriteIds()
+  ]);
+
+  const gallery = Array.isArray(venue.gallery) && venue.gallery.length ? venue.gallery : [venue.image];
+  const amenities = [...new Set([...venue.tags, 'Bola inclusa', 'Wi-Fi no local'])];
+  root.querySelector('[data-venue-hero]').src = gallery[0];
+  root.querySelector('[data-venue-hero]').alt = venue.name;
+  root.querySelector('[data-venue-distance]').textContent = `${formatDistance(venue.distance)} km`;
+  root.querySelector('[data-venue-name]').textContent = venue.name;
+  root.querySelector('[data-venue-meta]').textContent = `${displayText(venue.sport)} - ${displayText(venue.neighborhood)}`;
+  root.querySelector('[data-venue-rating]').textContent = venue.rating;
+  root.querySelector('[data-venue-reviews]').textContent = `${venue.reviews} avaliações`;
+  root.querySelector('[data-venue-price]').textContent = formatCurrency(venue.price);
+  root.querySelector('[data-venue-logo]').textContent = venueInitials(venue.name);
+  root.querySelector('[data-venue-photo-count]').textContent = gallery.length;
+  root.querySelector('[data-venue-photo-current]').textContent = '1';
+  root.querySelectorAll('[data-gallery-step]').forEach((button) => {
+    button.hidden = gallery.length < 2;
+  });
+  root.querySelector('[data-venue-review-rating]').textContent = venue.rating;
+  root.querySelector('[data-venue-review-count]').textContent = `${venue.reviews} avaliações verificadas`;
+  root.querySelectorAll('.venue-review-stars .ic').forEach((star, index) => {
+    star.classList.toggle('is-empty', index >= Math.round(venue.rating));
+  });
+  root.querySelector('[data-venue-gallery]').innerHTML = gallery.map((photo, index) => `
+    <button type="button" class="venue-hero-dot ${index === 0 ? 'on' : ''}"
+            data-gallery-image="${escapeHtml(photo)}" aria-label="Ver foto ${index + 1} de ${gallery.length}"></button>`).join('');
+  root.querySelector('[data-venue-amenities]').innerHTML = amenities.map((item) => `
+    <div class="venue-amenity">
+      <span>${icon(amenityIcon(item))}</span>
+      <strong>${escapeHtml(displayText(item))}</strong>
+    </div>`).join('');
+  root.querySelector('[data-venue-review-list]').innerHTML = (venue.reviewItems || []).map((review) => `
+    <article class="venue-review">
+      <header>
+        <span class="venue-review__avatar" aria-hidden="true">${escapeHtml(review.author.slice(0, 1))}</span>
+        <div><strong>${escapeHtml(review.author)}</strong><small>${escapeHtml(review.date)}</small></div>
+        <span class="venue-review__stars" aria-label="${review.rating} de 5 estrelas">${ratingStars(review.rating)}</span>
+      </header>
+      <p>${escapeHtml(review.text)}</p>
+    </article>`).join('');
+
+  const favoriteButton = root.querySelector('[data-favorite-toggle]');
+  favoriteButton.dataset.favoriteToggle = venue.id;
+  favoriteButton.classList.toggle('on', favoriteIds.includes(venue.id));
+
+  const booking = root.querySelector('[data-booking]');
+  booking.dataset.venueId = venue.id;
+  booking.dataset.price = venue.price;
+  booking.dataset.availability = JSON.stringify(availability);
+  booking.dataset.dayIndex = '0';
+  booking.dataset.duration = '1';
+  booking.dataset.hour = '';
+  booking.dataset.date = localDateValue();
+  booking.dataset.calendarMonth = calendarMonthValue(parseLocalDate(booking.dataset.date));
+  renderBookingCalendar(root);
+  renderBooking(root);
+}
+
+function isPastSlot(hour, dateValue) {
+  const date = dateValue || localDateValue();
+  if (date !== localDateValue()) return false;
+  const slotTotal = Number(String(hour).slice(0, 2)) * 60;
+  const now = new Date();
+  const nowTotal = now.getHours() * 60 + now.getMinutes();
+  return slotTotal <= nowTotal;
+}
+
+function renderBooking(root) {
+  const booking = root.querySelector('[data-booking]');
+  if (!booking) return;
+
+  const baseAvailability = JSON.parse(booking.dataset.availability || '[]');
+  const dayIndex = Number(booking.dataset.dayIndex || 0);
+  const availability = availabilityForDay(baseAvailability, dayIndex);
+  let selectedHour = booking.dataset.hour;
+  const duration = Math.max(1, Math.min(3, Number(booking.dataset.duration || 1)));
+  booking.dataset.duration = String(duration);
+
+  const isFreeAt = (hour) => availability.some((slot) => (
+    Number(slot.hour.slice(0, 2)) === hour && slot.status === 'free'
+  ));
+  const canStartAt = (hour) => {
+    for (let index = 0; index < duration; index += 1) {
+      if (!isFreeAt(hour + index)) return false;
+    }
+    return true;
+  };
+  const isPast = (hour) => isPastSlot(hour, booking.dataset.date);
+
+  if (selectedHour && (!canStartAt(Number(selectedHour.slice(0, 2))) || isPast(selectedHour))) {
+    selectedHour = '';
+    booking.dataset.hour = selectedHour;
+  }
+
+  const start = selectedHour ? Number(selectedHour.slice(0, 2)) : -1;
+
+  const groups = [
+    ['Manha', availability.filter((slot) => Number(slot.hour.slice(0, 2)) < 12)],
+    ['Tarde', availability.filter((slot) => {
+      const hour = Number(slot.hour.slice(0, 2));
+      return hour >= 12 && hour < 18;
+    })],
+    ['Noite', availability.filter((slot) => Number(slot.hour.slice(0, 2)) >= 18)]
+  ];
+  root.querySelector('[data-slots]').innerHTML = groups.map(([label, slots]) => `
+    <div class="avail-group">
+      <div class="avail-lbl">${label}</div>
+      <div class="avail-slots">${slots.map((slot) => {
+        const hour = Number(slot.hour.slice(0, 2));
+        const selected = selectedHour && hour >= start && hour < start + duration;
+        const availableStart = canStartAt(hour) && !isPast(slot.hour);
+        const reason = isPast(slot.hour)
+          ? 'Horário já passou'
+          : slot.status === 'busy' ? 'Horário ocupado' : `Não há ${duration}h consecutivas a partir daqui`;
+        return `<button type="button" class="slot ${availableStart ? 'free' : 'busy'} ${selected ? 'sel' : ''}" data-slot-hour="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
+      }).join('')}</div>
+    </div>`).join('');
+
+  root.querySelectorAll('[data-duration]').forEach((button) => {
+    const value = Number(button.dataset.duration);
+    button.disabled = false;
+    button.classList.remove('off');
+    button.classList.toggle('on', value === duration);
+    button.setAttribute('aria-pressed', String(value === duration));
+  });
+
+  const price = Number(booking.dataset.price || 0);
+  const { subtotal, serviceFee, total } = calculateCheckoutAmounts(price, duration);
+  const freeCount = availability.filter((slot) => canStartAt(Number(slot.hour.slice(0, 2))) && !isPast(slot.hour)).length;
+  root.querySelector('[data-availability-copy]').textContent = freeCount === 1 ? '1 início livre' : `${freeCount} inícios livres`;
+  root.querySelector('[data-duration-help]').textContent = duration === 1
+    ? 'Ideal para um treino rápido. Escolha abaixo o melhor início.'
+    : `Os horários abaixo já garantem ${duration} horas consecutivas de quadra.`;
+  root.querySelector('[data-bk-date]').textContent = bookingDateLabel(booking.dataset.date);
+  root.querySelector('[data-bk-range]').textContent = selectedHour ? `${selectedHour} a ${addHours(selectedHour, duration)}` : 'Escolha um horário';
+  root.querySelector('[data-bk-hours]').textContent = selectedHour ? `(${duration}h)` : '';
+  root.querySelector('[data-bk-sub]').textContent = selectedHour ? formatCurrency(subtotal) : '-';
+  const fee = root.querySelector('[data-bk-fee]');
+  if (fee) fee.textContent = selectedHour ? formatCurrency(serviceFee) : '-';
+  root.querySelector('[data-bk-total]').textContent = selectedHour ? formatCurrency(total) : '-';
+
+  const cta = root.querySelector('[data-bk-cta]');
+  cta.classList.toggle('is-disabled', !selectedHour);
+  cta.querySelector('[data-bk-cta-label]').textContent = selectedHour ? `Continuar - ${formatCurrency(total)}` : 'Escolha um horário';
+  if (selectedHour) {
+    const query = new URLSearchParams({
+      date: booking.dataset.date || localDateValue(),
+      hora: selectedHour,
+      dur: String(duration)
+    });
+    cta.href = `#pagamento/${booking.dataset.venueId}?${query}`;
+  } else {
+    cta.removeAttribute('href');
+  }
+}
+
+async function bookingContext(route) {
+  const venue = await venueService.get(route.params.id);
+  if (!venue) return null;
+  const query = routeQuery(route);
+  const hour = query.get('hora') || '19:00';
+  const duration = Math.max(1, Math.min(3, Number(query.get('dur') || 1)));
+  const date = query.get('date') || localDateValue();
+  const amounts = calculateCheckoutAmounts(venue.price, duration);
+  return {
+    venue,
+    date,
+    dateLabel: bookingDateLabel(date),
+    hour,
+    duration,
+    endHour: addHours(hour, duration),
+    ...amounts,
+    method: PAYMENT_METHOD_LABELS[query.get('metodo')] ? query.get('metodo') : 'pix'
+  };
+}
+
+function syncMobilePaymentChoice(root, requestedMethod = 'pix') {
+  const methods = [...root.querySelectorAll('[data-payment-method]')];
+  const selected = methods.find((method) => method.dataset.paymentMethod === requestedMethod && !method.disabled)
+    || methods.find((method) => !method.disabled);
+  if (!selected) return;
+
+  methods.forEach((method) => {
+    const active = method === selected;
+    method.classList.toggle('on', active);
+    method.setAttribute('aria-pressed', String(active));
+  });
+
+  const cta = root.querySelector('[data-payment-cta]');
+  const params = new URLSearchParams(cta.dataset.paymentQuery || '');
+  params.set('metodo', selected.dataset.paymentMethod);
+  cta.href = `${cta.dataset.paymentRoute}?${params}`;
+  cta.setAttribute('aria-label', `Enviar solicitação usando ${PAYMENT_METHOD_LABELS[selected.dataset.paymentMethod]}`);
+}
+
+async function renderPayment(root, route) {
+  const [context, wallet] = await Promise.all([
+    bookingContext(route),
+    venueService.wallet()
+  ]);
+  if (!context) {
+    location.hash = 'quadras';
+    return;
+  }
+  const {
+    venue,
+    date,
+    dateLabel,
+    hour,
+    duration,
+    endHour,
+    subtotal,
+    serviceFee,
+    total,
+    method
+  } = context;
+  root.querySelector('[data-back-venue]').href = `#quadra/${venue.id}`;
+  root.querySelector('[data-payment-image]').src = venue.image;
+  root.querySelector('[data-payment-image]').alt = venue.name;
+  root.querySelector('[data-payment-name]').textContent = venue.name;
+  root.querySelector('[data-payment-meta]').textContent = `${displayText(venue.sport)} - ${displayText(venue.neighborhood)}`;
+  root.querySelector('[data-payment-date]').textContent = dateLabel;
+  root.querySelector('[data-payment-hour]').textContent = `${hour} a ${endHour}`;
+  root.querySelector('[data-payment-duration]').textContent = duration === 1 ? '1 hora' : `${duration} horas`;
+  root.querySelector('[data-payment-rent-label]').textContent = `Aluguel da quadra (${duration}h)`;
+  root.querySelector('[data-payment-rent]').textContent = formatCurrency(subtotal);
+  root.querySelector('[data-payment-fee]').textContent = formatCurrency(serviceFee);
+  root.querySelector('[data-payment-total]').textContent = formatCurrency(total);
+  const walletMethod = root.querySelector('[data-payment-method="wallet"]');
+  const walletAvailable = Number(wallet.balance || 0) >= total;
+  walletMethod.disabled = !walletAvailable;
+  walletMethod.classList.toggle('is-unavailable', !walletAvailable);
+  walletMethod.querySelector('[data-payment-method-note]').textContent = walletAvailable
+    ? `${formatCurrency(wallet.balance)} disponíveis`
+    : `Saldo de ${formatCurrency(wallet.balance)} insuficiente`;
+  const cta = root.querySelector('[data-payment-cta]');
+  const confirmationQuery = new URLSearchParams({
+    date,
+    hora: hour,
+    dur: String(duration),
+    deadline: String(Date.now() + APPROVAL_WINDOW_MS)
+  });
+  const requestedResult = routeQuery(route).get('resultado');
+  if (requestedResult) confirmationQuery.set('resultado', requestedResult);
+  cta.dataset.paymentRoute = `#confirmado/${venue.id}`;
+  cta.dataset.paymentQuery = confirmationQuery.toString();
+  cta.querySelector('[data-payment-cta-label]').textContent = `Enviar solicitação - ${formatCurrency(total)}`;
+  syncMobilePaymentChoice(root, walletAvailable ? method : method === 'wallet' ? 'pix' : method);
+}
+
+async function renderConfirmation(root, route) {
+  const context = await bookingContext(route);
+  if (!context) {
+    location.hash = 'quadras';
+    return;
+  }
+  const {
+    venue,
+    date,
+    dateLabel,
+    hour,
+    duration,
+    endHour,
+    subtotal,
+    serviceFee,
+    total,
+    method
+  } = context;
+  const code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
+  const query = routeQuery(route);
+  const requestedDeadline = Number(query.get('deadline'));
+  const deadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
+    ? requestedDeadline
+    : Date.now() + APPROVAL_WINDOW_MS;
+  const forcedResult = query.get('resultado') || 'aceito';
+  const content = root.querySelector('[data-approval-content]');
+  let settled = false;
+
+  const reservationData = {
+    code,
+    venueId: venue.id,
+    date: dateLabel,
+    dateValue: date,
+    hour,
+    endHour,
+    duration,
+    subtotal,
+    serviceFee,
+    price: total,
+    paymentMethod: method
+  };
+
+  function approvalFlow(state) {
+    const rejected = state === 'declined' || state === 'expired';
+    const approvalClass = state === 'accepted' ? 'is-done' : rejected ? 'is-error' : 'is-current';
+    const confirmationClass = state === 'accepted' ? 'is-current' : '';
+    const approvalMarker = state === 'accepted'
+      ? icon('check')
+      : rejected
+        ? icon('x')
+        : '3';
+    return `
+      <ol class="booking-flow booking-flow--confirmation" aria-label="Etapas da reserva">
+        <li class="is-done"><span>${icon('check')}</span><small>Horário</small></li>
+        <li class="is-done"><span>${icon('check')}</span><small>Pagamento</small></li>
+        <li class="${approvalClass}"><span>${approvalMarker}</span><small>Aprovação</small></li>
+        <li class="${confirmationClass}"><span>${state === 'accepted' ? '4' : '4'}</span><small>Confirmação</small></li>
+      </ol>`;
+  }
+
+  function refreshApprovalIcons() {
+    window.pqRefreshIcons?.(content);
+  }
+
+  function renderPending(remaining) {
+    const progress = Math.max(0, Math.min(100, (remaining / APPROVAL_WINDOW_MS) * 100));
+    content.innerHTML = `
+      ${approvalFlow('pending')}
+      <section class="approval-view approval-view--pending">
+        ${approvalWaitingVisual()}
+        <span class="approval-eyebrow">Solicitação enviada</span>
+        <h1>Aguardando a arena</h1>
+        <p><strong>${escapeHtml(venue.name)}</strong> tem até 15 minutos para aceitar o seu horário.</p>
+
+        <div class="approval-timer">
+          <div><span>Tempo restante</span><strong data-approval-countdown>${formatApprovalCountdown(remaining)}</strong></div>
+          <div class="approval-progress" aria-hidden="true"><span data-approval-progress style="width:${progress}%"></span></div>
+        </div>
+
+        <div class="approval-reservation">
+          <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
+          <div><strong>${escapeHtml(dateLabel)}</strong><span>${hour} a ${endHour} · ${duration}h</span></div>
+          <b>${formatCurrency(total)}</b>
+        </div>
+
+        <div class="approval-payment-note">
+          ${icon('shield-check')}
+          <span><strong>Pagamento protegido</strong><small>A cobrança só será concluída depois que a arena aceitar.</small></span>
+        </div>
+        <a href="#reservas" class="btn outline block">Acompanhar em minhas reservas</a>
+      </section>`;
+    refreshApprovalIcons();
+  }
+
+  async function renderAccepted() {
+    if (settled) return;
+    settled = true;
+    clearInterval(activeMobileApprovalTimer);
+    await venueService.saveReservation({
+      ...reservationData,
+      status: 'Confirmada',
+      statusClass: 'pago',
+      group: 'proxima'
+    });
+    const conversation = await venueService.ensureConversationForVenue(venue);
+    document.title = 'Reserva confirmada - Qadras';
+    content.innerHTML = `
+      ${approvalFlow('accepted')}
+      <div class="success approval-view approval-view--accepted">
+        <div class="ring">${icon('check')}</div>
+        <span class="success-eyebrow">Arena aprovou sua solicitação</span>
+        <h2>Reserva confirmada</h2>
+        <p>Seu horário está garantido. Agora é só reunir a turma e jogar.</p>
+
+        <div class="ticket">
+          <div class="ticket-venue">
+            <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
+            <div><span>Partida confirmada</span><h3>${escapeHtml(venue.name)}</h3><p>${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</p></div>
+          </div>
+          <div class="ticket-details">
+            <div class="row"><span class="k">Data</span><span class="v">${escapeHtml(dateLabel)}</span></div>
+            <div class="row"><span class="k">Horário</span><span class="v">${hour} a ${endHour} (${duration}h)</span></div>
+            <div class="row"><span class="k">Pagamento</span><span class="v">${PAYMENT_METHOD_LABELS[method]}</span></div>
+            <div class="row"><span class="k">Aluguel</span><span class="v">${formatCurrency(subtotal)}</span></div>
+            <div class="row"><span class="k">Taxa de serviço</span><span class="v">${formatCurrency(serviceFee)}</span></div>
+            <div class="row"><span class="k">Total pago</span><span class="v">${formatCurrency(total)}</span></div>
+          </div>
+          <button class="booking-code" type="button" data-copy="${code}" data-copy-msg="Código da reserva copiado">
+            <span><small>Código da reserva</small><strong>${code}</strong></span>
+            ${icon('copy')}
+          </button>
+        </div>
+
+        <div class="confirmation-actions">
+          <a href="#reservas" class="btn block">Ver minhas reservas</a>
+          ${conversation ? `<a href="#mensagens/${conversation.id}" class="btn outline block">${icon('message-circle')}Falar com a arena</a>` : ''}
+          <a href="#quadras" class="btn outline block">Reservar outra quadra</a>
+        </div>
+      </div>`;
+    refreshApprovalIcons();
+  }
+
+  async function renderRejected(reason = 'declined') {
+    if (settled) return;
+    settled = true;
+    clearInterval(activeMobileApprovalTimer);
+    await venueService.saveReservation({
+      ...reservationData,
+      status: reason === 'expired' ? 'Tempo expirado' : 'Não aceita pela arena',
+      statusClass: 'cancelado',
+      group: 'historico'
+    });
+    const expired = reason === 'expired';
+    document.title = 'Reserva não confirmada - Qadras';
+    content.innerHTML = `
+      ${approvalFlow(expired ? 'expired' : 'declined')}
+      <section class="approval-view approval-view--rejected">
+        <div class="approval-symbol">${icon(expired ? 'clock-alert' : 'calendar-x-2')}</div>
+        <span class="approval-eyebrow">${expired ? 'Tempo de resposta encerrado' : 'Arena não aceitou'}</span>
+        <h1>${expired ? 'A solicitação expirou' : 'O horário não foi confirmado'}</h1>
+        <p>${expired
+          ? 'A arena não respondeu dentro de 15 minutos.'
+          : 'A arena não conseguiu atender esse horário.'} Nenhuma cobrança foi realizada.</p>
+
+        <div class="approval-payment-note">
+          ${icon('badge-check')}
+          <span><strong>Seu pagamento está seguro</strong><small>O valor foi liberado automaticamente para você.</small></span>
+        </div>
+
+        <div class="approval-recovery-actions">
+          <a href="#quadra/${venue.id}" class="btn block">Escolher outro horário</a>
+          <a href="#quadras" class="btn outline block">Procurar outra quadra</a>
+        </div>
+      </section>`;
+    refreshApprovalIcons();
+  }
+
+  await venueService.saveReservation({
+    ...reservationData,
+    status: 'Aguardando aprovação',
+    statusClass: 'pendente',
+    group: 'proxima'
+  });
+  document.title = 'Aguardando aprovação - Qadras';
+  renderPending(Math.max(0, deadline - Date.now()));
+
+  async function tickApproval() {
+    if (!document.contains(root)) {
+      clearInterval(activeMobileApprovalTimer);
+      return;
+    }
+    const remaining = deadline - Date.now();
+    const elapsed = APPROVAL_WINDOW_MS - remaining;
+    const countdown = content.querySelector('[data-approval-countdown]');
+    const progress = content.querySelector('[data-approval-progress]');
+    if (countdown) countdown.textContent = formatApprovalCountdown(remaining);
+    if (progress) progress.style.width = `${Math.max(0, Math.min(100, (remaining / APPROVAL_WINDOW_MS) * 100))}%`;
+
+    if (remaining <= 0 || forcedResult === 'expirado') {
+      await renderRejected('expired');
+    } else if (forcedResult === 'recusado' && elapsed >= 2500) {
+      await renderRejected('declined');
+    } else if (forcedResult !== 'pendente' && forcedResult !== 'recusado' && elapsed >= MOCK_APPROVAL_DELAY_MS) {
+      await renderAccepted();
+    }
+  }
+
+  activeMobileApprovalTimer = window.setInterval(tickApproval, 1000);
+  await tickApproval();
+}
+
+async function renderReservations(root) {
+  const reservations = await venueService.reservations();
+  const venues = await venueService.list();
+  const list = root.querySelector('[data-reservation-list]');
+  list.innerHTML = reservations.map((reservation) => {
+    const venue = venues.find((item) => item.id === reservation.venueId);
+    return venue ? reservationCard(reservation, venue) : '';
+  }).join('');
+}
+
+async function renderFavorites(root) {
+  const venues = await venueService.favorites();
+  const list = root.querySelector('[data-favorites-list]');
+  list.innerHTML = venues.length
+    ? venues.map((venue) => venueCard(venue, { removable: true })).join('')
+    : `<div class="empty">
+        <div class="empty-ic">${icon('heart', 'ic lg')}</div>
+        <h3>Nenhum favorito ainda</h3>
+        <p>Toque no coracao de uma quadra para salva-la aqui.</p>
+        <a href="#quadras" class="btn block">Explorar quadras</a>
+      </div>`;
+}
+
+async function renderWallet(root) {
+  const wallet = await venueService.wallet();
+  root.querySelector('[data-wallet-balance]').textContent = formatCurrency(wallet.balance);
+  root.querySelector('[data-wallet-transactions]').innerHTML = wallet.transactions.map((item) => `
+    <div class="transaction-row">
+      <div><strong>${escapeHtml(item.description)}</strong><span>${escapeHtml(item.date)}</span></div>
+      <b class="${item.value > 0 ? 'positive' : ''}">${item.value > 0 ? '+' : '-'} ${formatCurrency(Math.abs(item.value))}</b>
+    </div>`).join('');
+}
+
+async function renderWalletAction(root, route) {
+  const action = route.params.action;
+  const wallet = await venueService.wallet();
+  const title = root.querySelector('[data-wallet-action-title]');
+  const content = root.querySelector('[data-wallet-action-content]');
+
+  if (action === 'adicionar') {
+    title.textContent = 'Adicionar saldo';
+    content.innerHTML = `
+      <div class="balance-inline">Saldo atual <strong>${formatCurrency(wallet.balance)}</strong></div>
+      <div class="sec-head"><h2>Escolha um valor</h2></div>
+      <div class="amount-grid">
+        ${[30, 50, 100, 200].map((value, index) => `<button type="button" class="amount-option ${index === 1 ? 'on' : ''}" data-amount="${value}">${formatCurrency(value)}</button>`).join('')}
+      </div>
+      <div class="field"><label>Outro valor</label><input type="number" min="10" step="5" placeholder="R$ 0,00"></div>
+      <button type="button" class="btn block" data-toast="Pix gerado para adicionar saldo">Gerar Pix</button>`;
+    return;
+  }
+
+  if (action === 'cartao') {
+    title.textContent = 'Adicionar cartão';
+    content.innerHTML = `
+      <form data-demo-form data-success="Cartão adicionado com sucesso">
+        <div class="field"><label>Número do cartão</label><input type="text" inputmode="numeric" placeholder="0000 0000 0000 0000" required></div>
+        <div class="field"><label>Nome impresso</label><input type="text" placeholder="GABRIEL LISBOA" required></div>
+        <div class="input-row mobile-two">
+          <div class="field"><label>Validade</label><input type="text" inputmode="numeric" placeholder="MM/AA" required></div>
+          <div class="field"><label>CVV</label><input type="text" inputmode="numeric" placeholder="000" required></div>
+        </div>
+        <button class="btn block" type="submit">Salvar cartão</button>
+      </form>`;
+    return;
+  }
+
+  title.textContent = 'Cupons';
+  content.innerHTML = `
+    <form class="coupon-form" data-demo-form data-success="Cupom aplicado com sucesso">
+      <div class="field"><label>Código do cupom</label><input type="text" placeholder="Digite seu cupom" required></div>
+      <button class="btn block" type="submit">Aplicar cupom</button>
+    </form>
+    <div class="sec-head"><h2>Cupons disponíveis</h2></div>
+    <div class="coupon-list">${wallet.coupons.map((coupon) => `
+      <button type="button" class="coupon-row" data-copy="${escapeHtml(coupon.code)}" data-copy-msg="Cupom copiado">
+        <span><strong>${escapeHtml(coupon.code)}</strong><small>${escapeHtml(coupon.description)}</small></span>
+        ${icon('chevron-right')}
+      </button>`).join('')}</div>`;
+}
+
+function syncMobileProfile(root, user) {
+  if (!root?.querySelector('[data-profile-name]')) return;
+  const avatar = root.querySelector('[data-profile-avatar]');
+  if (avatar) {
+    avatar.classList.toggle('has-photo', Boolean(user.photo));
+    avatar.innerHTML = user.photo
+      ? `<img src="${escapeHtml(user.photo)}" alt="Foto de ${escapeHtml(user.name)}">`
+      : escapeHtml(user.name.slice(0, 1));
+  }
+  root.querySelector('[data-profile-name]').textContent = user.name;
+  root.querySelector('[data-profile-since]').textContent = `Jogador desde ${user.memberSince}`;
+  root.querySelector('[data-profile-city]').textContent = user.city;
+  root.querySelector('[data-profile-games]').textContent = user.stats.games;
+  root.querySelector('[data-profile-reservations]').textContent = user.stats.reservations;
+  root.querySelector('[data-profile-favorites]').textContent = user.stats.favorites;
+  root.querySelector('[data-profile-sport]').textContent = user.favoriteSport;
+  const form = root.querySelector('[data-profile-edit-form]');
+  if (form) {
+    form.elements.name.value = user.name;
+    form.elements.email.value = user.email;
+    form.elements.phone.value = user.phone;
+    form.elements.city.value = user.city;
+  }
+}
+
+async function renderProfile(root) {
+  const user = await venueService.profile();
+  syncMobileProfile(root, user);
+}
+
+async function renderMessages(root, route) {
+  const conversations = await venueService.conversations();
+  const conversationId = Number(route.params.id || 0);
+  const active = conversations.find((item) => item.id === conversationId);
+  const list = root.querySelector('[data-conversation-list]');
+  const thread = root.querySelector('[data-conversation-thread]');
+  const navbar = root.querySelector('.messages-navbar');
+  if (navbar) navbar.hidden = Boolean(active);
+
+  if (!active) {
+    list.hidden = false;
+    thread.hidden = true;
+    list.innerHTML = conversations.map((conversation) => {
+      const last = conversation.messages.at(-1);
+      return `
+        <a class="mobile-conversation" href="#mensagens/${conversation.id}">
+          <span class="conversation-avatar">${escapeHtml(conversation.venue.slice(0, 1))}</span>
+          <span class="conversation-main">
+            <span class="conversation-top"><strong>${escapeHtml(conversation.venue)}</strong><small>${escapeHtml(last?.time || '')}</small></span>
+            <span class="conversation-preview">${escapeHtml(last?.text || 'Sem mensagens')}</span>
+          </span>
+          ${icon('chevron-right')}
+        </a>`;
+    }).join('');
+    return;
+  }
+
+  list.hidden = true;
+  thread.hidden = false;
+  thread.innerHTML = `
+    <div class="thread-head mobile-thread-head">
+      <a class="icon-btn" href="#mensagens" aria-label="Voltar">${icon('chevron-left')}</a>
+      <span class="conversation-avatar">${escapeHtml(active.venue.slice(0, 1))}</span>
+      <div><strong>${escapeHtml(active.venue)}</strong><small>${escapeHtml(active.subject)}</small></div>
+    </div>
+    <div class="mobile-bubbles" data-mobile-bubbles>
+      ${active.messages.map((message) => `
+        <div class="bubble ${message.from === 'player' ? 'me' : 'them'}">
+          <div class="bub-txt">${escapeHtml(message.text)}</div>
+          <div class="bub-time">${escapeHtml(message.time)}</div>
+        </div>`).join('')}
+    </div>
+    <form class="mobile-composer" data-message-form data-conversation-id="${active.id}">
+      <input type="text" name="message" placeholder="Escreva uma mensagem..." autocomplete="off" required>
+      <button type="submit" aria-label="Enviar">${icon('send')}</button>
+    </form>`;
+  const bubbles = thread.querySelector('[data-mobile-bubbles]');
+  bubbles.scrollTop = bubbles.scrollHeight;
+}
+
+export async function renderMobilePage(route, root) {
+  if (activeMobileApprovalTimer) {
+    clearInterval(activeMobileApprovalTimer);
+    activeMobileApprovalTimer = null;
+  }
+  if (activeMobileMap) {
+    activeMobileMap.remove();
+    activeMobileMap = null;
+    activeUserMarker = null;
+  }
+  if (route.name !== 'home') stopGameCardTicker();
+  currentRoute = route;
+  const renderers = {
+    home: renderHome,
+    quadras: renderExplore,
+    mapa: renderMap,
+    quadra: renderVenue,
+    pagamento: renderPayment,
+    confirmado: renderConfirmation,
+    reservas: renderReservations,
+    favoritos: renderFavorites,
+    carteira: renderWallet,
+    carteiraAcao: renderWalletAction,
+    perfil: renderProfile,
+    config: async () => {},
+    mensagens: renderMessages,
+    game: renderGame
+  };
+  await renderers[route.name]?.(root, route);
+  syncMarketplaceState(document);
+}
+
+export function initMobileActions() {
+  if (!document.querySelector('[data-route-view]')) return;
+
+  document.addEventListener('submit', async (event) => {
+    const search = event.target.closest('[data-search-form]');
+    if (search) {
+      event.preventDefault();
+      const query = new URLSearchParams(new FormData(search));
+      for (const [key, value] of [...query]) {
+        if (!String(value).trim()) query.delete(key);
+      }
+      location.hash = `quadras${query.toString() ? `?${query}` : ''}`;
+      return;
+    }
+
+    const filter = event.target.closest('[data-filter-form]');
+    if (filter) {
+      event.preventDefault();
+      const data = new FormData(filter);
+      const query = new URLSearchParams();
+      const sport = data.get('esporte');
+      const radius = data.get('raio');
+      const now = data.get('agora');
+      const currentQuery = routeQuery(currentRoute);
+      const term = currentQuery.get('q');
+      if (sport) query.set('esporte', sport);
+      if (radius) query.set('raio', radius);
+      if (now) query.set('agora', '1');
+      if (term) query.set('q', term);
+      query.set('local', currentLocation());
+      closeMarketSheet(filter.closest('[data-market-sheet]'));
+      location.hash = `quadras?${query}`;
+      return;
+    }
+
+    const profileForm = event.target.closest('[data-profile-edit-form]');
+    if (profileForm) {
+      event.preventDefault();
+      if (!profileForm.reportValidity()) return;
+      const data = new FormData(profileForm);
+      const saved = await venueService.saveProfile({
+        name: String(data.get('name') || '').trim(),
+        email: String(data.get('email') || '').trim(),
+        phone: String(data.get('phone') || '').trim(),
+        city: String(data.get('city') || '').trim()
+      });
+      const view = document.querySelector('[data-route-view]');
+      syncMobileProfile(view, saved);
+      closeMarketSheet(profileForm.closest('[data-market-sheet]'));
+      window.pqToast?.('Perfil atualizado');
+      return;
+    }
+
+    const demo = event.target.closest('[data-demo-form]');
+    if (demo) {
+      event.preventDefault();
+      if (!demo.reportValidity()) return;
+      window.pqToast?.(demo.dataset.success || 'Alteracoes salvas');
+      return;
+    }
+
+    const composer = event.target.closest('[data-message-form]');
+    if (composer) {
+      event.preventDefault();
+      const input = composer.elements.message;
+      const message = input.value.trim();
+      if (!message) return;
+      await venueService.sendMessage(composer.dataset.conversationId, message);
+      const view = document.querySelector('[data-route-view]');
+      await renderMessages(view, currentRoute);
+      window.pqRefreshIcons?.(view);
+    }
+  });
+
+  document.addEventListener('change', async (event) => {
+    const photoInput = event.target.closest('[data-profile-photo-input]');
+    if (!photoInput) return;
+    const file = photoInput.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      window.pqToast?.('Escolha uma imagem de até 10 MB');
+      photoInput.value = '';
+      return;
+    }
+
+    photoInput.disabled = true;
+    try {
+      const photo = await imageFileToDataUrl(file);
+      const saved = await venueService.saveProfile({ photo });
+      const view = document.querySelector('[data-route-view]');
+      syncMobileProfile(view, saved);
+      window.pqToast?.('Foto do perfil atualizada');
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível atualizar a foto');
+    } finally {
+      photoInput.disabled = false;
+      photoInput.value = '';
+    }
+  });
+
+  document.addEventListener('click', async (event) => {
+    const sheetTrigger = event.target.closest('[data-sheet-open]');
+    if (sheetTrigger) {
+      event.preventDefault();
+      openMarketSheet(sheetTrigger.dataset.sheetOpen);
+      return;
+    }
+
+    const sheetClose = event.target.closest('[data-sheet-close]');
+    if (sheetClose) {
+      closeMarketSheet(sheetClose.closest('[data-market-sheet]'));
+      if (!sheetClose.matches('a[href^="#"]')) event.preventDefault();
+      return;
+    }
+
+    const locationOption = event.target.closest('[data-location-value]');
+    if (locationOption) {
+      const value = locationOption.dataset.locationValue;
+      storage.set('current_location', value);
+      storage.remove('current_coordinates');
+      syncMarketplaceState(document);
+      closeMarketSheet(locationOption.closest('[data-market-sheet]'));
+      window.pqToast?.(`Localização alterada para ${value}`);
+      return;
+    }
+
+    const useCurrentLocation = event.target.closest('[data-use-current-location]');
+    if (useCurrentLocation) {
+      if (!navigator.geolocation) {
+        window.pqToast?.('Localização do aparelho indisponível');
+        return;
+      }
+      useCurrentLocation.disabled = true;
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          storage.set('current_coordinates', [position.coords.latitude, position.coords.longitude]);
+          storage.set('current_location', 'Localização atual');
+          syncMarketplaceState(document);
+          closeMarketSheet(useCurrentLocation.closest('[data-market-sheet]'));
+          useCurrentLocation.disabled = false;
+          window.pqToast?.('Localização atualizada');
+        },
+        () => {
+          useCurrentLocation.disabled = false;
+          window.pqToast?.('Não foi possível acessar sua localização');
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+      return;
+    }
+
+    const markNotifications = event.target.closest('[data-mark-notifications]');
+    if (markNotifications) {
+      storage.set('notifications_read', true);
+      syncMarketplaceState(document);
+      closeMarketSheet(markNotifications.closest('[data-market-sheet]'));
+      window.pqToast?.('Notificações marcadas como lidas');
+      return;
+    }
+
+    const locate = event.target.closest('[data-map-locate]');
+    if (locate && activeMobileMap) {
+      if (!navigator.geolocation) {
+        activeMobileMap.setView(currentCoordinates(), 15, { animate: true });
+        window.pqToast?.('Localização do aparelho indisponível');
+        return;
+      }
+      window.pqToast?.('Buscando sua localização...');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coordinates = [position.coords.latitude, position.coords.longitude];
+          storage.set('current_coordinates', coordinates);
+          storage.set('current_location', 'Localização atual');
+          syncMarketplaceState(document);
+          activeUserMarker?.setLatLng(coordinates);
+          activeMobileMap?.setView(coordinates, 15, { animate: true });
+          activeUserMarker?.openPopup();
+        },
+        () => {
+          activeMobileMap?.setView(currentCoordinates(), 15, { animate: true });
+          window.pqToast?.('Não foi possível acessar sua localização');
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+      return;
+    }
+
+    const calendarNav = event.target.closest('[data-calendar-nav]');
+    if (calendarNav) {
+      const root = calendarNav.closest('[data-venue-page]');
+      const booking = root.querySelector('[data-booking]');
+      const month = calendarMonthDate(booking.dataset.calendarMonth);
+      month.setMonth(month.getMonth() + Number(calendarNav.dataset.calendarNav));
+      booking.dataset.calendarMonth = calendarMonthValue(month);
+      renderBookingCalendar(root);
+      return;
+    }
+
+    const calendarDate = event.target.closest('[data-calendar-date]');
+    if (calendarDate && !calendarDate.disabled) {
+      const root = calendarDate.closest('[data-venue-page]');
+      const booking = root.querySelector('[data-booking]');
+      booking.dataset.dayIndex = String(bookingDayOffset(calendarDate.dataset.calendarDate));
+      booking.dataset.date = calendarDate.dataset.calendarDate;
+      booking.dataset.hour = '';
+      renderBookingCalendar(root);
+      renderBooking(root);
+      return;
+    }
+
+    const slot = event.target.closest('[data-slot-hour]');
+    if (slot && !slot.disabled) {
+      const root = slot.closest('[data-venue-page]');
+      root.querySelector('[data-booking]').dataset.hour = slot.dataset.slotHour;
+      renderBooking(root);
+      return;
+    }
+
+    const duration = event.target.closest('[data-duration]');
+    if (duration && !duration.disabled) {
+      const root = duration.closest('[data-venue-page]');
+      root.querySelector('[data-booking]').dataset.duration = duration.dataset.duration;
+      renderBooking(root);
+      return;
+    }
+
+    const paymentRequest = event.target.closest('[data-payment-cta]');
+    if (paymentRequest?.dataset.paymentRoute) {
+      event.preventDefault();
+      const paymentRoot = paymentRequest.closest('[data-payment-page]');
+      const selectedMethod = paymentRoot?.querySelector('[data-payment-method].on')?.dataset.paymentMethod || 'pix';
+      const params = new URLSearchParams(paymentRequest.dataset.paymentQuery || '');
+      params.set('metodo', selectedMethod);
+      params.set('deadline', String(Date.now() + APPROVAL_WINDOW_MS));
+      location.hash = `${paymentRequest.dataset.paymentRoute}?${params}`;
+      return;
+    }
+
+    const galleryStep = event.target.closest('[data-gallery-step]');
+    if (galleryStep) {
+      const root = galleryStep.closest('[data-venue-page]');
+      const photos = [...(root?.querySelectorAll('[data-gallery-image]') || [])];
+      if (!photos.length) return;
+      const currentIndex = Math.max(0, photos.findIndex((button) => button.classList.contains('on')));
+      const nextIndex = (currentIndex + Number(galleryStep.dataset.galleryStep) + photos.length) % photos.length;
+      photos[nextIndex].click();
+      return;
+    }
+
+    const galleryImage = event.target.closest('[data-gallery-image]');
+    if (galleryImage) {
+      const root = galleryImage.closest('[data-venue-page]');
+      const hero = root?.querySelector('[data-venue-hero]');
+      if (!hero) return;
+      hero.src = galleryImage.dataset.galleryImage;
+      const photos = [...root.querySelectorAll('[data-gallery-image]')];
+      photos.forEach((button) => {
+        button.classList.toggle('on', button === galleryImage);
+      });
+      const current = root.querySelector('[data-venue-photo-current]');
+      if (current) current.textContent = String(photos.indexOf(galleryImage) + 1);
+      return;
+    }
+
+    const method = event.target.closest('[data-payment-method]');
+    if (method && !method.disabled) {
+      const root = method.closest('[data-payment-page]');
+      syncMobilePaymentChoice(root, method.dataset.paymentMethod);
+      return;
+    }
+
+    const favorite = event.target.closest('[data-favorite-toggle]');
+    if (favorite) {
+      event.preventDefault();
+      event.stopPropagation();
+      const active = await venueService.toggleFavorite(favorite.dataset.favoriteToggle);
+      favorite.classList.toggle('on', active);
+      window.pqToast?.(active ? 'Quadra salva nos favoritos' : 'Removida dos favoritos');
+      if (currentRoute?.name === 'favoritos') {
+        const view = document.querySelector('[data-route-view]');
+        await renderFavorites(view);
+        window.pqRefreshIcons?.(view);
+      }
+      return;
+    }
+
+    const amount = event.target.closest('[data-amount]');
+    if (amount) {
+      amount.parentElement.querySelectorAll('[data-amount]').forEach((item) => item.classList.toggle('on', item === amount));
+    }
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeMarketSheet();
+  });
+
+  syncMarketplaceState(document);
+}
+
+function matchPhaseNow(match) {
+  if (!match) return null;
+  const now = Date.now();
+  if (match.phase === 'post-game') return 'post-game';
+  if (now >= match.endTimestamp) return 'post-game';
+  if (now >= match.startTimestamp) return 'during-game';
+  return 'pre-game';
+}
+
+function formatClock(totalSeconds) {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const min = Math.floor(safe / 60);
+  const sec = safe % 60;
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function formatCountdown(msLeft) {
+  const totalMin = Math.max(0, Math.floor(msLeft / 60000));
+  if (totalMin >= 1440) {
+    const days = Math.floor(totalMin / 1440);
+    return { value: `${days}d`, unit: days === 1 ? 'dia' : 'dias' };
+  }
+  if (totalMin >= 60) {
+    const hours = Math.floor(totalMin / 60);
+    const min = totalMin % 60;
+    return { value: `${hours}h${String(min).padStart(2, '0')}`, unit: 'para comecar' };
+  }
+  if (totalMin >= 1) return { value: `${totalMin}`, unit: totalMin === 1 ? 'minuto' : 'minutos' };
+  return { value: formatClock(msLeft / 1000), unit: 'quase la' };
+}
+
+/** Card da partida na home — sempre visivel, nas 3 fases (ou vazio, sem partida). */
+function buildGameCard(match) {
+  const phase = matchPhaseNow(match);
+  if (!phase) {
+    return `<a class="game-card game-card--empty" href="#quadras" data-game-card data-game-phase="none">
+      <span class="game-card__icon"><i class="ic" data-lucide="calendar-plus"></i></span>
+      <span class="game-card__info">
+        <span class="game-card__label">Nenhuma partida marcada</span>
+        <span class="game-card__title">Bora marcar um jogo?</span>
+        <span class="game-card__meta"><span>Encontre uma quadra livre perto de você</span></span>
+      </span>
+      <i class="ic game-card__chevron" data-lucide="chevron-right"></i>
+    </a>`;
+  }
+
+  const venue = escapeHtml(match.venueName || 'Sua partida');
+  const sport = escapeHtml(match.sport || '');
+
+  if (phase === 'during-game') {
+    const elapsed = Math.floor((Date.now() - match.startTimestamp) / 1000);
+    const remaining = Math.max(0, Math.floor((match.endTimestamp - Date.now()) / 1000));
+    const progress = Math.min(100, (elapsed / Math.max(1, match.duration * 60)) * 100);
+    return `<a class="game-card game-card--live" href="#game" data-game-card data-game-phase="during-game">
+      <span class="game-card__icon"><i class="ic" data-lucide="activity"></i></span>
+      <span class="game-card__info">
+        <span class="game-card__label"><span class="game-card__dot"></span>Partida em andamento</span>
+        <span class="game-card__title">${venue}</span>
+        <span class="game-card__meta">
+          <span class="game-card__score" data-game-card-score>${match.score?.teamA ?? 0} × ${match.score?.teamB ?? 0}</span>
+          <span>·</span>
+          <span>${sport}</span>
+        </span>
+      </span>
+      <span class="game-card__countdown">
+        <span data-game-card-value>${formatClock(remaining)}</span>
+        <small data-game-card-unit>restam</small>
+      </span>
+      <span class="game-card__progress"><span data-game-card-progress style="width:${progress}%"></span></span>
+    </a>`;
+  }
+
+  if (phase === 'post-game') {
+    return `<a class="game-card game-card--done" href="#game" data-game-card data-game-phase="post-game">
+      <span class="game-card__icon"><i class="ic" data-lucide="award"></i></span>
+      <span class="game-card__info">
+        <span class="game-card__label">Partida encerrada</span>
+        <span class="game-card__title">${venue}</span>
+        <span class="game-card__meta"><span>Avalie a quadra e veja o resultado</span></span>
+      </span>
+      <span class="game-card__countdown">
+        <span data-game-card-value>${match.score?.teamA ?? 0} × ${match.score?.teamB ?? 0}</span>
+        <small data-game-card-unit>final</small>
+      </span>
+    </a>`;
+  }
+
+  const countdown = formatCountdown(match.startTimestamp - Date.now());
+  const confirmed = match.players?.confirmed?.length || 0;
+  return `<a class="game-card game-card--next" href="#game" data-game-card data-game-phase="pre-game">
+    <span class="game-card__icon"><i class="ic" data-lucide="clock"></i></span>
+    <span class="game-card__info">
+      <span class="game-card__label">Próxima partida</span>
+      <span class="game-card__title">${venue}</span>
+      <span class="game-card__meta">
+        <span>${sport}</span>
+        <span>·</span>
+        <span>${escapeHtml(match.startTime || '')}</span>
+        <span>·</span>
+        <span>${confirmed} confirmados</span>
+      </span>
+    </span>
+    <span class="game-card__countdown">
+      <span data-game-card-value>${countdown.value}</span>
+      <small data-game-card-unit>${countdown.unit}</small>
+    </span>
+  </a>`;
+}
+
+function stopGameCardTicker() {
+  if (gameCardTicker) {
+    clearInterval(gameCardTicker);
+    gameCardTicker = null;
+  }
+}
+
+/** Mantem o card vivo: countdown, cronometro e placar atualizam a cada segundo. */
+function startGameCardTicker(container, match) {
+  stopGameCardTicker();
+  if (!container || !match) return;
+
+  let lastPhase = matchPhaseNow(match);
+  gameCardTicker = setInterval(() => {
+    if (!container.isConnected) {
+      stopGameCardTicker();
+      return;
+    }
+    const phase = matchPhaseNow(match);
+    if (phase !== lastPhase) {
+      // Mudou de fase (ex.: comecou a partida) — redesenha o card inteiro.
+      lastPhase = phase;
+      match.phase = phase;
+      container.innerHTML = buildGameCard(match);
+      window.pqRefreshIcons?.(container);
+      return;
+    }
+
+    const value = container.querySelector('[data-game-card-value]');
+    const unit = container.querySelector('[data-game-card-unit]');
+    if (!value) return;
+
+    if (phase === 'during-game') {
+      const remaining = Math.max(0, Math.floor((match.endTimestamp - Date.now()) / 1000));
+      value.textContent = formatClock(remaining);
+      const elapsed = Math.floor((Date.now() - match.startTimestamp) / 1000);
+      const bar = container.querySelector('[data-game-card-progress]');
+      if (bar) bar.style.width = `${Math.min(100, (elapsed / Math.max(1, match.duration * 60)) * 100)}%`;
+      const score = container.querySelector('[data-game-card-score]');
+      const live = getActiveMatch();
+      if (score && live?.score) {
+        match.score = live.score;
+        score.textContent = `${live.score.teamA} × ${live.score.teamB}`;
+      }
+      return;
+    }
+
+    if (phase === 'pre-game') {
+      const countdown = formatCountdown(match.startTimestamp - Date.now());
+      value.textContent = countdown.value;
+      if (unit) unit.textContent = countdown.unit;
+    }
+  }, 1000);
+}
+
+async function renderGame(root) {
+  const ok = await loadGame();
+  if (!ok) {
+    root.innerHTML = '<div class="empty"><h3>Nenhuma partida ativa</h3><p>Quando você tiver um jogo marcado ele aparece aqui.</p><a class="btn" href="#quadras">Encontrar uma quadra</a></div>';
+  }
+}

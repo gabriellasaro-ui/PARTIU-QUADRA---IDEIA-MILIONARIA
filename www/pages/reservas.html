@@ -1,0 +1,27 @@
+<!-- TODO: substituir dados locais por GET /reservas na API FastAPI -->
+<div class="route-page reservations-page">
+  <div class="navbar">
+    <div>
+      <div class="title">Minhas reservas</div>
+      <div class="sub">Seus jogos agendados</div>
+    </div>
+    <span class="spacer"></span>
+    <span class="icon-btn"><i class="ic" data-lucide="calendar-check"></i></span>
+  </div>
+
+  <div class="container">
+    <div class="seg" role="tablist" data-seg data-target="#minhas-reservas">
+      <button type="button" class="seg-item on" data-filter="proxima">Proximas</button>
+      <button type="button" class="seg-item" data-filter="historico">Historico</button>
+    </div>
+
+    <div id="minhas-reservas">
+      <div data-reservation-list></div>
+      <div data-empty hidden class="empty">
+        <div class="empty-ic"><i class="ic lg" data-lucide="calendar-x"></i></div>
+        <h3>Nada por aqui</h3>
+        <p>Suas reservas desta categoria aparecerao aqui.</p>
+      </div>
+    </div>
+  </div>
+</div>

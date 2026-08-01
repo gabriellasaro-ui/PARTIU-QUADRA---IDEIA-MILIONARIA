@@ -1,0 +1,73 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'config' %}
+{% block title %}Configurações · Qadras{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+{% block page_sub %}Notificações, preferências e conta{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<button type="submit" form="config-form" class="btn btn-primary">Salvar alterações</button>
+{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<form id="config-form" method="post" class="settings">
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Notificações</h2>
+      <p>Como você quer ser avisado.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row"><span>Reserva confirmada</span><span class="switch on"></span></label>
+      <label class="switch-row"><span>Lembrete 1h antes do jogo</span><span class="switch on"></span></label>
+      <label class="switch-row"><span>Quadras novas perto de você</span><span class="switch"></span></label>
+      <label class="switch-row" style="border-bottom:none; padding-bottom:0;"><span>Promoções e cupons</span><span class="switch on"></span></label>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Preferências de jogo</h2>
+      <p>Deixamos a busca do seu jeito.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Esporte padrão</label>
+          <select>{% for e in esportes %}<option {{ 'selected' if e == 'Futebol Society' }}>{{ e }}</option>{% endfor %}</select>
+        </div>
+        <div class="inp"><label>Distância padrão</label>
+          <select><option>Até 2 km</option><option selected>Até 5 km</option><option>Até 10 km</option></select>
+        </div>
+      </div>
+      <div class="inp" style="margin-bottom:0;"><label>Cidade</label><input type="text" value="Goiânia"></div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Privacidade</h2>
+      <p>Controle quem vê seus dados.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row"><span>Mostrar meu nome pro dono da quadra<small>Ele vê quem reservou ao confirmar o horário</small></span><span class="switch on"></span></label>
+      <label class="switch-row" style="border-bottom:none; padding-bottom:0;"><span>Compartilhar minhas estatísticas<small>Seus jogos e reservas aparecem no perfil público</small></span><span class="switch"></span></label>
+    </div>
+  </section>
+
+  <section class="set-card danger">
+    <div class="set-aside">
+      <h2>Conta</h2>
+      <p>Encerrar a sessão ou excluir sua conta.</p>
+    </div>
+    <div class="set-fields">
+      <div style="display:flex; gap:10px;">
+        <a href="{{ url_for('index') }}" class="btn btn-soft">Sair da conta</a>
+        <button type="button" class="btn btn-danger" data-toast="Exclusão de conta (demo)">Excluir conta</button>
+      </div>
+    </div>
+  </section>
+
+</form>
+{% endblock %}

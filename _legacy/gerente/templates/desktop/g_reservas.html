@@ -1,0 +1,131 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'gerente' %}
+{% set active = 'g-reservas' %}
+{% block title %}Reservas · Qadras{% endblock %}
+{% block page_title %}Reservas{% endblock %}
+{% block page_sub %}Solicitações, reservas avulsas e mensalistas{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('pc_gerente_reserva_nova') }}" class="btn btn-primary manager-primary-action">
+  <svg class="ic sm"><use href="#i-plus"/></svg><span>Nova reserva</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir reservas e mensalistas mockados por dados da API -->
+{% set solicitadas = reservas|selectattr('status','equalto','Solicitada')|list %}
+
+{% if solicitadas %}
+<a class="req-banner" href="#solicitacoes">
+  <span class="ico"><svg class="ic"><use href="#i-bell"/></svg></span>
+  <div><b>{{ solicitadas|length }} {{ 'solicitação precisa' if solicitadas|length == 1 else 'solicitações precisam' }} da sua resposta</b><small>Aprove ou recuse antes que o prazo termine.</small></div>
+  <svg class="ic sm"><use href="#i-right"/></svg>
+</a>
+{% endif %}
+
+<section class="manager-reservation-overview" aria-label="Resumo das reservas">
+  <article><span><svg class="ic"><use href="#i-calendar"/></svg></span><div><strong class="num">{{ reservas|length }}</strong><small>Reservas no período</small></div></article>
+  <article><span><svg class="ic"><use href="#i-wallet"/></svg></span><div><strong class="num">R$ {{ '%.0f'|format(reservas|sum(attribute='valor')) }}</strong><small>Valor movimentado</small></div></article>
+  <article class="{{ 'has-pending' if solicitadas }}"><span><svg class="ic"><use href="#i-clock"/></svg></span><div><strong class="num">{{ solicitadas|length }}</strong><small>Aguardando aprovação</small></div></article>
+</section>
+
+<section class="manager-section" id="solicitacoes">
+  <div class="manager-section__head manager-section__head--stack">
+    <div><span>Operação</span><h2>Reservas avulsas</h2></div>
+    <div class="tabs manager-filter-tabs" data-seg data-target="#gres">
+      <button type="button" class="on" data-filter="">Todas</button>
+      <button type="button" data-filter="solicitada">Solicitações</button>
+      <button type="button" data-filter="pago">Pagas</button>
+      <button type="button" data-filter="pendente">Pendentes</button>
+      <button type="button" data-filter="confirmado">Confirmadas</button>
+    </div>
+  </div>
+
+  <div class="manager-bookings" id="gres">
+    {% for r in reservas %}
+    <article class="manager-booking-row {{ 'is-request' if r.status == 'Solicitada' }}" data-status="{{ r.status|lower }}">
+      <div class="manager-booking-person">
+        <span class="manager-avatar">{{ r.cliente[0] }}</span>
+        <div><strong>{{ r.cliente }}</strong><small>{{ r.telefone }}</small></div>
+      </div>
+      <div class="manager-booking-fact"><span>Quadra</span><strong>{{ r.quadra }}</strong></div>
+      <div class="manager-booking-fact"><span>Data e horário</span><strong>{{ r.data }} · <span class="num">{{ r.hora }}</span></strong></div>
+      <div class="manager-booking-fact"><span>Valor</span><strong class="num">R$ {{ r.valor }}</strong></div>
+      <div class="manager-booking-status"><span class="status {{ r.status|lower }}">{{ r.status }}</span></div>
+      <div class="manager-booking-actions">
+        {% if r.status == 'Solicitada' %}
+          <form method="post" action="{{ url_for('pc_gerente_reserva_recusar', rid=r.id) }}"><button type="submit" class="btn btn-danger btn-xs">Recusar</button></form>
+          <form method="post" action="{{ url_for('pc_gerente_reserva_aprovar', rid=r.id) }}"><button type="submit" class="btn btn-primary btn-xs"><svg class="ic sm"><use href="#i-check"/></svg> Aprovar</button></form>
+        {% else %}
+          <a href="{{ url_for('pc_gerente_reserva', rid=r.id) }}" class="btn btn-soft btn-xs">Ver detalhes</a>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+    <div class="manager-empty-list" data-empty hidden>
+      <svg class="ic"><use href="#i-calendar"/></svg><strong>Nenhuma reserva neste filtro</strong><span>Escolha outro status para continuar.</span>
+    </div>
+  </div>
+</section>
+
+<section class="manager-section manager-members-section" id="mensalistas">
+  <div class="manager-section__head">
+    <div><span>Recorrência</span><h2>Mensalistas</h2><p>Clientes com dia e horário fixos na sua grade.</p></div>
+    <button type="button" class="btn btn-outline" data-open-modal="modal-mensalista"><svg class="ic sm"><use href="#i-plus"/></svg> Adicionar mensalista</button>
+  </div>
+
+  <div class="manager-members" data-manager-member-list>
+    <article class="manager-member" data-member-id="mock-matheus" data-member-name="Matheus Ribeiro" data-member-court="Society 1" data-member-day="Terça" data-member-time="20:00" data-member-price="420">
+      <span class="manager-avatar">M</span>
+      <div class="manager-member__person"><strong>Matheus Ribeiro</strong><small>Society 1</small></div>
+      <div><span>Recorrência</span><strong>Toda terça · 20:00</strong></div>
+      <div><span>Mensalidade</span><strong class="num">R$ 420,00</strong></div>
+      <span class="status pago">Ativo</span>
+      <button type="button" class="manager-row-menu" data-manager-member-edit aria-label="Editar Matheus Ribeiro"><svg class="ic"><use href="#i-pencil"/></svg></button>
+    </article>
+    <article class="manager-member" data-member-id="mock-caiapo" data-member-name="Time Caiapó" data-member-court="Society 2" data-member-day="Quinta" data-member-time="21:00" data-member-price="480">
+      <span class="manager-avatar">T</span>
+      <div class="manager-member__person"><strong>Time Caiapó</strong><small>Society 2</small></div>
+      <div><span>Recorrência</span><strong>Toda quinta · 21:00</strong></div>
+      <div><span>Mensalidade</span><strong class="num">R$ 480,00</strong></div>
+      <span class="status pago">Ativo</span>
+      <button type="button" class="manager-row-menu" data-manager-member-edit aria-label="Editar Time Caiapó"><svg class="ic"><use href="#i-pencil"/></svg></button>
+    </article>
+    <article class="manager-member" data-member-id="mock-fernanda" data-member-name="Fernanda Lima" data-member-court="Areia" data-member-day="Sábado" data-member-time="09:00" data-member-price="360">
+      <span class="manager-avatar">F</span>
+      <div class="manager-member__person"><strong>Fernanda Lima</strong><small>Areia</small></div>
+      <div><span>Recorrência</span><strong>Todo sábado · 09:00</strong></div>
+      <div><span>Mensalidade</span><strong class="num">R$ 360,00</strong></div>
+      <span class="status pendente">Renova em 3 dias</span>
+      <button type="button" class="manager-row-menu" data-manager-member-edit aria-label="Editar Fernanda Lima"><svg class="ic"><use href="#i-pencil"/></svg></button>
+    </article>
+  </div>
+</section>
+
+<div class="modal" id="modal-mensalista" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <form class="modal-box manager-sheet" data-manager-member-form>
+    <div class="modal-head">
+      <div><span class="manager-modal-eyebrow">Recorrência</span><h3>Novo mensalista</h3></div>
+      <button class="modal-x" type="button" data-close-modal aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="inp"><label for="member-name">Cliente</label><input id="member-name" name="name" type="text" placeholder="Nome do cliente" required></div>
+      <div class="input-row">
+        <div class="inp"><label for="member-court">Quadra</label><select id="member-court" name="court"><option>Society 1</option><option>Society 2</option><option>Areia</option></select></div>
+        <div class="inp"><label for="member-day">Dia fixo</label><select id="member-day" name="day"><option>Segunda</option><option>Terça</option><option>Quarta</option><option>Quinta</option><option>Sexta</option><option>Sábado</option><option>Domingo</option></select></div>
+      </div>
+      <div class="input-row">
+        <div class="inp"><label for="member-time">Horário</label><input id="member-time" name="time" type="time" value="20:00" required></div>
+        <div class="inp"><label for="member-price">Mensalidade</label><input id="member-price" name="price" type="number" min="0" step="10" value="420" required></div>
+      </div>
+      <div class="set-hint"><svg class="ic"><use href="#i-calendar"/></svg> O horário será reservado semanalmente na grade.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-close-modal>Cancelar</button>
+      <button class="btn btn-primary" type="submit">Salvar mensalista</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

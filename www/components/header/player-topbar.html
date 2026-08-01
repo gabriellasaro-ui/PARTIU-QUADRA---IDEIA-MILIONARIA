@@ -1,0 +1,59 @@
+<!-- TODO: substituir dados locais por perfil, notificações e links oficiais dos apps via API FastAPI -->
+<header class="web-header">
+  <div class="web-header__main">
+    <a href="./pc.html#quadras" class="web-brand" aria-label="Qadras - explorar quadras">
+      <span class="web-brand__mark"><i class="ic" data-lucide="goal"></i></span>
+      <span>Qadras</span>
+    </a>
+
+    <nav class="web-nav" aria-label="Navegação principal">
+      <a data-nav-page="quadras" href="./pc.html#quadras">Explorar</a>
+      <a data-nav-page="reservas" href="./pc.html#reservas">
+        Reservas
+        <span class="web-nav__count" aria-label="2 reservas em andamento">2</span>
+      </a>
+      <a data-nav-page="favoritos" href="./pc.html#favoritos">Favoritos</a>
+    </nav>
+
+    <div class="web-header__actions">
+      <a class="web-icon-button" data-nav-page="mensagens" href="./pc.html#mensagens" aria-label="Mensagens das reservas" title="Mensagens das reservas">
+        <i class="ic" data-lucide="inbox"></i>
+        <span class="web-action-dot" aria-label="1 mensagem não lida">1</span>
+      </a>
+      <a class="web-login" data-auth-guest href="./login-pc.html">
+        <span>Entrar</span>
+        <i class="ic" data-lucide="log-in"></i>
+      </a>
+      <a class="web-app-cta" href="./index.html?modo=app#home">
+        <i class="ic" data-lucide="qr-code"></i>
+        <span>Abrir no celular</span>
+      </a>
+      <details class="web-account" data-auth-user hidden>
+        <summary aria-label="Abrir conta de Gabriel" title="Minha conta">
+          <span class="web-account__avatar">G</span>
+          <i class="ic" data-lucide="chevron-down"></i>
+        </summary>
+        <div class="web-account__menu">
+          <div class="web-account__intro">
+            <span class="web-account__avatar">G</span>
+            <span><strong>Gabriel Lisboa</strong><small>Jogador Qadras</small></span>
+          </div>
+          <div class="web-account__links">
+            <a data-nav-page="perfil" href="./pc.html#perfil"><i class="ic" data-lucide="user-round"></i><span>Perfil</span></a>
+            <a data-nav-page="carteira" href="./pc.html#carteira"><i class="ic" data-lucide="wallet-cards"></i><span>Carteira</span></a>
+            <a data-nav-page="config" href="./pc.html#config"><i class="ic" data-lucide="sliders-horizontal"></i><span>Ajustes</span></a>
+          </div>
+          <a class="web-account__logout" data-auth-logout href="./login.html"><i class="ic" data-lucide="log-out"></i>Sair da conta</a>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div class="web-context">
+    <div class="web-context__copy">
+      <h1 data-page-title>Explorar quadras</h1>
+      <p data-page-sub>Quadras disponíveis perto de Goiânia</p>
+    </div>
+    <div class="web-context__actions" data-player-topbar-actions></div>
+  </div>
+</header>

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% set active = 'reservas' %}
+{% set selected_date = request.args.get('date', '') %}
+{% set method = request.args.get('metodo', 'pix') %}
+{% set method_label = 'Cartão de crédito' if method == 'card' else ('Saldo Qadras' if method == 'wallet' else 'Pix') %}
+{% set booking_code = 'PQ-' ~ quadra.id ~ (hora|replace(':', '')) %}
+{% set booking_subtotal = (quadra.preco * dur)|round(2) %}
+{% set service_fee = (booking_subtotal * 0.05)|round(2) %}
+{% set checkout_total = (booking_subtotal + service_fee)|round(2) %}
+{% block title %}Aguardando aprovação{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir aprovação simulada por eventos da API FastAPI em tempo real -->
+<div class="container route-page booking-confirmation"
+     data-approval-page
+     data-approval-layout="mobile"
+     data-venue-id="{{ quadra.id }}"
+     data-venue-name="{{ quadra.nome|e }}"
+     data-venue-image="{{ quadra.foto|e }}"
+     data-venue-meta="{{ (quadra.esporte ~ ' - ' ~ quadra.bairro)|e }}"
+     data-booking-date="{{ selected_date }}"
+     data-booking-hour="{{ hora }}"
+     data-booking-end="{{ hora_fim }}"
+     data-booking-duration="{{ dur }}"
+     data-booking-subtotal="{{ booking_subtotal }}"
+     data-booking-fee="{{ service_fee }}"
+     data-booking-total="{{ checkout_total }}"
+     data-payment-method="{{ method_label|e }}"
+     data-booking-code="{{ booking_code }}"
+     data-other-time-url="{{ url_for('quadra', quadra_id=quadra.id) }}"
+     data-other-venue-url="{{ url_for('buscar') }}"
+     data-reservations-url="{{ url_for('reservas') }}"
+     data-chat-url="{{ url_for('pc_mensagens') }}">
+  <div data-approval-content aria-live="polite"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/booking-flow.js') }}"></script>
+{% endblock %}

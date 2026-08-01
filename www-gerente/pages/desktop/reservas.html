@@ -1,0 +1,71 @@
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="req-banner">
+  <span class="ico"><svg class="ic"><use href="#i-bell"/></svg></span>
+  <div><b>3 reservas precisam de atencao</b> hoje antes do horario de pico.</div>
+</div>
+
+<div class="toolbar">
+  <div class="field grow">
+    <svg class="ic"><use href="#i-search"/></svg>
+    <input type="text" placeholder="Buscar por cliente, codigo ou quadra">
+  </div>
+  <div class="field">
+    <svg class="ic"><use href="#i-calendar"/></svg>
+    <select>
+      <option>Hoje</option>
+      <option>Esta semana</option>
+      <option>Este mes</option>
+    </select>
+  </div>
+  <div class="field">
+    <svg class="ic"><use href="#i-sliders"/></svg>
+    <select>
+      <option>Todos os status</option>
+      <option>Pago</option>
+      <option>Confirmado</option>
+      <option>Pendente</option>
+    </select>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Proximas reservas</h2>
+      <span class="panel-sub">Operacao do dia organizada por horario</span>
+    </div>
+    <a class="lk" href="./dashboard.html#agenda">Ver agenda</a>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Cliente</th><th>Quadra</th><th>Data</th><th>Horario</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <tr>
+        <td><div class="cli"><span class="av">M</span> Matheus Rocha</div></td>
+        <td>Society 1</td>
+        <td>Hoje</td>
+        <td class="num">19:00</td>
+        <td class="val num">R$ 140</td>
+        <td><span class="status pago">Pago</span></td>
+        <td><span class="act-inline"><button class="btn btn-soft btn-xs" data-toast="Detalhes preparados para a API">Detalhes</button></span></td>
+      </tr>
+      <tr>
+        <td><div class="cli"><span class="av">B</span> Bruno Lima</div></td>
+        <td>Beach Tennis</td>
+        <td>Hoje</td>
+        <td class="num">20:30</td>
+        <td class="val num">R$ 120</td>
+        <td><span class="status confirmado">Confirmado</span></td>
+        <td><span class="act-inline"><button class="btn btn-soft btn-xs" data-toast="Detalhes preparados para a API">Detalhes</button></span></td>
+      </tr>
+      <tr>
+        <td><div class="cli"><span class="av">C</span> Carol Souza</div></td>
+        <td>Tenis Coberta</td>
+        <td>Amanha</td>
+        <td class="num">18:00</td>
+        <td class="val num">R$ 110</td>
+        <td><span class="status pendente">Pendente</span></td>
+        <td><span class="act-inline"><button class="btn btn-primary btn-xs" data-toast="Reserva aprovada">Aprovar</button></span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,32 @@
+<!-- TODO: substituir localizacao, perfil e notificacoes por dados da API -->
+<header class="market-header">
+  <div class="market-nav">
+    <button class="location-switch" type="button" data-sheet-open="location-sheet" aria-expanded="false">
+      <span class="location-switch__icon"><i class="ic" data-lucide="map-pin"></i></span>
+      <span class="location-switch__copy">
+        <small>Qadras | jogar em</small>
+        <strong data-current-location>Goiânia, GO</strong>
+      </span>
+      <i class="ic location-switch__chevron" data-lucide="chevron-down"></i>
+    </button>
+
+    <button class="market-notification" type="button" data-sheet-open="notifications-sheet" aria-expanded="false" aria-label="Abrir notificacoes">
+      <i class="ic" data-lucide="bell"></i>
+      <span data-notification-dot></span>
+    </button>
+  </div>
+
+  <div class="market-copy">
+    <p><span data-home-greeting>Ola</span>, Gabriel</p>
+    <h1>Onde vamos jogar hoje?</h1>
+  </div>
+
+  <form action="./index.html#quadras" method="get" class="market-search" data-search-form>
+    <i class="ic" data-lucide="search"></i>
+    <input type="search" name="q" placeholder="Quadra, esporte ou bairro" autocomplete="off">
+    <input type="hidden" name="local" value="Goiânia, GO" data-search-location>
+    <button type="submit" aria-label="Buscar">
+      <i class="ic" data-lucide="arrow-right"></i>
+    </button>
+  </form>
+</header>

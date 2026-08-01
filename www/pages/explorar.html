@@ -1,0 +1,32 @@
+<!-- TODO: substituir dados locais por GET /quadras na API FastAPI -->
+<div class="route-page" data-explore-page>
+  <header class="explore-header">
+    <div>
+      <span>Partiu jogar</span>
+      <div class="title" data-results-title>Explore quadras</div>
+      <div class="sub" data-results-sub>Carregando resultados...</div>
+    </div>
+    <a class="icon-btn" href="#mapa" aria-label="Abrir mapa"><i class="ic" data-lucide="map-pinned"></i></a>
+  </header>
+
+  <div class="container explore-market">
+    <form class="explore-search" data-search-form>
+      <i class="ic" data-lucide="search"></i>
+      <input type="search" name="q" placeholder="Arena, esporte ou bairro" autocomplete="off">
+      <input type="hidden" name="raio" value="5">
+      <input type="hidden" name="local" value="Goiânia, GO" data-search-location>
+      <input type="hidden" name="esporte" value="" data-search-sport disabled>
+      <input type="hidden" name="agora" value="1" data-search-now disabled>
+      <button type="button" aria-label="Abrir filtros" data-sheet-open="filter-sheet" aria-expanded="false">
+        <i class="ic" data-lucide="sliders-horizontal"></i>
+      </button>
+    </form>
+
+    <div class="sport-filter-rail" data-sport-filters></div>
+    <div class="result-context">
+      <span><i class="ic" data-lucide="navigation"></i><strong data-current-location>Goiânia, GO</strong></span>
+      <a href="#mapa">Ver mapa</a>
+    </div>
+    <div data-venue-list></div>
+  </div>
+</div>

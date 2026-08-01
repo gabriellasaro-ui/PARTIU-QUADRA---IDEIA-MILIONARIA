@@ -1,0 +1,22 @@
+<!-- TODO: substituir dados locais por GET /quadras na API FastAPI -->
+<div class="route-page mobile-map-route" data-map-page>
+  <div class="navbar map-navbar">
+    <div>
+      <div class="title">Mapa de quadras</div>
+      <div class="sub" data-map-summary>Quadras perto de voce</div>
+    </div>
+    <span class="spacer"></span>
+    <button class="icon-btn" type="button" data-map-locate aria-label="Centralizar na minha localizacao">
+      <i class="ic" data-lucide="locate-fixed"></i>
+    </button>
+  </div>
+
+  <div class="map-filter-strip">
+    <div class="chips" data-map-filters></div>
+  </div>
+
+  <div class="leaflet-map-shell">
+    <div class="leaflet-mobile-map" data-live-map aria-label="Mapa interativo das quadras"></div>
+    <div class="map-location-label"><span></span>Voce esta aqui</div>
+  </div>
+</div>

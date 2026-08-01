@@ -1,0 +1,40 @@
+{% extends "desktop/app_base.html" %}
+{% set role = 'jogador' %}
+{% set active = 'favoritos' %}
+{% block title %}Favoritos · Qadras{% endblock %}
+{% block page_title %}Favoritos{% endblock %}
+{% block page_sub %}As quadras que você salvou{% endblock %}
+{% block topbar_search %}{% endblock %}
+
+{% block content %}
+<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<div class="grid">
+  {% for q in quadras %}
+  <div class="qcard">
+    <div class="ph">
+      <button type="button" class="fav-heart on" data-remove=".qcard" data-remove-msg="Removido dos favoritos" aria-label="Remover dos favoritos">
+        <svg class="ic fill"><use href="#i-heart"/></svg>
+      </button>
+      <span class="pill star tl"><svg class="ic"><use href="#i-star"/></svg>{{ q.nota }} ({{ q.avaliacoes }})</span>
+      <img src="{{ q.foto }}" alt="{{ q.nome }}" loading="lazy">
+    </div>
+    <div class="bd">
+      <h3>{{ q.nome }}</h3>
+      <p class="meta"><svg class="ic"><use href="#i-pin"/></svg>{{ q.esporte }} · {{ q.bairro }}</p>
+      <div class="tags">{% for t in q.tags %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+      <div class="foot">
+        <div class="price">R$ {{ q.preco }}<small> /hora</small></div>
+        <a href="{{ url_for('pc_quadra', quadra_id=q.id) }}" class="btn btn-outline">Ver horários</a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="empty-ic"><svg class="ic lg"><use href="#i-heart"/></svg></div>
+    <h3>Nenhum favorito ainda</h3>
+    <p>Toque no coração de uma quadra para salvá-la aqui.</p>
+    <a href="{{ url_for('pc_explorar') }}" class="btn btn-primary">Explorar quadras</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

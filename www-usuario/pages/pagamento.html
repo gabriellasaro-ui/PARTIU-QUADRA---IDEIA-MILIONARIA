@@ -1,0 +1,89 @@
+<!-- TODO: substituir dados locais e solicitação simulada por POST /reservas na API FastAPI -->
+<div class="route-page" data-payment-page>
+  <div class="navbar checkout-navbar">
+    <a class="icon-btn" data-back-venue href="#quadras" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
+    <div><div class="title">Solicitar reserva</div><div class="sub">Confira os dados antes de enviar</div></div>
+  </div>
+
+  <div class="container checkout-mobile">
+    <ol class="booking-flow booking-flow--checkout" aria-label="Etapas da reserva">
+      <li class="is-done"><span><i class="ic" data-lucide="check"></i></span><small>Horário</small></li>
+      <li class="is-current"><span>2</span><small>Pagamento</small></li>
+      <li><span>3</span><small>Aprovação</small></li>
+      <li><span>4</span><small>Confirmação</small></li>
+    </ol>
+
+    <section class="checkout-recap">
+      <div class="mini-card">
+        <img data-payment-image alt="">
+        <div>
+          <span class="checkout-recap__eyebrow">Sua partida</span>
+          <h3 data-payment-name></h3>
+          <p class="meta" data-payment-meta></p>
+        </div>
+      </div>
+
+      <div class="info-rows">
+        <div class="row">
+          <span class="k"><i class="ic" data-lucide="calendar-days"></i>Data</span>
+          <span class="v" data-payment-date></span>
+        </div>
+        <div class="row">
+          <span class="k"><i class="ic" data-lucide="clock-3"></i>Horário</span>
+          <span class="v" data-payment-hour></span>
+        </div>
+        <div class="row">
+          <span class="k"><i class="ic" data-lucide="timer"></i>Duração</span>
+          <span class="v" data-payment-duration></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="checkout-section">
+      <div class="checkout-section__head">
+        <div><span>Como quer pagar?</span><h2>Forma de pagamento</h2></div>
+        <i class="ic" data-lucide="shield-check"></i>
+      </div>
+      <div class="pay-methods" data-payment-methods>
+        <button type="button" class="method on" data-payment-method="pix">
+          <span class="badge-ic"><i class="ic" data-lucide="zap"></i></span>
+          <span><strong>Pix</strong><small data-payment-method-note>Validação imediata</small></span>
+          <span class="check"><i class="ic" data-lucide="check"></i></span>
+        </button>
+        <button type="button" class="method" data-payment-method="card">
+          <span class="badge-ic"><i class="ic" data-lucide="credit-card"></i></span>
+          <span><strong>Cartão de crédito</strong><small data-payment-method-note>Final 4321</small></span>
+          <span class="check"><i class="ic" data-lucide="check"></i></span>
+        </button>
+        <button type="button" class="method" data-payment-method="wallet">
+          <span class="badge-ic"><i class="ic" data-lucide="wallet-cards"></i></span>
+          <span><strong>Saldo Qadras</strong><small data-payment-method-note></small></span>
+          <span class="check"><i class="ic" data-lucide="check"></i></span>
+        </button>
+      </div>
+    </section>
+
+    <div class="approval-policy">
+      <span><i class="ic" data-lucide="timer"></i></span>
+      <div>
+        <strong>A arena responde em até 15 minutos</strong>
+        <p>Validamos a forma de pagamento agora. A cobrança só é concluída se a arena aceitar.</p>
+      </div>
+    </div>
+
+    <section class="checkout-total">
+      <div class="line"><span data-payment-rent-label></span><span data-payment-rent></span></div>
+      <div class="line"><span>Taxa de serviço (5%)</span><span data-payment-fee></span></div>
+      <div class="line total"><span>Total</span><span data-payment-total></span></div>
+      <p><i class="ic" data-lucide="info"></i>A taxa mantém o pagamento, o suporte e a proteção da reserva.</p>
+    </section>
+
+    <div class="checkout-action">
+      <a data-payment-cta class="btn block" aria-label="Enviar solicitação de reserva">
+        <span data-payment-cta-label></span>
+        <i class="ic" data-lucide="arrow-right"></i>
+      </a>
+      <p class="note"><i class="ic" data-lucide="shield-check"></i><span>Nenhuma cobrança será concluída se a arena não aceitar.</span></p>
+    </div>
+  </div>
+</div>

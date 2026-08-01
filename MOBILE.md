@@ -1,4 +1,4 @@
-# Partiu Quadra — Web + App de celular (PWA → Play Store)
+# Qadras — Web + App de celular (PWA → Play Store)
 
 A meta é **um código só** servindo três frentes: site, app instalável (PWA) e app na
 Play Store. O que já está pronto e o passo a passo de cada etapa estão aqui.
@@ -77,3 +77,33 @@ com `tenant_id` por arena. A PWA e o TWA continuam os mesmos; só a origem dos d
 pip install Pillow
 python tools/gen_icons.py
 ```
+
+## 5. Capacitor instalado
+
+O projeto tambem ja esta preparado com Capacitor usando `frontend/` como `webDir`.
+
+Pacotes instalados:
+
+- `@capacitor/core`
+- `@capacitor/cli`
+- `@capacitor/android`
+- `@capacitor/ios`
+
+Arquivos/pastas principais:
+
+- `capacitor.config.json`
+- `package.json`
+- `package-lock.json`
+- `android/`
+- `ios/`
+
+Comandos uteis:
+
+```bash
+npm run cap:sync
+npm run cap:open:android
+npm run cap:open:ios
+```
+
+No Windows, o Android foi validado pelo Capacitor Doctor. Para buildar/abrir iOS de verdade,
+precisa de macOS com Xcode instalado.

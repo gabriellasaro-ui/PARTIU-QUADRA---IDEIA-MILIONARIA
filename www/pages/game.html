@@ -1,0 +1,244 @@
+<!-- Modo jogo — mesma linguagem visual do app (claro/verde), dentro do fluxo da rota -->
+<div class="route-page game-page" id="gameScreen" data-player-desktop-page="game">
+  <div class="hero game-hero">
+    <a class="back" href="#home" id="gameBtnBack" aria-label="Voltar para o início"><i class="ic" data-lucide="chevron-left"></i></a>
+    <img class="game-hero__img" id="gameVenueImg" src="" alt="">
+    <div class="game-hero__overlay">
+      <div class="game-hero__title" id="gameVenueName"></div>
+      <div class="game-hero__sub">
+        <i class="ic" data-lucide="map-pin"></i>
+        <span id="gameVenueAddress"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-phase" id="gamePhaseDots">
+    <span class="game-phase__step active" data-phase="pre-game"><i></i>Pré-jogo</span>
+    <span class="game-phase__step" data-phase="during-game"><i></i>Em campo</span>
+    <span class="game-phase__step" data-phase="post-game"><i></i>Resultado</span>
+  </div>
+
+  <div class="game-content" id="gameContent">
+
+    <!-- ───────── Pré-jogo ───────── -->
+    <div id="gamePrePhase">
+      <div class="game-countdown">
+        <div class="game-countdown__label">Sua partida começa em</div>
+        <div class="game-countdown__time" id="gameCountdown">00:00</div>
+        <div class="game-countdown__unit" id="gameCountdownUnit">minutos</div>
+      </div>
+
+      <div class="game-info-grid">
+        <div class="game-info-item">
+          <div class="game-info-item__label">Esporte</div>
+          <div class="game-info-item__value">
+            <i class="ic" data-lucide="zap"></i>
+            <span id="gameSport"></span>
+          </div>
+        </div>
+        <div class="game-info-item">
+          <div class="game-info-item__label">Horário</div>
+          <div class="game-info-item__value">
+            <i class="ic" data-lucide="clock"></i>
+            <span id="gameTime"></span>
+          </div>
+        </div>
+        <div class="game-info-item">
+          <div class="game-info-item__label">Duração</div>
+          <div class="game-info-item__value">
+            <i class="ic" data-lucide="hourglass"></i>
+            <span id="gameDuration"></span>
+          </div>
+        </div>
+        <div class="game-info-item">
+          <div class="game-info-item__label">Organizador</div>
+          <div class="game-info-item__value">
+            <i class="ic" data-lucide="user"></i>
+            <span id="gameOrganizer"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-actions">
+        <button class="game-btn game-btn--outline" id="gameBtnMap" type="button">
+          <i class="ic" data-lucide="navigation"></i>
+          Abrir no Maps
+        </button>
+        <button class="game-btn game-btn--outline" id="gameBtnShareLocation" type="button">
+          <i class="ic" data-lucide="share-2"></i>
+          Compartilhar
+        </button>
+      </div>
+
+      <div class="game-section-title">
+        Jogadores confirmados
+        <span id="gameConfirmedCount"></span>
+      </div>
+      <div class="game-players" id="gameConfirmedList"></div>
+
+      <div class="game-section-title">
+        Pendentes
+        <span id="gamePendingCount"></span>
+      </div>
+      <div class="game-players" id="gamePendingList"></div>
+
+      <div class="game-section-title">Times</div>
+      <div class="game-teams" id="gamePreTeamsDisplay">
+        <div class="game-team-card">
+          <div class="game-team-card__header team-a" id="preTeamACard">Time A</div>
+          <div id="preTeamAPlayers"></div>
+        </div>
+        <div class="game-team-card">
+          <div class="game-team-card__header team-b" id="preTeamBCard">Time B</div>
+          <div id="preTeamBPlayers"></div>
+        </div>
+      </div>
+
+      <button class="game-shuffle" id="gamePreShuffleBtn" type="button">
+        <span class="game-shuffle__icon"><i class="ic" data-lucide="shuffle"></i></span>
+        <span>
+          <strong>Sortear times</strong>
+          <small>Equilibrado por nível técnico</small>
+        </span>
+        <i class="ic" data-lucide="chevron-right"></i>
+      </button>
+
+      <div class="game-actions">
+        <button class="game-btn game-btn--primary" id="gameBtnConfirm" type="button">
+          <i class="ic" data-lucide="check-circle"></i>
+          Confirmar presença
+        </button>
+        <button class="game-btn game-btn--outline" id="gameBtnDelay" type="button">
+          <i class="ic" data-lucide="clock"></i>
+          Avisar atraso
+        </button>
+      </div>
+    </div>
+
+    <!-- ───────── Em campo ───────── -->
+    <div id="gameDuringPhase" style="display:none">
+      <div class="game-scoreboard">
+        <div class="game-scoreboard__live"><span class="game-scoreboard__dot"></span>Ao vivo</div>
+        <div class="game-scoreboard__timer" id="gameTimer">00:00</div>
+        <div class="game-scoreboard__half" id="gameHalf">1º tempo</div>
+        <div class="game-scoreboard__scores">
+          <div class="game-scoreboard__team">
+            <div class="game-scoreboard__team-name" id="teamAName">Time A</div>
+            <div class="game-scoreboard__team-score team-a" id="teamAScore">0</div>
+          </div>
+          <div class="game-scoreboard__divider">×</div>
+          <div class="game-scoreboard__team">
+            <div class="game-scoreboard__team-name" id="teamBName">Time B</div>
+            <div class="game-scoreboard__team-score team-b" id="teamBScore">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-score-controls">
+        <button class="game-score-btn game-score-btn--a" data-team="A" type="button">
+          <b>+1</b>
+          <small id="teamAShort">Time A</small>
+        </button>
+        <button class="game-score-btn game-score-btn--b" data-team="B" type="button">
+          <b>+1</b>
+          <small id="teamBShort">Time B</small>
+        </button>
+      </div>
+
+      <div class="game-section-title">Times</div>
+      <div class="game-teams" id="gameTeamsDisplay">
+        <div class="game-team-card">
+          <div class="game-team-card__header team-a" id="teamACard">Time A</div>
+          <div id="teamAPlayers"></div>
+        </div>
+        <div class="game-team-card">
+          <div class="game-team-card__header team-b" id="teamBCard">Time B</div>
+          <div id="teamBPlayers"></div>
+        </div>
+      </div>
+
+      <button class="game-shuffle" id="gameShuffleBtn" type="button">
+        <span class="game-shuffle__icon"><i class="ic" data-lucide="shuffle"></i></span>
+        <span>
+          <strong>Sortear times</strong>
+          <small>Equilibrado por nível técnico</small>
+        </span>
+        <i class="ic" data-lucide="chevron-right"></i>
+      </button>
+
+      <div class="game-section-title">
+        Eventos da partida
+        <span id="gameEventsCount">0</span>
+      </div>
+      <div class="game-events" id="gameEventsList"></div>
+
+      <div class="game-actions">
+        <button class="game-btn game-btn--danger" id="gameBtnEndMatch" type="button">
+          <i class="ic" data-lucide="flag"></i>
+          Encerrar partida
+        </button>
+      </div>
+    </div>
+
+    <!-- ───────── Resultado ───────── -->
+    <div id="gamePostPhase" style="display:none">
+      <div class="game-result">
+        <div class="game-result__winner" id="gameResultWinner">Empate!</div>
+        <div class="game-result__score">
+          <span class="team-a" id="gameFinalScoreA">0</span>
+          <span class="game-result__x">×</span>
+          <span class="team-b" id="gameFinalScoreB">0</span>
+        </div>
+        <div class="game-result__mvp" id="gameMVPDisplay" style="display:none">
+          <i class="ic" data-lucide="award"></i>
+          <span id="gameMVPName">MVP</span>
+        </div>
+      </div>
+
+      <div class="game-rating" id="gameRatingQuadra">
+        <div class="game-rating__title">Avalie a quadra</div>
+        <div class="game-rating__sub">Como foi a experiência na arena?</div>
+        <div class="game-rating__stars" data-rating="quadra"></div>
+      </div>
+
+      <div class="game-rating" id="gameRatingOrganizacao">
+        <div class="game-rating__title">Avalie a organização</div>
+        <div class="game-rating__sub">O organizador foi pontual e comunicativo?</div>
+        <div class="game-rating__stars" data-rating="organizacao"></div>
+      </div>
+
+      <div class="game-section-title">
+        Fotos da partida
+        <span id="gamePhotoCount">0</span>
+      </div>
+      <div class="game-photo-grid" id="gamePhotoGrid">
+        <button class="game-photo-add game-photo-item" id="gamePhotoAdd" type="button">
+          <i class="ic" data-lucide="plus"></i>
+        </button>
+      </div>
+
+      <div class="game-actions">
+        <button class="game-btn game-btn--outline" id="gameShareResult" type="button">
+          <i class="ic" data-lucide="share-2"></i>
+          Compartilhar
+        </button>
+        <button class="game-btn game-btn--primary" id="gameShareWhatsApp" type="button">
+          <i class="ic" data-lucide="message-circle"></i>
+          WhatsApp
+        </button>
+      </div>
+    </div>
+
+    <!-- ───────── Chat ───────── -->
+    <div class="game-chat" id="gameChatSection">
+      <div class="game-section-title">Chat da partida</div>
+      <div class="game-chat__msgs" id="gameChatMsgs"></div>
+      <div class="game-chat__input-wrap">
+        <input class="game-chat__input" id="gameChatInput" placeholder="Mensagem..." maxlength="500">
+        <button class="game-chat__send" id="gameChatSend" type="button" aria-label="Enviar mensagem">
+          <i class="ic" data-lucide="send"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
