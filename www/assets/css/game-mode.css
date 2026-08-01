@@ -1105,3 +1105,119 @@
 
 /* A aba Times comeca direto num card, sem titulo antes — precisa do respiro */
 .game-tabpanel[data-game-panel="times"] { padding-top: 16px; }
+
+/* ── Modo placar (paisagem) ─────────────────────────────────
+   Sem plugin de orientacao: instalar um obrigaria rebuild nativo e nova
+   submissao de loja por uma tela cosmetica, e nao resolveria a build web.
+   screen.orientation.lock() so funciona dentro de fullscreen no Chromium e
+   e sempre recusado no iOS/WKWebView — entao a rotacao real e feita por CSS.
+
+   O pulo do gato esta na media query: se o lock funcionar, ou se a pessoa
+   girar o aparelho na mao, (orientation: portrait) deixa de casar e a
+   rotacao se desliga sozinha. Um CSS so cobre os dois caminhos. */
+.game-tv {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--pq-brand-deep), var(--pq-brand-strong));
+  color: #fff;
+}
+
+.game-tv[hidden] { display: none; }
+
+.game-tv__stage {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(10px, 3vmin, 28px);
+  padding: clamp(12px, 4vmin, 32px);
+  text-align: center;
+}
+
+@media (orientation: portrait) {
+  .game-tv__stage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100vh;
+    height: 100vw;
+    width: 100dvh;
+    height: 100dvw;
+    transform: translate(-50%, -50%) rotate(90deg);
+    transform-origin: center center;
+  }
+}
+
+.game-tv__close {
+  /* fixed, e nao absolute: o palco rotacionado cria contexto de empilhamento
+     com transform, e o botao precisa ficar sempre no canto real da tela. */
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .34);
+  color: #fff;
+  cursor: pointer;
+}
+
+.game-tv__close .ic { width: 22px; height: 22px; }
+
+.game-tv__timer {
+  font-size: clamp(72px, 32vmin, 220px);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: .95;
+}
+
+.game-page.is-ending .game-tv__timer { color: #ffd88a; }
+
+.game-tv__scores {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 7vmin, 72px);
+}
+
+.game-tv__team {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-tv__team small {
+  font-size: clamp(11px, 2.6vmin, 22px);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  opacity: .8;
+}
+
+.game-tv__team b {
+  font-size: clamp(52px, 21vmin, 150px);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.game-tv__scores em {
+  font-size: clamp(20px, 5vmin, 52px);
+  font-style: normal;
+  opacity: .5;
+}
+
+body.game-tv-open { overflow: hidden; }
+
+/* Botao solto no painel (fora de .game-actions, que ja e grid) */
+.game-tv-open {
+  width: 100%;
+  margin-top: 10px;
+}

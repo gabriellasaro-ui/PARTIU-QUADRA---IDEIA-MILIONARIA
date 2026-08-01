@@ -6,6 +6,7 @@ let countdownInterval = null;
 let gameTimerInterval = null;
 let matchObserver = null;
 let isGameActive = false;
+let tvWakeLock = null;
 
 function $id(id) { return document.getElementById(id); }
 
@@ -343,6 +344,33 @@ function initGameTabs() {
  * para a pessoa como um estado de dados legitimo. Falha de montagem agora
  * diz que falhou.
  */
+// Fullscreen, trava de orientacao e wake lock sao todos best-effort: cada um
+// falha em alguma plataforma e nenhum deles e necessario — a rotacao real
+// vem do CSS. Por isso os tres em try/catch separados.
+async function openTvMode() {
+  const el = $id('gameTvMode');
+  if (!el) return;
+  el.hidden = false;
+  document.body.classList.add('game-tv-open');
+  try { await document.documentElement.requestFullscreen?.(); } catch (e) { /* recusado: segue */ }
+  try { await screen.orientation?.lock?.('landscape'); } catch (e) { /* iOS sempre recusa */ }
+  try { tvWakeLock = await navigator.wakeLock?.request('screen'); } catch (e) { /* sem suporte */ }
+}
+
+async function closeTvMode() {
+  const el = $id('gameTvMode');
+  if (el) el.hidden = true;
+  document.body.classList.remove('game-tv-open');
+  try { screen.orientation?.unlock?.(); } catch (e) { /* nao travou */ }
+  try { if (document.fullscreenElement) await document.exitFullscreen?.(); } catch (e) { /* nada */ }
+  try { await tvWakeLock?.release(); } catch (e) { /* nada */ }
+  tvWakeLock = null;
+}
+
+function isTvOpen() {
+  return $id('gameTvMode')?.hidden === false;
+}
+
 export async function loadGame(matchId) {
   try {
     match = await venueService.getActiveMatch();
@@ -426,6 +454,9 @@ function bindEvents() {
 
   $('gameBtnEndMatch')?.addEventListener('click', endMatch);
 
+  $('gameTvBtn')?.addEventListener('click', openTvMode);
+  qsa('[data-game-tv-close]').forEach((btn) => btn.addEventListener('click', closeTvMode));
+
   $('gamePhotoAdd')?.addEventListener('click', () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -471,6 +502,15 @@ export function isInGameMode() {
 export function destroyGame() {
   if (countdownInterval) clearInterval(countdownInterval);
   if (gameTimerInterval) clearInterval(gameTimerInterval);
+  // Sair da rota com o placar aberto deixaria a pessoa presa em tela cheia
+  // e travada em paisagem — o overlay some junto com o fragmento da rota.
+  closeTvMode();
   isGameActive = false;
   match = null;
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && isTvOpen()) closeTvMode();
+  });
 }

@@ -230,6 +230,11 @@
           <b class="team-b" data-team-score="B">0</b>
         </div>
       </div>
+
+      <button class="game-btn game-btn--primary game-tv-open" id="gameTvBtn" type="button">
+        <i class="ic" data-lucide="maximize"></i>
+        Modo placar (tela cheia)
+      </button>
     </section>
 
     <!-- ═════════ Aba: Times ═════════ -->
@@ -255,5 +260,30 @@
         <i class="ic" data-lucide="chevron-right"></i>
       </button>
     </section>
+  </div>
+
+  <!-- Modo placar: leitura apenas (cronometro, placar, fechar).
+       Usa os mesmos data-game-timer / data-team-score das abas, entao se
+       atualiza sozinho — nenhum interval novo. -->
+  <div class="game-tv" id="gameTvMode" hidden>
+    <!-- Fora do palco de proposito: dentro dele o canto superior direito cai
+         fora do viewport depois do rotate, e o botao fica inalcancavel. -->
+    <button class="game-tv__close" type="button" data-game-tv-close aria-label="Sair do modo placar">
+      <i class="ic" data-lucide="x"></i>
+    </button>
+    <div class="game-tv__stage">
+      <div class="game-tv__timer" data-game-timer>00:00</div>
+      <div class="game-tv__scores">
+        <span class="game-tv__team">
+          <small data-team-label="A">Time A</small>
+          <b data-team-score="A">0</b>
+        </span>
+        <em>×</em>
+        <span class="game-tv__team">
+          <small data-team-label="B">Time B</small>
+          <b data-team-score="B">0</b>
+        </span>
+      </div>
+    </div>
   </div>
 </div>
