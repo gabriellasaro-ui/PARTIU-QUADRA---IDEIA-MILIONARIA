@@ -1,0 +1,40 @@
+<!-- Barras de acao contextuais.
+
+     Sao irmas da .tabbar: mesmo nivel dentro do .phone (o loadComponents
+     descarta o wrapper e sobe os dois <nav> para ca), mesma caixa fixa, e
+     mutuamente exclusivas com ela.
+
+     Quem manda e o atributo html[data-bottombar], escrito por renderClub e
+     renderGame — nao pela rota. Assim, partida inexistente, erro de montagem
+     ou estado sem clube fazem a navegacao normal voltar sozinha.
+
+     Vive so no index.html: o pc.html nao tem este slot nem carrega o
+     mobile-v2.css, entao o desktop segue com a fileira de abas no topo. -->
+
+<nav class="contextbar contextbar--clube" aria-label="Gerenciar o clube">
+  <button class="contextbar__tab is-active" type="button" data-club-tab="peladas" aria-pressed="true">
+    <i class="ic" data-lucide="calendar-days"></i><span>Peladas</span>
+  </button>
+  <button class="contextbar__tab" type="button" data-club-tab="membros" aria-pressed="false">
+    <i class="ic" data-lucide="users"></i><span>Membros</span>
+  </button>
+  <button class="contextbar__primary" type="button" data-sheet-open="pelada-sheet"
+          aria-haspopup="dialog" aria-expanded="false" aria-label="Agendar pelada">
+    <span><i class="ic" data-lucide="calendar-plus"></i></span><em>Agendar</em>
+  </button>
+</nav>
+
+<nav class="contextbar contextbar--game" role="tablist" aria-label="Seções da partida">
+  <button class="contextbar__tab" type="button" role="tab" id="ctxGameTabPartida"
+          data-game-tab="partida" aria-selected="false" aria-controls="gameTabPartida">
+    <i class="ic" data-lucide="list"></i><span>Partida</span>
+  </button>
+  <button class="contextbar__tab" type="button" role="tab" id="ctxGameTabCronometro"
+          data-game-tab="cronometro" aria-selected="false" aria-controls="gameTabCronometro">
+    <i class="ic" data-lucide="timer"></i><span>Cronômetro</span>
+  </button>
+  <button class="contextbar__tab" type="button" role="tab" id="ctxGameTabTimes"
+          data-game-tab="times" aria-selected="false" aria-controls="gameTabTimes">
+    <i class="ic" data-lucide="users"></i><span>Times</span>
+  </button>
+</nav>

@@ -5618,3 +5618,112 @@ html[data-route="mapa"] .phone {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+
+/* ---------- barra contextual (clube / partida) ----------
+   Irma da .tabbar: mesma caixa fixa, mesma largura, mesmo raio, mesmo blur
+   e — de proposito — a MESMA altura. E essa igualdade que dispensa um token
+   novo: o padding-bottom da .screen, a conta de 100dvh do mapa e o offset do
+   .toast continuam todos valendo sem nenhuma outra edicao.
+
+   O gatilho e html[data-bottombar], escrito por renderClub / renderGame, e
+   nao a rota: assim o caminho de falha (sem partida, erro de montagem, sem
+   clube) devolve a navegacao normal sozinho. */
+html[data-bottombar] .tabbar { display: none; }
+
+html[data-bottombar="clube"] .contextbar--clube,
+html[data-bottombar="game"] .contextbar--game { display: grid; }
+
+.contextbar {
+  position: fixed;
+  z-index: 80;
+  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  width: min(100vw, 430px);
+  min-height: calc(var(--pq-tabbar-height) + var(--pq-safe-bottom));
+  padding: 8px 8px max(8px, var(--pq-safe-bottom));
+  transform: translateX(-50%);
+  border: 0;
+  border-top: 1px solid var(--pq-line);
+  border-radius: 24px 24px 0 0;
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 -8px 24px rgba(7, 94, 58, .08);
+  backdrop-filter: blur(18px) saturate(160%);
+}
+
+.contextbar__tab,
+.contextbar__primary {
+  display: flex;
+  min-height: 54px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 2px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #738079;
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.contextbar__tab .ic {
+  width: 21px;
+  height: 21px;
+}
+
+.contextbar__tab span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextbar__tab.is-active { color: var(--pq-brand-strong); }
+.contextbar__tab.is-active .ic { stroke-width: 2.4; }
+
+.contextbar__tab:active,
+.contextbar__primary:active { transform: translateY(1px); }
+
+.contextbar__tab:focus-visible,
+.contextbar__primary:focus-visible {
+  outline: 3px solid rgba(207, 255, 71, .9);
+  outline-offset: 2px;
+}
+
+/* Espaco em destaque — mesmo desenho do .tabbar-map ativo: circulo cheio na
+   cor da marca com o rotulo embaixo. E o vocabulario que o app ja tem para
+   "um espaco fala mais alto que os outros". */
+.contextbar__primary > span {
+  display: grid;
+  overflow: visible;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(7, 94, 58, .28);
+}
+
+.contextbar__primary > span .ic {
+  width: 20px;
+  height: 20px;
+}
+
+.contextbar__primary em {
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+/* Na partida as abas moram no rodape. A fileira de pilulas do topo passa a
+   ser so do desktop — o pc.html nao carrega este arquivo. */
+html[data-bottombar="game"] .game-tabs { display: none; }
