@@ -214,7 +214,7 @@ export const INITIAL_RESERVATIONS = [
     duration: 1,
     price: 90,
     status: 'Confirmada',
-    statusClass: 'confirmado',
+    statusClass: 'pago',
     group: 'proxima'
   },
   {
@@ -237,8 +237,8 @@ export const INITIAL_RESERVATIONS = [
     endHour: '16:00',
     duration: 1,
     price: 80,
-    status: 'Concluida',
-    statusClass: 'confirmado',
+    status: 'Concluída',
+    statusClass: 'concluido',
     group: 'historico'
   }
 ];
@@ -471,4 +471,34 @@ export const CLUB_CHAT = [
   { clubId: 1, memberId: 'u-joao', name: 'João Pedro', text: 'Tranquilo, a gente aquece antes.', time: '2 dias atrás' },
   { clubId: 1, memberId: 'u-camila', name: 'Camila Rocha', text: 'Alguém pode levar colete claro e escuro?', time: '1 dia atrás' },
   { clubId: 1, memberId: 'u-gabriel', name: 'Gabriel Lisboa', text: 'Levo eu. Confirmem presença aí, galera.', time: '1 dia atrás' }
+];
+
+/* ═══════════════ Pessoas na plataforma ═══════════════
+   O app so conhecia CURRENT_USER — nao havia como responder "quantos se
+   cadastraram" nem "quem sumiu". Datas relativas a hoje para o painel nao
+   envelhecer sozinho.
+
+   lastActiveAt e o campo que sustenta a reativacao: quem passa de 7 dias
+   entra na fila de notificacao. */
+function diasAtras(dias) {
+  return new Date(Date.now() - dias * 86400000).toISOString();
+}
+
+export const USERS = [
+  { id: 'u-gabriel', name: 'Gabriel Lisboa', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(58), lastActiveAt: diasAtras(0) },
+  { id: 'u-rafael', name: 'Rafael Costa', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(54), lastActiveAt: diasAtras(1) },
+  { id: 'u-mariana', name: 'Mariana Alves', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(41), lastActiveAt: diasAtras(2) },
+  { id: 'u-joao', name: 'João Pedro', role: 'jogador', city: 'Aparecida de Goiânia, GO', createdAt: diasAtras(39), lastActiveAt: diasAtras(5) },
+  { id: 'u-camila', name: 'Camila Rocha', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(33), lastActiveAt: diasAtras(6) },
+  { id: 'u-thiago', name: 'Thiago Santos', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(28), lastActiveAt: diasAtras(9) },
+  { id: 'u-lucas', name: 'Lucas Oliveira', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(24), lastActiveAt: diasAtras(14) },
+  { id: 'u-pedro', name: 'Pedro Henrique', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(21), lastActiveAt: diasAtras(23) },
+  { id: 'u-ana', name: 'Ana Beatriz', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(17), lastActiveAt: diasAtras(31) },
+  { id: 'u-felipe', name: 'Felipe Augusto', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(12), lastActiveAt: diasAtras(3) },
+  { id: 'u-carlos', name: 'Carlos Almeida', role: 'dono', venueId: 1, city: 'Goiânia, GO', createdAt: diasAtras(70), lastActiveAt: diasAtras(0) },
+  { id: 'u-sandra', name: 'Sandra Beach', role: 'dono', venueId: 2, city: 'Goiânia, GO', createdAt: diasAtras(66), lastActiveAt: diasAtras(1) },
+  { id: 'u-ze', name: 'José Ribeiro', role: 'dono', venueId: 3, city: 'Goiânia, GO', createdAt: diasAtras(62), lastActiveAt: diasAtras(11) },
+  { id: 'u-marcos', name: 'Marcos Areia', role: 'dono', venueId: 4, city: 'Goiânia, GO', createdAt: diasAtras(45), lastActiveAt: diasAtras(4) },
+  { id: 'u-julia', name: 'Julia Spin', role: 'dono', venueId: 5, city: 'Goiânia, GO', createdAt: diasAtras(30), lastActiveAt: diasAtras(19) },
+  { id: 'u-bruno', name: 'Bruno Cesta', role: 'dono', venueId: 6, city: 'Goiânia, GO', createdAt: diasAtras(15), lastActiveAt: diasAtras(2) }
 ];

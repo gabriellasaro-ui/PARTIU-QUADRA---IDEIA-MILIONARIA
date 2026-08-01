@@ -287,3 +287,5 @@ body {
   .admin-side__foot { display: none; }
   .admin-main { padding: 20px 16px 40px; }
 }
+
+.tag--concluido { background: #eef0ee; color: #5b6560; }

@@ -8,7 +8,7 @@
    Le o mesmo armazenamento do app (chaves pq:*) e a mesma semente. Sem
    backend, isso significa que cada navegador enxerga o proprio dado; o
    painel diz isso na lateral em vez de fingir ser producao. */
-import { VENUES, CLUBS, PELADAS, INITIAL_RESERVATIONS } from '../../config/mock-data.js';
+import { VENUES, CLUBS, PELADAS, INITIAL_RESERVATIONS, USERS } from '../../config/mock-data.js';
 import { SERVICE_FEE_RATE } from '../../config/constants.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
@@ -19,7 +19,8 @@ const TITLES = {
   visao: ['Visão geral', 'A plataforma inteira num lugar só'],
   arenas: ['Arenas', 'Quem oferece quadra na plataforma'],
   reservas: ['Reservas', 'Todo volume que passou pelo app'],
-  clubes: ['Clubes', 'Os grupos que organizam pelada recorrente']
+  clubes: ['Clubes', 'Os grupos que organizam pelada recorrente'],
+  pessoas: ['Pessoas', 'Quem se cadastrou e quem anda sumido']
 };
 
 function escapeHtml(value) {
@@ -57,6 +58,12 @@ function corteDaPlataforma(valor) {
   return Number(valor || 0) * (SERVICE_FEE_RATE / (1 + SERVICE_FEE_RATE));
 }
 
+/* Dias desde a ultima atividade — e o unico numero que decide quem entra na
+   fila de reativacao, entao vive num lugar so. */
+function diasSemUsar(user, campo = 'lastActiveAt') {
+  return Math.floor((Date.now() - new Date(user[campo]).getTime()) / 86400000);
+}
+
 function kpi(label, valor, nota, destaque) {
   return `<article class="kpi${destaque ? ' kpi--strong' : ''}">
     <small>${escapeHtml(label)}</small>
@@ -72,12 +79,41 @@ function viewVisao() {
   const receita = Math.round(corteDaPlataforma(gmv) * 100) / 100;
   const ativas = lista.filter((v) => v.active !== false).length;
 
+  const jogadores = USERS.filter((u) => u.role === 'jogador');
+  const donos = USERS.filter((u) => u.role === 'dono');
+  const inativos = USERS.filter((u) => diasSemUsar(u) > 7);
+  const ativos = USERS.length - inativos.length;
+
   return `<div class="kpi-grid">
     ${kpi('Receita da plataforma', formatCurrency(receita), `taxa de ${Math.round(SERVICE_FEE_RATE * 100)}% sobre as reservas`, true)}
     ${kpi('Volume transacionado', formatCurrency(gmv), `${res.length} reservas`)}
-    ${kpi('Arenas ativas', ativas, `de ${lista.length} cadastradas`)}
+    ${kpi('Jogos marcados', peladas().length, 'peladas nascidas de reservas')}
     ${kpi('Planos mensalistas', planos().size, 'receita recorrente')}
   </div>
+
+  <div class="kpi-grid">
+    ${kpi('Cadastrados', USERS.length, `${jogadores.length} jogadores · ${donos.length} donos de quadra`)}
+    ${kpi('Ativos', ativos, 'usaram nos últimos 7 dias')}
+    ${kpi('Inativos há +7 dias', inativos.length, inativos.length ? 'candidatos a notificação' : 'ninguém sumido')}
+    ${kpi('Arenas ativas', ativas, `de ${lista.length} cadastradas`)}
+  </div>
+
+  ${inativos.length ? `<section class="panel">
+    <h2>Fila de reativação</h2>
+    <p class="muted" style="margin-bottom:14px">Quem não abre o app há mais de 7 dias. É esta lista que alimenta o disparo de notificação.</p>
+    <table class="tbl">
+      <thead><tr><th>Pessoa</th><th>Papel</th><th>Cidade</th><th>Sem usar</th><th>Cadastro</th></tr></thead>
+      <tbody>
+        ${inativos.sort((a, b) => diasSemUsar(b) - diasSemUsar(a)).map((u) => `<tr>
+          <td><strong>${escapeHtml(u.name)}</strong></td>
+          <td>${u.role === 'dono' ? 'Dono de quadra' : 'Jogador'}</td>
+          <td>${escapeHtml(u.city)}</td>
+          <td class="num"><span class="tag tag--pendente">${diasSemUsar(u)} dias</span></td>
+          <td class="num">${diasSemUsar(u, 'createdAt')} dias atrás</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </section>` : ''}
 
   <section class="panel">
     <h2>Últimas reservas</h2>
@@ -166,7 +202,31 @@ function viewClubes() {
   </section>`;
 }
 
-const VIEWS = { visao: viewVisao, arenas: viewArenas, reservas: viewReservas, clubes: viewClubes };
+function viewPessoas() {
+  const ordenados = [...USERS].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return `<section class="panel">
+    <h2>Todo mundo na plataforma</h2>
+    <table class="tbl">
+      <thead><tr><th>Pessoa</th><th>Papel</th><th>Cidade</th><th>Cadastro</th><th>Última atividade</th><th>Situação</th></tr></thead>
+      <tbody>
+        ${ordenados.map((u) => {
+          const dias = diasSemUsar(u);
+          const inativo = dias > 7;
+          return `<tr>
+            <td><strong>${escapeHtml(u.name)}</strong></td>
+            <td>${u.role === 'dono' ? 'Dono de quadra' : 'Jogador'}</td>
+            <td>${escapeHtml(u.city)}</td>
+            <td class="num">${diasSemUsar(u, 'createdAt')} dias atrás</td>
+            <td class="num">${dias === 0 ? 'hoje' : `${dias} dias atrás`}</td>
+            <td><span class="tag tag--${inativo ? 'pendente' : 'pago'}">${inativo ? 'Inativo' : 'Ativo'}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+const VIEWS = { visao: viewVisao, arenas: viewArenas, reservas: viewReservas, clubes: viewClubes, pessoas: viewPessoas };
 
 function render() {
   const pedido = location.hash.replace('#', '') || 'visao';

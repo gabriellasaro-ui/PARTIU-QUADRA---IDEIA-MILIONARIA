@@ -389,6 +389,10 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
 .status.pago { background: var(--mint); color: var(--green-700); }
 .status.confirmado { background: #e6f0ff; color: #1d4ed8; }
 .status.pendente { background: #fff3d6; color: #b45309; }
+/* Concluida e passado, nao um estado que pede atencao — cinza, nao azul.
+   Antes ela dividia o azul com "Confirmada", entao a mesma cor significava
+   duas coisas. */
+.status.concluido { background: #eef0ee; color: #5b6560; }
 
 /* ---------- gerente: grafico, faixas, insight ---------- */
 .chart-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 14px 14px 6px; box-shadow: var(--shadow-sm); }
