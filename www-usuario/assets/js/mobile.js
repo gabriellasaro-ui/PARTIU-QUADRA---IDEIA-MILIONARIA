@@ -1201,6 +1201,9 @@ export async function renderMobilePage(route, root) {
     activeUserMarker = null;
   }
   if (route.name !== 'home') stopGameCardTicker();
+  // A barra de baixo pertence a tela, nao ao app: toda rota comeca sem ela e
+  // quem precisa (renderGame / renderClub) reescreve o atributo.
+  delete document.documentElement.dataset.bottombar;
   currentRoute = route;
   const renderers = {
     home: renderHome,
@@ -1927,8 +1930,13 @@ function prefillClubForm(club) {
 }
 
 async function renderGame(root) {
+  // Otimista de proposito: a barra entra junto com a rota, sem piscar a
+  // tabbar enquanto a partida carrega. Se nao houver partida, ela sai e a
+  // navegacao normal volta — o estado vazio precisa de uma saida.
+  document.documentElement.dataset.bottombar = 'game';
   const status = await loadGame();
   if (status === 'ok') return;
+  delete document.documentElement.dataset.bottombar;
   // 'empty' = nao ha partida. 'error' = a tela nao montou — nao mentir dizendo
   // que nao ha jogo; o motivo real fica no console.
   root.innerHTML = status === 'empty'

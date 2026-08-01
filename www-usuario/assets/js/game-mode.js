@@ -8,6 +8,7 @@ let gameTimerInterval = null;
 let matchObserver = null;
 let isGameActive = false;
 let tvWakeLock = null;
+let gameTabsDelegated = false;
 
 function $id(id) { return document.getElementById(id); }
 
@@ -623,9 +624,18 @@ function selectGameTab(name) {
 }
 
 function initGameTabs() {
-  qsa('[data-game-tab]').forEach((tab) => {
-    tab.addEventListener('click', () => selectGameTab(tab.dataset.gameTab));
-  });
+  // Delegacao registrada uma unica vez. Antes era um listener por elemento,
+  // religado a cada loadGame(): as abas do topo morrem junto com o fragmento
+  // da rota, mas as do rodape vivem fora dele e acumulariam um listener a
+  // cada visita a #game. Um listener para a vida do modulo cobre as duas
+  // fileiras pelo mesmo caminho.
+  if (!gameTabsDelegated) {
+    gameTabsDelegated = true;
+    document.addEventListener('click', (event) => {
+      const tab = event.target.closest('[data-game-tab]');
+      if (tab) selectGameTab(tab.dataset.gameTab);
+    });
+  }
   // Com a bola rolando o cronometro e o que interessa; fora isso, a partida.
   selectGameTab(match?.phase === 'during-game' ? 'cronometro' : 'partida');
 }
