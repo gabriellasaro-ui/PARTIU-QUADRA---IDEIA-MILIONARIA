@@ -74,6 +74,7 @@
           <label><input type="radio" name="esporte" value="Futebol Society"><span><i class="ic" data-lucide="goal"></i>Futebol</span></label>
           <label><input type="radio" name="esporte" value="Futsal"><span><i class="ic" data-lucide="trophy"></i>Futsal</span></label>
           <label><input type="radio" name="esporte" value="Volei"><span><i class="ic" data-lucide="volleyball"></i>Volei</span></label>
+          <label><input type="radio" name="esporte" value="outros"><span><i class="ic" data-lucide="circle-ellipsis"></i>Outros</span></label>
         </div>
       </fieldset>
       <fieldset>
@@ -149,44 +150,6 @@
       <div class="profile-edit-actions">
         <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
         <button class="btn" type="submit"><i class="ic" data-lucide="check"></i>Salvar</button>
-      </div>
-    </form>
-  </section>
-</div>
-
-<!-- Agendar pelada (do clube ou avulsa) -->
-<div class="market-sheet" id="pelada-sheet" data-market-sheet hidden>
-  <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar"></button>
-  <section class="market-sheet__panel profile-edit-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="pelada-title">
-    <header class="market-sheet__head">
-      <div>
-        <span>Marcar jogo</span>
-        <h2 id="pelada-title">Agendar pelada</h2>
-      </div>
-      <button class="market-sheet__close" type="button" data-sheet-close aria-label="Fechar">
-        <i class="ic" data-lucide="x"></i>
-      </button>
-    </header>
-
-    <form class="profile-edit-form" data-pelada-form>
-      <fieldset class="pelada-kind" data-pelada-kind>
-        <legend>Para quem é</legend>
-        <label><input type="radio" name="kind" value="clube" checked><span><strong>Do clube</strong><small data-pelada-club-name>Seu clube</small></span></label>
-        <label><input type="radio" name="kind" value="avulsa"><span><strong>Avulsa</strong><small>Sem o time fixo</small></span></label>
-      </fieldset>
-      <div class="field"><label>Nome da pelada</label><input type="text" name="title" placeholder="Pelada de quinta" required maxlength="60"></div>
-      <div class="field"><label>Quadra</label><select name="venueId" data-venue-options required></select></div>
-      <div class="field-row">
-        <div class="field"><label>Data</label><input type="date" name="dateISO" required></div>
-        <div class="field"><label>Hora</label><input type="time" name="startTime" value="20:00" required></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Duração (min)</label><input type="number" name="duration" value="60" min="30" max="240" step="30" required></div>
-        <div class="field"><label>Máx. jogadores</label><input type="number" name="maxPlayers" value="14" min="2" max="40" required></div>
-      </div>
-      <div class="profile-edit-actions">
-        <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
-        <button class="btn" type="submit"><i class="ic" data-lucide="check"></i>Agendar</button>
       </div>
     </form>
   </section>

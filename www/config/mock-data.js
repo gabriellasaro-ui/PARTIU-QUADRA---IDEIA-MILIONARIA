@@ -15,9 +15,13 @@ export const SPORTS = [
 export const FEATURED_SPORTS = [
   'Futebol Society',
   'Futsal',
-  'Volei',
-  'Tenis'
+  'Volei'
 ];
+
+/* O foco e futebol, mas as outras quadras nao somem do app: caem em "Outros",
+   que filtra por exclusao. Sem isso, Beach Point, Top Spin e Cesta Cheia
+   ficariam sem nenhuma porta de entrada por esporte. */
+export const OTHER_SPORTS = SPORTS.filter((sport) => !FEATURED_SPORTS.includes(sport));
 
 export const VENUES = [
   {

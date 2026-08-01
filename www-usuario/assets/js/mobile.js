@@ -370,6 +370,11 @@ async function renderHome(root) {
           <span>${icon(SPORT_ICONS[sport] || 'trophy')}</span>
           <strong>${escapeHtml(sport.replace(' Society', ''))}</strong>
         </a>`)
+      .concat(`
+        <a class="sport-item" href="#quadras?esporte=outros">
+          <span>${icon('circle-ellipsis')}</span>
+          <strong>Outros</strong>
+        </a>`)
       .join('');
   }
   if (featured) featured.innerHTML = venues.map((venue) => venueCard(venue, { action: 'Reservar' })).join('');
@@ -940,6 +945,52 @@ async function renderPayment(root, route) {
   syncMobilePaymentChoice(root, walletAvailable ? method : method === 'wallet' ? 'pix' : method);
 }
 
+/* Toda pelada nasce de uma reserva — nunca de um formulario solto.
+
+   Deixar marcar pelada sem reservar transformaria o app numa agenda de
+   grupo e a arena nao faturaria nada, que e justamente o oposto do negocio.
+
+   No mensalista a quadra e do clube por um mes inteiro, entao as quatro
+   sessoes ja nascem juntas em vez de serem digitadas uma a uma. */
+async function criarPeladasDaReserva(context, code) {
+  const club = await venueService.myClub();
+  const user = await venueService.profile();
+  const { venue, plan, hour, duration, date, weekday } = context;
+
+  const sessoes = plan === 'mensalista'
+    ? Array.from({ length: 4 }, (_, i) => {
+        const d = parseLocalDate(date);
+        d.setDate(d.getDate() + i * 7);
+        return localDateValue(d);
+      })
+    : [date];
+
+  const titulo = plan === 'mensalista'
+    ? `Pelada de ${WEEKDAY_NAMES[weekday]}`
+    : `Jogo na ${venue.name}`;
+
+  for (const dateISO of sessoes) {
+    await venueService.savePelada({
+      clubId: club ? club.id : null,
+      kind: club ? 'clube' : 'avulsa',
+      title: titulo,
+      venueId: venue.id,
+      venueName: venue.name,
+      sport: venue.sport,
+      dateISO,
+      startTime: hour,
+      duration: duration * 60,
+      maxPlayers: 14,
+      organizerId: user.id,
+      reservationCode: code,
+      plan,
+      status: 'agendada',
+      attendance: { [user.id]: 'sim' }
+    });
+  }
+  return sessoes.length;
+}
+
 async function renderConfirmation(root, route) {
   const context = await bookingContext(route);
   if (!context) {
@@ -979,7 +1030,9 @@ async function renderConfirmation(root, route) {
     subtotal,
     serviceFee,
     price: total,
-    paymentMethod: method
+    paymentMethod: method,
+    plan: context.plan,
+    weekday: context.weekday
   };
 
   function approvalFlow(state) {
@@ -1044,6 +1097,9 @@ async function renderConfirmation(root, route) {
       statusClass: 'pago',
       group: 'proxima'
     });
+    // So aqui, e nao ao enviar o pedido: reserva recusada nao pode deixar
+    // pelada fantasma no clube.
+    await criarPeladasDaReserva(context, code);
     const conversation = await venueService.ensureConversationForVenue(venue);
     document.title = 'Reserva confirmada - Qadras';
     content.innerHTML = `
@@ -1432,39 +1488,6 @@ export function initMobileActions() {
       });
       closeMarketSheet(clubForm.closest('[data-market-sheet]'));
       window.pqToast?.(id ? 'Clube atualizado' : `${saved.name} criado!`);
-      const view = document.querySelector('[data-route-view]');
-      await renderClub(view);
-      window.pqRefreshIcons?.(view);
-      return;
-    }
-
-    const peladaForm = event.target.closest('[data-pelada-form]');
-    if (peladaForm) {
-      event.preventDefault();
-      if (!peladaForm.reportValidity()) return;
-      const data = new FormData(peladaForm);
-      const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
-      const kind = String(data.get('kind') || 'avulsa');
-      const venueId = Number(data.get('venueId'));
-      const venues = await venueService.list({});
-      const venue = venues.find((v) => v.id === venueId);
-      const saved = await venueService.savePelada({
-        clubId: kind === 'clube' && club ? club.id : null,
-        kind: club ? kind : 'avulsa',
-        title: String(data.get('title') || '').trim(),
-        venueId,
-        venueName: venue?.name || '',
-        sport: venue?.sport || club?.sport || '',
-        dateISO: String(data.get('dateISO') || ''),
-        startTime: String(data.get('startTime') || ''),
-        duration: Number(data.get('duration')) || 60,
-        maxPlayers: Number(data.get('maxPlayers')) || 14,
-        organizerId: user.id,
-        status: 'agendada',
-        attendance: { [user.id]: 'sim' }
-      });
-      closeMarketSheet(peladaForm.closest('[data-market-sheet]'));
-      window.pqToast?.(`${saved.title} agendada!`);
       const view = document.querySelector('[data-route-view]');
       await renderClub(view);
       window.pqRefreshIcons?.(view);

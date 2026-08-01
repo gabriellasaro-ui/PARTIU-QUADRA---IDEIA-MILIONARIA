@@ -16,7 +16,7 @@
       <h3>Você ainda não tem um clube</h3>
       <p>O clube guarda seu time e organiza a pelada de sempre: quem entra, quando joga e quem confirmou.</p>
       <button class="btn block" type="button" data-sheet-open="club-edit-sheet">Criar meu clube</button>
-      <button class="btn outline block" type="button" data-sheet-open="pelada-sheet">Agendar pelada avulsa</button>
+      <a class="btn outline block" href="#quadras">Reservar uma quadra</a>
     </div>
 
     <div class="mobile-section-head">
@@ -47,9 +47,12 @@
       </div>
     </section>
 
-    <button class="btn block club-schedule" type="button" data-sheet-open="pelada-sheet">
-      <i class="ic" data-lucide="calendar-plus"></i>Agendar pelada
-    </button>
+    <!-- Leva a reservar a quadra, nao a um formulario: a pelada nasce da
+         reserva. Marcar sem reservar viraria agenda de grupo, e a arena
+         (que e o negocio) nao entraria na conta. -->
+    <a class="btn block club-schedule" href="#quadras">
+      <i class="ic" data-lucide="calendar-plus"></i>Marcar pelada — reservar quadra
+    </a>
 
     <!-- Seções alternadas pela barra inferior. Mesmo idioma das abas da
          partida: [data-*-panel] + o atributo hidden. -->

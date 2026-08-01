@@ -9,6 +9,7 @@ import {
   INITIAL_RESERVATIONS,
   SPORTS,
   FEATURED_SPORTS,
+  OTHER_SPORTS,
   VENUES,
   WALLET,
   CLUBS,
@@ -58,8 +59,15 @@ export const venueService = {
     const data = await fromApiOrLocal('/api/quadras', { quadras: VENUES });
     const venues = Array.isArray(data) ? data : (data?.quadras || []);
     const sport = String(filters.sport || '').trim();
+    // "outros" e um filtro por exclusao: tudo que nao esta em destaque.
+    const matches = (venue) => {
+      if (!sport) return true;
+      const nome = venue.esporte || venue.sport;
+      if (sport === 'outros') return OTHER_SPORTS.includes(nome);
+      return nome === sport;
+    };
     return venues
-      .filter((venue) => !sport || venue.esporte === sport || venue.sport === sport)
+      .filter(matches)
       .map(applyOverrides)
       .sort((a, b) => (a.distancia || a.distance) - (b.distancia || b.distance));
   },

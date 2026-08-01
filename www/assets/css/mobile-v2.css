@@ -5466,6 +5466,13 @@ html[data-route="mapa"] .phone {
 /* Reaproveita .profile-hero (identidade), .profile-stats, .res-card (pelada),
    .payment-row (membro), .seg (presenca) e .mobile-bubbles (conversa).
    O que segue e so o que esses idiomas nao cobrem. */
+/* Na Conversa o cabecalho e o botao de reservar so ocupam espaco — a tela
+   e para ler e escrever mensagem. */
+.clube-page:has([data-club-panel="chat"]:not([hidden])) .profile-hero,
+.clube-page:has([data-club-panel="chat"]:not([hidden])) .club-schedule {
+  display: none;
+}
+
 /* Cabecalho do clube centralizado: e uma identidade, nao um formulario —
    o eixo central da o ar de "escudo do time". */
 .clube-page .profile-identity {
