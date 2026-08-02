@@ -93,26 +93,6 @@ export function bookingWeekday(booking, hoje = new Date()) {
   return ROTULO_DIA[booking.data.split(',')[0]] ?? 0;
 }
 
-/* A data concreta da reserva. "Amanhã" nao pode virar so um indice de dia da
-   semana: no domingo isso da segunda-feira, e o modulo joga o evento na
-   segunda que ja passou. Aqui ele cai no dia certo, ainda que seja na
-   semana seguinte.
-
-   Os rotulos explicitos ("Qui, 02/07") sao dado de demonstracao ancorado na
-   semana corrente — ficam no dia da semana correspondente. */
-export function bookingDate(booking, hoje = new Date()) {
-  const base = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  if (booking.data === 'Hoje') return base;
-  if (booking.data === 'Amanhã') {
-    base.setDate(base.getDate() + 1);
-    return base;
-  }
-  const alvo = ROTULO_DIA[booking.data.split(',')[0]] ?? 0;
-  const segunda = new Date(base);
-  segunda.setDate(segunda.getDate() - ((segunda.getDay() + 6) % 7) + alvo);
-  return segunda;
-}
-
 /* '19:00 – 20:00' -> { inicio: 19, fim: 20 }. O travessao do dado antigo e
    en dash, nao hifen. */
 export function bookingHours(booking) {

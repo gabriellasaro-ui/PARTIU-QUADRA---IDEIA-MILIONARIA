@@ -11,6 +11,8 @@ import { renderManagerCourts, initManagerCourts } from './manager-courts.js';
 import { renderManagerReservations, initManagerReservations } from './manager-reservations.js';
 import { renderManagerMembers, initManagerMembers } from './manager-members.js';
 import { renderManagerOverview } from './manager-overview.js';
+import { renderManagerAgenda, initManagerAgenda } from './manager-agenda.js';
+import { renderManagerFinance, initManagerFinance } from './manager-finance.js';
 
 const MOBILE_ROUTES = {
   home: {
@@ -441,6 +443,8 @@ async function renderDesktopRoute() {
   if (routeName === 'quadras') renderManagerCourts(view);
   if (routeName === 'reservas') renderManagerReservations(view);
   if (routeName === 'mensalistas') await renderManagerMembers(view);
+  if (routeName === 'agenda') renderManagerAgenda(view);
+  if (routeName === 'financeiro') renderManagerFinance(view);
   markActiveNav();
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -451,6 +455,8 @@ function initDesktopRouter() {
   initManagerCourts();
   initManagerReservations();
   initManagerMembers();
+  initManagerAgenda();
+  initManagerFinance();
   window.addEventListener('hashchange', renderDesktopRoute);
   return renderDesktopRoute();
 }

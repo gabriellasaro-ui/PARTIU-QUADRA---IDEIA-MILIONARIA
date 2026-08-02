@@ -1,87 +1,100 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
-<div class="kpi-row">
-  <div class="kpi">
-    <div class="top"><span class="ico"><svg class="ic"><use href="#i-dollar"/></svg></span><span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +12%</span></div>
-    <div class="val num">R$ 4.820</div>
-    <div class="lbl">Receita da semana</div>
-  </div>
-  <div class="kpi">
-    <div class="top"><span class="ico"><svg class="ic"><use href="#i-wallet"/></svg></span><span class="delta"><svg class="ic"><use href="#i-check"/></svg> Hoje</span></div>
-    <div class="val num">R$ 685</div>
-    <div class="lbl">A receber</div>
-  </div>
-  <div class="kpi">
-    <div class="top"><span class="ico"><svg class="ic"><use href="#i-card"/></svg></span><span class="delta"><svg class="ic"><use href="#i-trend"/></svg> 97%</span></div>
-    <div class="val num">32</div>
-    <div class="lbl">Pagamentos OK</div>
+<!-- Financeiro — restaurado do app antigo (_legacy/.../g_financeiro.html).
+
+     A refatoracao tinha deixado numeros escritos na mao (R$ 4.820), um
+     grafico com o path fixo e clientes que nao existem no sistema. Voltam o
+     seletor de periodo, o card de proximo repasse, a rosca de destino da
+     receita, o ticket medio e as duas tabelas exportaveis — agora
+     calculados por assets/js/manager-finance.js. -->
+<!-- Duas caixas com os mesmos botoes: o app antigo tinha o seletor do desktop
+     no topbar da rota e o do mobile no conteudo. O topbar aqui e um
+     componente compartilhado, entao os dois descem para ca — a folha esconde
+     um ou outro conforme a largura. -->
+<div class="manager-finance-toolbar">
+  <div class="period" data-seg aria-label="Período financeiro">
+    <button type="button" data-finance-period="hoje">Hoje</button>
+    <button type="button" class="on" data-finance-period="7d">7 dias</button>
+    <button type="button" data-finance-period="30d">30 dias</button>
   </div>
 </div>
 
-<div class="dash-cols">
-  <div class="panel">
-    <div class="panel-head">
-      <div><h2>Receita por dia</h2><span class="panel-sub">Ultimos 7 dias</span></div>
-      <button class="btn btn-soft btn-xs" data-csv-table="#finance-table" data-csv-name="financeiro.csv">Exportar CSV</button>
+<div class="manager-mobile-period" data-seg aria-label="Período financeiro">
+  <button type="button" data-finance-period="hoje">Hoje</button>
+  <button type="button" class="on" data-finance-period="7d">7 dias</button>
+  <button type="button" data-finance-period="30d">30 dias</button>
+</div>
+
+<section class="manager-finance-summary">
+  <article class="manager-finance-balance">
+    <span class="manager-eyebrow"><i></i> Próximo repasse</span>
+    <strong class="num" data-finance-payout>R$ 0,00</strong>
+    <p>Valor líquido estimado após a comissão da plataforma.</p>
+    <div><span><svg class="ic sm"><use href="#i-trend"/></svg> 11% acima da semana passada</span><small>Atualizado agora</small></div>
+  </article>
+  <div class="manager-finance-metrics">
+    <article><span><svg class="ic"><use href="#i-dollar"/></svg></span><div><small>Faturamento bruto</small><strong class="num" data-finance-gross>R$ 0,00</strong></div></article>
+    <article><span><svg class="ic"><use href="#i-shield"/></svg></span><div><small data-finance-fee-pct>Comissão</small><strong class="num" data-finance-fee>R$ 0,00</strong></div></article>
+    <article><span><svg class="ic"><use href="#i-calendar"/></svg></span><div><small>Reservas no período</small><strong class="num" data-finance-count>0</strong></div></article>
+  </div>
+</section>
+
+<section class="manager-panel manager-finance-analytics">
+  <div class="manager-finance-chart">
+    <div class="manager-panel__head">
+      <div><span>Desempenho</span><h2>Faturamento na semana</h2></div>
+      <small>Últimos 7 dias</small>
     </div>
-    <svg class="lc" viewBox="0 0 620 220" role="img" aria-label="Receita semanal">
-      <path class="lc-area" d="M40 168 L120 132 L200 150 L280 102 L360 116 L440 62 L560 84 L560 190 L40 190 Z" fill="rgba(21,115,71,.14)"/>
-      <path class="lc-line" d="M40 168 L120 132 L200 150 L280 102 L360 116 L440 62 L560 84"/>
-      <circle class="lc-dot" cx="40" cy="168" r="3.4"/>
-      <circle class="lc-dot" cx="120" cy="132" r="3.4"/>
-      <circle class="lc-dot" cx="200" cy="150" r="3.4"/>
-      <circle class="lc-dot peak" cx="440" cy="62" r="5"/>
+    <svg class="lc" viewBox="0 0 620 240" role="img" aria-label="Faturamento por dia" data-finance-chart>
+      <defs><linearGradient id="lcfin" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#16a765" stop-opacity=".22"/><stop offset="1" stop-color="#16a765" stop-opacity="0"/>
+      </linearGradient></defs>
+      <path class="lc-area" data-finance-area d="" fill="url(#lcfin)"/>
+      <path class="lc-line" data-finance-line d=""/>
     </svg>
   </div>
 
-  <div class="panel">
-    <div class="panel-head"><div><h2>Repasses</h2><span class="panel-sub">Resumo operacional</span></div></div>
-    <div class="faixas">
-      <div class="faixa"><div class="faixa-top"><span>Pago <small>cartao e Pix</small></span><b>97%</b></div><div class="faixa-bar"><span style="width: 97%;"></span></div></div>
-      <div class="faixa"><div class="faixa-top"><span>Pendente <small>confirmacao manual</small></span><b>3%</b></div><div class="faixa-bar"><span style="width: 3%;"></span></div></div>
+  <div class="manager-finance-breakdown">
+    <div class="manager-panel__head">
+      <div><span>Composição</span><h2>Destino da receita</h2></div>
+    </div>
+    <div class="manager-finance-donut-wrap">
+      <div class="manager-finance-donut" data-finance-donut role="img">
+        <span><strong>95%</strong><small>líquido</small></span>
+      </div>
+      <div class="manager-finance-legend">
+        <p><i class="is-net"></i><span><strong>Arena</strong><small class="num" data-finance-net-arena>R$ 0,00</small></span></p>
+        <p><i class="is-fee"></i><span><strong>Comissão Qadras</strong><small class="num" data-finance-net-fee>R$ 0,00</small></span></p>
+      </div>
+    </div>
+    <div class="manager-finance-health">
+      <div><span>Ticket médio</span><strong class="num" data-finance-ticket>R$ 0,00</strong></div>
+      <div><span>Ocupação média</span><strong class="num" data-finance-occ>0%</strong></div>
     </div>
   </div>
-</div>
+</section>
 
-<div class="panel" style="margin-top:16px;">
-  <div class="panel-head"><h2>Movimentacoes</h2><span class="panel-sub">Entradas recentes</span></div>
-  <table class="tbl" id="finance-table">
-    <thead><tr><th>Codigo</th><th>Cliente</th><th>Metodo</th><th>Valor</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr><td class="num">PQ-1934</td><td>Matheus Rocha</td><td>Pix</td><td class="val num">R$ 140</td><td><span class="status pago">Pago</span></td></tr>
-      <tr><td class="num">PQ-1935</td><td>Bruno Lima</td><td>Cartao</td><td class="val num">R$ 120</td><td><span class="status confirmado">Confirmado</span></td></tr>
-      <tr><td class="num">PQ-1936</td><td>Carol Souza</td><td>Pix</td><td class="val num">R$ 110</td><td><span class="status pendente">Pendente</span></td></tr>
-    </tbody>
-  </table>
-</div>
+<section class="manager-panel manager-finance-ledger">
+  <div class="manager-panel__head">
+    <div><span>Receitas</span><h2>Reservas faturadas</h2></div>
+    <a href="#" data-csv-table="#tbl-receitas" data-csv-name="receitas-qadras.csv">Exportar CSV</a>
+  </div>
+  <div class="manager-table-wrap">
+    <table class="tbl manager-finance-table" id="tbl-receitas">
+      <thead><tr><th>Cliente</th><th>Data</th><th>Bruto</th><th>Comissão</th><th>Líquido</th><th>Status</th></tr></thead>
+      <tbody data-finance-ledger></tbody>
+    </table>
+  </div>
+</section>
 
-<!-- Secoes que existiam no app antigo e se perderam na refatoracao. -->
-<div class="panel">
-  <div class="panel-head">
-    <div>
-      <h2>Destino da receita</h2>
-      <span class="panel-sub">Para onde vai cada real que entra</span>
-    </div>
+<section class="manager-panel manager-finance-ledger manager-finance-payouts">
+  <div class="manager-panel__head">
+    <div><span>Conciliação</span><h2>Repasses da Qadras</h2><p>Confira o que já entrou e os valores que ainda serão recebidos.</p></div>
+    <a href="#" data-csv-table="#tbl-repasses" data-csv-name="repasses-qadras.csv">Exportar CSV</a>
   </div>
-  <div class="ops-list">
-    <div class="ops-item"><div><strong>Repasse para a arena</strong><span>95% do valor da reserva</span></div><b>R$ 4.579</b></div>
-    <div class="ops-item"><div><strong>Taxa da Qadras</strong><span>5% sobre cada reserva</span></div><b>R$ 241</b></div>
-    <div class="ops-item"><div><strong>Aguardando compensacao</strong><span>Pix cai em ate 1 dia util</span></div><b>R$ 320</b></div>
+  <div class="manager-table-wrap">
+    <table class="tbl manager-finance-table" id="tbl-repasses">
+      <thead><tr><th>Período</th><th>Reservas</th><th>Bruto</th><th>Comissão</th><th>Líquido</th><th>Status</th></tr></thead>
+      <tbody data-finance-payouts></tbody>
+    </table>
   </div>
-</div>
-
-<div class="panel">
-  <div class="panel-head">
-    <div>
-      <h2>Repasses da Qadras</h2>
-      <span class="panel-sub">Historico do que ja caiu na conta da arena</span>
-    </div>
-  </div>
-  <table class="tbl">
-    <thead><tr><th>Periodo</th><th>Reservas</th><th>Bruto</th><th>Taxa</th><th>Liquido</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr><td>01 a 07 deste mes</td><td class="num">32</td><td class="num">R$ 4.820</td><td class="num">R$ 241</td><td class="val num">R$ 4.579</td><td><span class="status pago">Pago</span></td></tr>
-      <tr><td>25 a 31 do mes passado</td><td class="num">28</td><td class="num">R$ 4.120</td><td class="num">R$ 206</td><td class="val num">R$ 3.914</td><td><span class="status pago">Pago</span></td></tr>
-      <tr><td>18 a 24 do mes passado</td><td class="num">31</td><td class="num">R$ 4.505</td><td class="num">R$ 225</td><td class="val num">R$ 4.280</td><td><span class="status pago">Pago</span></td></tr>
-    </tbody>
-  </table>
-</div>
+  <p class="manager-finance-note"><svg class="ic sm"><use href="#i-shield"/></svg><span>A comissão incide somente sobre reservas faturadas. Cada repasse permanece disponível para conferência e exportação.</span></p>
+</section>

@@ -3337,3 +3337,23 @@ html[data-manager-app] .period a.on,
 html[data-manager-app] .period button.on {
   box-shadow: none !important;
 }
+
+/* Controles que o app antigo mantinha no topbar de cada rota. O topbar aqui
+   e um componente compartilhado, entao eles vivem no conteudo — e cada um
+   aparece so na largura a que pertence. */
+html[data-manager-app] .manager-finance-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+html[data-manager-app] .cal-toolbar .period {
+  margin-left: auto;
+}
+
+@media (max-width: 900px) {
+  html[data-manager-app] .manager-finance-toolbar,
+  html[data-manager-app] .cal-toolbar .period {
+    display: none;
+  }
+}

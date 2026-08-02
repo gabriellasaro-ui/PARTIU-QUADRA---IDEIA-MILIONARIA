@@ -1,10 +1,18 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<!-- Agenda — restaurada do app antigo (_legacy/.../g_agenda.html).
+
+     A refatoracao tinha deixado uma grade escrita na mao, com quatro nomes
+     inventados e sem filtro de quadra, navegacao de semana, lista por dia no
+     mobile ou detalhe do agendamento. Tudo isso volta aqui, preenchido por
+     assets/js/manager-agenda.js a partir das reservas da arena. -->
 <div class="cal-toolbar">
   <div class="cal-range">
-    <a class="cal-nav" href="./dashboard.html#agenda" aria-label="Semana anterior"><svg class="ic sm"><use href="#i-left"/></svg></a>
-    <strong>Semana atual</strong>
-    <a class="cal-nav" href="./dashboard.html#agenda" aria-label="Proxima semana"><svg class="ic sm"><use href="#i-right"/></svg></a>
+    <button class="cal-nav" type="button" data-agenda-week="-1" aria-label="Semana anterior"><svg class="ic sm"><use href="#i-left"/></svg></button>
+    <strong data-agenda-range>Semana atual</strong>
+    <button class="cal-nav" type="button" data-agenda-week="1" aria-label="Próxima semana"><svg class="ic sm"><use href="#i-right"/></svg></button>
   </div>
+  <!-- No app antigo este filtro morava no topbar da rota. O topbar aqui e um
+       componente compartilhado, entao ele desce para a barra da agenda. -->
+  <div class="period" data-seg data-agenda-courts aria-label="Filtrar quadra"></div>
   <div class="cal-legend">
     <span><i class="pago"></i> Pago</span>
     <span><i class="confirmado"></i> Confirmado</span>
@@ -12,47 +20,47 @@
   </div>
 </div>
 
-<div class="cal">
-  <div class="cal-head">
-    <div class="ch-gut"></div>
-    <div class="ch-day today"><div class="d">Seg</div><div class="n">28</div></div>
-    <div class="ch-day"><div class="d">Ter</div><div class="n">29</div></div>
-    <div class="ch-day"><div class="d">Qua</div><div class="n">30</div></div>
-    <div class="ch-day"><div class="d">Qui</div><div class="n">31</div></div>
-    <div class="ch-day"><div class="d">Sex</div><div class="n">01</div></div>
-    <div class="ch-day"><div class="d">Sab</div><div class="n">02</div></div>
-    <div class="ch-day"><div class="d">Dom</div><div class="n">03</div></div>
-  </div>
+<div class="manager-agenda-court-filter" data-seg data-agenda-courts aria-label="Filtrar quadra"></div>
 
-  <div class="cal-body" style="--hourh: 58px;">
-    <div class="cal-gutter">
-      <div class="hr"><span>08:00</span></div>
-      <div class="hr"><span>09:00</span></div>
-      <div class="hr"><span>10:00</span></div>
-      <div class="hr"><span>11:00</span></div>
-      <div class="hr"><span>12:00</span></div>
-      <div class="hr"><span>13:00</span></div>
-      <div class="hr"><span>14:00</span></div>
-      <div class="hr"><span>15:00</span></div>
-      <div class="hr"><span>16:00</span></div>
-      <div class="hr"><span>17:00</span></div>
-      <div class="hr"><span>18:00</span></div>
-      <div class="hr"><span>19:00</span></div>
+<!-- Uma reserva por linha, dia a dia. No desktop a grade abaixo assume. -->
+<div class="manager-agenda-mobile" data-agenda-mobile></div>
+
+<div class="manager-agenda-desktop">
+  <div class="cal">
+    <div class="cal-head" data-agenda-head></div>
+    <div class="cal-body" data-agenda-body></div>
+  </div>
+</div>
+
+<div class="modal" data-agenda-event-modal hidden>
+  <div class="modal-backdrop" data-agenda-event-close></div>
+  <div class="modal-box ev-modal">
+    <div class="modal-head">
+      <h3>Detalhes do agendamento</h3>
+      <button class="modal-x" type="button" data-agenda-event-close aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
     </div>
-    <div class="cal-col today" style="min-height: 696px;">
-      <button class="cal-ev pago" style="top: 570px; height: 52px;" data-toast="Reserva de Matheus Rocha"><span class="t">Matheus Rocha</span><span class="h">19:00</span></button>
+    <div class="modal-body">
+      <div class="ev-person">
+        <span class="ev-avatar" data-ev-ini>?</span>
+        <div class="ev-person-info">
+          <strong data-ev-cli>—</strong>
+          <span class="ev-phone"><svg class="ic sm"><use href="#i-phone"/></svg> <span data-ev-tel>—</span></span>
+        </div>
+        <span class="status" data-ev-status>—</span>
+      </div>
+
+      <div class="ev-rows">
+        <div class="ev-row"><span class="k"><svg class="ic"><use href="#i-grid"/></svg> Quadra</span><span class="v" data-ev-quadra>—</span></div>
+        <div class="ev-row"><span class="k"><svg class="ic"><use href="#i-calendar"/></svg> Dia</span><span class="v" data-ev-dia>—</span></div>
+        <div class="ev-row"><span class="k"><svg class="ic"><use href="#i-clock"/></svg> Horário</span><span class="v num" data-ev-hora>—</span></div>
+        <div class="ev-row"><span class="k"><svg class="ic"><use href="#i-clock"/></svg> Duração</span><span class="v" data-ev-dur>—</span></div>
+        <div class="ev-row"><span class="k"><svg class="ic"><use href="#i-dollar"/></svg> Valor</span><span class="v num" data-ev-valor>—</span></div>
+        <div class="ev-row"><span class="k"><svg class="ic"><use href="#i-hash"/></svg> Código</span><span class="v num" data-ev-codigo>—</span></div>
+      </div>
     </div>
-    <div class="cal-col" style="min-height: 696px;">
-      <button class="cal-ev confirmado" style="top: 512px; height: 52px;" data-toast="Reserva de Bruno Lima"><span class="t">Bruno Lima</span><span class="h">18:00</span></button>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-agenda-event-close>Fechar</button>
+      <a class="btn btn-primary" href="./dashboard.html#mensagens"><svg class="ic sm"><use href="#i-chat"/></svg> Falar com o cliente</a>
     </div>
-    <div class="cal-col" style="min-height: 696px;">
-      <button class="cal-ev pendente" style="top: 570px; height: 52px;" data-toast="Reserva pendente"><span class="t">Carol Souza</span><span class="h">19:00</span></button>
-    </div>
-    <div class="cal-col" style="min-height: 696px;"></div>
-    <div class="cal-col" style="min-height: 696px;">
-      <button class="cal-ev pago" style="top: 628px; height: 52px;" data-toast="Reserva de Rafael Mendes"><span class="t">Rafael Mendes</span><span class="h">20:00</span></button>
-    </div>
-    <div class="cal-col" style="min-height: 696px;"></div>
-    <div class="cal-col" style="min-height: 696px;"></div>
   </div>
 </div>
