@@ -1,0 +1,313 @@
+/* Formularios do gerente: nova reserva, cadastro de quadra e configurações.
+
+   Sao as tres telas de formulario do app antigo. As duas primeiras nunca
+   tinham sido portadas; a terceira tinha perdido metade dos blocos.
+
+   Os switches sao `<span class="switch">` do CSS antigo, nao <input>. Eles
+   nao entram no FormData sozinho — cada tela le o estado deles na mao. */
+import {
+  ARENA_PROFILE, ARENA_COUPONS, SPORTS, AMENITIES
+} from '../../config/manager-data.js';
+import { courts, saveCourt } from './manager-courts.js';
+import { addBooking, setPageMeta } from './manager-bookings.js';
+import storage from '../../storage/storage.js';
+
+const PROFILE_KEY = 'manager-profile';
+const COUPONS_KEY = 'manager-coupons';
+const AMENITIES_KEY = 'manager-amenities';
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[char]));
+}
+
+const profile = () => ({ ...ARENA_PROFILE, ...storage.get(PROFILE_KEY, {}) });
+const coupons = () => storage.get(COUPONS_KEY, ARENA_COUPONS);
+
+const horas = (de, ate, selecionada) => {
+  let html = '';
+  for (let h = de; h <= ate; h += 1) {
+    const rotulo = `${String(h).padStart(2, '0')}:00`;
+    html += `<option${h === selecionada ? ' selected' : ''}>${rotulo}</option>`;
+  }
+  return html;
+};
+
+/* Liga um switch visual: sem <input> por tras, o estado e a classe. */
+function pintarSwitch(el, ligado) {
+  el.classList.toggle('on', Boolean(ligado));
+  el.setAttribute('aria-checked', String(Boolean(ligado)));
+}
+
+// ---------------------------------------------------------------- nova reserva
+
+export function renderManagerBookingForm(root) {
+  const form = root.querySelector('[data-booking-form]');
+  if (!form) return;
+
+  const quadras = root.querySelector('[data-booking-courts]');
+  if (quadras) quadras.innerHTML = courts().map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
+
+  const inicio = root.querySelector('[data-booking-hours]');
+  if (inicio) inicio.innerHTML = horas(6, 23, 19);
+
+  window.pqRefreshIcons?.(root);
+}
+
+// ------------------------------------------------------------- cadastro quadra
+
+/* O id vem do hash: #quadra/2 edita; #quadra sozinho cadastra. */
+const courtIdFromHash = () => (location.hash.split('/')[1] || '').trim();
+
+export function renderManagerCourtForm(root) {
+  const form = root.querySelector('[data-court-form]');
+  if (!form) return;
+
+  const id = courtIdFromHash();
+  const quadra = id ? courts().find((c) => String(c.id) === id) : null;
+
+  setPageMeta(
+    quadra ? `Editar ${quadra.label}` : 'Cadastrar quadra',
+    quadra ? 'Ajuste os dados do espaço' : 'Adicione um novo espaço à sua arena'
+  );
+
+  const esportes = root.querySelector('[data-court-sports]');
+  if (esportes) {
+    esportes.innerHTML = SPORTS.map((s) =>
+      `<option${quadra && quadra.sport === s ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
+  }
+  const abre = root.querySelector('[data-court-open]');
+  if (abre) abre.innerHTML = horas(6, 15, quadra?.abre ?? 8);
+  const fecha = root.querySelector('[data-court-close]');
+  if (fecha) fecha.innerHTML = horas(16, 23, quadra?.fecha ?? 23);
+
+  const comodidades = storage.get(AMENITIES_KEY, null) || AMENITIES;
+  const caixa = root.querySelector('[data-court-amenities]');
+  if (caixa) {
+    caixa.innerHTML = comodidades.map((a, i) =>
+      `<label class="switch-row"${i === comodidades.length - 1 ? ' style="border-bottom:none; padding-bottom:0;"' : ''}>
+        <span>${escapeHtml(a.label)}</span>
+        <span class="switch${a.on ? ' on' : ''}" data-switch="amenity:${escapeHtml(a.id)}" role="switch" tabindex="0" aria-checked="${a.on}"></span>
+      </label>`).join('');
+  }
+
+  form.elements.id.value = quadra?.id || '';
+  form.elements.label.value = quadra?.label || '';
+  form.elements.bairro.value = quadra?.bairro || '';
+  form.elements.descricao.value = quadra?.descricao || '';
+  form.elements.price.value = quadra?.price ?? 120;
+  form.elements.priceMonthly.value = quadra?.priceMonthly ?? 408;
+
+  const foto = root.querySelector('[data-court-photo]');
+  if (foto) {
+    foto.textContent = quadra ? '' : '+';
+    foto.style.backgroundImage = quadra ? `url('${quadra.photo}')` : '';
+    foto.style.backgroundSize = 'cover';
+    foto.style.backgroundPosition = 'center';
+  }
+  const rotuloFoto = root.querySelector('[data-court-photo-label]');
+  if (rotuloFoto) rotuloFoto.textContent = quadra ? 'Trocar foto' : 'Enviar foto';
+
+  const ativo = root.querySelector('[data-switch="active"]');
+  if (ativo) pintarSwitch(ativo, quadra ? quadra.active : true);
+
+  const enviar = root.querySelector('[data-court-submit]');
+  if (enviar) enviar.textContent = quadra ? 'Salvar alterações' : 'Cadastrar quadra';
+
+  window.pqRefreshIcons?.(root);
+}
+
+// ------------------------------------------------------------------ configuracoes
+
+function renderCupons(root) {
+  const lista = root.querySelector('[data-coupon-list]');
+  if (!lista) return;
+  const atuais = coupons();
+  lista.innerHTML = atuais.length
+    ? atuais.map((c) => `<article class="manager-coupon" data-coupon-id="${escapeHtml(c.id)}">
+        <span><svg class="ic"><use href="#i-gift"/></svg></span>
+        <div><strong>${escapeHtml(c.code)}</strong><small>${c.discount}% de desconto · válido até ${escapeHtml(formatarData(c.expires))}</small></div>
+        <button type="button" data-coupon-remove="${escapeHtml(c.id)}" aria-label="Remover cupom ${escapeHtml(c.code)}"><svg class="ic sm"><use href="#i-x"/></svg></button>
+      </article>`).join('')
+    : '<p class="panel-sub">Nenhuma campanha ativa. Um cupom ajuda a preencher os horários mais vazios.</p>';
+  window.pqRefreshIcons?.(lista);
+}
+
+const formatarData = (iso) => {
+  const [a, m, d] = String(iso).split('-');
+  return d ? `${d}/${m}` : iso;
+};
+
+export function renderManagerSettings(root) {
+  const form = root.querySelector('[data-settings-form]');
+  if (!form) return;
+
+  const dados = profile();
+  const esportes = root.querySelector('[data-settings-sports]');
+  if (esportes) {
+    esportes.innerHTML = SPORTS.map((s) =>
+      `<option${dados.esporte === s ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
+  }
+
+  ['nome', 'descricao', 'endereco', 'telefone', 'email', 'pixTipo', 'pixChave', 'pixTitular']
+    .forEach((campo) => {
+      if (form.elements[campo]) form.elements[campo].value = dados[campo] ?? '';
+    });
+
+  // Contagem real das quadras ativas — no template antigo era "2" fixo, e
+  // desencontrava de Minhas quadras assim que a arena pausasse uma.
+  if (form.elements.quadrasAtivas) {
+    form.elements.quadrasAtivas.value = courts().filter((c) => c.active).length;
+  }
+
+  root.querySelectorAll('[data-switch]').forEach((el) => {
+    const chave = el.dataset.switch;
+    if (chave.startsWith('amenity:')) return;
+    pintarSwitch(el, dados[chave]);
+  });
+
+  const seletor = root.querySelector('[data-coupon-courts]');
+  if (seletor) {
+    seletor.innerHTML = '<option>Todas as quadras</option>'
+      + courts().map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
+  }
+
+  renderCupons(root);
+  window.pqRefreshIcons?.(root);
+}
+
+// ------------------------------------------------------------------------ eventos
+
+export function initManagerForms() {
+  document.addEventListener('click', (event) => {
+    const root = document.querySelector('[data-desktop-route-view]');
+    if (!root) return;
+
+    // Um switch alterna na hora; o valor so e gravado quando o form e salvo.
+    const chave = event.target.closest('[data-switch]');
+    if (chave) {
+      event.preventDefault();
+      pintarSwitch(chave, !chave.classList.contains('on'));
+      return;
+    }
+
+    if (event.target.closest('[data-coupon-new]')) {
+      root.querySelector('[data-coupon-dialog]').hidden = false;
+      return;
+    }
+    if (event.target.closest('[data-coupon-cancel]')) {
+      root.querySelector('[data-coupon-dialog]').hidden = true;
+      return;
+    }
+
+    const remover = event.target.closest('[data-coupon-remove]');
+    if (remover) {
+      storage.set(COUPONS_KEY, coupons().filter((c) => c.id !== remover.dataset.couponRemove));
+      renderCupons(root);
+      window.pqToast?.('Cupom removido');
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const chave = event.target.closest?.('[data-switch]');
+    if (!chave) return;
+    event.preventDefault();
+    pintarSwitch(chave, !chave.classList.contains('on'));
+  });
+
+  document.addEventListener('submit', (event) => {
+    const root = document.querySelector('[data-desktop-route-view]');
+
+    const reserva = event.target.closest('[data-booking-form]');
+    if (reserva) {
+      event.preventDefault();
+      if (!reserva.reportValidity()) return;
+      const d = new FormData(reserva);
+      const inicio = String(d.get('inicio'));
+      const dur = Number(d.get('duracao'));
+      const fim = `${String(Math.floor(Number(inicio.split(':')[0]) + dur)).padStart(2, '0')}:${dur % 1 ? '30' : '00'}`;
+      const id = `nova-${Date.now()}`;
+      addBooking({
+        id,
+        codigo: `PQ-${String(Date.now()).slice(-4)}`,
+        cliente: String(d.get('cliente')).trim(),
+        telefone: String(d.get('telefone')).trim(),
+        quadra: String(d.get('quadra')),
+        data: String(d.get('data')).trim(),
+        hora: `${inicio} – ${fim}`,
+        valor: Number(d.get('valor')),
+        status: String(d.get('status'))
+      });
+      window.pqToast?.('Reserva criada');
+      location.hash = '#reservas';
+      return;
+    }
+
+    const quadra = event.target.closest('[data-court-form]');
+    if (quadra) {
+      event.preventDefault();
+      if (!quadra.reportValidity()) return;
+      const d = new FormData(quadra);
+      const id = Number(d.get('id')) || Date.now();
+      const anterior = courts().find((c) => c.id === id);
+      saveCourt(id, {
+        id,
+        label: String(d.get('label')).trim(),
+        sport: String(d.get('sport')),
+        bairro: String(d.get('bairro')).trim(),
+        descricao: String(d.get('descricao')).trim(),
+        price: Number(d.get('price')),
+        priceMonthly: Number(d.get('priceMonthly')),
+        abre: Number(String(d.get('abre')).split(':')[0]),
+        fecha: Number(String(d.get('fecha')).split(':')[0]),
+        active: root.querySelector('[data-switch="active"]')?.classList.contains('on') ?? true,
+        occupancy: anterior?.occupancy ?? 0,
+        photo: anterior?.photo || courts()[0].photo
+      });
+      storage.set(AMENITIES_KEY, AMENITIES.map((a) => ({
+        ...a,
+        on: root.querySelector(`[data-switch="amenity:${a.id}"]`)?.classList.contains('on') ?? a.on
+      })));
+      window.pqToast?.('Quadra salva');
+      location.hash = '#quadras';
+      return;
+    }
+
+    const config = event.target.closest('[data-settings-form]');
+    if (config) {
+      event.preventDefault();
+      const d = new FormData(config);
+      const salvo = { ...profile() };
+      ['nome', 'esporte', 'descricao', 'endereco', 'telefone', 'email', 'pixTipo', 'pixChave', 'pixTitular']
+        .forEach((campo) => { salvo[campo] = String(d.get(campo) ?? ''); });
+      root.querySelectorAll('[data-switch]').forEach((el) => {
+        if (!el.dataset.switch.startsWith('amenity:')) {
+          salvo[el.dataset.switch] = el.classList.contains('on');
+        }
+      });
+      storage.set(PROFILE_KEY, salvo);
+      window.pqToast?.('Configurações salvas');
+      return;
+    }
+
+    const cupom = event.target.closest('[data-coupon-form]');
+    if (cupom) {
+      event.preventDefault();
+      if (!cupom.reportValidity()) return;
+      const d = new FormData(cupom);
+      storage.set(COUPONS_KEY, [...coupons(), {
+        id: `cupom-${Date.now()}`,
+        code: String(d.get('code')).trim().toUpperCase(),
+        discount: Number(d.get('discount')),
+        expires: String(d.get('expires')),
+        court: String(d.get('court'))
+      }]);
+      root.querySelector('[data-coupon-dialog]').hidden = true;
+      cupom.reset();
+      renderCupons(root);
+      window.pqToast?.('Cupom criado');
+    }
+  });
+}

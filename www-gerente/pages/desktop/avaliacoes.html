@@ -1,48 +1,21 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
-<div class="kpi-row">
-  <div class="kpi">
-    <div class="top"><span class="ico"><svg class="ic"><use href="#i-star"/></svg></span><span class="delta"><svg class="ic"><use href="#i-trend"/></svg> +0.2</span></div>
-    <div class="val num">4.8</div>
-    <div class="lbl">Nota media</div>
-  </div>
-  <div class="kpi">
-    <div class="top"><span class="ico"><svg class="ic"><use href="#i-chat"/></svg></span><span class="delta"><svg class="ic"><use href="#i-check"/></svg> 91%</span></div>
-    <div class="val num">128</div>
-    <div class="lbl">Avaliacoes</div>
-  </div>
-  <div class="kpi">
-    <div class="top"><span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span><span class="delta"><svg class="ic"><use href="#i-trend"/></svg> 2h</span></div>
-    <div class="val num">8</div>
-    <div class="lbl">A responder</div>
-  </div>
-</div>
+<!-- Avaliações — porte de _legacy/.../g_avaliacoes.html.
 
-<div class="review">
-  <div class="review-top">
-    <span class="av">M</span>
-    <div>
-      <strong>Matheus Rocha</strong>
-      <span class="review-when">Hoje</span>
-      <div class="review-stars"><svg class="ic on"><use href="#i-star"/></svg><svg class="ic on"><use href="#i-star"/></svg><svg class="ic on"><use href="#i-star"/></svg><svg class="ic on"><use href="#i-star"/></svg><svg class="ic on"><use href="#i-star"/></svg></div>
+     Estava com tres KPIs inventados e dois reviews escritos na mao (Matheus
+     Rocha, Carol Souza — clientes que nao existem no sistema). Voltam a nota
+     media com estrelas, a distribuicao por nota e a lista com caixa de
+     resposta, montadas por assets/js/manager-reviews.js. -->
+<div class="split-2">
+  <div class="card">
+    <h2>Reputação</h2>
+    <div class="rating-big">
+      <div class="rb-num num" data-reviews-average>0,0</div>
+      <div>
+        <div class="rb-stars" data-reviews-stars></div>
+        <div class="rb-total"><span data-reviews-total>0</span> avaliações</div>
+      </div>
     </div>
+    <div class="dist" data-reviews-dist></div>
   </div>
-  <p>Quadra muito boa, iluminacao forte e atendimento rapido.</p>
-  <button class="review-reply" data-reply-toggle>Responder</button>
-  <div class="review-reply-box" data-reply-box hidden>
-    <textarea placeholder="Escreva a resposta"></textarea>
-    <button class="btn btn-primary btn-xs" data-reply-send>Enviar resposta</button>
-  </div>
-</div>
 
-<div class="review">
-  <div class="review-top">
-    <span class="av">C</span>
-    <div>
-      <strong>Carol Souza</strong>
-      <span class="review-when">Ontem</span>
-      <div class="review-stars"><svg class="ic on"><use href="#i-star"/></svg><svg class="ic on"><use href="#i-star"/></svg><svg class="ic on"><use href="#i-star"/></svg><svg class="ic on"><use href="#i-star"/></svg><svg class="ic"><use href="#i-star"/></svg></div>
-    </div>
-  </div>
-  <p>Experiencia boa. Seria perfeito com mais horarios no fim da tarde.</p>
-  <div class="review-answer"><strong>Resposta do dono:</strong> Obrigado pelo feedback, estamos abrindo novos horarios.</div>
+  <div data-reviews-list></div>
 </div>

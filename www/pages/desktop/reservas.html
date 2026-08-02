@@ -1,55 +1,60 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
-<div class="req-banner">
-  <span class="ico"><svg class="ic"><use href="#i-bell"/></svg></span>
-  <div><b>3 reservas precisam de atencao</b> hoje antes do horario de pico.</div>
-</div>
+<!-- Reservas — porte de _legacy/.../g_reservas.html.
 
+     Voltam o banner de solicitacoes (com contagem real, nao "3 reservas
+     precisam de atencao" escrito na mao), o resumo do periodo, os filtros
+     por status e as linhas com Aprovar / Recusar / Ver detalhes. A tabela
+     que estava aqui nao deixava aprovar nem abrir a reserva.
+     Montado por assets/js/manager-reservations.js. -->
 <div class="toolbar">
   <div class="field grow">
     <svg class="ic"><use href="#i-search"/></svg>
-    <input type="text" placeholder="Buscar por cliente, codigo ou quadra">
+    <input type="text" placeholder="Buscar por cliente, código ou quadra" data-booking-search>
   </div>
-  <div class="field">
-    <svg class="ic"><use href="#i-calendar"/></svg>
-    <select>
-      <option>Hoje</option>
-      <option>Esta semana</option>
-      <option>Este mes</option>
-    </select>
-  </div>
-  <div class="field">
-    <svg class="ic"><use href="#i-sliders"/></svg>
-    <select>
-      <option>Todos os status</option>
-      <option>Pago</option>
-      <option>Confirmado</option>
-      <option>Pendente</option>
-    </select>
-  </div>
+  <a class="btn btn-primary" href="./dashboard.html#reserva-nova">
+    <svg class="ic sm"><use href="#i-plus"/></svg> Nova reserva
+  </a>
 </div>
 
-<!-- Mensalistas primeiro: e receita recorrente e horario ja comprometido.
-     O gerente nao precisa reaprovar a mesma quinta quatro vezes. -->
-<div class="panel" data-manager-mensal-head>
-  <div class="panel-head">
-    <div>
-      <h2>Mensalistas</h2>
-      <span class="panel-sub">Quadra comprometida toda semana · <b data-manager-mensal-count>0</b> planos</span>
+<a class="req-banner" href="#solicitacoes" data-booking-banner hidden>
+  <span class="ico"><svg class="ic"><use href="#i-bell"/></svg></span>
+  <div><b data-booking-banner-count></b><small>Aprove ou recuse antes que o prazo termine.</small></div>
+  <svg class="ic sm"><use href="#i-right"/></svg>
+</a>
+
+<section class="manager-reservation-overview" aria-label="Resumo das reservas">
+  <article><span><svg class="ic"><use href="#i-calendar"/></svg></span><div><strong class="num" data-booking-total>0</strong><small>Reservas no período</small></div></article>
+  <article><span><svg class="ic"><use href="#i-wallet"/></svg></span><div><strong class="num" data-booking-volume>R$ 0</strong><small>Valor movimentado</small></div></article>
+  <article data-booking-pending-card><span><svg class="ic"><use href="#i-clock"/></svg></span><div><strong class="num" data-booking-pending>0</strong><small>Aguardando aprovação</small></div></article>
+</section>
+
+<section class="manager-section" id="solicitacoes">
+  <div class="manager-section__head manager-section__head--stack">
+    <div><span>Operação</span><h2>Reservas avulsas</h2></div>
+    <div class="tabs manager-filter-tabs" data-seg>
+      <button type="button" class="on" data-booking-filter="">Todas</button>
+      <button type="button" data-booking-filter="solicitada">Solicitações</button>
+      <button type="button" data-booking-filter="pago">Pagas</button>
+      <button type="button" data-booking-filter="pendente">Pendentes</button>
+      <button type="button" data-booking-filter="confirmado">Confirmadas</button>
     </div>
+  </div>
+
+  <div class="manager-bookings" data-manager-reservation-list></div>
+
+  <div class="manager-empty-list" data-booking-empty hidden>
+    <svg class="ic"><use href="#i-calendar"/></svg>
+    <strong>Nenhuma reserva neste filtro</strong>
+    <span>Escolha outro status para continuar.</span>
+  </div>
+</section>
+
+<!-- Mensalistas aqui e so o resumo: e receita recorrente e horario ja
+     comprometido, entao nao disputa espaco com o que pede decisao. A
+     gestao fica na propria secao. -->
+<section class="manager-section manager-members-section" id="mensalistas">
+  <div class="manager-section__head">
+    <div><span>Recorrência</span><h2>Mensalistas</h2><p>Clientes com dia e horário fixos na sua grade · <b data-manager-mensal-count>0</b> planos.</p></div>
+    <a class="btn btn-outline" href="./dashboard.html#mensalistas">Gerenciar <svg class="ic sm"><use href="#i-right"/></svg></a>
   </div>
   <div class="mensal-grid" data-manager-mensal-list></div>
-</div>
-
-<div class="panel">
-  <div class="panel-head">
-    <div>
-      <h2>Reservas avulsas</h2>
-      <span class="panel-sub">Caso a caso — sao estas que precisam de decisao</span>
-    </div>
-    <a class="lk" href="./dashboard.html#agenda">Ver agenda</a>
-  </div>
-  <table class="tbl">
-    <thead><tr><th>Cliente</th><th>Quadra</th><th>Data</th><th>Horario</th><th>Valor</th><th>Status</th><th></th></tr></thead>
-    <tbody data-manager-reservation-list></tbody>
-  </table>
-</div>
+</section>

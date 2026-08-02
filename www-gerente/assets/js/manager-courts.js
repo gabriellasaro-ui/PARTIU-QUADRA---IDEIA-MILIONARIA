@@ -37,7 +37,7 @@ export function courts() {
   return [...base, ...novas];
 }
 
-function saveCourt(id, patch) {
+export function saveCourt(id, patch) {
   const over = overrides();
   over[id] = { ...(over[id] || {}), ...patch };
   storage.set(COURTS_KEY, over);
@@ -71,7 +71,7 @@ function courtCard(court) {
       </div>
 
       <div class="foot">
-        <button class="btn btn-soft" type="button" data-court-edit="${court.id}">Editar</button>
+        <a class="btn btn-soft" href="./dashboard.html#quadra/${court.id}">Editar</a>
         <button class="btn btn-outline" type="button" data-court-toggle="${court.id}">${court.active ? 'Pausar' : 'Ativar'}</button>
       </div>
     </div>
@@ -84,11 +84,11 @@ export function renderManagerCourts(root) {
   const grid = root.querySelector('[data-court-list]');
   if (grid) {
     grid.innerHTML = lista.map(courtCard).join('')
-      + `<button type="button" class="qcard add-card" data-court-new>
+      + `<a class="qcard add-card" href="./dashboard.html#quadra">
            <span class="add-ic"><svg class="ic lg"><use href="#i-plus"/></svg></span>
            <strong>Adicionar quadra</strong>
            <small>Cadastre mais um espaço da sua arena</small>
-         </button>`;
+         </a>`;
   }
 
   const contador = root.querySelector('[data-court-count]');
@@ -122,39 +122,13 @@ export function renderManagerCourts(root) {
   window.pqRefreshIcons?.(root);
 }
 
-function abrirEditor(root, court) {
-  const dialog = root.querySelector('[data-court-dialog]');
-  const form = root.querySelector('[data-court-form]');
-  if (!dialog || !form) return;
-  root.querySelector('[data-court-dialog-name]').textContent = court ? court.label : 'Nova quadra';
-  form.elements.id.value = court?.id || '';
-  form.elements.label.value = court?.label || '';
-  form.elements.sport.value = court?.sport || 'Futebol Society';
-  form.elements.price.value = court?.price ?? 120;
-  form.elements.priceMonthly.value = court?.priceMonthly ?? 408;
-  dialog.hidden = false;
-}
-
 export function initManagerCourts() {
   document.addEventListener('click', (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
 
-    if (event.target.closest('[data-court-new]')) {
-      abrirEditor(root, null);
-      return;
-    }
-    if (event.target.closest('[data-court-cancel]')) {
-      root.querySelector('[data-court-dialog]').hidden = true;
-      return;
-    }
-
-    const editar = event.target.closest('[data-court-edit]');
-    if (editar) {
-      abrirEditor(root, courts().find((c) => String(c.id) === editar.dataset.courtEdit));
-      return;
-    }
-
+    // Pausar/ativar e a unica edicao que vale a pena fazer sem sair da
+    // lista. O resto abre o formulario completo, que e uma pagina.
     const toggle = event.target.closest('[data-court-toggle]');
     if (toggle) {
       const court = courts().find((c) => String(c.id) === toggle.dataset.courtToggle);
@@ -172,30 +146,5 @@ export function initManagerCourts() {
       storage.set(SHOWCASE_KEY, { ...estado, [chave]: !estado[chave] });
       renderManagerCourts(root);
     }
-  });
-
-  document.addEventListener('submit', (event) => {
-    const form = event.target.closest('[data-court-form]');
-    if (!form) return;
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-
-    const root = document.querySelector('[data-desktop-route-view]');
-    const data = new FormData(form);
-    const id = Number(data.get('id')) || Date.now();
-    saveCourt(id, {
-      id,
-      label: String(data.get('label') || '').trim(),
-      sport: String(data.get('sport') || ''),
-      price: Number(data.get('price') || 0),
-      priceMonthly: Number(data.get('priceMonthly') || 0),
-      active: true,
-      occupancy: courts().find((c) => c.id === id)?.occupancy ?? 0,
-      photo: courts().find((c) => c.id === id)?.photo || COURTS[0].photo
-    });
-
-    root.querySelector('[data-court-dialog]').hidden = true;
-    renderManagerCourts(root);
-    window.pqToast?.('Quadra salva');
   });
 }

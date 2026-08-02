@@ -7,6 +7,11 @@ import { renderManagerReservations, initManagerReservations } from './manager-re
 import { renderManagerMembers, initManagerMembers } from './manager-members.js';
 import { renderManagerOverview } from './manager-overview.js';
 import { renderManagerAgenda, initManagerAgenda } from './manager-agenda.js';
+import { renderManagerReviews, initManagerReviews } from './manager-reviews.js';
+import { renderManagerBookingDetail, initManagerBookingDetail } from './manager-booking-detail.js';
+import {
+  renderManagerBookingForm, renderManagerCourtForm, renderManagerSettings, initManagerForms
+} from './manager-forms.js';
 import { renderManagerFinance, initManagerFinance } from './manager-finance.js';
 
 const DESKTOP_ROUTES = {
@@ -52,6 +57,27 @@ const DESKTOP_ROUTES = {
     heading: 'Minhas quadras',
     sub: 'Estrutura, preços e disponibilidade'
   },
+  reservaNova: {
+    aliases: ['reserva-nova'],
+    page: './pages/desktop/reserva-nova.html',
+    title: 'Nova reserva - Qadras',
+    heading: 'Nova reserva',
+    sub: 'Agende manualmente para um cliente'
+  },
+  reservaDetalhe: {
+    aliases: ['reserva'],
+    page: './pages/desktop/reserva-detalhe.html',
+    title: 'Detalhes da reserva - Qadras',
+    heading: 'Detalhes da reserva',
+    sub: 'Aprove, confirme o pagamento ou cancele'
+  },
+  quadraForm: {
+    aliases: ['quadra'],
+    page: './pages/desktop/quadra-form.html',
+    title: 'Cadastrar quadra - Qadras',
+    heading: 'Cadastrar quadra',
+    sub: 'Dados, preço, comodidades e status do espaço'
+  },
   mensalistas: {
     aliases: ['mensalistas'],
     page: './pages/desktop/mensalistas.html',
@@ -93,7 +119,10 @@ function markActiveNav() {
 
 function routeFromHash(routes, fallback) {
   const hash = location.hash.replace(/^#/, '').trim();
-  return Object.entries(routes).find(([, route]) => route.aliases.includes(hash))?.[0] || fallback;
+  // Rotas com parametro: #reserva/7 e #quadra/2 resolvem pela primeira parte.
+  const base = hash.split('/')[0];
+  return Object.entries(routes)
+    .find(([, route]) => route.aliases.includes(hash) || route.aliases.includes(base))?.[0] || fallback;
 }
 
 async function setFragment(container, path) {
@@ -134,13 +163,14 @@ async function renderDesktopRoute() {
   const routeName = routeFromHash(DESKTOP_ROUTES, 'dashboard');
   const route = DESKTOP_ROUTES[routeName];
 
-  if (view.dataset.currentRoute === routeName) {
+  if (view.dataset.currentRoute === routeName && view.dataset.currentHash === location.hash) {
     updateDesktopMeta(routeName, route);
     markActiveNav();
     return;
   }
 
   view.dataset.currentRoute = routeName;
+  view.dataset.currentHash = location.hash;
   // O manager-app.css tem regras por tela penduradas neste atributo.
   document.documentElement.dataset.managerView = routeName;
   updateDesktopMeta(routeName, route);
@@ -151,6 +181,11 @@ async function renderDesktopRoute() {
   if (routeName === 'mensalistas') await renderManagerMembers(view);
   if (routeName === 'agenda') renderManagerAgenda(view);
   if (routeName === 'financeiro') renderManagerFinance(view);
+  if (routeName === 'avaliacoes') renderManagerReviews(view);
+  if (routeName === 'config') renderManagerSettings(view);
+  if (routeName === 'reservaNova') renderManagerBookingForm(view);
+  if (routeName === 'reservaDetalhe') renderManagerBookingDetail(view);
+  if (routeName === 'quadraForm') renderManagerCourtForm(view);
   markActiveNav();
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -163,6 +198,9 @@ function initDesktopRouter() {
   initManagerMembers();
   initManagerAgenda();
   initManagerFinance();
+  initManagerReviews();
+  initManagerBookingDetail();
+  initManagerForms();
   window.addEventListener('hashchange', renderDesktopRoute);
   return renderDesktopRoute();
 }

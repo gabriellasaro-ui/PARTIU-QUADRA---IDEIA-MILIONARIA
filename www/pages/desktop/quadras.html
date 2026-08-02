@@ -41,38 +41,10 @@
     <h2>Espaços cadastrados</h2>
     <small class="panel-sub" data-court-count></small>
   </div>
-  <button class="btn btn-primary" type="button" data-court-new>
+  <a class="btn btn-primary" href="./dashboard.html#quadra">
     <svg class="ic sm"><use href="#i-plus"/></svg> Adicionar quadra
-  </button>
+  </a>
 </div>
 
 <div class="grid" data-court-list></div>
 
-<div class="modal" data-court-dialog hidden>
-  <div class="modal-backdrop" data-court-cancel></div>
-  <form class="modal-box manager-sheet" data-court-form>
-    <div class="modal-head">
-      <div>
-        <span class="manager-modal-eyebrow">Espaço</span>
-        <h3 data-court-dialog-name></h3>
-      </div>
-      <button class="modal-x" type="button" data-court-cancel aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" name="id">
-      <label class="field-block"><span>Nome do espaço</span><input name="label" type="text" placeholder="Society 3" required></label>
-      <label class="field-block"><span>Modalidade</span><select name="sport">
-        <option>Futebol Society</option><option>Futsal</option><option>Vôlei</option><option>Beach Tennis</option>
-      </select></label>
-      <div class="field-row">
-        <label class="field-block"><span>Avulso (por hora)</span><input name="price" type="number" min="0" step="5" required></label>
-        <label class="field-block"><span>Mensalista (por mês)</span><input name="priceMonthly" type="number" min="0" step="5" required></label>
-      </div>
-      <div class="set-hint"><svg class="ic"><use href="#i-check-circle"/></svg> Deixe a mensalidade abaixo de 4× o avulso para o plano compensar para o jogador.</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-soft" type="button" data-court-cancel>Cancelar</button>
-      <button class="btn btn-primary" type="submit">Salvar quadra</button>
-    </div>
-  </form>
-</div>

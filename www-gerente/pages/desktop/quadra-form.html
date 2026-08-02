@@ -1,0 +1,84 @@
+<!-- Cadastro / edição de quadra — porte de _legacy/.../g_quadra_form.html.
+
+     Tela inteira que nunca tinha sido portada. Eu tinha posto no lugar um
+     modal com dois campos de preco; o formulario de verdade tem foto,
+     esporte, bairro, descricao, janela de funcionamento, comodidades e
+     status. Preenchido por assets/js/manager-court-form.js. -->
+<a href="./dashboard.html#quadras" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para minhas quadras</a>
+
+<form id="quadra-form" class="settings" data-court-form>
+  <input type="hidden" name="id">
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Dados da quadra</h2>
+      <p>Como o espaço aparece para os jogadores na busca.</p>
+    </div>
+    <div class="set-fields">
+      <div class="set-avatar">
+        <span class="ava" data-court-photo>+</span>
+        <div>
+          <button type="button" class="btn btn-outline" data-file-trigger="#foto-file" data-court-photo-label>Enviar foto</button>
+          <input type="file" id="foto-file" accept="image/*" data-preview="[data-court-photo]" hidden>
+          <div class="av-meta">PNG ou JPG, até 5&nbsp;MB</div>
+        </div>
+      </div>
+      <div class="inp"><label>Nome / apelido da quadra</label><input type="text" name="label" placeholder="Ex.: Society 1" required></div>
+      <div class="input-row">
+        <div class="inp"><label>Esporte</label><select name="sport" data-court-sports></select></div>
+        <div class="inp"><label>Bairro</label><input type="text" name="bairro" placeholder="Ex.: Jardim Goiás"></div>
+      </div>
+      <div class="inp" style="margin-bottom:0;"><label>Descrição</label><input type="text" name="descricao" placeholder="Fale sobre o piso, iluminação, estrutura..."></div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Preço &amp; disponibilidade</h2>
+      <p>Valor da hora e janela de funcionamento.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Preço por hora (R$)</label><input type="number" name="price" value="120" min="0" step="10" required></div>
+        <div class="inp"><label>Mensalista (por mês)</label><input type="number" name="priceMonthly" value="408" min="0" step="10" required></div>
+      </div>
+      <div class="input-row">
+        <div class="inp"><label>Duração mínima</label><select name="duracaoMin">
+          <option>1 hora</option><option>1h30</option><option>2 horas</option>
+        </select></div>
+        <div class="inp"><label>&nbsp;</label><div class="set-hint" style="margin:0;"><svg class="ic"><use href="#i-shield"/></svg> Mensalidade abaixo de 4× o avulso compensa para o jogador.</div></div>
+      </div>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="inp" style="margin-bottom:0;"><label>Abre às</label><select name="abre" data-court-open></select></div>
+        <div class="inp" style="margin-bottom:0;"><label>Fecha às</label><select name="fecha" data-court-close></select></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Comodidades</h2>
+      <p>O que sua quadra oferece.</p>
+    </div>
+    <div class="set-fields" data-court-amenities></div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Status</h2>
+      <p>Quadras ativas ficam visíveis na busca e aceitam reservas.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row" style="border-bottom:none; padding-bottom:0;">
+        <span>Quadra ativa</span>
+        <span class="switch on" data-switch="active" role="switch" tabindex="0" aria-checked="true"></span>
+      </label>
+      <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Você só paga comissão sobre cada reserva confirmada.</div>
+    </div>
+  </section>
+
+  <div class="manager-form-actions">
+    <a href="./dashboard.html#quadras" class="btn btn-soft">Cancelar</a>
+    <button type="submit" class="btn btn-primary"><svg class="ic sm"><use href="#i-check"/></svg> <span data-court-submit>Cadastrar quadra</span></button>
+  </div>
+</form>

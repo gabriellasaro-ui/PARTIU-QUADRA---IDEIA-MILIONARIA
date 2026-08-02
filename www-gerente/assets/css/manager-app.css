@@ -3357,3 +3357,23 @@ html[data-manager-app] .cal-toolbar .period {
     display: none;
   }
 }
+
+/* Barra de acoes dos formularios de pagina. No app antigo esses botoes
+   moravam no topbar da rota; o topbar aqui e compartilhado, entao eles
+   ficam no fim do formulario, que e onde a pessoa termina de preencher. */
+html[data-manager-app] .manager-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@media (max-width: 720px) {
+  html[data-manager-app] .manager-form-actions {
+    flex-direction: column-reverse;
+  }
+  html[data-manager-app] .manager-form-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

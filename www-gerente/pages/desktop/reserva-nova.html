@@ -1,0 +1,63 @@
+<!-- Nova reserva — porte de _legacy/.../g_reserva_nova.html.
+
+     Tela inteira que nunca tinha sido portada: e como o gerente agenda para
+     quem fechou por telefone ou apareceu na porta. Sem ela a arena so
+     conseguia registrar o que viesse pelo app. -->
+<a href="./dashboard.html#reservas" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para reservas</a>
+
+<form id="reserva-form" class="settings" data-booking-form>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Cliente</h2>
+      <p>Quem vai jogar. O contato é usado para avisos da reserva.</p>
+    </div>
+    <div class="set-fields">
+      <div class="inp"><label>Nome do cliente</label><input type="text" name="cliente" placeholder="Ex.: Lucas Andrade" required></div>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="inp" style="margin-bottom:0;"><label>Telefone / WhatsApp</label><input type="text" name="telefone" placeholder="(62) 90000-0000" required></div>
+        <div class="inp" style="margin-bottom:0;"><label>E-mail (opcional)</label><input type="text" name="email" placeholder="cliente@email.com"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Reserva</h2>
+      <p>Quadra, dia e horário do jogo.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Quadra</label><select name="quadra" data-booking-courts></select></div>
+        <div class="inp"><label>Data</label><input type="text" name="data" placeholder="Hoje" value="Hoje" required></div>
+      </div>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="inp" style="margin-bottom:0;"><label>Início</label><select name="inicio" data-booking-hours></select></div>
+        <div class="inp" style="margin-bottom:0;"><label>Duração</label><select name="duracao">
+          <option value="1">1 hora</option><option value="1.5">1h30</option><option value="2">2 horas</option>
+        </select></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Pagamento</h2>
+      <p>Como essa reserva será cobrada.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Valor (R$)</label><input type="number" name="valor" value="120" min="0" step="10" required></div>
+        <div class="inp"><label>Status</label><select name="status">
+          <option>Pago</option><option>Pendente</option><option>Confirmado</option>
+        </select></div>
+      </div>
+      <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Reservas manuais entram na sua agenda e no faturamento normalmente.</div>
+    </div>
+  </section>
+
+  <div class="manager-form-actions">
+    <a href="./dashboard.html#reservas" class="btn btn-soft">Cancelar</a>
+    <button type="submit" class="btn btn-primary"><svg class="ic sm"><use href="#i-check"/></svg> Criar reserva</button>
+  </div>
+</form>

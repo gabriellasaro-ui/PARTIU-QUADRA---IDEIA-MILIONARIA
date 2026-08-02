@@ -139,3 +139,47 @@ export const STATUS_CLASS = {
   Pago: 'pago',
   Confirmado: 'confirmado'
 };
+
+/* Avaliacoes da arena, do app antigo (_legacy/gerente/app.py:194). */
+export const ARENA_REVIEWS = [
+  { cliente: 'Lucas Andrade', nota: 5, quando: 'há 2 dias', texto: 'Quadra impecável, gramado novo e iluminação ótima pra jogar à noite.' },
+  { cliente: 'Marina Souza', nota: 5, quando: 'há 5 dias', texto: 'Vestiário limpo e atendimento rápido. Voltarei com certeza.' },
+  { cliente: 'Rafael Lima', nota: 4, quando: 'há 1 semana', texto: 'Muito boa, só faltou estacionamento mais perto. No mais, top.' },
+  { cliente: 'Time da Firma', nota: 5, quando: 'há 2 semanas', texto: 'Melhor society da região, reserva pelo app é super prática.' }
+];
+
+export const REVIEW_DIST = [
+  { n: 5, qtd: 168 }, { n: 4, qtd: 32 }, { n: 3, qtd: 9 }, { n: 2, qtd: 3 }, { n: 1, qtd: 2 }
+];
+
+/* Perfil da arena — o que a tela de Configurações edita. */
+export const ARENA_PROFILE = {
+  nome: 'Arena Bola na Rede',
+  esporte: 'Futebol Society',
+  descricao: 'Society com grama sintética, iluminação e vestiário.',
+  endereco: 'Rua das Quadras, 123 — Jardim Goiás, Goiânia',
+  telefone: '(62) 99999-0000',
+  email: 'contato@arenabolanarede.com',
+  pixTipo: 'CNPJ',
+  pixChave: '12.345.678/0001-90',
+  pixTitular: 'Arena Bola na Rede LTDA',
+  notificaReserva: true,
+  notificaPagamento: true,
+  notificaAvaliacao: false,
+  notificaResumo: true,
+  pausada: false
+};
+
+export const ARENA_COUPONS = [
+  { id: 'mock-primeirajogada', code: 'PRIMEIRAJOGADA', discount: 10, expires: '2026-08-31', court: 'Todas as quadras' }
+];
+
+export const SPORTS = ['Futebol Society', 'Futsal', 'Beach Tennis', 'Vôlei', 'Basquete', 'Tênis'];
+
+export const AMENITIES = [
+  { id: 'iluminacao', label: 'Iluminação', on: true },
+  { id: 'coberta', label: 'Coberta', on: false },
+  { id: 'vestiario', label: 'Vestiário', on: true },
+  { id: 'estacionamento', label: 'Estacionamento', on: false },
+  { id: 'bar', label: 'Bar / lanchonete', on: false }
+];

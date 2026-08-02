@@ -1,78 +1,132 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
-<div class="settings">
+<!-- Configurações — porte de _legacy/.../g_config.html.
+
+     Seis blocos: perfil da arena, endereço e contato, recebimento Pix,
+     notificações, cupons e conta. A versao refatorada tinha perdido Pix,
+     cupons e o bloco de conta. Valores vem de ARENA_PROFILE e o que a arena
+     salva persiste (assets/js/manager-settings.js). -->
+<form id="gconfig-form" class="settings" data-settings-form>
+
   <section class="set-card">
     <div class="set-aside">
       <h2>Perfil da arena</h2>
-      <p>Informacoes exibidas para jogadores no aplicativo.</p>
+      <p>É assim que sua arena aparece para os jogadores na busca.</p>
     </div>
     <div class="set-fields">
       <div class="set-avatar">
-        <span class="ava" id="arena-logo-preview">A</span>
+        <span class="ava" id="arena-logo">A</span>
         <div>
-          <button class="btn btn-soft" data-file-trigger="#arena-logo">Trocar logo</button>
-          <input id="arena-logo" type="file" accept="image/*" data-preview="#arena-logo-preview" hidden>
-          <div class="av-meta">PNG ou JPG ate 2 MB</div>
+          <button type="button" class="btn btn-outline" data-file-trigger="#logo-file">Trocar logo</button>
+          <input type="file" id="logo-file" accept="image/*" data-preview="#arena-logo" hidden>
+          <div class="av-meta">PNG ou JPG, até 2&nbsp;MB</div>
         </div>
       </div>
+      <div class="inp"><label>Nome da arena</label><input type="text" name="nome"></div>
       <div class="input-row">
-        <div class="inp"><label>Nome da arena</label><input value="Arena Bola na Rede"></div>
-        <div class="inp"><label>Telefone</label><input value="(11) 99999-0000"></div>
+        <div class="inp"><label>Esporte principal</label><select name="esporte" data-settings-sports></select></div>
+        <div class="inp"><label>Quadras ativas</label><input type="number" name="quadrasAtivas" min="0" readonly></div>
       </div>
-      <div class="inp"><label>Endereco</label><input value="Rua das Quadras, 120 - Sao Paulo"></div>
+      <div class="inp" style="margin-bottom:0;"><label>Descrição</label><input type="text" name="descricao"></div>
     </div>
   </section>
 
   <section class="set-card">
     <div class="set-aside">
-      <h2>Operacao</h2>
-      <p>Preferencias de atendimento e confirmacao.</p>
+      <h2>Endereço &amp; contato</h2>
+      <p>Onde os jogadores encontram sua arena e como falam com você.</p>
     </div>
     <div class="set-fields">
-      <label class="switch-row"><span>Confirmacao automatica<small>Reservas pagas entram direto na agenda.</small></span><span class="switch on"></span></label>
-      <label class="switch-row"><span>Receber alerta de reserva<small>Notificacao para novas solicitacoes.</small></span><span class="switch on"></span></label>
-      <label class="switch-row"><span>Permitir reagendamento<small>Jogadores podem pedir novo horario.</small></span><span class="switch"></span></label>
+      <div class="inp"><label>Endereço</label><input type="text" name="endereco"></div>
+      <div class="input-row" style="margin-bottom:0;">
+        <div class="inp" style="margin-bottom:0;"><label>Telefone / WhatsApp</label><input type="text" name="telefone"></div>
+        <div class="inp" style="margin-bottom:0;"><label>E-mail</label><input type="text" name="email"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Recebimento (Pix)</h2>
+      <p>Conta que recebe o repasse automático a cada reserva paga.</p>
+    </div>
+    <div class="set-fields">
+      <div class="input-row">
+        <div class="inp"><label>Tipo de chave</label><select name="pixTipo">
+          <option>CNPJ</option><option>CPF</option><option>E-mail</option><option>Celular</option><option>Aleatória</option>
+        </select></div>
+        <div class="inp"><label>Chave Pix</label><input type="text" name="pixChave"></div>
+      </div>
+      <div class="inp" style="margin-bottom:0;"><label>Titular da conta</label><input type="text" name="pixTitular"></div>
+      <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Repasse cai automaticamente, sem mensalidade.</div>
+    </div>
+  </section>
+
+  <section class="set-card">
+    <div class="set-aside">
+      <h2>Notificações</h2>
+      <p>Escolha o que quer ser avisado.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row"><span>Nova reserva</span><span class="switch" data-switch="notificaReserva" role="switch" tabindex="0"></span></label>
+      <label class="switch-row"><span>Pagamento confirmado</span><span class="switch" data-switch="notificaPagamento" role="switch" tabindex="0"></span></label>
+      <label class="switch-row"><span>Avaliação recebida</span><span class="switch" data-switch="notificaAvaliacao" role="switch" tabindex="0"></span></label>
+      <label class="switch-row" style="border-bottom:none; padding-bottom:0;"><span>Resumo semanal por e-mail</span><span class="switch" data-switch="notificaResumo" role="switch" tabindex="0"></span></label>
+    </div>
+  </section>
+
+  <section class="set-card" id="promocoes">
+    <div class="set-aside">
+      <h2>Cupons e descontos</h2>
+      <p>Crie incentivos para preencher horários ociosos e trazer clientes de volta.</p>
+    </div>
+    <div class="set-fields">
+      <div class="manager-coupon-head">
+        <div><strong>Campanhas ativas</strong><small>Aplicadas no checkout do jogador</small></div>
+        <button type="button" class="btn btn-outline" data-coupon-new><svg class="ic sm"><use href="#i-plus"/></svg> Novo cupom</button>
+      </div>
+      <div class="manager-coupons" data-coupon-list></div>
     </div>
   </section>
 
   <section class="set-card danger">
     <div class="set-aside">
       <h2>Conta</h2>
-      <p>Acoes sensiveis ficam protegidas na etapa de API.</p>
+      <p>Encerrar a sessão ou desativar a arena na plataforma.</p>
     </div>
     <div class="set-fields">
-      <button class="btn btn-danger" data-toast="Acao protegida">Desativar arena</button>
+      <label class="switch-row">
+        <span>Pausar arena <small style="color:var(--muted);display:block;font-weight:500;">Some da busca, sem novas reservas</small></span>
+        <span class="switch" data-switch="pausada" role="switch" tabindex="0"></span>
+      </label>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <a href="./index.html" class="btn btn-soft">Sair da conta</a>
+        <button type="button" class="btn btn-danger" data-toast="Arena desativada (demo)">Desativar arena</button>
+      </div>
     </div>
   </section>
-</div>
 
-<!-- Secoes que existiam no app antigo e se perderam na refatoracao. -->
-<div class="panel">
-  <div class="panel-head"><div><h2>Endereco e contato</h2><span class="panel-sub">O que o jogador ve na ficha da arena</span></div></div>
-  <div class="set-grid">
-    <label class="field-block"><span>Endereco</span><input type="text" value="Rua 27, 345 - Jardim Goias"></label>
-    <label class="field-block"><span>Cidade</span><input type="text" value="Goiania, GO"></label>
-    <label class="field-block"><span>Telefone</span><input type="tel" value="(62) 98888-0001"></label>
-    <label class="field-block"><span>E-mail</span><input type="email" value="contato@arenabolanarede.com.br"></label>
+  <div class="manager-form-actions">
+    <button type="submit" class="btn btn-primary"><svg class="ic sm"><use href="#i-check"/></svg> Salvar configurações</button>
   </div>
-</div>
+</form>
 
-<div class="panel">
-  <div class="panel-head"><div><h2>Recebimento (Pix)</h2><span class="panel-sub">Conta que recebe os repasses</span></div></div>
-  <div class="set-grid">
-    <label class="field-block"><span>Chave Pix</span><input type="text" value="62988880001"></label>
-    <label class="field-block"><span>Tipo da chave</span><select><option>Telefone</option><option>CNPJ</option><option>E-mail</option><option>Aleatoria</option></select></label>
-    <label class="field-block"><span>Titular</span><input type="text" value="Arena Bola na Rede LTDA"></label>
-    <label class="field-block"><span>CNPJ</span><input type="text" value="12.345.678/0001-90"></label>
-  </div>
-  <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Os repasses caem em ate 1 dia util apos a partida acontecer.</div>
-</div>
-
-<div class="panel">
-  <div class="panel-head"><div><h2>Notificacoes</h2><span class="panel-sub">Quando a arena quer ser avisada</span></div></div>
-  <div class="ops-list">
-    <div class="ops-item"><div><strong>Nova reserva</strong><span>Assim que alguem reservar</span></div><b>Sim</b></div>
-    <div class="ops-item"><div><strong>Cancelamento</strong><span>Quando um horario abrir</span></div><b>Sim</b></div>
-    <div class="ops-item"><div><strong>Mensalista renovando</strong><span>3 dias antes do vencimento</span></div><b>Sim</b></div>
-    <div class="ops-item"><div><strong>Resumo semanal</strong><span>Toda segunda de manha</span></div><b>Nao</b></div>
-  </div>
+<div class="modal" data-coupon-dialog hidden>
+  <div class="modal-backdrop" data-coupon-cancel></div>
+  <form class="modal-box manager-sheet" data-coupon-form>
+    <div class="modal-head">
+      <div><span class="manager-modal-eyebrow">Promoção</span><h3>Novo cupom</h3></div>
+      <button class="modal-x" type="button" data-coupon-cancel aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="inp"><label for="coupon-code">Código</label><input id="coupon-code" name="code" type="text" maxlength="20" placeholder="Ex.: JOGANATERCA" required></div>
+      <div class="input-row">
+        <div class="inp"><label for="coupon-discount">Desconto (%)</label><input id="coupon-discount" name="discount" type="number" min="1" max="80" value="10" required></div>
+        <div class="inp"><label for="coupon-expires">Válido até</label><input id="coupon-expires" name="expires" type="date" required></div>
+      </div>
+      <div class="inp"><label for="coupon-court">Aplicar em</label><select id="coupon-court" name="court" data-coupon-courts></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-coupon-cancel>Cancelar</button>
+      <button class="btn btn-primary" type="submit">Criar cupom</button>
+    </div>
+  </form>
 </div>
