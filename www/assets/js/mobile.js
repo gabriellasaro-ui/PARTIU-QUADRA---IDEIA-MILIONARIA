@@ -1419,14 +1419,21 @@ async function renderMessages(root, route) {
       <div><strong>${escapeHtml(active.venue)}</strong><small>${escapeHtml(active.subject)}</small></div>
     </div>
     <div class="mobile-bubbles" data-mobile-bubbles>
-      ${active.messages.map((message) => `
-        <div class="bubble ${message.from === 'player' ? 'me' : 'them'}">
+      ${active.messages.map((message) => {
+        const mine = message.from === 'player';
+        // Numa conversa de grupo o nome nao e enfeite: sem ele nao da para
+        // saber quem escreveu. Com a arena so ha dois lados, entao some.
+        const name = !mine && message.name ? `<div class="bub-name">${escapeHtml(message.name)}</div>` : '';
+        return `
+        <div class="bubble ${mine ? 'me' : 'them'}">
+          ${name}
           <div class="bub-txt">${escapeHtml(message.text)}</div>
           <div class="bub-time">${escapeHtml(message.time)}</div>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>
     <form class="mobile-composer" data-message-form data-conversation-id="${active.id}">
-      <input type="text" name="message" placeholder="Escreva uma mensagem..." autocomplete="off" required>
+      <input type="text" name="message" placeholder="${active.kind === 'club' ? 'Escreva para o time...' : 'Escreva uma mensagem...'}" autocomplete="off" required>
       <button type="submit" aria-label="Enviar">${icon('send')}</button>
     </form>`;
   const bubbles = thread.querySelector('[data-mobile-bubbles]');
@@ -1559,26 +1566,6 @@ export function initMobileActions() {
       return;
     }
 
-    const clubChatForm = event.target.closest('[data-club-chat-form]');
-    if (clubChatForm) {
-      event.preventDefault();
-      const input = clubChatForm.elements.message;
-      const text = input.value.trim();
-      if (!text) return;
-      const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
-      if (!club) return;
-      await venueService.sendClubMessage(club.id, {
-        memberId: user.id,
-        name: user.name,
-        text,
-        time: 'agora'
-      });
-      input.value = '';
-      const view = document.querySelector('[data-route-view]');
-      await renderClub(view);
-      window.pqRefreshIcons?.(view);
-      return;
-    }
 
     const demo = event.target.closest('[data-demo-form]');
     if (demo) {
@@ -2169,26 +2156,6 @@ function selectClubSection(name) {
   });
 }
 
-/* Reusa .mobile-bubbles / .bubble / .mobile-composer — o mesmo chat das
-   mensagens com as arenas. "me" sai pelo memberId, nao pelo nome: o nome
-   muda quando a pessoa edita o perfil. */
-function renderClubChat(root, messages, userId) {
-  const box = root.querySelector('[data-club-bubbles]');
-  if (!box) return;
-  box.innerHTML = messages.length
-    ? messages.map((m) => {
-        const mine = m.memberId === userId;
-        const name = mine ? '' : `<div class="bub-name">${escapeHtml(m.name || '')}</div>`;
-        return `<div class="bubble ${mine ? 'me' : 'them'}">
-          ${name}
-          <div class="bub-txt">${escapeHtml(m.text)}</div>
-          <div class="bub-time">${escapeHtml(m.time || '')}</div>
-        </div>`;
-      }).join('')
-    : '<div class="empty"><h3>Nenhuma mensagem</h3><p>Comece a combinar a próxima pelada.</p></div>';
-  box.scrollTop = box.scrollHeight;
-}
-
 async function renderClub(root) {
   const [user, club] = await Promise.all([venueService.profile(), venueService.myClub()]);
   const emptyView = root.querySelector('[data-club-empty]');
@@ -2241,7 +2208,6 @@ async function renderClub(root) {
   if (clubNameLabel) clubNameLabel.textContent = club.name;
 
   prefillClubForm(club);
-  renderClubChat(root, await venueService.clubChat(club.id), user.id);
   selectClubSection(clubSection);
   window.pqRefreshIcons?.(root);
 }

@@ -17,6 +17,10 @@ import {
   CLUB_CHAT
 } from '../config/mock-data.js';
 
+/* Conversa do time dentro da lista de mensagens. Negativo para nao
+   colidir com as conversas de arena, que vem do backend. */
+export const CLUB_CONVERSATION_ID = -1;
+
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 async function fromApiOrLocal(path, localValue) {
@@ -149,15 +153,48 @@ export const venueService = {
     return !active;
   },
 
+  /* A conversa do time entra aqui junto com as das arenas. Ela morava numa
+     aba dentro do Clube, o que dava dois lugares para procurar mensagem no
+     mesmo app. Mensagem tem um endereco so.
+
+     Id negativo de proposito: as conversas com arena vem do backend com id
+     positivo, entao nao ha como colidir. */
   async conversations() {
     if (API_BASE_URL) {
       const data = await api.get('/api/mensagens?role=jogador');
       return data?.conversas || [];
     }
-    return storage.get('conversations', clone(CONVERSATIONS));
+    const arenas = storage.get('conversations', clone(CONVERSATIONS));
+    const club = await this.myClub();
+    if (!club) return arenas;
+
+    const mensagens = await this.clubChat(club.id);
+    const user = await this.profile();
+    return [{
+      id: CLUB_CONVERSATION_ID,
+      kind: 'club',
+      venue: club.name,
+      subject: `Conversa do time · ${club.members.length} membros`,
+      messages: mensagens.map((m) => ({
+        from: m.memberId === user.id ? 'player' : 'member',
+        name: m.name,
+        text: m.text,
+        time: m.time
+      }))
+    }, ...arenas];
   },
 
   async sendMessage(conversationId, text) {
+    if (Number(conversationId) === CLUB_CONVERSATION_ID) {
+      const [club, user] = await Promise.all([this.myClub(), this.profile()]);
+      if (!club) return null;
+      return this.sendClubMessage(club.id, {
+        memberId: user.id,
+        name: user.name,
+        text,
+        time: 'agora'
+      });
+    }
     if (API_BASE_URL) {
       return api.post(`/api/mensagens/${conversationId}/enviar?texto=${encodeURIComponent(text)}&de=jogador`);
     }

@@ -54,6 +54,13 @@
       <i class="ic" data-lucide="calendar-plus"></i>Marcar pelada — reservar quadra
     </a>
 
+    <!-- A conversa do time vive em Mensagens, junto com as das arenas. Este
+         atalho existe para nao sumir: quem esta no clube pensa em falar com
+         o time ali, nao em abrir outra tela. -->
+    <a class="btn outline block club-chat-link" href="#mensagens/-1">
+      <i class="ic" data-lucide="messages-square"></i>Conversa do time
+    </a>
+
     <!-- Seções alternadas pela barra inferior. Mesmo idioma das abas da
          partida: [data-*-panel] + o atributo hidden. -->
     <section data-club-panel="peladas">
@@ -72,14 +79,5 @@
       <div class="payment-list" data-member-list></div>
     </section>
 
-    <!-- Conversa ocupa a tela inteira: e uma tela de chat, nao uma secao de
-         uma pagina. O compositor fica preso embaixo e so a lista rola. -->
-    <section class="club-chat-panel" data-club-panel="chat" hidden>
-      <div class="mobile-bubbles" data-club-bubbles></div>
-      <form class="mobile-composer club-chat-composer" data-club-chat-form>
-        <input type="text" name="message" placeholder="Escreva para o time..." autocomplete="off" maxlength="500" required>
-        <button type="submit" aria-label="Enviar"><i class="ic" data-lucide="send"></i></button>
-      </form>
-    </section>
   </div>
 </div>

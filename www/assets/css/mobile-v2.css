@@ -1667,14 +1667,22 @@ button .ic,
   color: var(--pq-muted);
 }
 
+/* A conversa ocupa a tela menos a tabbar. Com 100vh - 72px o compositor
+   caia atras da barra de baixo e a pessoa nao achava onde escrever. */
 .mobile-chat-thread {
   display: flex;
-  min-height: calc(100vh - 72px);
+  min-height: calc(100dvh - var(--pq-tabbar-height) - var(--pq-safe-bottom));
   flex-direction: column;
   background: #eef3ef;
 }
 
 .mobile-chat-thread[hidden] {
+  display: none;
+}
+
+/* .navbar declara display, entao ganha do [hidden] do navegador. Sem isto o
+   cabecalho "Mensagens" ficava em cima do cabecalho da conversa. */
+.messages-navbar[hidden] {
   display: none;
 }
 
@@ -6026,4 +6034,10 @@ html[data-bottombar="game"] .game-tabs { display: none; }
   font-size: 11.5px;
   font-style: normal;
   font-weight: 800;
+}
+
+/* A barra do clube tem duas secoes; a da partida tem tres. Sem isto o
+   terceiro espaco ficava vazio depois que a Conversa saiu daqui. */
+.contextbar--clube {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
