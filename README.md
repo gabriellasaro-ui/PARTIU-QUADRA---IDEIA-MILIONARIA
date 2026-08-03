@@ -4,6 +4,8 @@ Plataforma para encontrar e alugar quadras esportivas, com pagamento no app e ch
 
 ## Arquitetura
 
+Documentação funcional e técnica completa: [docs/QADRAS-DOCUMENTACAO-COMPLETA.md](docs/QADRAS-DOCUMENTACAO-COMPLETA.md).
+
 ```
 /
 ├── backend/          → FastAPI (API REST)
