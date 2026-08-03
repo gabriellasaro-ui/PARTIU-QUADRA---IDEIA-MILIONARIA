@@ -10,6 +10,17 @@ export const API_BASE_URL = runtimeConfig.API_BASE_URL || '';
    quebrado para o WhatsApp de alguem. Sem base, o convite compartilha so o
    texto com o codigo. */
 export const APP_PUBLIC_URL = runtimeConfig.APP_PUBLIC_URL || '';
+
+/* Exigir conta para reservar, abrir Carteira, Clube etc.
+
+   DESLIGADO por enquanto: o app inteiro funciona sem login, que e o que
+   permite navegar e demonstrar tudo sem esbarrar em formulario. As telas de
+   entrar, cadastro e onboarding continuam existindo e funcionando — so nao
+   sao mais obrigatorias.
+
+   Para ligar, basta trocar para true (ou definir no runtimeConfig): a lista
+   de rotas protegidas e o gate de acao ja estao prontos e testados. */
+export const REQUIRE_LOGIN = runtimeConfig.REQUIRE_LOGIN ?? false;
 export const STORAGE_PREFIX = runtimeConfig.STORAGE_PREFIX || 'pq';
 export const DEFAULT_LOCALE = 'pt-BR';
 export const DEFAULT_CURRENCY = 'BRL';

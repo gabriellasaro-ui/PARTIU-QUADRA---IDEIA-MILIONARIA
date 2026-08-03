@@ -4,7 +4,7 @@ import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/fo
 import { SPORTS, POSITIONS, LEVELS, FEET } from '../../config/mock-data.js';
 import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
-import { authHashFor, safeNext } from '../../middleware/auth.js';
+import { authHashFor, safeNext, requiresLogin } from '../../middleware/auth.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
 
@@ -1698,7 +1698,7 @@ export function initMobileActions() {
      formulario piscar e sumir. */
   document.addEventListener('click', (event) => {
     const alvo = event.target.closest('[data-requires-auth]');
-    if (!alvo || authService.hasSession()) return;
+    if (!alvo || !requiresLogin() || authService.hasSession()) return;
     event.preventDefault();
     event.stopPropagation();
     window.pqToast?.('Entre na sua conta para continuar');
@@ -1887,6 +1887,8 @@ export function initMobileActions() {
     if (authForm) {
       event.preventDefault();
       if (!authForm.reportValidity()) return;
+      const erro = authForm.querySelector('[data-auth-error]');
+      if (erro) erro.hidden = true;
       const submit = authForm.querySelector('[type="submit"]');
       submit?.setAttribute('disabled', 'disabled');
       try {
@@ -1897,7 +1899,12 @@ export function initMobileActions() {
           : await authService.login(dados);
         goAfterAuth(currentRoute, session.isNew);
       } catch (error) {
-        window.pqToast?.(error.message || 'Não foi possível continuar');
+        const msg = error.message || 'Não foi possível continuar';
+        window.pqToast?.(msg);
+        if (erro) {
+          erro.textContent = msg;
+          erro.hidden = false;
+        }
       } finally {
         submit?.removeAttribute('disabled');
       }

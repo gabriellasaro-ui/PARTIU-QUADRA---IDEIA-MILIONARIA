@@ -32,6 +32,9 @@
         <label for="auth-password">Senha</label>
         <input id="auth-password" type="password" name="password" autocomplete="current-password" placeholder="Sua senha" required>
       </div>
+      <!-- Erro inline alem do toast: o toast some em 3s e quem digitou errado
+           perde a mensagem antes de ler. -->
+      <p class="auth-error" data-auth-error hidden role="alert"></p>
       <button class="btn block" type="submit">Entrar</button>
     </form>
 

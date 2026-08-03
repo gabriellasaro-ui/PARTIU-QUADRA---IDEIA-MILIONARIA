@@ -6512,3 +6512,13 @@ html[data-bottombar="none"] .screen {
 }
 
 .player-card__hint .ic { flex: 0 0 auto; width: 16px; height: 16px; }
+
+.auth-error {
+  padding: 10px 12px;
+  border: 1px solid #f2c7c7;
+  border-radius: 12px;
+  margin: 0 0 12px;
+  background: #fdf2f2;
+  color: #c0392b;
+  font-size: 13px;
+}

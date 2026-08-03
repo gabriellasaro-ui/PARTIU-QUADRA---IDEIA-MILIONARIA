@@ -30,6 +30,9 @@
         <label for="reg-password">Senha</label>
         <input id="reg-password" type="password" name="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" minlength="6" required>
       </div>
+      <!-- Erro inline alem do toast: o toast some em 3s e quem digitou errado
+           perde a mensagem antes de ler. -->
+      <p class="auth-error" data-auth-error hidden role="alert"></p>
       <button class="btn block" type="submit">Criar conta</button>
     </form>
 

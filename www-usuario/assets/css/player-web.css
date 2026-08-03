@@ -2343,3 +2343,15 @@ html[data-player-desktop] .calendar-day.on {
     margin: 0 0 4px;
   }
 }
+
+/* Erro do formulario de auth no desktop. Inline porque estas paginas nao
+   carregam o ui.js e nao tem toast. */
+.web-login-card__error {
+  padding: 10px 12px;
+  border: 1px solid #f2c7c7;
+  border-radius: 10px;
+  margin: 0 0 14px;
+  background: #fdf2f2;
+  color: #c0392b;
+  font-size: 13px;
+}

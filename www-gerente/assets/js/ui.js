@@ -23,7 +23,7 @@
 
   function syncAuthControls() {
     var authenticated = false;
-    try { authenticated = Boolean(localStorage.getItem('auth_token')); } catch (error) {}
+    try { authenticated = Boolean(localStorage.getItem((((window.__PQ_CONFIG__ || {}).STORAGE_PREFIX) || 'pq') + ':auth_token')); } catch (error) {}
     document.querySelectorAll('[data-auth-guest]').forEach(function (element) {
       element.hidden = authenticated;
     });
@@ -78,8 +78,9 @@
     var authLogout = e.target.closest('[data-auth-logout]');
     if (authLogout) {
       try {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
+        var pfx = (((window.__PQ_CONFIG__ || {}).STORAGE_PREFIX) || 'pq') + ':';
+        localStorage.removeItem(pfx + 'auth_token');
+        localStorage.removeItem(pfx + 'auth_user');
       } catch (error) {}
     }
 

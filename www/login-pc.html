@@ -21,7 +21,7 @@
   </header>
 
   <main class="web-login-main">
-    <form class="web-login-card" data-web-login-form>
+    <form class="web-login-card" data-web-auth-form="login">
       <h1>Entrar na sua conta</h1>
       <p>Acesse suas reservas, favoritos e mensagens.</p>
       <div class="inp">
@@ -32,20 +32,42 @@
         <label for="web-login-password">Senha</label>
         <input id="web-login-password" type="password" name="password" autocomplete="current-password" placeholder="Sua senha" required>
       </div>
+      <!-- Erro inline, e nao toast: esta pagina nao carrega o ui.js, entao
+           window.pqToast nao existe aqui. A versao anterior chamava o toast
+           e a falha passava em silencio absoluto. -->
+      <p class="web-login-card__error" data-auth-error hidden role="alert"></p>
       <button class="btn btn-primary btn-lg" type="submit">Entrar</button>
-      <div class="web-login-card__footer">Ainda não tem conta? <a href="./login.html">Criar conta</a></div>
+      <div class="web-login-card__footer">Ainda não tem conta? <a href="./cadastro-pc.html">Criar conta</a></div>
     </form>
   </main>
 
   <script src="./assets/vendor/lucide/lucide.min.js"></script>
-  <script>
+  <script type="module">
+    import authService from './services/auth.js';
+
     window.lucide && window.lucide.createIcons();
-    document.querySelector('[data-web-login-form]').addEventListener('submit', function (event) {
+
+    const form = document.querySelector('[data-web-auth-form]');
+    const erro = form.querySelector('[data-auth-error]');
+
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      var email = new FormData(event.currentTarget).get('email');
-      localStorage.setItem('auth_token', 'qadras-local-session');
-      localStorage.setItem('auth_user', JSON.stringify({ name: 'Gabriel', email: email }));
-      location.href = './pc.html#quadras';
+      if (!form.reportValidity()) return;
+      erro.hidden = true;
+      const submit = form.querySelector('[type="submit"]');
+      submit.setAttribute('disabled', 'disabled');
+      try {
+        const dados = Object.fromEntries(new FormData(form));
+        await (form.dataset.webAuthForm === 'register'
+          ? authService.register(dados)
+          : authService.login(dados));
+        location.href = './pc.html#quadras';
+      } catch (error) {
+        erro.textContent = error.message || 'Não foi possível continuar';
+        erro.hidden = false;
+      } finally {
+        submit.removeAttribute('disabled');
+      }
     });
   </script>
 </body>

@@ -1,3 +1,5 @@
+import { REQUIRE_LOGIN } from '../config/constants.js';
+
 /* Quem pode entrar em cada rota.
 
    Aqui morava um requireAuth() que nunca rodou: ele dependia de
@@ -47,6 +49,12 @@ export function safeNext(route) {
   return AUTH_ROUTES.has(primeiro) ? 'home' : raw;
 }
 
+/* Com REQUIRE_LOGIN desligado nada e protegido: o app inteiro abre sem
+   conta. A lista acima continua valendo e testada para quando ligar. */
 export function isProtectedRoute(routeName) {
-  return PROTECTED_MOBILE_ROUTES.has(routeName);
+  return REQUIRE_LOGIN && PROTECTED_MOBILE_ROUTES.has(routeName);
+}
+
+export function requiresLogin() {
+  return REQUIRE_LOGIN;
 }
