@@ -1,0 +1,46 @@
+<!-- Onboarding — curto de proposito.
+
+     Pergunta so posicao e nivel. Nascimento, pe dominante e foto ficam no
+     Perfil: onboarding longo mata cadastro, e quem se importa com ranking
+     completa depois.
+
+     Tres passos, UMA rota. Passos como rotas hash virariam tres entradas de
+     historico e o Voltar do Android ficaria estranho. Os seletores reusam
+     .filter-choice-grid, o mesmo componente do filtro de esporte — a pessoa
+     ja conhece o gesto. -->
+<div class="route-page onb-page">
+  <header class="onb-head">
+    <button class="icon-btn onb-back" type="button" data-onb-back aria-label="Voltar um passo" hidden>
+      <i class="ic" data-lucide="chevron-left"></i>
+    </button>
+    <div class="onb-progress" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1">
+      <span data-onb-bar></span>
+    </div>
+    <a class="onb-skip" href="#home" data-onb-skip>Depois</a>
+  </header>
+
+  <section class="onb-step" data-onb-step="1">
+    <h1>Onde você joga?</h1>
+    <p>Serve para sortear times equilibrados na sua pelada.</p>
+    <div class="filter-choice-grid" data-onb-positions></div>
+    <button class="btn block onb-next" type="button" data-onb-next disabled>Continuar</button>
+  </section>
+
+  <section class="onb-step" data-onb-step="2" hidden>
+    <h1>Como é seu nível?</h1>
+    <p>Ninguém vê isso além de você e do seu time.</p>
+    <div class="filter-choice-grid onb-levels" data-onb-levels></div>
+    <button class="btn block onb-next" type="button" data-onb-next disabled>Continuar</button>
+  </section>
+
+  <section class="onb-step onb-step--done" data-onb-step="3" hidden>
+    <span class="onb-check"><i class="ic" data-lucide="check"></i></span>
+    <h1>Tudo pronto</h1>
+    <p data-onb-summary></p>
+    <div class="onb-hint">
+      <i class="ic" data-lucide="trophy"></i>
+      <span>Complete sua ficha no Perfil (nascimento e pé dominante) para entrar no ranking quando ele chegar.</span>
+    </div>
+    <button class="btn block" type="button" data-onb-finish>Começar a jogar</button>
+  </section>
+</div>

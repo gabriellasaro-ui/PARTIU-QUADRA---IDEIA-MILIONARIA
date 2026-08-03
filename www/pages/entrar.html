@@ -1,0 +1,42 @@
+<!-- Entrar.
+
+     Rota do SPA, nao pagina separada: quem toca em "Reservar" no meio de uma
+     quadra precisa voltar exatamente para onde estava, e o ?next= so
+     sobrevive assim. A barra de baixo some via data-bottombar="none",
+     escrito por renderAuth. -->
+<div class="route-page auth-page">
+  <a class="auth-back icon-btn" href="#home" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
+
+  <div class="auth-hero">
+    <span class="auth-mark"><i class="ic" data-lucide="goal"></i></span>
+    <h1>Bora jogar</h1>
+    <p>Entre para reservar quadra e organizar seu time.</p>
+  </div>
+
+  <div class="auth-body">
+    <!-- Google em primeiro: e o caminho mais curto, e quem tem conta Google
+         no celular nao precisa lembrar de senha nenhuma. -->
+    <button class="btn outline block auth-google" type="button" data-google-login>
+      <span class="auth-google__mark" aria-hidden="true">G</span>
+      Continuar com Google
+    </button>
+
+    <div class="auth-divider"><span>ou</span></div>
+
+    <form data-auth-form="login" novalidate>
+      <div class="field">
+        <label for="auth-email">E-mail</label>
+        <input id="auth-email" type="email" name="email" autocomplete="email" placeholder="voce@email.com" required>
+      </div>
+      <div class="field">
+        <label for="auth-password">Senha</label>
+        <input id="auth-password" type="password" name="password" autocomplete="current-password" placeholder="Sua senha" required>
+      </div>
+      <button class="btn block" type="submit">Entrar</button>
+    </form>
+
+    <a class="auth-link" href="#" data-toast="Recuperação de senha entra com o backend">Esqueci minha senha</a>
+
+    <p class="auth-swap">Ainda não tem conta? <a href="#cadastro" data-auth-swap>Criar conta</a></p>
+  </div>
+</div>

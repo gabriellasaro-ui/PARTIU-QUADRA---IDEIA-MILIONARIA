@@ -111,6 +111,21 @@ html[data-route="mapa"] .mobile-map-route {
   }
 }
 
+/* [hidden] tem que esconder. Sempre.
+
+   O navegador aplica [hidden]{display:none} pela folha DELE, e qualquer
+   regra de autor que declare display ganha, independentemente de
+   especificidade. Neste projeto isso ja causou quatro bugs: o painel de
+   conversa do clube desenhado por cima de todas as abas, o cabecalho de
+   Mensagens duplicado, os tres passos do onboarding empilhados e o botao de
+   voltar aparecendo no primeiro passo.
+
+   O !important e o unico jeito de a folha de autor perder para si mesma.
+   Nada legitimo precisa de um elemento [hidden] visivel. */
+[hidden] {
+  display: none !important;
+}
+
 .topbar {
   padding: calc(24px + var(--pq-safe-top)) 18px 20px;
   background:
@@ -2423,6 +2438,17 @@ button .ic,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Passou a cobrir tambem as animacoes estruturais. Antes so o bloco de
+     aprovacao respeitava a preferencia; route-in, o onboarding e as folhas
+     continuavam se mexendo. */
+  .route-page,
+  .onb-step,
+  .onb-check,
+  .toast,
+  .market-sheet__panel { animation: none; }
+
+  .onb-progress > span { transition: none; }
+
   .approval-live-visual__arena,
   .approval-live-visual__route::after,
   .approval-live-visual__pulse,
@@ -6065,3 +6091,356 @@ html[data-bottombar="game"] .game-tabs { display: none; }
   font-style: normal;
   font-weight: 800;
 }
+
+/* ═══════════════ Entrar, cadastro e onboarding ═══════════════ */
+
+/* Sem barra de baixo nestas telas, entao o respiro que a .screen reserva
+   para a tabbar vira buraco. */
+html[data-bottombar="none"] .screen {
+  padding-bottom: var(--pq-safe-bottom);
+}
+
+.auth-page {
+  display: flex;
+  min-height: calc(100dvh - var(--pq-safe-bottom));
+  flex-direction: column;
+  padding: 12px 20px calc(24px + var(--pq-safe-bottom));
+}
+
+.auth-back {
+  align-self: flex-start;
+}
+
+.auth-hero {
+  padding: 26px 0 22px;
+  text-align: center;
+}
+
+.auth-mark {
+  display: inline-flex;
+  width: 60px;
+  height: 60px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  margin-bottom: 16px;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.auth-mark .ic { width: 30px; height: 30px; }
+
+.auth-hero h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.auth-hero p {
+  margin: 0;
+  color: var(--pq-muted);
+  font-size: 14px;
+}
+
+.auth-body { flex: 1; }
+
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.auth-google__mark {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: #fff;
+  color: #4285f4;
+  font-weight: 800;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--pq-line);
+  content: '';
+}
+
+.auth-link {
+  display: block;
+  padding: 14px 0 2px;
+  color: var(--pq-brand-strong);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.auth-swap {
+  margin: 22px 0 0;
+  color: var(--pq-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.auth-swap a {
+  color: var(--pq-brand-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-terms {
+  margin: 14px 0 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ── Onboarding ── */
+
+.onb-page {
+  display: flex;
+  min-height: calc(100dvh - var(--pq-safe-bottom));
+  flex-direction: column;
+  padding: 12px 20px calc(24px + var(--pq-safe-bottom));
+}
+
+.onb-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 22px;
+}
+
+.onb-progress {
+  height: 4px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--pq-line);
+}
+
+.onb-progress > span {
+  display: block;
+  width: 33.33%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pq-brand);
+  /* Transicao, e nao keyframe: transicao interpola a partir do valor atual,
+     entao a barra avanca de um passo ao outro. Um keyframe reiniciaria do
+     zero a cada troca. */
+  transition: width .28s cubic-bezier(.2, .8, .2, 1);
+}
+
+.onb-skip {
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.onb-step {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  /* Horizontal de proposito: route-in e vertical, entao a direcao sozinha
+     diz "mesmo lugar, outro passo" em vez de "outra tela". */
+  animation: pq-step-in .18s cubic-bezier(.2, .8, .2, 1);
+}
+
+.onb-page--back .onb-step {
+  animation-name: pq-step-in-back;
+}
+
+@keyframes pq-step-in {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pq-step-in-back {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.onb-step h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.onb-step > p {
+  margin: 0 0 22px;
+  color: var(--pq-muted);
+  font-size: 14px;
+}
+
+/* .btn.block ja declara margin-top e tem duas classes; um seletor de uma
+   classe so perderia e o botao ficaria colado no conteudo. */
+.onb-step .btn.onb-next {
+  margin-top: auto;
+}
+
+/* Duas colunas, nao tres: "Meio-campo" e "Jogo de tudo" nao cabem em um
+   terco da tela e vazavam para fora do cartao. */
+.onb-page [data-onb-positions] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onb-levels {
+  grid-template-columns: 1fr;
+}
+
+.onb-levels label span {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+.onb-levels label small {
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.onb-step--done {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.onb-check {
+  display: inline-flex;
+  width: 76px;
+  height: 76px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: 20px;
+  background: var(--pq-brand);
+  color: #fff;
+  /* Reusa o pop que a tela de aprovacao ja usa — mesma sensacao de "deu
+     certo", sem inventar um segundo vocabulario. */
+  animation: pq-approval-success-pop .5s cubic-bezier(.2, .9, .25, 1.25) both;
+}
+
+.onb-check .ic { width: 38px; height: 38px; stroke-width: 3; }
+
+.onb-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  margin: 20px 0;
+  background: var(--pq-mint);
+  color: var(--pq-brand-strong);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.onb-hint .ic { flex: 0 0 auto; width: 18px; height: 18px; }
+
+.onb-step--done .btn { width: 100%; margin-top: auto; }
+
+/* ── Resultado da busca de clube ── */
+
+.club-hit .btn-xs {
+  padding: 8px 14px;
+  font-size: 12px;
+}
+
+/* ── Código do clube e zona de risco ── */
+
+.club-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 12px;
+  border: 1px dashed var(--pq-line);
+  border-radius: 999px;
+  margin-top: 12px;
+  background: var(--pq-paper);
+}
+
+.club-code__value {
+  color: var(--pq-brand-strong);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.club-code__btn {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--pq-brand-strong);
+  cursor: pointer;
+}
+
+.club-code__btn .ic { width: 15px; height: 15px; }
+.club-code__btn:active { transform: translateY(1px); }
+
+.club-danger {
+  padding-top: 20px;
+  margin-top: 20px;
+  border-top: 1px solid var(--pq-line);
+}
+
+.club-danger__delete {
+  border-color: #f2c7c7;
+  color: #c0392b;
+}
+
+.club-danger__delete:disabled {
+  border-color: var(--pq-line);
+  color: var(--pq-muted);
+  opacity: .6;
+}
+
+.club-danger__hint {
+  margin: 8px 0 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.member-remove {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: #fff;
+  color: #c0392b;
+  cursor: pointer;
+}
+
+.member-remove .ic { width: 16px; height: 16px; }

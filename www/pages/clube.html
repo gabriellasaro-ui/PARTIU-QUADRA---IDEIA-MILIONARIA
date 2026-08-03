@@ -15,7 +15,9 @@
       <span class="empty-ic"><i class="ic" data-lucide="users"></i></span>
       <h3>Você ainda não tem um clube</h3>
       <p>O clube guarda seu time e organiza a pelada de sempre: quem entra, quando joga e quem confirmou.</p>
-      <button class="btn block" type="button" data-sheet-open="club-edit-sheet">Criar meu clube</button>
+      <button class="btn block" type="button" data-sheet-open="club-edit-sheet" data-requires-auth="clube">Criar meu clube</button>
+      <!-- O caminho que faltava: ate agora so dava para CRIAR clube. -->
+      <a class="btn outline block" href="#clubes">Entrar num clube</a>
       <a class="btn outline block" href="#quadras">Reservar uma quadra</a>
     </div>
 
@@ -43,6 +45,16 @@
           <h1 data-club-name></h1>
           <p data-club-description></p>
           <span class="profile-location"><i class="ic" data-lucide="map-pin"></i><span data-club-city></span></span>
+          <!-- O codigo e o convite: e assim que alguem acha este time. -->
+          <div class="club-code">
+            <span class="club-code__value" data-club-code>—</span>
+            <button class="club-code__btn" type="button" data-club-copy aria-label="Copiar código">
+              <i class="ic" data-lucide="copy"></i>
+            </button>
+            <button class="club-code__btn" type="button" data-club-share aria-label="Compartilhar convite">
+              <i class="ic" data-lucide="share-2"></i>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -70,6 +82,12 @@
         <span data-member-label></span>
       </div>
       <div class="payment-list" data-member-list></div>
+
+      <div class="club-danger">
+        <button class="btn outline block" type="button" data-club-leave hidden>Sair do clube</button>
+        <button class="btn outline block club-danger__delete" type="button" data-club-delete hidden>Apagar clube</button>
+        <p class="club-danger__hint" data-club-delete-hint hidden>Remova os outros membros antes de apagar.</p>
+      </div>
     </section>
 
     <!-- Conversa ocupa a tela inteira: e uma tela de chat, nao uma secao de

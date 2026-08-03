@@ -9,6 +9,28 @@ export const SPORTS = [
   'Futsal'
 ];
 
+/* ═══════════════ Ficha de jogador ═══════════════
+   O onboarding pergunta posicao e nivel; o resto fica no Perfil. Sao os
+   dados que ranking e torneio vao consumir la na frente — por enquanto so
+   servem para sortear time equilibrado e para a arena saber quem chega. */
+export const POSITIONS = [
+  { id: 'Goleiro', icon: 'hand' },
+  { id: 'Zagueiro', icon: 'shield' },
+  { id: 'Lateral', icon: 'move-horizontal' },
+  { id: 'Meio-campo', icon: 'git-branch' },
+  { id: 'Atacante', icon: 'goal' },
+  { id: 'Jogo de tudo', icon: 'shuffle' }
+];
+
+export const LEVELS = [
+  { id: 'iniciante', label: 'Iniciante', hint: 'Jogo de vez em quando' },
+  { id: 'intermediario', label: 'Intermediário', hint: 'Jogo toda semana' },
+  { id: 'avancado', label: 'Avançado', hint: 'Jogo competitivo' }
+];
+
+export const FEET = ['Destro', 'Canhoto', 'Ambidestro'];
+
+
 /* A home mostra so os esportes mais jogados — o rail nao e um indice, e um
    atalho. Beach Tennis e Basquete continuam em SPORTS e seguem achaveis por
    "Ver todos" e pelos filtros de Explorar. */
@@ -294,7 +316,18 @@ export const CURRENT_USER = {
   city: 'Goiânia',
   memberSince: 'jun/2025',
   stats: { games: 12, reservations: 8, favorites: 3 },
-  favoriteSport: 'Futebol Society'
+  favoriteSport: 'Futebol Society',
+  /* Ficha de jogador. Posicao e nota viviam so no membro do clube — o mesmo
+     u-gabriel era "Atacante, 4.8" la dentro e nao tinha nada disso aqui.
+     Desceram para ca: o perfil e a fonte, o membro do clube e uma projecao. */
+  position: 'Atacante',
+  level: 'intermediario',
+  birthDate: '',
+  foot: '',
+  rating: 4.8,
+  photo: '',
+  provider: 'password',
+  onboardedAt: null
 };
 
 function buildMatchDate(minutesFromNow) {
@@ -406,6 +439,8 @@ export const CLUBS = demoWithoutClub() ? [] : [
   {
     id: 1,
     name: 'Pelada dos Cria',
+    // Codigo de convite: e por ele que alguem acha o time na busca.
+    code: 'KRT4P9',
     sport: 'Futebol Society',
     city: 'Goiânia, GO',
     description: 'Toda quinta às 20h. Quem faltar sem avisar paga a água.',

@@ -1,7 +1,11 @@
 export const ROUTES = {
   home: './index.html',
   desktop: './pc.html#quadras',
-  login: './login.html',
+  login: './index.html#entrar',
+  entrar: './index.html#entrar',
+  cadastro: './index.html#cadastro',
+  onboarding: './index.html#onboarding',
+  clubes: './index.html#clubes',
   dashboard: './dashboard.html',
   explorar: './index.html#explorar',
   mapa: './index.html#mapa',
@@ -36,7 +40,10 @@ export function parseMobileRouteHash(hashValue = '') {
     home: 'home',
     inicio: 'home',
     chat: 'mensagens',
-    configuracoes: 'config'
+    configuracoes: 'config',
+    // Links antigos para ./login.html continuam valendo.
+    login: 'entrar',
+    registrar: 'cadastro'
   };
   const validRoutes = new Set([
     'home',
@@ -52,7 +59,11 @@ export function parseMobileRouteHash(hashValue = '') {
     'config',
     'mensagens',
     'game',
-    'clube'
+    'clube',
+    'clubes',
+    'entrar',
+    'cadastro',
+    'onboarding'
   ]);
   let name = aliases[first] || first;
   const params = {};

@@ -1,5 +1,5 @@
 import { loadComponents, refreshIcons } from './component-loader.js';
-import { requireAuth, redirectWhenAuthenticated } from '../../middleware/auth.js';
+import { isProtectedRoute, authHashFor } from '../../middleware/auth.js';
 import { qsa } from '../../utils/helpers.js';
 import authService from '../../services/auth.js';
 import { API_BASE_URL } from '../../config/constants.js';
@@ -103,6 +103,30 @@ const MOBILE_ROUTES = {
     page: './pages/clube.html',
     title: 'Clube - Qadras',
     nav: 'menu'
+  },
+  clubes: {
+    header: null,
+    page: './pages/clubes.html',
+    title: 'Achar clube - Qadras',
+    nav: 'menu'
+  },
+  entrar: {
+    header: null,
+    page: './pages/entrar.html',
+    title: 'Entrar - Qadras',
+    nav: ''
+  },
+  cadastro: {
+    header: null,
+    page: './pages/cadastro.html',
+    title: 'Criar conta - Qadras',
+    nav: ''
+  },
+  onboarding: {
+    header: null,
+    page: './pages/onboarding.html',
+    title: 'Seu perfil - Qadras',
+    nav: ''
   },
   game: {
     header: null,
@@ -286,12 +310,6 @@ const PLAYER_DESKTOP_ROUTES = {
   }
 };
 
-function applyRouteGuards() {
-  const page = document.documentElement;
-  if (page.dataset.authRequired === 'true') requireAuth();
-  if (page.dataset.guestOnly === 'true') redirectWhenAuthenticated();
-}
-
 function markActiveNav() {
   const current = document.documentElement.dataset.page;
   qsa('[data-nav-page]').forEach((item) => {
@@ -349,6 +367,20 @@ async function renderMobileRoute() {
 
   const routeState = mobileRouteFromHash();
   const { name: routeName, route } = routeState;
+
+  /* A guarda roda ANTES de qualquer escrita no DOM, inclusive antes do
+     curto-circuito abaixo. Marcar currentRoute e so entao redirecionar faria
+     o roteador acreditar que ja montou a rota protegida: ao voltar logada, a
+     pessoa cairia no curto-circuito e veria a tela antiga, vazia. E o mesmo
+     bug que ja mordeu o painel do gerente.
+
+     location.replace e nao assign: assim o Voltar a partir do login cai na
+     origem de verdade, e nao num pingue-pongue protegido <-> login. */
+  if (isProtectedRoute(routeName) && !authService.hasSession()) {
+    location.replace(authHashFor(location.hash));
+    return;
+  }
+
   if (view.dataset.currentRoute === routeState.signature) {
     document.documentElement.dataset.page = route.nav;
     document.documentElement.dataset.route = routeName;
@@ -608,7 +640,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.pqRefreshIcons = refreshIcons;
   await loadComponents();
   window.pqSyncAuthControls?.();
-  applyRouteGuards();
   initMobileActions();
   initPlayerDesktopActions();
   await initMobileRouter();

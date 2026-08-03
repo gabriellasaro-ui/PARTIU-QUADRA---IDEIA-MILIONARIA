@@ -1,0 +1,40 @@
+<!-- Criar conta. Mesma anatomia de entrar.html de proposito: quem trocou de
+     tela por engano nao devia sentir que mudou de app. -->
+<div class="route-page auth-page">
+  <a class="auth-back icon-btn" href="#entrar" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
+
+  <div class="auth-hero">
+    <span class="auth-mark"><i class="ic" data-lucide="goal"></i></span>
+    <h1>Criar conta</h1>
+    <p>Leva um minuto. Depois é só escolher a quadra.</p>
+  </div>
+
+  <div class="auth-body">
+    <button class="btn outline block auth-google" type="button" data-google-login>
+      <span class="auth-google__mark" aria-hidden="true">G</span>
+      Continuar com Google
+    </button>
+
+    <div class="auth-divider"><span>ou</span></div>
+
+    <form data-auth-form="register" novalidate>
+      <div class="field">
+        <label for="reg-name">Nome completo</label>
+        <input id="reg-name" type="text" name="name" autocomplete="name" placeholder="Como o time te chama" required>
+      </div>
+      <div class="field">
+        <label for="reg-email">E-mail</label>
+        <input id="reg-email" type="email" name="email" autocomplete="email" placeholder="voce@email.com" required>
+      </div>
+      <div class="field">
+        <label for="reg-password">Senha</label>
+        <input id="reg-password" type="password" name="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+      </div>
+      <button class="btn block" type="submit">Criar conta</button>
+    </form>
+
+    <p class="auth-terms">Ao criar a conta você aceita os termos de uso e a política de privacidade.</p>
+
+    <p class="auth-swap">Já tem conta? <a href="#entrar" data-auth-swap>Entrar</a></p>
+  </div>
+</div>

@@ -294,7 +294,18 @@ export const CURRENT_USER = {
   city: 'Goiânia',
   memberSince: 'jun/2025',
   stats: { games: 12, reservations: 8, favorites: 3 },
-  favoriteSport: 'Futebol Society'
+  favoriteSport: 'Futebol Society',
+  /* Ficha de jogador. Posicao e nota viviam so no membro do clube — o mesmo
+     u-gabriel era "Atacante, 4.8" la dentro e nao tinha nada disso aqui.
+     Desceram para ca: o perfil e a fonte, o membro do clube e uma projecao. */
+  position: 'Atacante',
+  level: 'intermediario',
+  birthDate: '',
+  foot: '',
+  rating: 4.8,
+  photo: '',
+  provider: 'password',
+  onboardedAt: null
 };
 
 function buildMatchDate(minutesFromNow) {
@@ -406,6 +417,8 @@ export const CLUBS = demoWithoutClub() ? [] : [
   {
     id: 1,
     name: 'Pelada dos Cria',
+    // Codigo de convite: e por ele que alguem acha o time na busca.
+    code: 'KRT4P9',
     sport: 'Futebol Society',
     city: 'Goiânia, GO',
     description: 'Toda quinta às 20h. Quem faltar sem avisar paga a água.',

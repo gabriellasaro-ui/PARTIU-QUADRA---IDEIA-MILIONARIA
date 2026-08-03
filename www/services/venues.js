@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '../config/constants.js';
 import api from './api.js';
 import storage from '../storage/storage.js';
+import authService from './auth.js';
 import {
   ACTIVE_MATCH,
   CONVERSATIONS,
@@ -196,18 +197,30 @@ export const venueService = {
 
   async profile() {
     if (API_BASE_URL) return api.get('/api/perfil');
+    /* Campos derivados NAO vem do override. Em aparelhos que ja editaram o
+       perfil antes desta correcao, player_profile guarda o objeto inteiro e
+       congelaria stats e nota para sempre. Descartar na leitura desentala
+       esses aparelhos sem jogar fora nome, cidade e telefone, que a pessoa
+       realmente editou. */
+    const { stats, memberSince, rating, ...override } = storage.get('player_profile', {});
     return {
       ...clone(CURRENT_USER),
-      ...storage.get('player_profile', {})
+      // A sessao manda no que e identidade: quem entrou e quem esta aqui.
+      ...(authService.currentUser() || {}),
+      ...override
     };
   },
 
-  async saveProfile(profile) {
-    if (API_BASE_URL) return api.post('/api/perfil/salvar', profile);
-    const current = await this.profile();
-    const next = { ...current, ...clone(profile) };
-    storage.set('player_profile', next);
-    return clone(next);
+  async saveProfile(patch) {
+    if (API_BASE_URL) return api.patch('/api/perfil', patch);
+    /* So o patch, nunca o objeto inteiro — o mesmo cuidado que saveVenue ja
+       toma de proposito. Gravando tudo, stats/memberSince/favoriteSport
+       viravam copia congelada na primeira edicao e mudanca no catalogo nunca
+       mais aparecia. */
+    storage.set('player_profile', { ...storage.get('player_profile', {}), ...clone(patch) });
+    // A topbar e a saudacao leem da sessao; sem isto ficam com o nome velho.
+    authService.updateSessionUser(patch);
+    return this.profile();
   },
 
   async getActiveMatch() {
@@ -252,10 +265,125 @@ export const venueService = {
     const previous = clubs.find((c) => c.id === id);
     const next = [
       ...clubs.filter((c) => c.id !== id),
-      { ...previous, ...club, id, members: club.members || previous?.members || [] }
+      {
+        ...previous,
+        ...club,
+        id,
+        members: club.members || previous?.members || [],
+        // So na criacao. Regerar na edicao invalidaria convites ja mandados.
+        code: previous?.code || club.code || this.generateClubCode(clubs)
+      }
     ];
     storage.set('clubs', next);
     return clone(next.find((c) => c.id === id));
+  },
+
+  /* Codigo de convite. 6 caracteres, exibido XXX-XXX.
+
+     O alfabeto exclui I, L, O, 0 e 1 de proposito: sao os pares que se
+     confundem falados e escritos, e este codigo vai ser ditado em voz alta
+     num grupo de WhatsApp. 31^6 da ~887 milhoes de combinacoes.
+
+     Guardado SEM hifen — o hifen e formatacao, nao dado. Se entrasse no
+     valor, a busca teria que normalizar em dois lugares. */
+  generateClubCode(existentes = []) {
+    const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const usados = new Set(existentes.map((c) => c.code).filter(Boolean));
+    for (let tentativa = 0; tentativa < 50; tentativa += 1) {
+      let code = '';
+      for (let i = 0; i < 6; i += 1) {
+        code += ALFABETO[Math.floor(Math.random() * ALFABETO.length)];
+      }
+      if (!usados.has(code)) return code;
+    }
+    return `C${Date.now().toString(36).slice(-5).toUpperCase()}`;
+  },
+
+  async clubByCode(code) {
+    if (API_BASE_URL) {
+      const data = await api.get(`/api/clubes?codigo=${encodeURIComponent(code)}`);
+      return data?.clube || null;
+    }
+    const alvo = String(code || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const clubs = await this.clubs();
+    return clone(clubs.find((c) => c.code === alvo)) || null;
+  },
+
+  /* O membro nasce do PERFIL: posicao e nota vem de quem a pessoa e, nao de
+     um valor escrito na mao na hora de entrar. */
+  async joinClub(clubId) {
+    if (API_BASE_URL) return api.post(`/api/clubes/${clubId}/entrar`, {});
+    const [clubs, user, atual] = await Promise.all([this.clubs(), this.profile(), this.myClub()]);
+    if (atual) throw new Error('Você já faz parte de um clube. Saia dele antes de entrar em outro.');
+    const club = clubs.find((c) => c.id === Number(clubId));
+    if (!club) throw new Error('Clube não encontrado.');
+    if (club.members.some((m) => m.id === user.id)) return clone(club);
+
+    const membro = {
+      id: user.id,
+      name: user.name,
+      role: 'membro',
+      position: user.position || 'Jogador',
+      rating: user.rating ?? null,
+      since: new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+    };
+    const next = clubs.map((c) => (c.id === club.id ? { ...c, members: [...c.members, membro] } : c));
+    storage.set('clubs', next);
+    return clone(next.find((c) => c.id === club.id));
+  },
+
+  async leaveClub(clubId) {
+    if (API_BASE_URL) return api.post(`/api/clubes/${clubId}/sair`, {});
+    const [clubs, user] = await Promise.all([this.clubs(), this.profile()]);
+    const club = clubs.find((c) => c.id === Number(clubId));
+    if (!club) return null;
+    const restantes = club.members.filter((m) => m.id !== user.id);
+    // Sair sendo o ultimo apaga o clube: um grupo sem ninguem nao e grupo,
+    // e ficaria orfao aparecendo na busca dos outros para sempre.
+    if (!restantes.length) return this.deleteClub(clubId, { force: true });
+    storage.set('clubs', clubs.map((c) => (c.id === club.id ? { ...c, members: restantes } : c)));
+    return { ok: true };
+  },
+
+  /* So o dono, e so com o clube vazio — a regra que o dono do produto
+     definiu. O force existe para o caminho do ultimo membro saindo, que ja
+     satisfaz a regra por outro caminho. */
+  async deleteClub(clubId, { force = false } = {}) {
+    if (API_BASE_URL) return api.delete(`/api/clubes/${clubId}`);
+    const [clubs, user] = await Promise.all([this.clubs(), this.profile()]);
+    const club = clubs.find((c) => c.id === Number(clubId));
+    if (!club) return { ok: true };
+    if (!force) {
+      const euSouDono = club.members.some((m) => m.id === user.id && m.role === 'dono');
+      if (!euSouDono) throw new Error('Só quem criou o clube pode apagar.');
+      if (club.members.length > 1) {
+        throw new Error('Remova os outros membros antes de apagar o clube.');
+      }
+    }
+    storage.set('clubs', clubs.filter((c) => c.id !== club.id));
+    // Cascata: pelada de clube e conversa nao sobrevivem ao clube.
+    const peladas = await this.peladas();
+    storage.set('peladas', peladas.filter((p) => p.clubId !== club.id));
+    const chat = storage.get('club_chat', clone(CLUB_CHAT));
+    storage.set('club_chat', chat.filter((m) => m.clubId !== club.id));
+    return { ok: true };
+  },
+
+  /* Sem isto a regra "apagar so se vazio" deixaria o clube indeletavel para
+     sempre: nao haveria como esvaziar. */
+  async removeMember(clubId, memberId) {
+    if (API_BASE_URL) return api.delete(`/api/clubes/${clubId}/membros/${memberId}`);
+    const [clubs, user] = await Promise.all([this.clubs(), this.profile()]);
+    const club = clubs.find((c) => c.id === Number(clubId));
+    if (!club) return null;
+    if (!club.members.some((m) => m.id === user.id && m.role === 'dono')) {
+      throw new Error('Só quem criou o clube pode remover membros.');
+    }
+    if (memberId === user.id) throw new Error('Você não pode remover a si mesmo.');
+    storage.set('clubs', clubs.map((c) => (
+      c.id === club.id ? { ...c, members: c.members.filter((m) => m.id !== memberId) } : c
+    )));
+    return { ok: true };
   },
 
   async peladas(clubId) {

@@ -1,7 +1,10 @@
 import venueService from '../../services/venues.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
-import { SPORTS } from '../../config/mock-data.js';
+import { SPORTS, POSITIONS, LEVELS } from '../../config/mock-data.js';
+import { APP_PUBLIC_URL } from '../../config/constants.js';
+import authService from '../../services/auth.js';
+import { authHashFor, safeNext } from '../../middleware/auth.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
 
@@ -1433,6 +1436,164 @@ async function renderMessages(root, route) {
   bubbles.scrollTop = bubbles.scrollHeight;
 }
 
+/* ══════════════════ Entrar / criar conta ══════════════════ */
+
+/* Guarda o passo do onboarding entre renders, pelo mesmo motivo de
+   clubSection: o render roda de novo e nao pode arrancar a pessoa do meio. */
+let onbStep = 1;
+let onbEscolha = { position: '', level: '' };
+
+function renderAuth(root, route) {
+  // A barra de baixo pertence a tela. "none" porque nao ha barra nenhuma
+  // aqui — a regra html[data-bottombar] .tabbar {display:none} ja casa com
+  // qualquer valor, e contextbar--none nao existe.
+  document.documentElement.dataset.bottombar = 'none';
+
+  if (authService.hasSession()) {
+    location.replace(`#${safeNext(route)}`);
+    return;
+  }
+
+  // O next precisa sobreviver a troca entre entrar e cadastro, senao quem
+  // errou a tela volta para a home em vez do checkout que estava montando.
+  const next = route?.query?.get('next');
+  if (next) {
+    root.querySelectorAll('[data-auth-swap]').forEach((link) => {
+      const destino = link.getAttribute('href').replace(/^#/, '').split('?')[0];
+      link.setAttribute('href', `#${destino}?next=${encodeURIComponent(next)}`);
+    });
+  }
+
+  window.pqRefreshIcons?.(root);
+}
+
+/* Depois de entrar: quem acabou de criar conta passa pelo onboarding, quem
+   ja tinha volta direto para onde estava indo. */
+function goAfterAuth(route, isNew) {
+  const destino = safeNext(route);
+  location.replace(isNew || authService.needsOnboarding()
+    ? `#onboarding?next=${encodeURIComponent(destino)}`
+    : `#${destino}`);
+}
+
+/* ══════════════════ Onboarding ══════════════════ */
+
+function onbPaint(root) {
+  root.querySelectorAll('[data-onb-step]').forEach((secao) => {
+    secao.hidden = Number(secao.dataset.onbStep) !== onbStep;
+  });
+
+  const barra = root.querySelector('[data-onb-bar]');
+  if (barra) barra.style.width = `${(onbStep / 3) * 100}%`;
+  root.querySelector('.onb-progress')?.setAttribute('aria-valuenow', String(onbStep));
+
+  const voltar = root.querySelector('[data-onb-back]');
+  if (voltar) voltar.hidden = onbStep === 1;
+
+  // O botao de cada passo so libera com a escolha feita.
+  const passo1 = root.querySelector('[data-onb-step="1"] [data-onb-next]');
+  if (passo1) passo1.disabled = !onbEscolha.position;
+  const passo2 = root.querySelector('[data-onb-step="2"] [data-onb-next]');
+  if (passo2) passo2.disabled = !onbEscolha.level;
+
+  const resumo = root.querySelector('[data-onb-summary]');
+  if (resumo && onbStep === 3) {
+    const nivel = LEVELS.find((l) => l.id === onbEscolha.level);
+    resumo.textContent = `${onbEscolha.position} · ${nivel ? nivel.label : ''}`;
+  }
+}
+
+function renderOnboarding(root, route) {
+  document.documentElement.dataset.bottombar = 'none';
+
+  if (!authService.hasSession()) {
+    location.replace(authHashFor('onboarding'));
+    return;
+  }
+
+  onbStep = 1;
+  const user = authService.currentUser() || {};
+  onbEscolha = { position: user.position || '', level: user.level || '' };
+
+  const posicoes = root.querySelector('[data-onb-positions]');
+  if (posicoes) {
+    posicoes.innerHTML = POSITIONS.map((p) => `<label>
+      <input type="radio" name="onb-position" value="${escapeHtml(p.id)}"${p.id === onbEscolha.position ? ' checked' : ''}>
+      <span><i class="ic" data-lucide="${escapeHtml(p.icon)}"></i>${escapeHtml(p.id)}</span>
+    </label>`).join('');
+  }
+
+  const niveis = root.querySelector('[data-onb-levels]');
+  if (niveis) {
+    niveis.innerHTML = LEVELS.map((l) => `<label>
+      <input type="radio" name="onb-level" value="${escapeHtml(l.id)}"${l.id === onbEscolha.level ? ' checked' : ''}>
+      <span><strong>${escapeHtml(l.label)}</strong><small>${escapeHtml(l.hint)}</small></span>
+    </label>`).join('');
+  }
+
+  // O "Depois eu preencho" leva ao mesmo lugar do fim do fluxo.
+  const pular = root.querySelector('[data-onb-skip]');
+  if (pular) pular.setAttribute('href', `#${safeNext(route)}`);
+
+  onbPaint(root);
+  window.pqRefreshIcons?.(root);
+}
+
+/* ══════════════════ Busca de clube ══════════════════ */
+
+async function renderClubSearch(root, route) {
+  const lista = root.querySelector('[data-club-results]');
+  if (!lista) return;
+
+  // Aceita ?codigo= do convite e ?q= da busca. A URL e a unica fonte de
+  // verdade, igual em renderExplore.
+  const termo = route.query.get('q') || route.query.get('codigo') || '';
+  const campo = root.querySelector('[data-search-form] input[name="q"]');
+  if (campo) campo.value = termo;
+
+  if (!termo.trim()) {
+    lista.innerHTML = `<div class="empty">
+      <span class="empty-ic"><i class="ic" data-lucide="search"></i></span>
+      <h3>Ache seu time</h3>
+      <p>Busque pelo nome do clube ou cole o código que mandaram no grupo.</p>
+    </div>`;
+    window.pqRefreshIcons?.(root);
+    return;
+  }
+
+  const [clubes, meu] = await Promise.all([venueService.clubs(), venueService.myClub()]);
+  const alvo = normalizeSearch(termo);
+  const alvoCodigo = alvo.replace(/[^a-z0-9]/g, '');
+
+  const achados = clubes.filter((club) => {
+    if (meu && club.id === meu.id) return false;
+    // Codigo casa EXATO, nunca por pedaco: codigo e identidade, nao palavra
+    // chave. Busca parcial vazaria quais codigos existem.
+    if (club.code && normalizeSearch(club.code) === alvoCodigo) return true;
+    return normalizeSearch(club.name).includes(alvo);
+  });
+
+  lista.innerHTML = achados.length
+    ? achados.map((club) => `<article class="payment-row club-hit">
+        <span class="badge-ic">${escapeHtml(club.name.charAt(0).toUpperCase())}</span>
+        <span>
+          <strong>${escapeHtml(club.name)}</strong>
+          <small>${escapeHtml(club.sport)} &middot; ${escapeHtml(club.city)} &middot; ${club.members.length} no time</small>
+        </span>
+        <button class="btn btn-xs" type="button"
+                data-club-join="${club.id}"
+                data-requires-auth="clubes?codigo=${escapeHtml(club.code || '')}">Entrar</button>
+      </article>`).join('')
+    : `<div class="empty">
+        <span class="empty-ic"><i class="ic" data-lucide="search-x"></i></span>
+        <h3>Nenhum clube com esse nome ou código</h3>
+        <p>Confira o código com quem te chamou, ou crie o seu.</p>
+        <button class="btn block" type="button" data-sheet-open="club-edit-sheet" data-requires-auth="clube">Criar meu clube</button>
+      </div>`;
+
+  window.pqRefreshIcons?.(root);
+}
+
 export async function renderMobilePage(route, root) {
   if (activeMobileApprovalTimer) {
     clearInterval(activeMobileApprovalTimer);
@@ -1467,7 +1628,11 @@ export async function renderMobilePage(route, root) {
     config: async () => {},
     mensagens: renderMessages,
     clube: renderClub,
-    game: renderGame
+    game: renderGame,
+    entrar: renderAuth,
+    cadastro: renderAuth,
+    onboarding: renderOnboarding,
+    clubes: renderClubSearch
   };
   await renderers[route.name]?.(root, route);
   syncMarketplaceState(document);
@@ -1475,6 +1640,84 @@ export async function renderMobilePage(route, root) {
 
 export function initMobileActions() {
   if (!document.querySelector('[data-route-view]')) return;
+
+  /* Gate de acao — para o que NAO e navegacao (abrir a folha de criar clube,
+     entrar num clube). Navegacao ja e coberta pela guarda de rota no app.js.
+
+     Fase de CAPTURA, e nao bolha: o caminho de um clique e
+     document(capture) -> alvo -> document(bubble), e todos os outros
+     handlers deste arquivo e do ui.js estao na bolha do document. Em bolha,
+     a folha de criar clube abriria antes do gate barrar, e a pessoa veria o
+     formulario piscar e sumir. */
+  document.addEventListener('click', (event) => {
+    const alvo = event.target.closest('[data-requires-auth]');
+    if (!alvo || authService.hasSession()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    window.pqToast?.('Entre na sua conta para continuar');
+    location.hash = authHashFor(alvo.dataset.requiresAuth || location.hash);
+  }, true);
+
+  document.addEventListener('click', async (event) => {
+    const view = document.querySelector('[data-route-view]');
+
+    const google = event.target.closest('[data-google-login]');
+    if (google) {
+      google.setAttribute('disabled', 'disabled');
+      try {
+        const session = await authService.loginWithGoogle();
+        goAfterAuth(currentRoute, session.isNew);
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível entrar com o Google');
+      } finally {
+        google.removeAttribute('disabled');
+      }
+      return;
+    }
+
+    const onbNext = event.target.closest('[data-onb-next]');
+    if (onbNext) {
+      onbStep = Math.min(3, onbStep + 1);
+      view?.querySelector('[data-onb-step]')?.closest('.onb-page')
+        ?.classList.remove('onb-page--back');
+      onbPaint(view);
+      return;
+    }
+
+    const onbBack = event.target.closest('[data-onb-back]');
+    if (onbBack) {
+      onbStep = Math.max(1, onbStep - 1);
+      // A classe inverte o sentido da animacao: voltar entra pela esquerda.
+      view?.querySelector('.onb-page')?.classList.add('onb-page--back');
+      onbPaint(view);
+      return;
+    }
+
+    const onbFinish = event.target.closest('[data-onb-finish]');
+    if (onbFinish) {
+      await authService.completeOnboarding(onbEscolha);
+      await venueService.saveProfile(onbEscolha);
+      location.replace(`#${safeNext(currentRoute)}`);
+      return;
+    }
+
+    const logout = event.target.closest('[data-auth-logout]');
+    if (logout) {
+      event.preventDefault();
+      await authService.logout();
+      window.pqSyncAuthControls?.();
+      location.replace('./index.html#home');
+    }
+  });
+
+  /* A escolha do onboarding acende o botao do passo. */
+  document.addEventListener('change', (event) => {
+    const radio = event.target.closest('[data-onb-positions] input, [data-onb-levels] input');
+    if (!radio) return;
+    const campo = radio.name === 'onb-position' ? 'position' : 'level';
+    onbEscolha = { ...onbEscolha, [campo]: radio.value };
+    onbPaint(document.querySelector('[data-route-view]'));
+  });
 
   document.addEventListener('submit', async (event) => {
     const search = event.target.closest('[data-search-form]');
@@ -1484,7 +1727,10 @@ export function initMobileActions() {
       for (const [key, value] of [...query]) {
         if (!String(value).trim()) query.delete(key);
       }
-      location.hash = `quadras${query.toString() ? `?${query}` : ''}`;
+      // Opt-in: sem o atributo continua indo para quadras, que e o que os
+      // dois formularios existentes esperam.
+      const alvo = search.dataset.searchTarget || 'quadras';
+      location.hash = `${alvo}${query.toString() ? `?${query}` : ''}`;
       return;
     }
 
@@ -1546,8 +1792,11 @@ export function initMobileActions() {
           id: user.id,
           name: user.name,
           role: 'dono',
-          position: user.favoriteSport ? 'Jogador' : 'Jogador',
-          rating: 5,
+          // Do perfil, nao de um valor escrito na mao: e o perfil que manda
+          // em quem a pessoa e. (Antes aqui havia um ternario com os dois
+          // ramos devolvendo 'Jogador'.)
+          position: user.position || 'Jogador',
+          rating: user.rating ?? null,
           since: new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
         }]
       });
@@ -1577,6 +1826,28 @@ export function initMobileActions() {
       const view = document.querySelector('[data-route-view]');
       await renderClub(view);
       window.pqRefreshIcons?.(view);
+      return;
+    }
+
+    /* Entrar / criar conta. Antes do [data-demo-form], que e generico. */
+    const authForm = event.target.closest('[data-auth-form]');
+    if (authForm) {
+      event.preventDefault();
+      if (!authForm.reportValidity()) return;
+      const submit = authForm.querySelector('[type="submit"]');
+      submit?.setAttribute('disabled', 'disabled');
+      try {
+        const dados = Object.fromEntries(new FormData(authForm));
+        const modo = authForm.dataset.authForm;
+        const session = modo === 'register'
+          ? await authService.register(dados)
+          : await authService.login(dados);
+        goAfterAuth(currentRoute, session.isNew);
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível continuar');
+      } finally {
+        submit?.removeAttribute('disabled');
+      }
       return;
     }
 
@@ -1644,6 +1915,95 @@ export function initMobileActions() {
       window.pqRefreshIcons?.(view);
       return;
     }
+
+  const joinBtn = event.target.closest('[data-club-join]');
+  if (joinBtn) {
+    try {
+      const club = await venueService.joinClub(joinBtn.dataset.clubJoin);
+      window.pqToast?.(`Bem-vindo ao ${club.name}!`);
+      location.hash = 'clube';
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível entrar');
+    }
+    return;
+  }
+
+  if (event.target.closest('[data-club-copy]')) {
+    const code = document.querySelector('[data-club-code]')?.dataset.raw || '';
+    try {
+      await navigator.clipboard.writeText(code);
+      window.pqToast?.('Código copiado');
+    } catch (error) {
+      window.pqToast?.(`Código do time: ${code}`);
+    }
+    return;
+  }
+
+  if (event.target.closest('[data-club-share]')) {
+    const code = document.querySelector('[data-club-code]')?.dataset.raw || '';
+    const nome = document.querySelector('[data-club-name]')?.textContent || 'nosso time';
+    const texto = `Bora jogar? Entra no ${nome} no Qadras com o código ${formatClubCode(code)}.`;
+    // O link so entra quando existe dominio: sob file:// no app o
+    // location.origin e a string "null", e iria link quebrado para o
+    // WhatsApp de alguem.
+    const payload = { title: 'Qadras', text: texto };
+    if (APP_PUBLIC_URL) payload.url = `${APP_PUBLIC_URL}/index.html#clubes?codigo=${code}`;
+    try {
+      if (navigator.share) await navigator.share(payload);
+      else {
+        await navigator.clipboard.writeText(payload.url || texto);
+        window.pqToast?.('Convite copiado!');
+      }
+    } catch (error) { /* a pessoa cancelou o compartilhamento */ }
+    return;
+  }
+
+  const leaveBtn = event.target.closest('[data-club-leave]');
+  if (leaveBtn) {
+    const club = await venueService.myClub();
+    if (!club) return;
+    if (!window.confirm(`Sair do ${club.name}? Você perde acesso às peladas e à conversa do time.`)) return;
+    await venueService.leaveClub(club.id);
+    window.pqToast?.('Você saiu do clube');
+    const view = document.querySelector('[data-route-view]');
+    await renderClub(view);
+    window.pqRefreshIcons?.(view);
+    return;
+  }
+
+  const deleteBtn = event.target.closest('[data-club-delete]');
+  if (deleteBtn) {
+    const club = await venueService.myClub();
+    if (!club) return;
+    if (!window.confirm(`Apagar o ${club.name}? As peladas e a conversa vão junto. Não dá para desfazer.`)) return;
+    try {
+      await venueService.deleteClub(club.id);
+      window.pqToast?.('Clube apagado');
+      const view = document.querySelector('[data-route-view]');
+      await renderClub(view);
+      window.pqRefreshIcons?.(view);
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível apagar');
+    }
+    return;
+  }
+
+  const removeBtn = event.target.closest('[data-member-remove]');
+  if (removeBtn) {
+    const club = await venueService.myClub();
+    if (!club) return;
+    const alvo = club.members.find((m) => m.id === removeBtn.dataset.memberRemove);
+    if (!window.confirm(`Remover ${alvo ? alvo.name : 'este membro'} do clube?`)) return;
+    try {
+      await venueService.removeMember(club.id, removeBtn.dataset.memberRemove);
+      const view = document.querySelector('[data-route-view]');
+      await renderClub(view);
+      window.pqRefreshIcons?.(view);
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível remover');
+    }
+    return;
+  }
 
     const editClub = event.target.closest('[data-club-edit]');
     if (editClub) {
@@ -2141,12 +2501,26 @@ function addMinutesToTime(hhmm, minutes) {
 
 /* Linha de membro no idioma de lista do app (.payment-row), o mesmo das
    formas de pagamento e das configuracoes. */
-function memberRow(member) {
+/* KRT4P9 -> KRT-4P9. Hifen so na exibicao: e mais facil de ditar em voz
+   alta, mas o dado guardado nao tem separador. */
+function formatClubCode(code) {
+  const limpo = String(code || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
+  return limpo.length === 6 ? `${limpo.slice(0, 3)}-${limpo.slice(3)}` : limpo;
+}
+
+function memberRow(member, user, souDono) {
   const initial = member.name.charAt(0).toUpperCase();
-  const role = member.role === 'dono' ? 'Dono do clube' : (member.position || 'Membro');
+  // A linha da propria pessoa le do perfil vivo: editar posicao no Perfil
+  // reflete aqui na hora, sem precisar reescrever o registro de membro.
+  const eu = user && member.id === user.id;
+  const position = eu ? (user.position || member.position) : member.position;
+  const role = member.role === 'dono' ? 'Dono do clube' : (position || 'Membro');
+  const rating = eu ? (user.rating ?? member.rating) : member.rating;
   const tail = member.role === 'dono'
     ? '<span class="status pago">Dono</span>'
-    : `<span class="member-rating">${icon('star')}${member.rating ?? '-'}</span>`;
+    : souDono && !eu
+      ? `<button class="member-remove" type="button" data-member-remove="${escapeHtml(member.id)}" aria-label="Remover ${escapeHtml(member.name)}">${icon('user-minus')}</button>`
+      : `<span class="member-rating">${icon('star')}${rating ?? '-'}</span>`;
   return `<div class="payment-row member-row">
     <span class="badge-ic member-row__avatar">${initial}</span>
     <span><strong>${escapeHtml(member.name)}</strong><small>${escapeHtml(role)} &middot; desde ${escapeHtml(member.since || '')}</small></span>
@@ -2232,7 +2606,29 @@ async function renderClub(root) {
   root.querySelector('[data-club-avatar]').textContent = club.name.charAt(0).toUpperCase();
   root.querySelector('[data-member-label]').textContent = club.members.length === 1 ? '1 no time' : `${club.members.length} no time`;
   root.querySelector('[data-pelada-label]').textContent = upcoming.length === 1 ? '1 marcada' : `${upcoming.length} marcadas`;
-  root.querySelector('[data-member-list]').innerHTML = club.members.map(memberRow).join('');
+  const souDono = club.members.some((m) => m.id === user.id && m.role === 'dono');
+
+  const codigo = root.querySelector('[data-club-code]');
+  if (codigo) {
+    codigo.textContent = formatClubCode(club.code);
+    codigo.dataset.raw = club.code || '';
+  }
+
+  /* Dono nao "sai": ele apaga. E so consegue apagar com o clube vazio, entao
+     a dica explica o que fazer antes em vez de deixar o botao morto sem
+     motivo aparente. */
+  const sozinho = club.members.length <= 1;
+  const btnSair = root.querySelector('[data-club-leave]');
+  if (btnSair) btnSair.hidden = souDono;
+  const btnApagar = root.querySelector('[data-club-delete]');
+  if (btnApagar) {
+    btnApagar.hidden = !souDono;
+    btnApagar.disabled = !sozinho;
+  }
+  const dica = root.querySelector('[data-club-delete-hint]');
+  if (dica) dica.hidden = !souDono || sozinho;
+  root.querySelector('[data-member-list]').innerHTML = club.members
+    .map((m) => memberRow(m, user, souDono)).join('');
   root.querySelector('[data-pelada-list]').innerHTML = upcoming.length
     ? upcoming.map((p) => peladaCard(p, user.id, venueOf(p))).join('')
     : '<div class="empty"><h3>Nenhuma pelada marcada</h3><p>Agende a próxima e o time confirma presença por aqui.</p></div>';

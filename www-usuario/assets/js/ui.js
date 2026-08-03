@@ -21,9 +21,19 @@
   normalizeIcons(document);
   window.pqNormalizeIcons = normalizeIcons;
 
+  /* A mesma chave que storage/storage.js escreve. Este arquivo e script
+     classico, nao modulo, entao nao da para importar de la — mas a chave
+     precisa bater, senao o authService e a UI vivem em universos separados.
+     Era exatamente o que acontecia: aqui lia "auth_token" cru e o servico
+     gravava "pq:auth_token". Ninguem nunca via a sessao do outro. */
+  function authKey(name) {
+    var config = window.__PQ_CONFIG__ || {};
+    return (config.STORAGE_PREFIX || 'pq') + ':' + name;
+  }
+
   function syncAuthControls() {
     var authenticated = false;
-    try { authenticated = Boolean(localStorage.getItem('auth_token')); } catch (error) {}
+    try { authenticated = Boolean(localStorage.getItem(authKey('auth_token'))); } catch (error) {}
     document.querySelectorAll('[data-auth-guest]').forEach(function (element) {
       element.hidden = authenticated;
     });
@@ -75,14 +85,11 @@
   }
 
   document.addEventListener('click', function (e) {
-    var authLogout = e.target.closest('[data-auth-logout]');
-    if (authLogout) {
-      try {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-      } catch (error) {}
-    }
-
+    /* O logout saiu daqui de proposito. Este bloco so apagava duas chaves do
+       localStorage: nao avisava a API, nao re-sincronizava a topbar e nao
+       limpava o perfil, entao a proxima pessoa a entrar no aparelho herdava
+       nome e foto de quem saiu. Quem cuida disso agora e o app.js, que e
+       modulo e consegue chamar authService.logout(). */
     var sportOption = e.target.closest('[data-sport-option]');
     if (sportOption) {
       e.preventDefault();

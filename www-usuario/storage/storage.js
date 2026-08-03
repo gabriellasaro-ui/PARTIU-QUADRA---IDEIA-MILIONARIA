@@ -41,6 +41,9 @@ export const storage = {
   clearSession() {
     remove(TOKEN_KEY);
     remove(USER_KEY);
+    // O perfil vai junto: sem isto, quem entrar depois no mesmo aparelho
+    // herda nome, cidade e foto de quem saiu.
+    remove('player_profile');
   },
   getAuthToken() {
     return read(TOKEN_KEY);
