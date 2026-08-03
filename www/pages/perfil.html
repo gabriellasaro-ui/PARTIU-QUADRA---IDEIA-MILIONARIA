@@ -9,7 +9,7 @@
   <div class="container">
     <section class="profile-hero">
       <div class="profile-cover">
-        <span class="profile-role"><i class="ic" data-lucide="user-round-check"></i>Jogador</span>
+        <span class="profile-role"><i class="ic" data-lucide="user-round-check"></i><span data-profile-position>Jogador</span></span>
       </div>
       <div class="profile-identity">
         <div class="profile-avatar-wrap">
@@ -36,6 +36,26 @@
       <div><strong data-profile-favorites></strong><span>favoritas</span></div>
     </div>
     <div class="favorite-sport"><i class="ic" data-lucide="trophy"></i>Esporte favorito: <strong data-profile-sport></strong></div>
+
+    <!-- Ficha de jogador. O onboarding pergunta posicao e nivel; nascimento
+         e pe dominante ficam aqui, com o empurrao explicando para que
+         servem. -->
+    <section class="player-card">
+      <div class="player-card__head">
+        <h2>Ficha de jogador</h2>
+        <button class="player-card__edit" type="button" data-sheet-open="profile-edit-sheet">Editar</button>
+      </div>
+      <div class="player-card__grid">
+        <div><span>Posição</span><strong data-profile-position-value>—</strong></div>
+        <div><span>Nível</span><strong data-profile-level>—</strong></div>
+        <div><span>Nascimento</span><strong data-profile-birth>—</strong></div>
+        <div><span>Pé dominante</span><strong data-profile-foot>—</strong></div>
+      </div>
+      <p class="player-card__hint" data-profile-card-hint hidden>
+        <i class="ic" data-lucide="trophy"></i>
+        Complete sua ficha para entrar no ranking quando ele chegar.
+      </p>
+    </section>
 
     <nav class="account-menu" aria-label="Menu da conta">
       <a href="#mensagens"><span class="menu-icon"><i class="ic" data-lucide="message-circle"></i></span><span><strong>Mensagens</strong><small>Disponíveis após uma reserva confirmada</small></span><i class="ic" data-lucide="chevron-right"></i></a>
@@ -68,6 +88,10 @@
         <div class="field"><label>E-mail</label><input type="email" name="email" autocomplete="email" required></div>
         <div class="field"><label>Celular</label><input type="tel" name="phone" autocomplete="tel" required></div>
         <div class="field"><label>Cidade</label><input type="text" name="city" autocomplete="address-level2" required></div>
+        <div class="field"><label>Posição</label><select name="position" data-profile-positions></select></div>
+        <div class="field"><label>Nível</label><select name="level" data-profile-levels></select></div>
+        <div class="field"><label>Nascimento</label><input type="date" name="birthDate"></div>
+        <div class="field"><label>Pé dominante</label><select name="foot" data-profile-feet></select></div>
         <div class="profile-edit-actions">
           <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
           <button class="btn" type="submit"><i class="ic" data-lucide="check"></i>Salvar</button>

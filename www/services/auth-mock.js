@@ -11,12 +11,14 @@
    ser testavel agora que existe busca e entrada em clube. */
 import storage from '../storage/storage.js';
 import { CURRENT_USER } from '../config/mock-data.js';
+import { mesAno } from '../utils/formatters.js';
 
 const CONTAS_KEY = 'auth_accounts';
 const DEMO_EMAIL = 'gabriel@email.com';
 
 const contas = () => storage.get(CONTAS_KEY, []);
 const salvarContas = (lista) => storage.set(CONTAS_KEY, lista);
+
 
 const normalizarEmail = (email) => String(email || '').trim().toLowerCase();
 
@@ -40,7 +42,7 @@ function novoUsuario({ name, email, provider, photo = '' }) {
     foot: '',
     favoriteSport: '',
     rating: null,
-    memberSince: new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+    memberSince: mesAno(),
     stats: { games: 0, reservations: 0, favorites: 0 },
     provider,
     onboardedAt: null

@@ -2,6 +2,7 @@ import { API_BASE_URL } from '../config/constants.js';
 import api from './api.js';
 import storage from '../storage/storage.js';
 import authService from './auth.js';
+import { mesAno } from '../utils/formatters.js';
 import {
   ACTIVE_MATCH,
   CONVERSATIONS,
@@ -325,7 +326,7 @@ export const venueService = {
       role: 'membro',
       position: user.position || 'Jogador',
       rating: user.rating ?? null,
-      since: new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+      since: mesAno()
     };
     const next = clubs.map((c) => (c.id === club.id ? { ...c, members: [...c.members, membro] } : c));
     storage.set('clubs', next);

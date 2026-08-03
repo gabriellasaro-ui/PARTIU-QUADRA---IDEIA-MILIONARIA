@@ -6444,3 +6444,71 @@ html[data-bottombar="none"] .screen {
 }
 
 .member-remove .ic { width: 16px; height: 16px; }
+
+/* ── Ficha de jogador no Perfil ── */
+
+.player-card {
+  padding: 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  margin: 16px 0;
+  background: var(--pq-panel);
+}
+
+.player-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.player-card__head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.player-card__edit {
+  border: 0;
+  background: none;
+  color: var(--pq-brand-strong);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.player-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 10px;
+}
+
+.player-card__grid span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.player-card__grid strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.player-card__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  margin: 16px 0 0;
+  background: var(--pq-mint);
+  color: var(--pq-brand-strong);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.player-card__hint .ic { flex: 0 0 auto; width: 16px; height: 16px; }

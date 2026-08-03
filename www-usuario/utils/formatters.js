@@ -30,3 +30,10 @@ export function calculateCheckoutAmounts(pricePerHour, duration = 1) {
     total: Math.round((subtotal + serviceFee) * 100) / 100
   };
 }
+
+/* toLocaleDateString('pt-BR', {month:'short'}) devolve "ago. de 2026". O app
+   escreve "ago/2026" em todo lugar (CLUBS.members.since, CURRENT_USER). */
+export function mesAno(date = new Date()) {
+  const mes = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+  return `${mes}/${date.getFullYear()}`;
+}

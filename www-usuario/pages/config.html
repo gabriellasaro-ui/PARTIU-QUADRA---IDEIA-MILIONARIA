@@ -27,6 +27,8 @@
     </section>
 
     <button class="btn block" type="submit">Salvar alteracoes</button>
-    <a class="logout-link" href="#home">Sair da conta</a>
+    <!-- Botao, e nao link: e acao, nao navegacao. Antes era
+         <a href="#home"> e nao limpava sessao nenhuma. -->
+    <button class="logout-link" type="button" data-auth-logout>Sair da conta</button>
   </form>
 </div>

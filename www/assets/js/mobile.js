@@ -1,7 +1,7 @@
 import venueService from '../../services/venues.js';
 import storage from '../../storage/storage.js';
-import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
-import { SPORTS, POSITIONS, LEVELS } from '../../config/mock-data.js';
+import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/formatters.js';
+import { SPORTS, POSITIONS, LEVELS, FEET } from '../../config/mock-data.js';
 import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
 import { authHashFor, safeNext } from '../../middleware/auth.js';
@@ -1371,14 +1371,61 @@ function syncMobileProfile(root, user) {
   root.querySelector('[data-profile-games]').textContent = user.stats.games;
   root.querySelector('[data-profile-reservations]').textContent = user.stats.reservations;
   root.querySelector('[data-profile-favorites]').textContent = user.stats.favorites;
-  root.querySelector('[data-profile-sport]').textContent = user.favoriteSport;
+  root.querySelector('[data-profile-sport]').textContent = user.favoriteSport || '';
+  // Conta nova ainda nao tem esporte favorito; o rotulo sozinho parece bug.
+  const linhaEsporte = root.querySelector('.favorite-sport');
+  if (linhaEsporte) linhaEsporte.hidden = !user.favoriteSport;
+
+  // Ficha de jogador. O cracha do topo mostra a posicao; antes era a palavra
+  // "Jogador" escrita na mao no HTML.
+  const nivel = LEVELS.find((l) => l.id === user.level);
+  const set = (sel, valor) => {
+    const el = root.querySelector(sel);
+    if (el) el.textContent = valor;
+  };
+  set('[data-profile-position]', user.position || 'Jogador');
+  set('[data-profile-position-value]', user.position || '—');
+  set('[data-profile-level]', nivel ? nivel.label : '—');
+  set('[data-profile-birth]', formatBirthDate(user.birthDate));
+  set('[data-profile-foot]', user.foot || '—');
+
+  // O empurrao so aparece enquanto falta alguma coisa: aviso permanente vira
+  // decoracao e para de ser lido.
+  const faltando = !user.position || !user.level || !user.birthDate || !user.foot;
+  const dica = root.querySelector('[data-profile-card-hint]');
+  if (dica) dica.hidden = !faltando;
+
   const form = root.querySelector('[data-profile-edit-form]');
   if (form) {
     form.elements.name.value = user.name;
     form.elements.email.value = user.email;
     form.elements.phone.value = user.phone;
     form.elements.city.value = user.city;
+
+    // Os selects sao montados aqui porque a folha vive fora da rota — mesmo
+    // motivo de fillSportOptions.
+    const opcoes = (sel, itens, atual, vazio) => {
+      const campo = root.querySelector(sel);
+      if (!campo) return;
+      campo.innerHTML = `<option value="">${vazio}</option>` + itens.map((i) => {
+        const valor = typeof i === 'string' ? i : i.id;
+        const rotulo = typeof i === 'string' ? i : (i.label || i.id);
+        return `<option value="${escapeHtml(valor)}"${valor === atual ? ' selected' : ''}>${escapeHtml(rotulo)}</option>`;
+      }).join('');
+    };
+    opcoes('[data-profile-positions]', POSITIONS, user.position || '', 'Não informado');
+    opcoes('[data-profile-levels]', LEVELS, user.level || '', 'Não informado');
+    opcoes('[data-profile-feet]', FEET, user.foot || '', 'Não informado');
+    if (form.elements.birthDate) form.elements.birthDate.value = user.birthDate || '';
   }
+}
+
+/* '1994-03-27' -> '27/03/1994'. Guardamos ISO porque <input type="date">
+   fala ISO; quem le prefere o formato daqui. */
+function formatBirthDate(iso) {
+  if (!iso) return '—';
+  const [a, m, d] = String(iso).split('-');
+  return d ? `${d}/${m}/${a}` : iso;
 }
 
 async function renderProfile(root) {
@@ -1764,7 +1811,13 @@ export function initMobileActions() {
         name: String(data.get('name') || '').trim(),
         email: String(data.get('email') || '').trim(),
         phone: String(data.get('phone') || '').trim(),
-        city: String(data.get('city') || '').trim()
+        city: String(data.get('city') || '').trim(),
+        // A ficha de jogador. Posicao vale dobrado: alem do cracha do topo,
+        // e o que o registro de membro do clube passa a espelhar.
+        position: String(data.get('position') || ''),
+        level: String(data.get('level') || ''),
+        birthDate: String(data.get('birthDate') || ''),
+        foot: String(data.get('foot') || '')
       });
       const view = document.querySelector('[data-route-view]');
       syncMobileProfile(view, saved);
@@ -1797,7 +1850,7 @@ export function initMobileActions() {
           // ramos devolvendo 'Jogador'.)
           position: user.position || 'Jogador',
           rating: user.rating ?? null,
-          since: new Date().toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+          since: mesAno()
         }]
       });
       closeMarketSheet(clubForm.closest('[data-market-sheet]'));
