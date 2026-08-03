@@ -5528,6 +5528,14 @@ html[data-route="mapa"] .phone {
   margin: 0 -16px;
 }
 
+/* O display acima e regra de autor e ganha do [hidden] do navegador, entao
+   o painel da Conversa ficava desenhado por cima em TODAS as abas: quem
+   abria Peladas via as mensagens. selectClubSection marcava hidden certinho
+   e nao adiantava nada. */
+.club-chat-panel[hidden] {
+  display: none;
+}
+
 .club-chat-panel .mobile-bubbles {
   flex: 1;
   min-height: 0;
@@ -6034,10 +6042,4 @@ html[data-bottombar="game"] .game-tabs { display: none; }
   font-size: 11.5px;
   font-style: normal;
   font-weight: 800;
-}
-
-/* A barra do clube tem duas secoes; a da partida tem tres. Sem isto o
-   terceiro espaco ficava vazio depois que a Conversa saiu daqui. */
-.contextbar--clube {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
