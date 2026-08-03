@@ -202,8 +202,14 @@
              aria-labelledby="gameTabBtnCronometro" data-game-panel="cronometro" hidden>
       <div class="game-bigclock">
         <div class="game-bigclock__label" data-game-clock-label>Tempo de jogo</div>
-        <div class="game-bigclock__value" data-game-countdown data-game-timer>00:00</div>
-        <div class="game-bigclock__unit"><span data-round-label>Rodada 1</span></div>
+        <!-- O anel mostra quanto ja correu. Antes o numero flutuava sozinho
+             num cartao branco e nao dizia nada de relance. -->
+        <div class="game-bigclock__dial" data-clock-dial style="--game-progress:0">
+          <div class="game-bigclock__face">
+            <div class="game-bigclock__value" data-game-countdown data-game-timer>00:00</div>
+            <div class="game-bigclock__unit"><span data-round-label>Rodada 1</span></div>
+          </div>
+        </div>
       </div>
 
       <div class="game-clock-actions">
@@ -233,7 +239,7 @@
           <div class="game-scorepad__value team-a" data-team-score="A">0</div>
           <div class="game-scorepad__btns">
             <button class="game-scorepad__btn" type="button" data-score-step="A:-1" aria-label="Tirar um gol do time A">−</button>
-            <button class="game-scorepad__btn is-plus" type="button" data-score-step="A:1" aria-label="Somar um gol ao time A">+</button>
+            <button class="game-scorepad__btn is-plus team-a" type="button" data-score-step="A:1" aria-label="Somar um gol ao time A">+</button>
           </div>
         </div>
         <em>×</em>
@@ -242,7 +248,7 @@
           <div class="game-scorepad__value team-b" data-team-score="B">0</div>
           <div class="game-scorepad__btns">
             <button class="game-scorepad__btn" type="button" data-score-step="B:-1" aria-label="Tirar um gol do time B">−</button>
-            <button class="game-scorepad__btn is-plus" type="button" data-score-step="B:1" aria-label="Somar um gol ao time B">+</button>
+            <button class="game-scorepad__btn is-plus team-b" type="button" data-score-step="B:1" aria-label="Somar um gol ao time B">+</button>
           </div>
         </div>
       </div>
@@ -258,7 +264,9 @@
         </button>
       </div>
 
-      <p class="game-note">
+      <!-- Escondida ate ter valor: data-venue-remaining so e preenchido
+           durante o jogo, e "restam --" na tela de espera e traco morto. -->
+      <p class="game-note" data-venue-note hidden>
         <i class="ic" data-lucide="clock"></i>
         Quadra reservada até <b id="gameVenueEnd">--:--</b> · restam <b data-venue-remaining>--</b>
       </p>
@@ -289,7 +297,17 @@
       </div>
 
       <div class="game-section-title">Em quadra</div>
-      <div class="game-teams" id="gameTeamsDisplay">
+
+      <!-- Um bloco com contexto no lugar de dois cartoes dizendo
+           "Aguardando sorteio...". Mostrar quantos confirmados e quantos por
+           time e o que faz o botao de sortear ter sentido. -->
+      <div class="game-teams-empty" data-teams-empty>
+        <span class="game-teams-empty__icon"><i class="ic" data-lucide="users-round"></i></span>
+        <strong data-teams-empty-count>Ninguém confirmado ainda</strong>
+        <small data-teams-empty-hint>Confirme presença na aba Partida para sortear.</small>
+      </div>
+
+      <div class="game-teams" id="gameTeamsDisplay" hidden>
         <div class="game-team-card">
           <div class="game-team-card__header team-a" id="teamACard" data-team-label="A">Time A</div>
           <div id="teamAPlayers"></div>

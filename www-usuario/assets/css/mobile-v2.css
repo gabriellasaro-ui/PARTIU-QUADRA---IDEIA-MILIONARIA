@@ -6352,7 +6352,7 @@ html[data-bottombar="none"] .screen {
   padding: 14px;
   border-radius: 14px;
   margin: 20px 0;
-  background: var(--pq-mint);
+  background: var(--pq-signal-soft);
   color: var(--pq-brand-strong);
   font-size: 13px;
   line-height: 1.45;
@@ -6505,7 +6505,7 @@ html[data-bottombar="none"] .screen {
   padding: 12px;
   border-radius: 12px;
   margin: 16px 0 0;
-  background: var(--pq-mint);
+  background: var(--pq-signal-soft);
   color: var(--pq-brand-strong);
   font-size: 12.5px;
   line-height: 1.45;

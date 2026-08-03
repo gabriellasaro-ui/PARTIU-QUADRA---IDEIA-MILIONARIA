@@ -11,6 +11,10 @@
    inofensivo, e mantem aquele arquivo legivel isoladamente.
    ========================================================= */
 :root {
+  /* Time B. Verde x azul e o par de colete de qualquer pelada; o ambar que
+     estava aqui antes lia como alerta, nao como time. */
+  --pq-team-b: #1d6fd8;
+
   /* marca */
   --pq-brand: #16a765;
   --pq-brand-strong: #0c8b52;

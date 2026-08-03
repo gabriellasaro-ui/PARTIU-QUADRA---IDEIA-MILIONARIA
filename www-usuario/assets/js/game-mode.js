@@ -60,6 +60,7 @@ function teamListHtml(players) {
 }
 
 function renderTeams() {
+  renderTeamsEmpty();
   const empty = '<div class="game-team-card__empty">Aguardando sorteio...</div>';
   const a = $id('teamAPlayers');
   const b = $id('teamBPlayers');
@@ -207,6 +208,7 @@ function tickDuringGame(m) {
     return;
   }
   const min = Math.floor(left / 60000);
+  document.querySelectorAll('[data-venue-note]').forEach((el) => { el.hidden = false; });
   setAll('[data-venue-remaining]', min >= 60
     ? Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0')
     : min + ' min');
@@ -389,6 +391,43 @@ function selectedTeamCount() {
   return Math.min(6, Math.max(2, Number(on?.dataset.teamCount) || 2));
 }
 
+/* Alimenta o anel do relogio. Recebe 0..1 e vira porcentagem no CSS. */
+function setClockProgress(fraction) {
+  const pct = Math.max(0, Math.min(100, Math.round(fraction * 100)));
+  document.querySelectorAll('[data-clock-dial]').forEach((el) => {
+    el.style.setProperty('--game-progress', String(pct));
+  });
+}
+
+/* Estado vazio da aba Times: mostra quantos ja confirmaram e quantos por
+   time. Sem isso o botao de sortear ficava sem contexto e a aba virava um
+   vazio de meia tela. */
+function renderTeamsEmpty() {
+  const bloco = document.querySelector('[data-teams-empty]');
+  const grade = document.getElementById('gameTeamsDisplay');
+  if (!bloco || !grade) return;
+
+  const sorteado = Boolean(match?.teams?.list?.length);
+  bloco.hidden = sorteado;
+  grade.hidden = !sorteado;
+  if (sorteado) return;
+
+  const total = match?.players?.confirmed?.length || 0;
+  const times = selectedTeamCount();
+  const titulo = bloco.querySelector('[data-teams-empty-count]');
+  const dica = bloco.querySelector('[data-teams-empty-hint]');
+  if (titulo) {
+    titulo.textContent = total
+      ? `${total} ${total === 1 ? 'confirmado' : 'confirmados'}`
+      : 'Ninguém confirmado ainda';
+  }
+  if (dica) {
+    dica.textContent = total >= times
+      ? `Dá para ${times} times de ${Math.floor(total / times)}. Toque em sortear.`
+      : `Faltam ${times - total} para fechar ${times} times.`;
+  }
+}
+
 function shuffleTeams() {
   if (!match) return;
   const count = selectedTeamCount();
@@ -531,6 +570,8 @@ function formatMs(ms) {
 function renderRoundClock() {
   if (!match) return;
   const remaining = roundRemainingMs();
+  const total = roundState().durationMin * 60000 || 1;
+  setClockProgress(1 - remaining / total);
   setAll('[data-game-timer]', formatMs(remaining));
   setAll('[data-game-countdown]', formatMs(remaining));
   $id('gameScreen')?.classList.toggle('is-ending', remaining <= 60000 && remaining > 0);
@@ -771,6 +812,8 @@ function bindEvents() {
   qsa('[data-team-count]').forEach((chip) => {
     chip.addEventListener('click', () => {
       qsa('[data-team-count]').forEach((c) => c.classList.toggle('is-on', c === chip));
+      // A dica do estado vazio fala em "N times de X" — tem que acompanhar.
+      renderTeamsEmpty();
     });
   });
 

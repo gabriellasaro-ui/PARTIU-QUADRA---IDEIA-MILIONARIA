@@ -566,8 +566,8 @@
 }
 
 .game-team-card__header.team-b {
-  border-bottom-color: var(--pq-gold, #e4a11b);
-  color: #8a6008;
+  border-bottom-color: var(--pq-team-b);
+  color: var(--pq-team-b);
 }
 
 .game-team-card__player {
@@ -1021,8 +1021,8 @@
 
 /* ── Relogio grande (aba Cronometro) ────────────────────── */
 .game-bigclock {
-  margin-top: 16px;
-  padding: 32px 16px;
+  margin-top: 12px;
+  padding: 18px 16px 20px;
   border: 1px solid var(--pq-line);
   border-radius: 22px;
   background: var(--pq-panel);
@@ -1038,10 +1038,46 @@
   letter-spacing: .04em;
 }
 
+/* Anel de progresso. conic-gradient e nao SVG: e a mesma tecnica do donut
+   do financeiro do gerente, dirigida por variavel CSS, e nao precisa de
+   viewBox nem de calcular circunferencia. */
+.game-bigclock__dial {
+  position: relative;
+  display: grid;
+  width: min(170px, 46vw);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  margin: 14px auto 0;
+  /* Trilho em mint, nao na linha cinza: a 0% um anel cinza-claro sumia e
+     parecia so um circulo vazio de enfeite. */
+  background: conic-gradient(
+    var(--pq-brand) calc(var(--game-progress, 0) * 1%),
+    var(--pq-signal) 0
+  );
+  transition: background .3s linear;
+}
+
+.game-bigclock__face {
+  display: grid;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+  align-content: center;
+  border-radius: 50%;
+  background: var(--pq-panel);
+}
+
+/* Ultimos 60s: o anel inteiro avisa, nao so o numero. */
+.game-page.is-ending .game-bigclock__dial {
+  background: conic-gradient(
+    var(--pq-amber, #ea580c) calc(var(--game-progress, 0) * 1%),
+    var(--pq-signal) 0
+  );
+}
+
 .game-bigclock__value {
-  margin-top: 8px;
   color: var(--pq-ink);
-  font-size: clamp(56px, 18vw, 96px);
+  font-size: clamp(34px, 11vw, 44px);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   line-height: .95;
@@ -1095,7 +1131,7 @@
 }
 
 .game-clock-score__team b.team-a { color: var(--pq-brand-deep); }
-.game-clock-score__team b.team-b { color: #8a6008; }
+.game-clock-score__team b.team-b { color: var(--pq-team-b); }
 
 .game-clock-score em {
   color: var(--pq-muted);
@@ -1230,8 +1266,9 @@ body.game-tv-open { overflow: hidden; }
 }
 
 .game-chip {
-  min-width: 52px;
-  padding: 9px 14px;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 9px 10px;
   border: 1px solid var(--pq-line);
   border-radius: 999px;
   background: var(--pq-panel);
@@ -1292,7 +1329,7 @@ body.game-tv-open { overflow: hidden; }
 }
 
 .game-scorepad__value.team-a { color: var(--pq-brand-deep); }
-.game-scorepad__value.team-b { color: #8a6008; }
+.game-scorepad__value.team-b { color: var(--pq-team-b); }
 
 .game-scorepad__btns {
   display: grid;
@@ -1319,6 +1356,10 @@ body.game-tv-open { overflow: hidden; }
   background: var(--pq-brand);
   color: #fff;
 }
+
+/* O + pega a cor do proprio time: dois botoes verdes iguais comandando
+   placares diferentes e um convite a errar no meio do jogo. */
+.game-scorepad__btn.is-plus.team-b { background: var(--pq-team-b); }
 
 .game-scorepad__btn:active { transform: translateY(1px); }
 
@@ -1500,3 +1541,44 @@ body.game-tv-open { overflow: hidden; }
 
 .game-teams-setup .game-section-title { margin: 0 0 10px; }
 .game-teams-setup .game-shuffle { margin-top: 12px; background: var(--pq-signal-soft); }
+
+/* Estado vazio dos times. Antes eram dois cartoes dizendo "Aguardando
+   sorteio..." com um vazio enorme embaixo — dois nadas ocupando o dobro do
+   espaco. Um bloco so, com o numero de confirmados, da contexto ao botao
+   de sortear logo acima. */
+.game-teams-empty {
+  display: grid;
+  padding: 30px 20px;
+  border: 1px dashed var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  justify-items: center;
+  text-align: center;
+}
+
+.game-teams-empty[hidden] { display: none; }
+
+.game-teams-empty__icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 50%;
+  margin-bottom: 12px;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-strong);
+}
+
+.game-teams-empty__icon .ic { width: 24px; height: 24px; }
+
+.game-teams-empty strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.game-teams-empty small {
+  margin-top: 4px;
+  color: var(--pq-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
