@@ -19,16 +19,19 @@ from .api import (
     favoritos,
     auth,
 )
+from .core.config import settings
+from .core.database import check_database
+from .core.redis import ping_redis
 
 app = FastAPI(
-    title="Qadras API",
+    title=settings.app_name,
     description="Partiu Quadra — API de reservas de quadras esportivas",
-    version="2.0.0",
+    version=settings.app_version,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origin_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,7 +49,16 @@ app.include_router(auth.router)
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "app": "Qadras API"}
+    db_ok = check_database()
+    redis_ok = ping_redis()
+    return {
+        "status": "ok" if db_ok and redis_ok else "degraded",
+        "db": "ok" if db_ok else "error",
+        "redis": "ok" if redis_ok else "error",
+        "app": settings.app_name,
+        "version": settings.app_version,
+        "environment": settings.environment,
+    }
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

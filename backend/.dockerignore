@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Ambiente local (nunca entrar na imagem)
+.env
+.env.*
+!.env.example
+state.json
+
+# Editors / SO
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log

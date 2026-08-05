@@ -1,5 +1,12 @@
-from pydantic import BaseModel
+"""Schemas de autenticacao — mesmo contrato que services/auth.js ja consome.
+
+Respostas de sessao sao { token, user, isNew }; `user` usa chaves camelCase
+(birthDate, memberSince, onboardedAt...) para o app nao precisar traduzir.
+"""
+from datetime import datetime
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):
@@ -21,31 +28,32 @@ class GoogleRequest(BaseModel):
 
 
 class OnboardingRequest(BaseModel):
-    position: str
-    level: str
+    position: Optional[str] = ""
+    level: Optional[str] = ""
+    onboardedAt: Optional[str] = None
 
 
-class Usuario(BaseModel):
-    nome: str
-    email: str
-    avatar: Optional[str] = None
+class RefreshRequest(BaseModel):
+    refreshToken: str
+
+
+class LogoutRequest(BaseModel):
+    refreshToken: Optional[str] = None
 
 
 class SessionUser(BaseModel):
-    """O usuario da sessao, no formato que o app consome.
+    """O usuario da sessao, no formato que o app consome (chaves camelCase).
 
-    Difere de Usuario (que atende o /api/auth/user antigo, em portugues) —
-    aqui as chaves batem com o objeto que services/auth.js guarda em
-    pq:auth_user, para nao precisar de traducao no cliente."""
+    `role` e aditivo para o gerente; o app do jogador ignora.
+    """
 
     id: str
     name: str
     email: str
+    role: str = "jogador"
     phone: str = ""
     city: str = ""
     photo: str = ""
-    # Campos que o ranking e os torneios vao usar. Nascem vazios: o
-    # onboarding pede so posicao e nivel, o resto fica para o perfil.
     position: str = ""
     level: str = ""
     birthDate: str = ""
@@ -61,3 +69,4 @@ class SessionResponse(BaseModel):
     token: str
     user: SessionUser
     isNew: bool = False
+    refreshToken: Optional[str] = None
