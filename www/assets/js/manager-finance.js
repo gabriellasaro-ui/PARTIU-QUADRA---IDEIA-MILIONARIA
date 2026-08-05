@@ -5,18 +5,18 @@
    Carol Souza — tres clientes que nao existem em nenhum outro lugar do
    sistema. Nenhum numero conversava com as reservas da arena.
 
-   Aqui tudo deriva de ARENA_BOOKINGS e da mesma SERVICE_FEE_RATE que o
-   checkout do jogador usa, entao o que a arena ve bater e o que ela recebe.
+   Aqui tudo deriva de ARENA_BOOKINGS e de ARENA_FEE_RATE — a taxa DA ARENA,
+   que e diferente da que o jogador paga no checkout.
    O app antigo tinha ainda o seletor de periodo, o card de proximo repasse,
    a rosca de destino da receita e as duas tabelas exportaveis. Voltaram. */
 import { ARENA_BOOKINGS, ARENA_PAYOUTS, STATUS_CLASS } from '../../config/manager-data.js';
-import { SERVICE_FEE_RATE } from '../../config/constants.js';
+import { ARENA_FEE_RATE } from '../../config/constants.js';
 import { formatCurrency } from '../../utils/formatters.js';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-// A taxa e cobrada por cima do valor da quadra, entao a fatia dela dentro do
-// bruto e rate/(1+rate) — nao rate. Confundir os dois inflaria o repasse.
-const FATIA_TAXA = SERVICE_FEE_RATE / (1 + SERVICE_FEE_RATE);
+/* A taxa da arena sai POR DENTRO do valor da quadra: de R$ 120 ela recebe
+   R$ 116,40. Nao confundir com a do jogador, que entra por cima. */
+const FATIA_TAXA = ARENA_FEE_RATE;
 const TAXA_PCT = Math.round(FATIA_TAXA * 100);
 
 let periodo = '7d';

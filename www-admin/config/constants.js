@@ -6,7 +6,19 @@ export const API_BASE_URL = runtimeConfig.API_BASE_URL || '';
 export const STORAGE_PREFIX = runtimeConfig.STORAGE_PREFIX || 'pq';
 export const DEFAULT_LOCALE = 'pt-BR';
 export const DEFAULT_CURRENCY = 'BRL';
-export const SERVICE_FEE_RATE = 0.05;
+/* Duas taxas, porque a cobranca e dos dois lados.
+
+   PLAYER_FEE_RATE entra POR CIMA do preco da quadra: quadra de R$ 120 vira
+   R$ 130,80 no checkout.
+   ARENA_FEE_RATE sai POR DENTRO do repasse: dos mesmos R$ 120 a arena
+   recebe R$ 116,40.
+
+   SERVICE_FEE_RATE continua exportado apontando para a taxa do jogador —
+   e a que o checkout usa, e havia consumidor demais para renomear de uma
+   vez sem risco. */
+export const PLAYER_FEE_RATE = 0.09;
+export const ARENA_FEE_RATE = 0.03;
+export const SERVICE_FEE_RATE = PLAYER_FEE_RATE;
 
 export const HTTP_HEADERS = {
   ACCEPT: 'Accept',

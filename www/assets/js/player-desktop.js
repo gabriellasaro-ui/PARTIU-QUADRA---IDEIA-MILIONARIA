@@ -587,7 +587,7 @@ async function renderVenue(root, route) {
           </div>
           <div class="bc-summary">
             <div class="line"><span class="muted">Aluguel da quadra <span data-player-booking-hours></span></span><span data-player-booking-sub>-</span></div>
-            <div class="line"><span class="muted">Taxa de serviço (5%)</span><span data-player-booking-fee>-</span></div>
+            <div class="line"><span class="muted">Taxa de serviço (${Math.round(SERVICE_FEE_RATE * 100)}%)</span><span data-player-booking-fee>-</span></div>
             <div class="line total"><span>Total</span><span data-player-booking-total>-</span></div>
             <small>Pagamento, suporte e proteção da reserva.</small>
           </div>
@@ -841,7 +841,7 @@ async function renderPayment(root, route) {
             <h2>Total da reserva</h2>
           </div>
           <div class="line"><span class="muted">Aluguel (${duration}h)</span><span>${money(subtotal)}</span></div>
-          <div class="line"><span class="muted">Taxa de serviço (5%)</span><span>${money(serviceFee)}</span></div>
+          <div class="line"><span class="muted">Taxa de serviço (${Math.round(SERVICE_FEE_RATE * 100)}%)</span><span>${money(serviceFee)}</span></div>
           <div class="line total"><span>Total</span><span>${money(total)}</span></div>
           <div class="order-card__fee-note">${icon('info', 'ic sm')}A taxa mantém o pagamento, o suporte e a proteção da reserva.</div>
           <a class="btn btn-primary btn-lg btn-block" data-player-payment-cta>

@@ -1,6 +1,7 @@
 import venueService from '../../services/venues.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/formatters.js';
+import { SERVICE_FEE_RATE } from '../../config/constants.js';
 import { SPORTS, POSITIONS, LEVELS, FEET } from '../../config/mock-data.js';
 import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
@@ -1681,6 +1682,11 @@ export async function renderMobilePage(route, root) {
     onboarding: renderOnboarding,
     clubes: renderClubSearch
   };
+  // O percentual da taxa aparece em texto corrido; preencher aqui evita
+  // "9%" escrito na mao voltando a divergir da constante.
+  root.querySelectorAll('[data-fee-pct]').forEach((el) => {
+    el.textContent = String(Math.round(SERVICE_FEE_RATE * 100));
+  });
   await renderers[route.name]?.(root, route);
   syncMarketplaceState(document);
 }

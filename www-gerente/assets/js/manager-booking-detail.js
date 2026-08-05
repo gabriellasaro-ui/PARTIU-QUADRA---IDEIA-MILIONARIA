@@ -6,12 +6,11 @@
    oferece confirmar pagamento; o que ja esta encerrado nao oferece nada
    alem de voltar. */
 import { bookings, getBooking, setBookingStatus, encerrada, setPageMeta } from './manager-bookings.js';
-import { SERVICE_FEE_RATE } from '../../config/constants.js';
+import { ARENA_FEE_RATE } from '../../config/constants.js';
 import { formatCurrency } from '../../utils/formatters.js';
 
-// A taxa incide por cima do valor da quadra, entao a fatia dela dentro do
-// bruto e rate/(1+rate).
-const FATIA = SERVICE_FEE_RATE / (1 + SERVICE_FEE_RATE);
+// A taxa da arena sai por dentro do valor da quadra.
+const FATIA = ARENA_FEE_RATE;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({

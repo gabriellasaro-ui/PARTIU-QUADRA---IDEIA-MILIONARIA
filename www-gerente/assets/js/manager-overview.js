@@ -6,7 +6,7 @@
    O mapa de calor e o grafico sao derivados, nao inventados: saem do padrao
    de horarios que a arena ja tem. */
 import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
-import { SERVICE_FEE_RATE } from '../../config/constants.js';
+import { ARENA_FEE_RATE } from '../../config/constants.js';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 const HORAS = ['08h', '09h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h', '18h', '19h', '20h', '21h', '22h', '23h'];
@@ -103,7 +103,7 @@ export function renderManagerOverview(root) {
   // promise nao resolvia. O gerente ve as reservas da propria arena.
   const reservas = ARENA_BOOKINGS;
   const bruto = reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
-  const comissao = bruto * (SERVICE_FEE_RATE / (1 + SERVICE_FEE_RATE));
+  const comissao = bruto * ARENA_FEE_RATE;
   const pendentes = reservas.filter((r) => r.status === 'Solicitada' || r.status === 'Pendente').length;
 
   set(root, '[data-overview-payout]', brl(bruto - comissao));

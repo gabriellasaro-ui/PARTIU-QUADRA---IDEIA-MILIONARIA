@@ -1,7 +1,12 @@
 """Constantes, dados-semente (mock) e helpers puros — sem estado mutável."""
 from datetime import datetime, timedelta
 
-TAXA_PLATAFORMA = 0.05
+# Duas taxas: a do jogador entra por cima do preco da quadra, a da arena
+# sai por dentro do repasse. TAXA_PLATAFORMA aponta para a do jogador, que
+# e a usada no checkout.
+TAXA_JOGADOR = 0.09
+TAXA_ARENA = 0.03
+TAXA_PLATAFORMA = TAXA_JOGADOR
 
 IMG = "https://images.unsplash.com/"
 IMG_PARAMS = "?auto=format&fit=crop&w=900&q=80"

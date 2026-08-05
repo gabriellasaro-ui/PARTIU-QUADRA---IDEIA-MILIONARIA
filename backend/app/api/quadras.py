@@ -64,7 +64,7 @@ def resumo_quadra(quadra_id: int, hora: str = Query("19:00"), dur: int = Query(1
     dur = data.clamp_dur(dur)
     preco = q["preco"]
     subtotal = preco * dur
-    service_fee = round(subtotal * 0.05, 2)
+    service_fee = round(subtotal * data.TAXA_JOGADOR, 2)
     return {
         "quadra": q,
         "hora": hora,
