@@ -1,0 +1,32 @@
+<!-- Navegação do gerente no celular.
+
+     O CSS desta barra existia desde a refatoração — 72 regras prontas, e o
+     .content já reservava o espaço embaixo para ela — mas o componente nunca
+     foi construído. Somado a isso, manager-app.css escondia o hambúrguer que
+     abre a gaveta, e o resultado é que abaixo de 820px o gerente entrava numa
+     rota e não tinha como sair dela.
+
+     Cinco destinos, os mesmos data-nav-page da sidebar, para markActiveNav
+     acender os dois de uma vez. O quinto abre a gaveta com o resto. -->
+<nav class="manager-tabbar" aria-label="Navegação do painel">
+  <a data-nav-page="dashboard" href="./dashboard.html">
+    <span class="manager-tabbar-icon"><svg class="ic"><use href="#i-chart"/></svg></span>
+    <span>Início</span>
+  </a>
+  <a data-nav-page="reservas" href="./dashboard.html#reservas">
+    <span class="manager-tabbar-icon"><svg class="ic"><use href="#i-calendar"/></svg></span>
+    <span>Reservas</span>
+  </a>
+  <a data-nav-page="agenda" href="./dashboard.html#agenda">
+    <span class="manager-tabbar-icon"><svg class="ic"><use href="#i-clock"/></svg></span>
+    <span>Agenda</span>
+  </a>
+  <a data-nav-page="quadras" href="./dashboard.html#quadras">
+    <span class="manager-tabbar-icon"><svg class="ic"><use href="#i-grid"/></svg></span>
+    <span>Quadras</span>
+  </a>
+  <button type="button" data-nav-open aria-label="Abrir menu">
+    <span class="manager-tabbar-icon"><svg class="ic"><use href="#i-menu"/></svg></span>
+    <span>Menu</span>
+  </button>
+</nav>

@@ -214,6 +214,21 @@ function initAppShell() {
 
   qsa('[data-nav-open]').forEach((button) => button.addEventListener('click', openNav));
   qsa('[data-nav-close]').forEach((button) => button.addEventListener('click', closeNav));
+
+  /* No mobile a gaveta cobre a tela inteira: toque fora fecha, e Esc
+     tambem. Sem isso, abrir o Menu e mudar de ideia deixava a pessoa presa
+     atras do painel — nao havia botao de fechar visivel. */
+  document.addEventListener('click', (event) => {
+    if (!app.classList.contains('nav-open')) return;
+    if (event.target.closest('.sidebar, [data-nav-open]')) return;
+    closeNav();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeNav();
+  });
+
+  // Trocar de rota fecha a gaveta; senao ela fica aberta sobre a tela nova.
+  window.addEventListener('hashchange', closeNav);
   qsa('.sidebar a').forEach((link) => link.addEventListener('click', closeNav));
   qsa('.web-account a').forEach((link) => link.addEventListener('click', () => {
     link.closest('.web-account')?.removeAttribute('open');

@@ -2199,6 +2199,8 @@ html[data-manager-app] .toast {
     gap: 10px;
   }
 
+  /* O hamburguer sai porque a barra de baixo assume a navegacao — e o
+     quinto espaco dela (Menu) que abre a gaveta. */
   html[data-manager-app] .topbar .hamb {
     display: none;
   }
@@ -3442,5 +3444,32 @@ html[data-manager-app] .manager-boost__price em {
   html[data-manager-app] .manager-boost__action {
     width: 100%;
     justify-content: space-between;
+  }
+}
+
+
+/* A barra so existe no mobile; no desktop quem navega e a sidebar.
+   Precisa vir dentro de um media query proprio: solta no fim do arquivo,
+   esta regra venceria o display:grid do bloco de 820px por vir depois. */
+@media (min-width: 821px) {
+  html[data-manager-app] .manager-tabbar { display: none; }
+}
+
+@media (max-width: 820px) {
+  html[data-manager-app] .manager-tabbar > button {
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  /* Fecha a gaveta ao tocar fora dela. Sem isto, abrir o Menu e mudar de
+     ideia deixava a pessoa presa atras do painel. */
+  html[data-manager-app] .app.nav-open::after {
+    position: fixed;
+    z-index: 60;
+    inset: 0;
+    background: rgba(9, 32, 20, .38);
+    content: '';
   }
 }
