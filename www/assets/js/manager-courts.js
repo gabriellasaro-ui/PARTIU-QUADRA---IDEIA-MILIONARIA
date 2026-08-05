@@ -9,7 +9,7 @@
      que justificam mexer nisso (visualizacoes, conversao) e a previa real.
    - Espacos cadastrados: o catalogo, com ocupacao e preco de cada quadra.
 
-   Preco e status ficam em storage, entao o que a arena edita persiste. */
+   Preço e status ficam em storage, entao o que a arena edita persiste. */
 import { ARENA, COURTS } from '../../config/manager-data.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
@@ -127,7 +127,7 @@ export function initManagerCourts() {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
 
-    // Pausar/ativar e a unica edicao que vale a pena fazer sem sair da
+    // Pausar/ativar e a unica edição que vale a pena fazer sem sair da
     // lista. O resto abre o formulario completo, que e uma pagina.
     const toggle = event.target.closest('[data-court-toggle]');
     if (toggle) {

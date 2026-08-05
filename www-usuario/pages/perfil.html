@@ -43,7 +43,7 @@
     <section class="player-card">
       <div class="player-card__head">
         <h2>Ficha de jogador</h2>
-        <button class="player-card__edit" type="button" data-sheet-open="profile-edit-sheet">Editar</button>
+        <button class="player-card__edit" type="button" data-sheet-open="player-card-sheet">Editar</button>
       </div>
       <div class="player-card__grid">
         <div><span>Posição</span><strong data-profile-position-value>—</strong></div>
@@ -53,7 +53,7 @@
       </div>
       <p class="player-card__hint" data-profile-card-hint hidden>
         <i class="ic" data-lucide="trophy"></i>
-        Complete sua ficha para entrar no ranking quando ele chegar.
+        <span>Complete sua ficha para entrar no ranking quando ele chegar.</span>
       </p>
     </section>
 
@@ -66,7 +66,7 @@
   </div>
 
   <section id="profile-edit-sheet" class="market-sheet" data-market-sheet hidden aria-label="Editar perfil">
-    <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar edicao"></button>
+    <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar edição"></button>
     <div class="market-sheet__panel profile-edit-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
       <div class="market-sheet__head">
         <div>
@@ -88,6 +88,31 @@
         <div class="field"><label>E-mail</label><input type="email" name="email" autocomplete="email" required></div>
         <div class="field"><label>Celular</label><input type="tel" name="phone" autocomplete="tel" required></div>
         <div class="field"><label>Cidade</label><input type="text" name="city" autocomplete="address-level2" required></div>
+        <div class="profile-edit-actions">
+          <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
+          <button class="btn" type="submit"><i class="ic" data-lucide="check"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Ficha separada da conta: nome e e-mail sao dados de cadastro; posicao
+       e nivel sao como voce joga. Misturar os oito campos num formulario so
+       fazia "Editar perfil" pedir coisa que nao tem nada a ver. -->
+  <section id="player-card-sheet" class="market-sheet" data-market-sheet hidden aria-label="Editar ficha de jogador">
+    <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar edição"></button>
+    <div class="market-sheet__panel profile-edit-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="player-card-title">
+      <div class="market-sheet__head">
+        <div>
+          <span>Como você joga</span>
+          <h2 id="player-card-title">Ficha de jogador</h2>
+        </div>
+        <button class="market-sheet__close" type="button" data-sheet-close aria-label="Fechar">
+          <i class="ic" data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form class="profile-edit-form" data-player-card-form>
         <div class="field"><label>Posição</label><select name="position" data-profile-positions></select></div>
         <div class="field"><label>Nível</label><select name="level" data-profile-levels></select></div>
         <div class="field"><label>Nascimento</label><input type="date" name="birthDate"></div>

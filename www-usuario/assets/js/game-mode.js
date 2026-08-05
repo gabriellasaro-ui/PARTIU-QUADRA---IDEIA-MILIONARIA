@@ -385,7 +385,7 @@ function syncTeamLabels() {
 }
 
 /* Serpentina: para 2 times reproduz a distribuicao anterior (0->A, 1->B,
-   2->B, 3->A), entao o caso padrao nao regride. */
+   2->B, 3->A), entao o caso padrão nao regride. */
 function snakeDraft(sorted, teamCount) {
   const buckets = Array.from({ length: teamCount }, () => []);
   sorted.forEach((player, i) => {
@@ -610,9 +610,9 @@ function renderRoundControls() {
 
    Antes ele dependia de gameTimerInterval, que so nasce dentro de
    updateDuringGame — ou seja, so quando a partida ja comecou. No caso
-   padrao (partida daqui a 25 min, fase pre-game) apertar Iniciar trocava o
+   padrão (partida daqui a 25 min, fase pre-game) apertar Iniciar trocava o
    rotulo do botao e o numero nunca se mexia. Era literalmente impossivel
-   cronometrar antes do horario da reserva. */
+   cronometrar antes do horário da reserva. */
 function startRoundTicker() {
   if (roundInterval) clearInterval(roundInterval);
   roundInterval = setInterval(renderRoundClock, 250);

@@ -50,7 +50,7 @@ export const VENUES = [
     id: 1,
     name: 'Arena Bola na Rede',
     sport: 'Futebol Society',
-    neighborhood: 'Jardim Goias',
+    neighborhood: 'Jardim Goiás',
     distance: 1.2,
     rating: 4.8,
     reviews: 214,
@@ -62,7 +62,7 @@ export const VENUES = [
       'https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=900&q=80'
     ],
-    tags: ['Grama sintetica', 'Iluminada', 'Vestiario'],
+    tags: ['Grama sintética', 'Iluminada', 'Vestiário'],
     map: { x: 58, y: 42, lat: -16.7060, lng: -49.2350 }
   },
   {
@@ -100,7 +100,7 @@ export const VENUES = [
       'https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=900&q=80'
     ],
-    tags: ['Piso oficial', 'Coberta', 'Vestiario'],
+    tags: ['Piso oficial', 'Coberta', 'Vestiário'],
     map: { x: 51, y: 62, lat: -16.6870, lng: -49.2620 }
   },
   {
@@ -126,7 +126,7 @@ export const VENUES = [
     id: 5,
     name: 'Top Spin Tenis',
     sport: 'Tenis',
-    neighborhood: 'Alto da Gloria',
+    neighborhood: 'Alto da Glória',
     distance: 4.1,
     rating: 4.6,
     reviews: 73,
@@ -157,7 +157,7 @@ export const VENUES = [
       'https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80'
     ],
-    tags: ['Coberta', 'Arquibancada', 'Vestiario'],
+    tags: ['Coberta', 'Arquibancada', 'Vestiário'],
     map: { x: 63, y: 25, lat: -16.6950, lng: -49.2650 }
   }
 ];
@@ -230,7 +230,7 @@ export const INITIAL_RESERVATIONS = [
   {
     code: 'PQ-20800',
     venueId: 2,
-    date: 'Amanha',
+    date: 'Amanhã',
     hour: '08:00',
     endHour: '09:00',
     duration: 1,
@@ -254,7 +254,7 @@ export const INITIAL_RESERVATIONS = [
   {
     code: 'PQ-31500',
     venueId: 3,
-    date: 'Sab, 20/06',
+    date: 'Sáb, 20/06',
     hour: '15:00',
     endHour: '16:00',
     duration: 1,
@@ -270,12 +270,12 @@ export const CONVERSATIONS = [
     id: 1,
     venueId: 1,
     venue: 'Arena Bola na Rede',
-    subject: 'Reserva de sabado 19h',
+    subject: 'Reserva de sábado 19h',
     messages: [
-      { from: 'player', text: 'Fala! Reservei sabado as 19h. A quadra tem colete pra emprestar?', time: '09:12' },
-      { from: 'venue', text: 'Opa, Gabriel! Tem sim, 10 coletes. Quantos voces vao precisar?', time: '09:15' },
-      { from: 'player', text: 'Uns 6 ta otimo. Valeu!', time: '09:16' },
-      { from: 'venue', text: 'Fechado, deixo separado na recepcao. Bom jogo!', time: '09:17' }
+      { from: 'player', text: 'Fala! Reservei sábado às 19h. A quadra tem colete pra emprestar?', time: '09:12' },
+      { from: 'venue', text: 'Opa, Gabriel! Tem sim, 10 coletes. Quantos vocês vão precisar?', time: '09:15' },
+      { from: 'player', text: 'Uns 6 tá ótimo. Valeu!', time: '09:16' },
+      { from: 'venue', text: 'Fechado, deixo separado na recepção. Bom jogo!', time: '09:17' }
     ]
   },
   {
@@ -284,20 +284,20 @@ export const CONVERSATIONS = [
     venue: 'Beach Point Arena',
     subject: 'Beach tennis domingo',
     messages: [
-      { from: 'venue', text: 'Oi Gabriel, seu horario de domingo 10h esta confirmado. Precisa de raquete?', time: '18:40' }
+      { from: 'venue', text: 'Oi Gabriel, seu horário de domingo 10h está confirmado. Precisa de raquete?', time: '18:40' }
     ]
   }
 ];
 
 /* Sem saldo, sem extrato, sem cupom: guardar dinheiro de usuario e coisa de
-   instituicao de pagamento. O que sobrou e meio de pagamento, e cartao nao
+   instituicao de pagamento. O que sobrou e meio de pagamento, e cartão nao
    mora aqui — e markup da tela ate existir adquirente. */
 export const WALLET = { cards: [] };
 
 export const CURRENT_USER = {
   // Id proprio: a presenca na pelada precisa de chave estavel, e "Editar
   // perfil" ja permite trocar o nome — chavear por nome deixaria referencias
-  // orfas em silencio na primeira edicao.
+  // orfas em silencio na primeira edição.
   id: 'u-gabriel',
   name: 'Gabriel Lisboa',
   email: 'gabriel@email.com',
@@ -338,7 +338,7 @@ function buildMatchEndDate(startTimestamp, durationMinutes) {
 }
 
 // Permite demonstrar as 3 fases do card sem esperar o relogio:
-// ?partida=aovivo (em andamento), ?partida=fim (encerrada), padrao = proxima partida.
+// ?partida=aovivo (em andamento), ?partida=fim (encerrada), padrão = proxima partida.
 function demoMatchOffsetMinutes() {
   const demo = new URLSearchParams(globalThis.location?.search || '').get('partida');
   if (demo === 'aovivo') return -20;

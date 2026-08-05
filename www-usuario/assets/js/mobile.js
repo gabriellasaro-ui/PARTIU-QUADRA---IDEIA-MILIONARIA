@@ -66,10 +66,10 @@ function displayText(value) {
   const replacements = {
     Volei: 'Vôlei',
     Tenis: 'Tênis',
-    'Jardim Goias': 'Jardim Goiás',
-    'Alto da Gloria': 'Alto da Glória',
-    'Grama sintetica': 'Grama sintética',
-    Vestiario: 'Vestiário'
+    'Jardim Goiás': 'Jardim Goiás',
+    'Alto da Glória': 'Alto da Glória',
+    'Grama sintética': 'Grama sintética',
+    Vestiário: 'Vestiário'
   };
   return replacements[value] || value;
 }
@@ -130,12 +130,23 @@ function openMarketSheet(sheetId) {
     const sport = query.get('esporte') || '';
     const radius = query.get('raio') || '5';
     const now = query.get('agora') === '1';
-    form?.querySelectorAll('[name="esporte"]').forEach((input) => {
-      input.checked = input.value === sport;
-    });
+    fillFilterSports(sport);
+    /* Raio fora dos presets e "Personalizado": sem isto, escolher 7 km na
+       barra deixava os quatro radios desmarcados ao reabrir, e o proximo
+       envio devolvia o padrão de 5 km. */
+    const presets = ['2', '5', '10'];
+    const custom = !presets.includes(String(radius));
     form?.querySelectorAll('[name="raio"]').forEach((input) => {
-      input.checked = input.value === radius;
+      input.checked = custom ? input.value === 'custom' : input.value === radius;
     });
+    const range = form?.querySelector('[data-raio-range]');
+    const rangeInput = form?.querySelector('[name="raioKm"]');
+    if (range) range.hidden = !custom;
+    if (custom && rangeInput) {
+      rangeInput.value = radius;
+      const saida = form?.querySelector('[data-raio-output]');
+      if (saida) saida.textContent = `${radius} km`;
+    }
     const nowInput = form?.querySelector('[name="agora"]');
     if (nowInput) nowInput.checked = now;
   }
@@ -276,6 +287,8 @@ function renderBookingCalendar(root) {
     const foraDoPlano = booking.dataset.planKind === 'mensalista'
       && date.getDay() !== Number(booking.dataset.planWeekday || 3);
     const disabled = date < today || date > maxDate || foraDoPlano;
+    // O inverso de foraDoPlano ja estava calculado; so faltava virar classe.
+    const noPlano = booking.dataset.planKind === 'mensalista' && !foraDoPlano && !disabled;
     const selected = value === booking.dataset.date;
     const isToday = value === localDateValue(today);
     const spoken = new Intl.DateTimeFormat('pt-BR', {
@@ -284,7 +297,7 @@ function renderBookingCalendar(root) {
       month: 'long'
     }).format(date);
     cells.push(`
-      <button type="button" class="calendar-day ${selected ? 'on' : ''} ${isToday ? 'is-today' : ''}"
+      <button type="button" class="calendar-day ${selected ? 'on' : ''} ${isToday ? 'is-today' : ''} ${noPlano ? 'is-plan' : ''}"
               data-calendar-date="${value}" aria-label="${escapeHtml(spoken)}"
               aria-pressed="${selected}" ${disabled ? 'disabled' : ''}>
         <span>${day}</span>
@@ -449,7 +462,9 @@ async function renderExplore(root, route) {
   const sportInput = root.querySelector('[data-search-sport]');
   if (sportInput) {
     sportInput.value = sport;
-    sportInput.disabled = !sport;
+    // Nao desabilitar: valor vazio ja e descartado no envio, e disabled
+    // fazia o campo sumir do FormData na janela entre montar e renderizar.
+
   }
   const nowInput = root.querySelector('[data-search-now]');
   if (nowInput) nowInput.disabled = !now;
@@ -682,7 +697,7 @@ function firstWeekdayInMonth(weekday, monthValue) {
 
 const WEEKDAY_NAMES = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
-/* O mensalista cobra por mes (4 sessoes no mesmo dia e horario); o avulso,
+/* O mensalista cobra por mes (4 sessoes no mesmo dia e horário); o avulso,
    por hora. A duracao multiplica os dois igual, entao o unico que muda e a
    base — o resto do checkout segue identico. */
 function planPriceBase(venue, plan) {
@@ -734,7 +749,7 @@ function renderBooking(root) {
   const start = selectedHour ? Number(selectedHour.slice(0, 2)) : -1;
 
   const groups = [
-    ['Manha', availability.filter((slot) => Number(slot.hour.slice(0, 2)) < 12)],
+    ['Manhã', availability.filter((slot) => Number(slot.hour.slice(0, 2)) < 12)],
     ['Tarde', availability.filter((slot) => {
       const hour = Number(slot.hour.slice(0, 2));
       return hour >= 12 && hour < 18;
@@ -1283,12 +1298,12 @@ async function renderFavorites(root) {
     : `<div class="empty">
         <div class="empty-ic">${icon('heart', 'ic lg')}</div>
         <h3>Nenhum favorito ainda</h3>
-        <p>Toque no coracao de uma quadra para salva-la aqui.</p>
+        <p>Toque no coração de uma quadra para salvá-la aqui.</p>
         <a href="#quadras" class="btn block">Explorar quadras</a>
       </div>`;
 }
 
-/* A tela de Pagamento nao tem nada dinamico hoje: cartao e Pix sao markup
+/* A tela de Pagamento nao tem nada dinamico hoje: cartão e Pix sao markup
    fixo ate existir adquirente. Fica como funcao para a rota nao precisar de
    caso especial. */
 async function renderWallet() {}
@@ -1297,7 +1312,7 @@ async function renderWalletAction(root, route) {
   const title = root.querySelector('[data-wallet-action-title]');
   const content = root.querySelector('[data-wallet-action-content]');
 
-  // So cartao. "Adicionar saldo" e "Cupons" sairam junto com a carteira.
+  // So cartão. "Adicionar saldo" e "Cupons" sairam junto com a carteira.
   title.textContent = 'Adicionar cartão';
   content.innerHTML = `
     <form data-demo-form data-success="Cartão adicionado com sucesso">
@@ -1346,34 +1361,39 @@ function syncMobileProfile(root, user) {
   set('[data-profile-foot]', user.foot || '—');
 
   // O empurrao so aparece enquanto falta alguma coisa: aviso permanente vira
-  // decoracao e para de ser lido.
+  // decoração e para de ser lido.
   const faltando = !user.position || !user.level || !user.birthDate || !user.foot;
   const dica = root.querySelector('[data-profile-card-hint]');
   if (dica) dica.hidden = !faltando;
 
+  // Folha da CONTA: quem a pessoa e no cadastro.
   const form = root.querySelector('[data-profile-edit-form]');
   if (form) {
     form.elements.name.value = user.name;
     form.elements.email.value = user.email;
     form.elements.phone.value = user.phone;
     form.elements.city.value = user.city;
-
-    // Os selects sao montados aqui porque a folha vive fora da rota — mesmo
-    // motivo de fillSportOptions.
-    const opcoes = (sel, itens, atual, vazio) => {
-      const campo = root.querySelector(sel);
-      if (!campo) return;
-      campo.innerHTML = `<option value="">${vazio}</option>` + itens.map((i) => {
-        const valor = typeof i === 'string' ? i : i.id;
-        const rotulo = typeof i === 'string' ? i : (i.label || i.id);
-        return `<option value="${escapeHtml(valor)}"${valor === atual ? ' selected' : ''}>${escapeHtml(rotulo)}</option>`;
-      }).join('');
-    };
-    opcoes('[data-profile-positions]', POSITIONS, user.position || '', 'Não informado');
-    opcoes('[data-profile-levels]', LEVELS, user.level || '', 'Não informado');
-    opcoes('[data-profile-feet]', FEET, user.foot || '', 'Não informado');
-    if (form.elements.birthDate) form.elements.birthDate.value = user.birthDate || '';
   }
+
+  /* Folha da FICHA: como a pessoa joga. Os selects sao montados aqui porque
+     as folhas vivem fora do fragmento da rota — mesmo motivo de
+     fillSportOptions. Fora do bloco acima de proposito: sao formularios
+     diferentes e um nao pode depender do outro existir. */
+  const opcoes = (sel, itens, atual, vazio) => {
+    const campo = root.querySelector(sel);
+    if (!campo) return;
+    campo.innerHTML = `<option value="">${vazio}</option>` + itens.map((i) => {
+      const valor = typeof i === 'string' ? i : i.id;
+      const rotulo = typeof i === 'string' ? i : (i.label || i.id);
+      return `<option value="${escapeHtml(valor)}"${valor === atual ? ' selected' : ''}>${escapeHtml(rotulo)}</option>`;
+    }).join('');
+  };
+  opcoes('[data-profile-positions]', POSITIONS, user.position || '', 'Não informado');
+  opcoes('[data-profile-levels]', LEVELS, user.level || '', 'Não informado');
+  opcoes('[data-profile-feet]', FEET, user.foot || '', 'Não informado');
+
+  const cardForm = root.querySelector('[data-player-card-form]');
+  if (cardForm?.elements.birthDate) cardForm.elements.birthDate.value = user.birthDate || '';
 }
 
 /* '1994-03-27' -> '27/03/1994'. Guardamos ISO porque <input type="date">
@@ -1650,7 +1670,7 @@ export function initMobileActions() {
   if (!document.querySelector('[data-route-view]')) return;
 
   /* Gate de acao — para o que NAO e navegacao (abrir a folha de criar clube,
-     entrar num clube). Navegacao ja e coberta pela guarda de rota no app.js.
+     entrar num clube). Navegação ja e coberta pela guarda de rota no app.js.
 
      Fase de CAPTURA, e nao bolha: o caminho de um clique e
      document(capture) -> alvo -> document(bubble), e todos os outros
@@ -1757,7 +1777,9 @@ export function initMobileActions() {
       if (radius) query.set('raio', radius);
       if (now) query.set('agora', '1');
       if (term) query.set('q', term);
-      query.set('local', currentLocation());
+      // Preserva o local da URL. Sobrescrever com o localStorage trocava em
+      // silencio a cidade que a pessoa tinha escolhido.
+      query.set('local', currentQuery.get('local') || currentLocation());
       closeMarketSheet(filter.closest('[data-market-sheet]'));
       location.hash = `quadras?${query}`;
       return;
@@ -1772,9 +1794,22 @@ export function initMobileActions() {
         name: String(data.get('name') || '').trim(),
         email: String(data.get('email') || '').trim(),
         phone: String(data.get('phone') || '').trim(),
-        city: String(data.get('city') || '').trim(),
-        // A ficha de jogador. Posicao vale dobrado: alem do cracha do topo,
-        // e o que o registro de membro do clube passa a espelhar.
+        city: String(data.get('city') || '').trim()
+      });
+      const view = document.querySelector('[data-route-view]');
+      syncMobileProfile(view, saved);
+      closeMarketSheet(profileForm.closest('[data-market-sheet]'));
+      window.pqToast?.('Perfil atualizado');
+      return;
+    }
+
+    /* A ficha tem folha propria. Posicao vale dobrado: alem do cracha do
+       topo, e o que o registro de membro do clube passa a espelhar. */
+    const cardForm = event.target.closest('[data-player-card-form]');
+    if (cardForm) {
+      event.preventDefault();
+      const data = new FormData(cardForm);
+      const saved = await venueService.saveProfile({
         position: String(data.get('position') || ''),
         level: String(data.get('level') || ''),
         birthDate: String(data.get('birthDate') || ''),
@@ -1782,8 +1817,8 @@ export function initMobileActions() {
       });
       const view = document.querySelector('[data-route-view]');
       syncMobileProfile(view, saved);
-      closeMarketSheet(profileForm.closest('[data-market-sheet]'));
-      window.pqToast?.('Perfil atualizado');
+      closeMarketSheet(cardForm.closest('[data-market-sheet]'));
+      window.pqToast?.('Ficha atualizada');
       return;
     }
 
@@ -1801,7 +1836,7 @@ export function initMobileActions() {
         city: String(data.get('city') || '').trim(),
         description: String(data.get('description') || '').trim(),
         createdBy: user.id,
-        // Quem cria entra como dono; edicao preserva os membros existentes.
+        // Quem cria entra como dono; edição preserva os membros existentes.
         members: id ? undefined : [{
           id: user.id,
           name: user.name,
@@ -2521,7 +2556,7 @@ function addMinutesToTime(hhmm, minutes) {
 }
 
 /* Linha de membro no idioma de lista do app (.payment-row), o mesmo das
-   formas de pagamento e das configuracoes. */
+   formas de pagamento e das configurações. */
 /* KRT4P9 -> KRT-4P9. Hifen so na exibicao: e mais facil de ditar em voz
    alta, mas o dado guardado nao tem separador. */
 function formatClubCode(code) {
@@ -2661,6 +2696,38 @@ async function renderClub(root) {
   renderClubChat(root, await venueService.clubChat(club.id), user.id);
   selectClubSection(clubSection);
   window.pqRefreshIcons?.(root);
+}
+
+/* A grade de esportes da folha sai da MESMA fonte da fileira do Explorar.
+   Duas listas escritas separadamente foi a origem do filtro bugado: a folha
+   nao reconhecia Beach Tennis, Basquete nem Tenis, e a fileira nao
+   reconhecia "outros". */
+const SPORT_FILTER_ICONS = {
+  'Futebol Society': 'goal',
+  Futsal: 'trophy',
+  Volei: 'volleyball',
+  'Beach Tennis': 'circle-dot',
+  Basquete: 'target',
+  Tenis: 'activity'
+};
+
+async function fillFilterSports(sportAtual) {
+  const grid = document.querySelector('[data-filter-sports]');
+  if (!grid) return;
+  const sports = await venueService.sports();
+  const opcoes = [
+    { value: '', label: 'Todos', icon: 'shapes' },
+    ...sports.map((nome) => ({
+      value: nome,
+      label: displayText(nome),
+      icon: SPORT_FILTER_ICONS[nome] || 'circle-dot'
+    }))
+  ];
+  grid.innerHTML = opcoes.map((o) => `<label>
+    <input type="radio" name="esporte" value="${escapeHtml(o.value)}"${o.value === sportAtual ? ' checked' : ''}>
+    <span><i class="ic" data-lucide="${o.icon}"></i>${escapeHtml(o.label)}</span>
+  </label>`).join('');
+  window.pqRefreshIcons?.(grid);
 }
 
 /* As folhas sao globais (vivem fora do route-view), entao os selects sao

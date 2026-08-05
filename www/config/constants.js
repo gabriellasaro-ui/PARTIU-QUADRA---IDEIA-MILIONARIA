@@ -5,7 +5,7 @@ export const APP_VERSION = '0.1.0';
 export const API_BASE_URL = runtimeConfig.API_BASE_URL || '';
 
 /* Base publica do app, usada no link de convite do clube. Fica vazia por
-   padrao de proposito: no Capacitor o app roda em file:// e location.origin
+   padrão de proposito: no Capacitor o app roda em file:// e location.origin
    e a string "null" — montar link a partir dali mandaria um endereco
    quebrado para o WhatsApp de alguem. Sem base, o convite compartilha so o
    texto com o codigo. */

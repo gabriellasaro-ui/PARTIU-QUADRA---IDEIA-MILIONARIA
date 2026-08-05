@@ -15,7 +15,7 @@ export const ARENA = {
   id: 1,
   name: 'Arena Bola na Rede',
   sport: 'Futebol Society',
-  neighborhood: 'Jardim Goias',
+  neighborhood: 'Jardim Goiás',
   city: 'Goiania, GO',
   rating: 4.8,
   distance: 1.2,
@@ -73,7 +73,7 @@ export const ARENA_BOOKINGS = [
   { id: 8, codigo: 'PQ-1938', cliente: 'Galera do Bairro', telefone: '(62) 99455-8890', quadra: 'Society 1', data: 'Sáb, 04/07', hora: '16:00 – 17:00', valor: 120, status: 'Confirmado' }
 ];
 
-/* Repasses ja conciliados. Historico fechado: nao sai das reservas acima,
+/* Repasses ja conciliados. Histórico fechado: nao sai das reservas acima,
    que sao a semana corrente. */
 export const ARENA_PAYOUTS = [
   { periodo: '01 a 07 deste mês', reservas: 32, bruto: 4820, status: 'Pago', cls: 'pago' },

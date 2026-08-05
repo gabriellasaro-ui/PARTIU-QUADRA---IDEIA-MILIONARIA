@@ -1,11 +1,11 @@
-<!-- TODO: substituir localizacao, alertas e filtros locais por dados da API FastAPI -->
+<!-- TODO: substituir localização, alertas e filtros locais por dados da API FastAPI -->
 <div class="market-sheet" id="location-sheet" data-market-sheet hidden>
-  <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar localizacao"></button>
+  <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar localização"></button>
   <section class="market-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="location-sheet-title">
     <header class="market-sheet__head">
       <div>
         <span>Onde vamos jogar?</span>
-        <h2 id="location-sheet-title">Escolha sua regiao</h2>
+        <h2 id="location-sheet-title">Escolha sua região</h2>
       </div>
       <button class="market-sheet__close" type="button" data-sheet-close aria-label="Fechar">
         <i class="ic" data-lucide="x"></i>
@@ -13,11 +13,11 @@
     </header>
     <button class="current-location-action" type="button" data-use-current-location>
       <span><i class="ic" data-lucide="locate-fixed"></i></span>
-      <span><strong>Usar minha localizacao</strong><small>Encontrar quadras ao seu redor</small></span>
+      <span><strong>Usar minha localização</strong><small>Encontrar quadras ao seu redor</small></span>
       <i class="ic" data-lucide="chevron-right"></i>
     </button>
     <div class="location-options">
-      <span class="market-sheet__label">Regioes recentes</span>
+      <span class="market-sheet__label">Regiões recentes</span>
       <button type="button" data-location-value="Goiânia, GO">
         <i class="ic" data-lucide="map-pin"></i><span><strong>Goiânia</strong><small>Goiás</small></span>
       </button>
@@ -29,12 +29,12 @@
 </div>
 
 <div class="market-sheet" id="notifications-sheet" data-market-sheet hidden>
-  <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar notificacoes"></button>
+  <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar notificações"></button>
   <section class="market-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="notifications-sheet-title">
     <header class="market-sheet__head">
       <div>
         <span>Central do jogo</span>
-        <h2 id="notifications-sheet-title">Notificacoes</h2>
+        <h2 id="notifications-sheet-title">Notificações</h2>
       </div>
       <button class="market-sheet__close" type="button" data-sheet-close aria-label="Fechar">
         <i class="ic" data-lucide="x"></i>
@@ -43,11 +43,11 @@
     <div class="notification-list">
       <a href="#reservas" data-sheet-close>
         <span class="notification-list__icon notification-list__icon--success"><i class="ic" data-lucide="circle-check"></i></span>
-        <span><strong>Reserva confirmada</strong><small>Arena Bola na Rede, hoje as 19:00</small><em>Agora</em></span>
+        <span><strong>Reserva confirmada</strong><small>Arena Bola na Rede, hoje às 19:00</small><em>Agora</em></span>
       </a>
       <a href="#quadras?agora=1" data-sheet-close>
         <span class="notification-list__icon"><i class="ic" data-lucide="zap"></i></span>
-        <span><strong>Abriu um horario perto de voce</strong><small>Beach Point Arena liberou 20:00</small><em>Ha 12 min</em></span>
+        <span><strong>Abriu um horário perto de você</strong><small>Beach Point Arena liberou 20:00</small><em>Há 12 min</em></span>
       </a>
     </div>
     <button class="market-sheet__secondary" type="button" data-mark-notifications>Marcar todas como lidas</button>
@@ -69,16 +69,14 @@
     <form class="market-filter-form" data-filter-form>
       <fieldset>
         <legend>Esporte</legend>
-        <div class="filter-choice-grid filter-choice-grid--sports">
-          <label><input type="radio" name="esporte" value="" checked><span><i class="ic" data-lucide="shapes"></i>Todos</span></label>
-          <label><input type="radio" name="esporte" value="Futebol Society"><span><i class="ic" data-lucide="goal"></i>Futebol</span></label>
-          <label><input type="radio" name="esporte" value="Futsal"><span><i class="ic" data-lucide="trophy"></i>Futsal</span></label>
-          <label><input type="radio" name="esporte" value="Volei"><span><i class="ic" data-lucide="volleyball"></i>Volei</span></label>
-          <label><input type="radio" name="esporte" value="outros"><span><i class="ic" data-lucide="circle-ellipsis"></i>Outros</span></label>
-        </div>
+        <!-- Preenchido por fillFilterSports() com os MESMOS esportes da
+             fileira do Explorar. Escrito na mao, a folha tinha 5 opcoes e a
+             fileira 6: escolher Beach Tennis na fileira desmarcava todos os
+             radios, e sair da folha sem tocar em nada apagava o filtro. -->
+        <div class="filter-choice-grid filter-choice-grid--sports" data-filter-sports></div>
       </fieldset>
       <fieldset>
-        <legend>Distancia maxima</legend>
+        <legend>Distância máxima</legend>
         <div class="filter-choice-grid">
           <label><input type="radio" name="raio" value="2"><span>2 km</span></label>
           <label><input type="radio" name="raio" value="5" checked><span>5 km</span></label>
@@ -86,13 +84,13 @@
           <label><input type="radio" name="raio" value="custom" data-raio-custom><span>Personalizado</span></label>
         </div>
         <div class="filter-range" data-raio-range hidden>
-          <input type="range" name="raioKm" min="1" max="30" step="1" value="5" aria-label="Distancia maxima em quilometros">
+          <input type="range" name="raioKm" min="1" max="30" step="1" value="5" aria-label="Distância máxima em quilômetros">
           <output data-raio-output>5 km</output>
         </div>
       </fieldset>
       <label class="filter-now">
         <span><i class="ic" data-lucide="zap"></i></span>
-        <span><strong>Partiu agora</strong><small>Mostrar horarios nas proximas 2 horas</small></span>
+        <span><strong>Partiu agora</strong><small>Mostrar horários nas próximas 2 horas</small></span>
         <input type="checkbox" name="agora" value="1">
         <i class="filter-switch"></i>
       </label>

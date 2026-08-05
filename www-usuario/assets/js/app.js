@@ -239,7 +239,7 @@ async function setFragment(container, path) {
     initModals();
   } catch (error) {
     container.setAttribute('data-route-error', path);
-    container.innerHTML = '<div class="container route-page"><div class="empty"><h3>Tela indisponivel</h3><p>Tente novamente em instantes.</p><a class="btn block" href="./index.html">Voltar ao inicio</a></div></div>';
+    container.innerHTML = '<div class="container route-page"><div class="empty"><h3>Tela indisponível</h3><p>Tente novamente em instantes.</p><a class="btn block" href="./index.html">Voltar ao início</a></div></div>';
   }
 }
 

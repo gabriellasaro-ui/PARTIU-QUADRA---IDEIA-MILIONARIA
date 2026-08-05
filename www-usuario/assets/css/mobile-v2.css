@@ -2763,6 +2763,16 @@ button .ic,
   color: var(--pq-brand-strong);
 }
 
+/* Todas as datas do plano, nao so a escolhida: no mensalista a pessoa
+   precisa ver a recorrencia inteira do mes. Vem ANTES de .on para o dia
+   selecionado continuar solido por cima. */
+.calendar-day.is-plan:not(.on) {
+  border-color: var(--pq-signal);
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-strong);
+  font-weight: 800;
+}
+
 .calendar-day.on {
   border-color: var(--pq-brand-strong);
   background: var(--pq-brand-strong);
@@ -3403,7 +3413,7 @@ html[data-route="mapa"] .phone {
 
 .sport-item {
   display: flex;
-  flex: 0 0 74px;
+  flex: 0 1 74px;
   align-items: center;
   gap: 7px;
   scroll-snap-align: start;
@@ -6498,9 +6508,12 @@ html[data-bottombar="none"] .screen {
   font-weight: 700;
 }
 
+/* baseline, e nao flex-start: com o texto como no solto, o half-leading da
+   linha empurrava as letras ~4px para baixo e o icone ficava boiando acima
+   delas. O <span> em volta do texto e o que da uma baseline para alinhar. */
 .player-card__hint {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 8px;
   padding: 12px;
   border-radius: 12px;
@@ -6511,7 +6524,7 @@ html[data-bottombar="none"] .screen {
   line-height: 1.45;
 }
 
-.player-card__hint .ic { flex: 0 0 auto; width: 16px; height: 16px; }
+.player-card__hint .ic { position: relative; top: 2px; flex: 0 0 auto; width: 16px; height: 16px; }
 
 .auth-error {
   padding: 10px 12px;

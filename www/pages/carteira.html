@@ -1,34 +1,26 @@
-<!-- TODO: substituir dados locais por GET /carteira na API FastAPI -->
+<!-- Formas de pagamento.
+
+     Era "Carteira", com saldo pré-pago, extrato e cupons. Saiu tudo: guardar
+     dinheiro de gente é atividade de instituição de pagamento, e o app não é
+     isso. O que fica é o meio de pagamento — cartão salvo e Pix —, que é o
+     que a reserva precisa para acontecer. -->
 <div class="route-page">
   <div class="navbar">
     <a class="icon-btn" href="#home" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
-    <div><div class="title">Carteira</div><div class="sub">Saldo e formas de pagamento</div></div>
+    <div><div class="title">Pagamento</div><div class="sub">Como você paga suas quadras</div></div>
   </div>
 
   <div class="container">
-    <section class="mobile-wallet">
-      <span>Saldo disponivel</span>
-      <strong data-wallet-balance></strong>
-      <div class="wallet-actions">
-        <a class="btn wallet-primary" href="#carteira/adicionar"><i class="ic" data-lucide="plus"></i>Adicionar</a>
-        <a class="btn wallet-secondary" href="#carteira/cupom"><i class="ic" data-lucide="ticket-percent"></i>Cupom</a>
-      </div>
-    </section>
-
     <div class="mobile-section-head"><h2>Formas de pagamento</h2></div>
     <div class="payment-list">
-      <div class="payment-row"><span class="badge-ic"><i class="ic" data-lucide="zap"></i></span><span><strong>Pix</strong><small>Aprovacao na hora</small></span><i class="ic row-check" data-lucide="check"></i></div>
-      <div class="payment-row"><span class="badge-ic"><i class="ic" data-lucide="credit-card"></i></span><span><strong>Visa final 4321</strong><small>Cartao principal</small></span><a href="#carteira/cartao" aria-label="Editar cartao"><i class="ic" data-lucide="chevron-right"></i></a></div>
+      <div class="payment-row"><span class="badge-ic"><i class="ic" data-lucide="zap"></i></span><span><strong>Pix</strong><small>Aprovação na hora</small></span><i class="ic row-check" data-lucide="check"></i></div>
+      <div class="payment-row"><span class="badge-ic"><i class="ic" data-lucide="credit-card"></i></span><span><strong>Visa final 4321</strong><small>Cartão principal</small></span><a href="#carteira/cartão" aria-label="Editar cartão"><i class="ic" data-lucide="chevron-right"></i></a></div>
     </div>
-    <a href="#carteira/cartao" class="btn outline block"><i class="ic" data-lucide="plus"></i>Adicionar cartao</a>
+    <a href="#carteira/cartão" class="btn outline block"><i class="ic" data-lucide="plus"></i>Adicionar cartão</a>
 
-    <div class="mobile-section-head"><h2>Extrato</h2><span>Ultimos lancamentos</span></div>
-    <div class="transaction-list" data-wallet-transactions></div>
-
-    <section class="referral-band">
-      <span class="referral-icon"><i class="ic" data-lucide="gift"></i></span>
-      <div><strong>Indique e ganhe</strong><p>Ganhe R$ 20 quando um amigo fizer a primeira reserva.</p></div>
-      <button type="button" data-copy="https://partiu.app/r/GABRIEL20" data-copy-msg="Link de indicacao copiado" aria-label="Copiar link"><i class="ic" data-lucide="copy"></i></button>
-    </section>
+    <p class="payment-note">
+      <i class="ic" data-lucide="shield-check"></i>
+      <span>Você paga a cada reserva. A Qadras não guarda saldo.</span>
+    </p>
   </div>
 </div>

@@ -17,7 +17,7 @@ export const ROUTES = {
   carteira: './index.html#carteira',
   mensagens: './index.html#mensagens',
   perfil: './index.html#perfil',
-  configuracoes: './index.html#config',
+  configurações: './index.html#config',
   clube: './index.html#clube'
 };
 
@@ -32,7 +32,7 @@ export function parseMobileRouteHash(hashValue = '') {
     home: 'home',
     inicio: 'home',
     chat: 'mensagens',
-    configuracoes: 'config',
+    configurações: 'config',
     // Links antigos para ./login.html continuam valendo.
     login: 'entrar',
     registrar: 'cadastro'

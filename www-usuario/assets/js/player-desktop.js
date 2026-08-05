@@ -51,10 +51,10 @@ function displayText(value) {
   const replacements = {
     Volei: 'Vôlei',
     Tenis: 'Tênis',
-    'Jardim Goias': 'Jardim Goiás',
-    'Alto da Gloria': 'Alto da Glória',
-    'Grama sintetica': 'Grama sintética',
-    Vestiario: 'Vestiário'
+    'Jardim Goiás': 'Jardim Goiás',
+    'Alto da Glória': 'Alto da Glória',
+    'Grama sintética': 'Grama sintética',
+    Vestiário: 'Vestiário'
   };
   return replacements[value] || value;
 }
@@ -496,7 +496,7 @@ async function renderVenue(root, route) {
                 <button type="button" class="calendar-nav" data-player-calendar-nav="1" aria-label="Próximo mês">${icon('chevron-right')}</button>
               </div>
               <div class="booking-calendar__weekdays" aria-hidden="true">
-                <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span>
+                <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
               </div>
               <div class="booking-calendar__grid" data-player-calendar-grid></div>
             </div>
@@ -1144,7 +1144,7 @@ async function renderWallet(root) {
             <div class="payment-row"><span class="badge-ic">${icon('zap')}</span><span><strong>Pix</strong><small>Aprovação na hora</small></span></div>
             <div class="payment-row"><span class="badge-ic">${icon('credit-card')}</span><span><strong>Visa final 4321</strong><small>Cartão principal</small></span></div>
           </div>
-          <a href="#carteira/cartao" class="btn btn-outline" style="margin-top:14px;">${icon('plus', 'ic sm')} Adicionar cartão</a>
+          <a href="#carteira/cartão" class="btn btn-outline" style="margin-top:14px;">${icon('plus', 'ic sm')} Adicionar cartão</a>
         </div>
       </div>
       <aside class="card">
@@ -1159,7 +1159,7 @@ async function renderWalletAction(root, route) {
   const action = route.params.action || 'adicionar';
   const pageTitle = document.querySelector('[data-page-title]');
   const pageSub = document.querySelector('[data-page-sub]');
-  if (action === 'cartao') {
+  if (action === 'cartão') {
     if (pageTitle) pageTitle.textContent = 'Adicionar cartão';
     if (pageSub) pageSub.textContent = 'Cadastre um cartão para pagar mais rápido';
     root.innerHTML = `
@@ -1178,7 +1178,7 @@ async function renderWalletAction(root, route) {
       </form>`;
     return;
   }
-  // Cartao e a unica acao que sobrou; qualquer outra volta para Pagamento.
+  // Cartão e a unica acao que sobrou; qualquer outra volta para Pagamento.
   location.hash = 'carteira';
 }
 
@@ -1268,7 +1268,7 @@ async function renderProfile(root) {
       <form id="player-profile-form" class="card desktop-profile-editor" data-player-profile-form hidden>
         <div class="desktop-profile-section-head">
           <div><h2>Editar perfil</h2><p>Atualize como suas informações aparecem no aplicativo.</p></div>
-          <button class="icon-btn" type="button" data-player-profile-cancel aria-label="Fechar edicao">${icon('x')}</button>
+          <button class="icon-btn" type="button" data-player-profile-cancel aria-label="Fechar edição">${icon('x')}</button>
         </div>
         <div class="inp"><label>Nome completo</label><input type="text" name="name" value="${escapeHtml(profile.name)}" autocomplete="name" required></div>
         <div class="input-row">
@@ -1299,7 +1299,7 @@ async function renderConfig(root) {
           <label class="switch-row"><span>Reserva confirmada</span><span class="switch on"></span></label>
           <label class="switch-row"><span>Lembrete 1h antes do jogo</span><span class="switch on"></span></label>
           <label class="switch-row"><span>Quadras novas perto de você</span><span class="switch"></span></label>
-          <label class="switch-row"><span>Promocoes e cupons</span><span class="switch on"></span></label>
+          <label class="switch-row"><span>Promoções e cupons</span><span class="switch on"></span></label>
         </div>
       </section>
       <section class="set-card">

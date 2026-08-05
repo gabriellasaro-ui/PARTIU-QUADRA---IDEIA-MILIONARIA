@@ -71,7 +71,11 @@ export const venueService = {
     return venues
       .filter(matches)
       .map(applyOverrides)
-      .sort((a, b) => (a.distancia || a.distance) - (b.distancia || b.distance));
+      /* Melhor avaliada primeiro; distancia so desempata. Antes era so
+         distancia, entao a quadra ruim da esquina ganhava da otima a 400m.
+         Como e no servico e nao na tela, mapa e favoritos herdam a regra. */
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0)
+        || (a.distancia || a.distance) - (b.distancia || b.distance));
   },
 
   async featured() {

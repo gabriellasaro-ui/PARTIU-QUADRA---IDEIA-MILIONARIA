@@ -1,4 +1,4 @@
-/* TODO: substituir disponibilidade local por GET /quadras/{id}/horarios. */
+/* TODO: substituir disponibilidade local por GET /quadras/{id}/horários. */
 (function () {
   var DAY_MS = 86400000;
 

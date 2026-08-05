@@ -87,11 +87,11 @@
     var replacements = {
       'Volei': 'Vôlei',
       'Tenis': 'Tênis',
-      'Jardim Goias': 'Jardim Goiás',
-      'Alto da Gloria': 'Alto da Glória',
+      'Jardim Goiás': 'Jardim Goiás',
+      'Alto da Glória': 'Alto da Glória',
       'Goiania': 'Goiânia',
-      'Grama sintetica': 'Grama sintética',
-      'Vestiario': 'Vestiário'
+      'Grama sintética': 'Grama sintética',
+      'Vestiário': 'Vestiário'
     };
     return replacements[value] || value;
   }

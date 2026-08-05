@@ -68,7 +68,7 @@ export function renderManagerReservations(root) {
   const solicitadas = todas.filter((r) => r.status === 'Solicitada');
 
   // O banner some quando nao ha o que responder — um aviso permanente vira
-  // decoracao e para de ser lido.
+  // decoração e para de ser lido.
   const banner = root.querySelector('[data-booking-banner]');
   if (banner) {
     banner.hidden = solicitadas.length === 0;

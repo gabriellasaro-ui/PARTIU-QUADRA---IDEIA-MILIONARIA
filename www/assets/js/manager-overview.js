@@ -3,12 +3,12 @@
    O template legacy era Jinja: o Flask calculava repasse, ocupacao, mapa de
    calor e grafico no servidor. Aqui isso vira JS, lendo as reservas reais.
 
-   O mapa de calor e o grafico sao derivados, nao inventados: saem do padrao
-   de horarios que a arena ja tem. */
+   O mapa de calor e o grafico sao derivados, nao inventados: saem do padrão
+   de horários que a arena ja tem. */
 import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
 import { ARENA_FEE_RATE } from '../../config/constants.js';
 
-const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
+const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const HORAS = ['08h', '09h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h', '18h', '19h', '20h', '21h', '22h', '23h'];
 
 const brl = (v) => Number(v || 0).toFixed(2).replace('.', ',');
@@ -23,7 +23,7 @@ function escapeHtml(value) {
   }[c]));
 }
 
-/* Ocupacao por faixa: noite e o horario nobre da pelada, entao ela puxa mais.
+/* Ocupacao por faixa: noite e o horário nobre da pelada, entao ela puxa mais.
    Deriva do numero de reservas para nao ser um numero solto. */
 function faixas(total) {
   const base = [
@@ -43,7 +43,7 @@ function renderHeatmap(root) {
   HORAS.forEach((hora, linha) => {
     html += `<small class="manager-heatmap__hour">${hora}</small>`;
     DIAS.forEach((dia, col) => {
-      // Mais quente a noite e no fim de semana — o padrao real de pelada.
+      // Mais quente a noite e no fim de semana — o padrão real de pelada.
       const noite = linha >= 9 ? (linha >= 10 && linha <= 13 ? 3 : 2) : (linha >= 6 ? 1 : 0);
       const fds = col >= 5 ? 1 : 0;
       const b = Math.min(4, noite + fds);

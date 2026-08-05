@@ -15,7 +15,10 @@
       <input type="search" name="q" placeholder="Arena, esporte ou bairro" autocomplete="off">
       <input type="hidden" name="raio" value="5">
       <input type="hidden" name="local" value="Goiânia, GO" data-search-location>
-      <input type="hidden" name="esporte" value="" data-search-sport disabled>
+      <!-- Habilitado: campo disabled some do FormData, e o fragmento e
+           rebaixado a cada navegacao. Buscar antes do render religar mandava
+           a URL sem esporte. Valor vazio ja e descartado pelo laco acima. -->
+      <input type="hidden" name="esporte" value="" data-search-sport>
       <input type="hidden" name="agora" value="1" data-search-now disabled>
       <button type="button" aria-label="Abrir filtros" data-sheet-open="filter-sheet" aria-expanded="false">
         <i class="ic" data-lucide="sliders-horizontal"></i>
