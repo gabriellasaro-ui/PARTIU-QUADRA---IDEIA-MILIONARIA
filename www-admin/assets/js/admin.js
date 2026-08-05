@@ -8,12 +8,18 @@
    Le o mesmo armazenamento do app (chaves pq:*) e a mesma semente. Sem
    backend, isso significa que cada navegador enxerga o proprio dado; o
    painel diz isso na lateral em vez de fingir ser producao. */
-import { VENUES, CLUBS, PELADAS, INITIAL_RESERVATIONS, USERS } from '../../config/mock-data.js';
+import { VENUES, CLUBS, PELADAS, INITIAL_RESERVATIONS, USERS, PLATFORM_BOOKINGS } from '../../config/mock-data.js';
 import { SERVICE_FEE_RATE } from '../../config/constants.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
 
 const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+
+/* '2026-07-28' -> '28/07'. O ano so importa no filtro, nao na linha. */
+function dataCurta(iso) {
+  const [, m, d] = String(iso).split('-');
+  return d ? `${d}/${m}` : iso;
+}
 
 const TITLES = {
   visao: ['Visão geral', 'A plataforma inteira num lugar só'],
@@ -64,6 +70,68 @@ function diasSemUsar(user, campo = 'lastActiveAt') {
   return Math.floor((Date.now() - new Date(user[campo]).getTime()) / 86400000);
 }
 
+/* ═══════════════ Filtros ═══════════════
+
+   O painel nao tinha um unico input. Cada view era uma template string
+   reconstruida do zero a cada hashchange, entao o estado de filtro precisa
+   viver fora do render — senao a pessoa digita e o proximo render apaga.
+
+   O padrao e o mesmo que ja funciona em manager-reservations.js: estado em
+   variavel de modulo, delegacao de evento no document, re-render inteiro. */
+const filtros = {
+  periodo: '30d',      // visao geral e reservas
+  inatividade: '7',    // faixa da fila de reativacao
+  busca: '',           // nome da pessoa
+  cidade: '',
+  estado: ''
+};
+
+const PERIODOS = [
+  { id: '7d', label: '7 dias', dias: 7 },
+  { id: '30d', label: '30 dias', dias: 30 },
+  { id: '90d', label: '90 dias', dias: 90 },
+  { id: 'tudo', label: 'Tudo', dias: Infinity }
+];
+
+const FAIXAS_INATIVIDADE = [
+  { id: '7', label: '+7d' },
+  { id: '14', label: '+14d' },
+  { id: '21', label: '+21d' },
+  { id: '30', label: '+30d' },
+  { id: '60', label: '+1 mês' }
+];
+
+/* As reservas da plataforma tem dateISO de verdade; as do jogador tem
+   rotulo ('Hoje', 'Sex, 12/06'), que nao da para comparar. Por isso o
+   filtro por data so existe sobre PLATFORM_BOOKINGS. */
+function reservasNoPeriodo() {
+  const faixa = PERIODOS.find((p) => p.id === filtros.periodo) || PERIODOS[1];
+  if (faixa.dias === Infinity) return PLATFORM_BOOKINGS;
+  const corte = Date.now() - faixa.dias * 86400000;
+  return PLATFORM_BOOKINGS.filter((r) => new Date(`${r.dateISO}T12:00`).getTime() >= corte);
+}
+
+function pessoasFiltradas() {
+  const termo = filtros.busca.trim().toLowerCase();
+  return USERS.filter((u) => (!termo || u.name.toLowerCase().includes(termo))
+    && (!filtros.cidade || u.city === filtros.cidade)
+    && (!filtros.estado || u.state === filtros.estado));
+}
+
+const distintos = (campo) => [...new Set(USERS.map((u) => u[campo]).filter(Boolean))].sort();
+
+/* Quanto cada pessoa gastou. Antes era impossivel: as reservas nao tinham
+   dono. */
+function gastoPor(userId, lista = PLATFORM_BOOKINGS) {
+  return lista.filter((r) => r.userId === userId).reduce((t, r) => t + Number(r.price || 0), 0);
+}
+
+function segmento(nome, opcoes, atual) {
+  return `<div class="admin-seg" role="group">${opcoes.map((o) => `
+    <button type="button" data-admin-filter="${nome}" data-valor="${escapeHtml(o.id)}"
+            class="${o.id === atual ? 'on' : ''}">${escapeHtml(o.label)}</button>`).join('')}</div>`;
+}
+
 function kpi(label, valor, nota, destaque) {
   return `<article class="kpi${destaque ? ' kpi--strong' : ''}">
     <small>${escapeHtml(label)}</small>
@@ -73,18 +141,33 @@ function kpi(label, valor, nota, destaque) {
 }
 
 function viewVisao() {
-  const res = reservations();
   const lista = venues();
+  // O periodo vale sobre o historico da plataforma, que tem data real.
+  const res = reservasNoPeriodo();
   const gmv = res.reduce((total, r) => total + Number(r.price || 0), 0);
   const receita = Math.round(corteDaPlataforma(gmv) * 100) / 100;
   const ativas = lista.filter((v) => v.active !== false).length;
 
   const jogadores = USERS.filter((u) => u.role === 'jogador');
   const donos = USERS.filter((u) => u.role === 'dono');
-  const inativos = USERS.filter((u) => diasSemUsar(u) > 7);
+  const corte = Number(filtros.inatividade);
+  const inativos = USERS.filter((u) => diasSemUsar(u) > corte);
   const ativos = USERS.length - inativos.length;
 
-  return `<div class="kpi-grid">
+  /* RPU sobre quem de fato reservou, nao sobre a base inteira: dividir por
+     todo mundo cadastrado mistura quem nunca usou, e o numero deixa de
+     dizer alguma coisa quando a base cresce. O ticket medio vem junto
+     porque ele nao engana. */
+  const compradores = new Set(res.map((r) => r.userId)).size;
+  const rpu = compradores ? receita / compradores : 0;
+  const ticket = res.length ? gmv / res.length : 0;
+
+  return `<div class="admin-toolbar">
+    <span class="admin-toolbar__label">Período</span>
+    ${segmento('periodo', PERIODOS, filtros.periodo)}
+  </div>
+
+  <div class="kpi-grid">
     ${kpi('Receita da plataforma', formatCurrency(receita), `taxa de ${Math.round(SERVICE_FEE_RATE * 100)}% sobre as reservas`, true)}
     ${kpi('Volume transacionado', formatCurrency(gmv), `${res.length} reservas`)}
     ${kpi('Jogos marcados', peladas().length, 'peladas nascidas de reservas')}
@@ -94,13 +177,25 @@ function viewVisao() {
   <div class="kpi-grid">
     ${kpi('Cadastrados', USERS.length, `${jogadores.length} jogadores · ${donos.length} donos de quadra`)}
     ${kpi('Ativos', ativos, 'usaram nos últimos 7 dias')}
-    ${kpi('Inativos há +7 dias', inativos.length, inativos.length ? 'candidatos a notificação' : 'ninguém sumido')}
+    ${kpi(`Inativos há +${corte} dias`, inativos.length, inativos.length ? 'candidatos a notificação' : 'ninguém sumido')}
     ${kpi('Arenas ativas', ativas, `de ${lista.length} cadastradas`)}
+  </div>
+
+  <div class="kpi-grid">
+    ${kpi('RPU', formatCurrency(rpu), `receita ÷ ${compradores} ${compradores === 1 ? 'pessoa que reservou' : 'pessoas que reservaram'}`, true)}
+    ${kpi('Ticket médio', formatCurrency(ticket), 'por reserva')}
+    ${kpi('Reservas no período', res.length, 'com data real')}
+    ${kpi('Volume no período', formatCurrency(gmv), 'transacionado')}
+  </div>
+
+  <div class="admin-toolbar">
+    <span class="admin-toolbar__label">Sem usar há</span>
+    ${segmento('inatividade', FAIXAS_INATIVIDADE, filtros.inatividade)}
   </div>
 
   ${inativos.length ? `<section class="panel">
     <h2>Fila de reativação</h2>
-    <p class="muted" style="margin-bottom:14px">Quem não abre o app há mais de 7 dias. É esta lista que alimenta o disparo de notificação.</p>
+    <p class="muted" style="margin-bottom:14px">Quem não abre o app há mais de ${corte} dias. É esta lista que alimenta o disparo de notificação.</p>
     <table class="tbl">
       <thead><tr><th>Pessoa</th><th>Papel</th><th>Cidade</th><th>Sem usar</th><th>Cadastro</th></tr></thead>
       <tbody>
@@ -118,23 +213,25 @@ function viewVisao() {
   <section class="panel">
     <h2>Últimas reservas</h2>
     <table class="tbl">
-      <thead><tr><th>Código</th><th>Arena</th><th>Quando</th><th>Valor</th><th>Plataforma</th><th>Status</th></tr></thead>
+      <thead><tr><th>Código</th><th>Pessoa</th><th>Arena</th><th>Quando</th><th>Valor</th><th>Plataforma</th></tr></thead>
       <tbody>
-        ${res.slice(0, 8).map((r) => {
+        ${[...res].sort((a, b) => b.dateISO.localeCompare(a.dateISO)).slice(0, 10).map((r) => {
           const venue = lista.find((v) => v.id === r.venueId);
+          const pessoa = USERS.find((u) => u.id === r.userId);
           return `<tr>
             <td class="mono">${escapeHtml(r.code)}</td>
+            <td>${escapeHtml(pessoa?.name || '-')}</td>
             <td>${escapeHtml(venue?.name || '-')}</td>
-            <td>${escapeHtml(r.date)} · ${escapeHtml(r.hour)}</td>
+            <td>${escapeHtml(dataCurta(r.dateISO))} · ${escapeHtml(r.hour)}</td>
             <td class="num">${formatCurrency(r.price)}</td>
             <td class="num strong">${formatCurrency(corteDaPlataforma(r.price))}</td>
-            <td><span class="tag tag--${escapeHtml(r.statusClass)}">${escapeHtml(r.status)}</span></td>
           </tr>`;
         }).join('')}
       </tbody>
     </table>
   </section>`;
 }
+
 
 function viewArenas() {
   const res = reservations();
@@ -203,26 +300,46 @@ function viewClubes() {
 }
 
 function viewPessoas() {
-  const ordenados = [...USERS].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  return `<section class="panel">
-    <h2>Todo mundo na plataforma</h2>
-    <table class="tbl">
-      <thead><tr><th>Pessoa</th><th>Papel</th><th>Cidade</th><th>Cadastro</th><th>Última atividade</th><th>Situação</th></tr></thead>
+  const noPeriodo = reservasNoPeriodo();
+  const ordenados = pessoasFiltradas()
+    .map((u) => ({ ...u, gasto: gastoPor(u.id, noPeriodo) }))
+    .sort((a, b) => b.gasto - a.gasto || new Date(b.createdAt) - new Date(a.createdAt));
+  const corte = Number(filtros.inatividade);
+
+  return `<div class="admin-toolbar admin-toolbar--wrap">
+    <input type="search" class="admin-input" placeholder="Buscar pessoa"
+           data-admin-search value="${escapeHtml(filtros.busca)}">
+    <select class="admin-select" data-admin-filter="cidade">
+      <option value="">Todas as cidades</option>
+      ${distintos('city').map((c) => `<option${c === filtros.cidade ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+    </select>
+    <select class="admin-select" data-admin-filter="estado">
+      <option value="">Todos os estados</option>
+      ${distintos('state').map((e) => `<option${e === filtros.estado ? ' selected' : ''}>${escapeHtml(e)}</option>`).join('')}
+    </select>
+    ${segmento('periodo', PERIODOS, filtros.periodo)}
+  </div>
+
+  <section class="panel">
+    <h2>Todo mundo na plataforma <span class="muted">· ${ordenados.length}</span></h2>
+    ${ordenados.length ? `<table class="tbl">
+      <thead><tr><th>Pessoa</th><th>Papel</th><th>Cidade</th><th>Gastou</th><th>Cadastro</th><th>Última atividade</th><th>Situação</th></tr></thead>
       <tbody>
         ${ordenados.map((u) => {
           const dias = diasSemUsar(u);
-          const inativo = dias > 7;
+          const inativo = dias > corte;
           return `<tr>
             <td><strong>${escapeHtml(u.name)}</strong></td>
             <td>${u.role === 'dono' ? 'Dono de quadra' : 'Jogador'}</td>
-            <td>${escapeHtml(u.city)}</td>
+            <td>${escapeHtml(u.city)}${u.state ? ` · ${escapeHtml(u.state)}` : ''}</td>
+            <td class="num strong">${u.gasto ? formatCurrency(u.gasto) : '—'}</td>
             <td class="num">${diasSemUsar(u, 'createdAt')} dias atrás</td>
             <td class="num">${dias === 0 ? 'hoje' : `${dias} dias atrás`}</td>
             <td><span class="tag tag--${inativo ? 'pendente' : 'pago'}">${inativo ? 'Inativo' : 'Ativo'}</span></td>
           </tr>`;
         }).join('')}
       </tbody>
-    </table>
+    </table>` : '<p class="muted">Ninguém com esses filtros.</p>'}
   </section>`;
 }
 
@@ -241,6 +358,35 @@ function render() {
   });
   window.lucide?.createIcons?.({ icons: window.lucide.icons });
 }
+
+/* Delegacao no document porque cada render substitui o innerHTML inteiro:
+   um listener preso ao elemento morreria no primeiro clique. */
+document.addEventListener('click', (event) => {
+  const botao = event.target.closest('button[data-admin-filter][data-valor]');
+  if (!botao) return;
+  filtros[botao.dataset.adminFilter] = botao.dataset.valor;
+  render();
+});
+
+document.addEventListener('change', (event) => {
+  const campo = event.target.closest('select[data-admin-filter]');
+  if (!campo) return;
+  filtros[campo.dataset.adminFilter] = campo.value;
+  render();
+});
+
+document.addEventListener('input', (event) => {
+  const campo = event.target.closest('[data-admin-search]');
+  if (!campo) return;
+  filtros.busca = campo.value;
+  render();
+  // O render recria o input, entao foco e cursor precisam voltar.
+  const novo = document.querySelector('[data-admin-search]');
+  if (novo) {
+    novo.focus();
+    novo.setSelectionRange(novo.value.length, novo.value.length);
+  }
+});
 
 window.addEventListener('hashchange', render);
 window.addEventListener('load', render);

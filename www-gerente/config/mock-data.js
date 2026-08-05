@@ -9,6 +9,28 @@ export const SPORTS = [
   'Futsal'
 ];
 
+/* ═══════════════ Ficha de jogador ═══════════════
+   O onboarding pergunta posicao e nivel; o resto fica no Perfil. Sao os
+   dados que ranking e torneio vao consumir la na frente — por enquanto so
+   servem para sortear time equilibrado e para a arena saber quem chega. */
+export const POSITIONS = [
+  { id: 'Goleiro', icon: 'hand' },
+  { id: 'Zagueiro', icon: 'shield' },
+  { id: 'Lateral', icon: 'move-horizontal' },
+  { id: 'Meio-campo', icon: 'git-branch' },
+  { id: 'Atacante', icon: 'goal' },
+  { id: 'Jogo de tudo', icon: 'shuffle' }
+];
+
+export const LEVELS = [
+  { id: 'iniciante', label: 'Iniciante', hint: 'Jogo de vez em quando' },
+  { id: 'intermediario', label: 'Intermediário', hint: 'Jogo toda semana' },
+  { id: 'avancado', label: 'Avançado', hint: 'Jogo competitivo' }
+];
+
+export const FEET = ['Destro', 'Canhoto', 'Ambidestro'];
+
+
 /* A home mostra so os esportes mais jogados — o rail nao e um indice, e um
    atalho. Beach Tennis e Basquete continuam em SPORTS e seguem achaveis por
    "Ver todos" e pelos filtros de Explorar. */
@@ -28,7 +50,7 @@ export const VENUES = [
     id: 1,
     name: 'Arena Bola na Rede',
     sport: 'Futebol Society',
-    neighborhood: 'Jardim Goias',
+    neighborhood: 'Jardim Goiás',
     distance: 1.2,
     rating: 4.8,
     reviews: 214,
@@ -40,7 +62,7 @@ export const VENUES = [
       'https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=900&q=80'
     ],
-    tags: ['Grama sintetica', 'Iluminada', 'Vestiario'],
+    tags: ['Grama sintética', 'Iluminada', 'Vestiário'],
     map: { x: 58, y: 42, lat: -16.7060, lng: -49.2350 }
   },
   {
@@ -78,7 +100,7 @@ export const VENUES = [
       'https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=900&q=80'
     ],
-    tags: ['Piso oficial', 'Coberta', 'Vestiario'],
+    tags: ['Piso oficial', 'Coberta', 'Vestiário'],
     map: { x: 51, y: 62, lat: -16.6870, lng: -49.2620 }
   },
   {
@@ -104,7 +126,7 @@ export const VENUES = [
     id: 5,
     name: 'Top Spin Tenis',
     sport: 'Tenis',
-    neighborhood: 'Alto da Gloria',
+    neighborhood: 'Alto da Glória',
     distance: 4.1,
     rating: 4.6,
     reviews: 73,
@@ -135,7 +157,7 @@ export const VENUES = [
       'https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80'
     ],
-    tags: ['Coberta', 'Arquibancada', 'Vestiario'],
+    tags: ['Coberta', 'Arquibancada', 'Vestiário'],
     map: { x: 63, y: 25, lat: -16.6950, lng: -49.2650 }
   }
 ];
@@ -208,7 +230,7 @@ export const INITIAL_RESERVATIONS = [
   {
     code: 'PQ-20800',
     venueId: 2,
-    date: 'Amanha',
+    date: 'Amanhã',
     hour: '08:00',
     endHour: '09:00',
     duration: 1,
@@ -232,7 +254,7 @@ export const INITIAL_RESERVATIONS = [
   {
     code: 'PQ-31500',
     venueId: 3,
-    date: 'Sab, 20/06',
+    date: 'Sáb, 20/06',
     hour: '15:00',
     endHour: '16:00',
     duration: 1,
@@ -248,12 +270,12 @@ export const CONVERSATIONS = [
     id: 1,
     venueId: 1,
     venue: 'Arena Bola na Rede',
-    subject: 'Reserva de sabado 19h',
+    subject: 'Reserva de sábado 19h',
     messages: [
-      { from: 'player', text: 'Fala! Reservei sabado as 19h. A quadra tem colete pra emprestar?', time: '09:12' },
-      { from: 'venue', text: 'Opa, Gabriel! Tem sim, 10 coletes. Quantos voces vao precisar?', time: '09:15' },
-      { from: 'player', text: 'Uns 6 ta otimo. Valeu!', time: '09:16' },
-      { from: 'venue', text: 'Fechado, deixo separado na recepcao. Bom jogo!', time: '09:17' }
+      { from: 'player', text: 'Fala! Reservei sábado às 19h. A quadra tem colete pra emprestar?', time: '09:12' },
+      { from: 'venue', text: 'Opa, Gabriel! Tem sim, 10 coletes. Quantos vocês vão precisar?', time: '09:15' },
+      { from: 'player', text: 'Uns 6 tá ótimo. Valeu!', time: '09:16' },
+      { from: 'venue', text: 'Fechado, deixo separado na recepção. Bom jogo!', time: '09:17' }
     ]
   },
   {
@@ -262,20 +284,20 @@ export const CONVERSATIONS = [
     venue: 'Beach Point Arena',
     subject: 'Beach tennis domingo',
     messages: [
-      { from: 'venue', text: 'Oi Gabriel, seu horario de domingo 10h esta confirmado. Precisa de raquete?', time: '18:40' }
+      { from: 'venue', text: 'Oi Gabriel, seu horário de domingo 10h está confirmado. Precisa de raquete?', time: '18:40' }
     ]
   }
 ];
 
 /* Sem saldo, sem extrato, sem cupom: guardar dinheiro de usuario e coisa de
-   instituicao de pagamento. O que sobrou e meio de pagamento, e cartao nao
+   instituicao de pagamento. O que sobrou e meio de pagamento, e cartão nao
    mora aqui — e markup da tela ate existir adquirente. */
 export const WALLET = { cards: [] };
 
 export const CURRENT_USER = {
   // Id proprio: a presenca na pelada precisa de chave estavel, e "Editar
   // perfil" ja permite trocar o nome — chavear por nome deixaria referencias
-  // orfas em silencio na primeira edicao.
+  // orfas em silencio na primeira edição.
   id: 'u-gabriel',
   name: 'Gabriel Lisboa',
   email: 'gabriel@email.com',
@@ -316,7 +338,7 @@ function buildMatchEndDate(startTimestamp, durationMinutes) {
 }
 
 // Permite demonstrar as 3 fases do card sem esperar o relogio:
-// ?partida=aovivo (em andamento), ?partida=fim (encerrada), padrao = proxima partida.
+// ?partida=aovivo (em andamento), ?partida=fim (encerrada), padrão = proxima partida.
 function demoMatchOffsetMinutes() {
   const demo = new URLSearchParams(globalThis.location?.search || '').get('partida');
   if (demo === 'aovivo') return -20;
@@ -409,7 +431,7 @@ export const CLUBS = demoWithoutClub() ? [] : [
     // Codigo de convite: e por ele que alguem acha o time na busca.
     code: 'KRT4P9',
     sport: 'Futebol Society',
-    city: 'Goiânia, GO',
+    city: 'Goiânia', state: 'GO',
     description: 'Toda quinta às 20h. Quem faltar sem avisar paga a água.',
     photo: '',
     createdBy: 'u-gabriel',
@@ -487,20 +509,60 @@ function diasAtras(dias) {
 }
 
 export const USERS = [
-  { id: 'u-gabriel', name: 'Gabriel Lisboa', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(58), lastActiveAt: diasAtras(0) },
-  { id: 'u-rafael', name: 'Rafael Costa', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(54), lastActiveAt: diasAtras(1) },
-  { id: 'u-mariana', name: 'Mariana Alves', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(41), lastActiveAt: diasAtras(2) },
-  { id: 'u-joao', name: 'João Pedro', role: 'jogador', city: 'Aparecida de Goiânia, GO', createdAt: diasAtras(39), lastActiveAt: diasAtras(5) },
-  { id: 'u-camila', name: 'Camila Rocha', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(33), lastActiveAt: diasAtras(6) },
-  { id: 'u-thiago', name: 'Thiago Santos', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(28), lastActiveAt: diasAtras(9) },
-  { id: 'u-lucas', name: 'Lucas Oliveira', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(24), lastActiveAt: diasAtras(14) },
-  { id: 'u-pedro', name: 'Pedro Henrique', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(21), lastActiveAt: diasAtras(23) },
-  { id: 'u-ana', name: 'Ana Beatriz', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(17), lastActiveAt: diasAtras(31) },
-  { id: 'u-felipe', name: 'Felipe Augusto', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(12), lastActiveAt: diasAtras(3) },
-  { id: 'u-carlos', name: 'Carlos Almeida', role: 'dono', venueId: 1, city: 'Goiânia, GO', createdAt: diasAtras(70), lastActiveAt: diasAtras(0) },
-  { id: 'u-sandra', name: 'Sandra Beach', role: 'dono', venueId: 2, city: 'Goiânia, GO', createdAt: diasAtras(66), lastActiveAt: diasAtras(1) },
-  { id: 'u-ze', name: 'José Ribeiro', role: 'dono', venueId: 3, city: 'Goiânia, GO', createdAt: diasAtras(62), lastActiveAt: diasAtras(11) },
-  { id: 'u-marcos', name: 'Marcos Areia', role: 'dono', venueId: 4, city: 'Goiânia, GO', createdAt: diasAtras(45), lastActiveAt: diasAtras(4) },
-  { id: 'u-julia', name: 'Julia Spin', role: 'dono', venueId: 5, city: 'Goiânia, GO', createdAt: diasAtras(30), lastActiveAt: diasAtras(19) },
-  { id: 'u-bruno', name: 'Bruno Cesta', role: 'dono', venueId: 6, city: 'Goiânia, GO', createdAt: diasAtras(15), lastActiveAt: diasAtras(2) }
+  { id: 'u-gabriel', name: 'Gabriel Lisboa', role: 'jogador', city: 'Aparecida de Goiânia', state: 'GO', createdAt: diasAtras(58), lastActiveAt: diasAtras(0) },
+  { id: 'u-rafael', name: 'Rafael Costa', role: 'jogador', city: 'Goiânia', state: 'GO', createdAt: diasAtras(54), lastActiveAt: diasAtras(1) },
+  { id: 'u-mariana', name: 'Mariana Alves', role: 'jogador', city: 'Goiânia', state: 'GO', createdAt: diasAtras(41), lastActiveAt: diasAtras(2) },
+  { id: 'u-joao', name: 'João Pedro', role: 'jogador', city: 'Aparecida de Goiânia', state: 'GO', createdAt: diasAtras(39), lastActiveAt: diasAtras(5) },
+  { id: 'u-camila', name: 'Camila Rocha', role: 'jogador', city: 'Goiânia', state: 'GO', createdAt: diasAtras(33), lastActiveAt: diasAtras(6) },
+  { id: 'u-thiago', name: 'Thiago Santos', role: 'jogador', city: 'Goiânia', state: 'GO', createdAt: diasAtras(28), lastActiveAt: diasAtras(9) },
+  { id: 'u-lucas', name: 'Lucas Oliveira', role: 'jogador', city: 'Uberlândia', state: 'MG', createdAt: diasAtras(24), lastActiveAt: diasAtras(14) },
+  { id: 'u-pedro', name: 'Pedro Henrique', role: 'jogador', city: 'Brasília', state: 'DF', createdAt: diasAtras(21), lastActiveAt: diasAtras(23) },
+  { id: 'u-ana', name: 'Ana Beatriz', role: 'jogador', city: 'Anápolis', state: 'GO', createdAt: diasAtras(17), lastActiveAt: diasAtras(31) },
+  { id: 'u-felipe', name: 'Felipe Augusto', role: 'jogador', city: 'Campinas', state: 'SP', createdAt: diasAtras(12), lastActiveAt: diasAtras(3) },
+  { id: 'u-carlos', name: 'Carlos Almeida', role: 'dono', venueId: 1, city: 'Goiânia', state: 'GO', createdAt: diasAtras(70), lastActiveAt: diasAtras(0) },
+  { id: 'u-sandra', name: 'Sandra Beach', role: 'dono', venueId: 2, city: 'Goiânia', state: 'GO', createdAt: diasAtras(66), lastActiveAt: diasAtras(1) },
+  { id: 'u-ze', name: 'José Ribeiro', role: 'dono', venueId: 3, city: 'Goiânia', state: 'GO', createdAt: diasAtras(62), lastActiveAt: diasAtras(11) },
+  { id: 'u-marcos', name: 'Marcos Areia', role: 'dono', venueId: 4, city: 'Goiânia', state: 'GO', createdAt: diasAtras(45), lastActiveAt: diasAtras(4) },
+  { id: 'u-julia', name: 'Julia Spin', role: 'dono', venueId: 5, city: 'Goiânia', state: 'GO', createdAt: diasAtras(30), lastActiveAt: diasAtras(19) },
+  { id: 'u-bruno', name: 'Bruno Cesta', role: 'dono', venueId: 6, city: 'Goiânia', state: 'GO', createdAt: diasAtras(15), lastActiveAt: diasAtras(2) }
 ];
+
+/* ═══════════════ Historico da plataforma ═══════════════
+   As reservas do jogador ("minhas reservas") nao tem dono: sao dele por
+   definicao. O painel do dono precisa do contrario — quem gastou quanto, de
+   onde, e quando. Por isso um historico separado, com userId e data ISO.
+
+   Sem isso, "quanto cada pessoa gastou", RPU e filtro por data eram
+   impossiveis: nao havia ligacao entre pessoa e valor, e as datas eram
+   rotulos ('Hoje', 'Sex, 12/06') que nao dao para comparar. */
+function diasAtrasISO(dias) {
+  return new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
+}
+
+/* Volume diferente por pessoa de proposito: com todo mundo igual, os
+   filtros nao teriam o que separar e o RPU seria uma media sem informacao. */
+const PADRAO_GASTO = [
+  ['u-gabriel', [0, 3, 8, 15, 22, 30, 44, 58]],
+  ['u-rafael', [1, 9, 17, 26, 40]],
+  ['u-mariana', [2, 12, 25, 38]],
+  ['u-joao', [5, 19, 34]],
+  ['u-camila', [6, 21, 45]],
+  ['u-thiago', [3, 16]],
+  ['u-bruna', [11, 29]],
+  ['u-diego', [23]],
+  ['u-larissa', [31]],
+  ['u-bruno', [2, 7, 13, 20]]
+];
+
+export const PLATFORM_BOOKINGS = PADRAO_GASTO.flatMap(([userId, dias], iu) =>
+  dias.map((d, i) => ({
+    code: `PQ-${(9000 + iu * 100 + i)}`,
+    userId,
+    venueId: ((iu + i) % 6) + 1,
+    dateISO: diasAtrasISO(d),
+    hour: `${String(18 + (i % 4)).padStart(2, '0')}:00`,
+    duration: i % 3 === 0 ? 2 : 1,
+    price: [90, 110, 120, 140, 160][(iu + i) % 5] * (i % 3 === 0 ? 2 : 1),
+    status: d < 2 ? 'Confirmada' : 'Concluida'
+  }))
+);

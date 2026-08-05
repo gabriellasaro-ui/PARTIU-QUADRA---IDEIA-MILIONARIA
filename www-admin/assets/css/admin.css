@@ -289,3 +289,71 @@ body {
 }
 
 .tag--concluido { background: #eef0ee; color: #5b6560; }
+
+/* ── Filtros ─────────────────────────────────────────────────────────────
+   O painel nao tinha um unico input antes disto. */
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-toolbar--wrap { flex-wrap: wrap; }
+
+.admin-toolbar__label {
+  color: #6b7f72;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.admin-seg {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid #e2eae4;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.admin-seg button {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: #55665c;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-seg button.on {
+  background: #0c8b52;
+  color: #fff;
+}
+
+.admin-input,
+.admin-select {
+  padding: 9px 13px;
+  border: 1px solid #e2eae4;
+  border-radius: 11px;
+  background: #fff;
+  color: #143523;
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.admin-input { min-width: 210px; }
+.admin-input:focus,
+.admin-select:focus {
+  border-color: #0c8b52;
+  outline: none;
+}
+
+@media (max-width: 720px) {
+  .admin-toolbar { flex-wrap: wrap; }
+  .admin-input { flex: 1 1 100%; min-width: 0; }
+}

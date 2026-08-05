@@ -431,7 +431,7 @@ export const CLUBS = demoWithoutClub() ? [] : [
     // Codigo de convite: e por ele que alguem acha o time na busca.
     code: 'KRT4P9',
     sport: 'Futebol Society',
-    city: 'Goiânia, GO',
+    city: 'Goiânia', state: 'GO',
     description: 'Toda quinta às 20h. Quem faltar sem avisar paga a água.',
     photo: '',
     createdBy: 'u-gabriel',
@@ -509,20 +509,60 @@ function diasAtras(dias) {
 }
 
 export const USERS = [
-  { id: 'u-gabriel', name: 'Gabriel Lisboa', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(58), lastActiveAt: diasAtras(0) },
-  { id: 'u-rafael', name: 'Rafael Costa', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(54), lastActiveAt: diasAtras(1) },
-  { id: 'u-mariana', name: 'Mariana Alves', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(41), lastActiveAt: diasAtras(2) },
-  { id: 'u-joao', name: 'João Pedro', role: 'jogador', city: 'Aparecida de Goiânia, GO', createdAt: diasAtras(39), lastActiveAt: diasAtras(5) },
-  { id: 'u-camila', name: 'Camila Rocha', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(33), lastActiveAt: diasAtras(6) },
-  { id: 'u-thiago', name: 'Thiago Santos', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(28), lastActiveAt: diasAtras(9) },
-  { id: 'u-lucas', name: 'Lucas Oliveira', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(24), lastActiveAt: diasAtras(14) },
-  { id: 'u-pedro', name: 'Pedro Henrique', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(21), lastActiveAt: diasAtras(23) },
-  { id: 'u-ana', name: 'Ana Beatriz', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(17), lastActiveAt: diasAtras(31) },
-  { id: 'u-felipe', name: 'Felipe Augusto', role: 'jogador', city: 'Goiânia, GO', createdAt: diasAtras(12), lastActiveAt: diasAtras(3) },
-  { id: 'u-carlos', name: 'Carlos Almeida', role: 'dono', venueId: 1, city: 'Goiânia, GO', createdAt: diasAtras(70), lastActiveAt: diasAtras(0) },
-  { id: 'u-sandra', name: 'Sandra Beach', role: 'dono', venueId: 2, city: 'Goiânia, GO', createdAt: diasAtras(66), lastActiveAt: diasAtras(1) },
-  { id: 'u-ze', name: 'José Ribeiro', role: 'dono', venueId: 3, city: 'Goiânia, GO', createdAt: diasAtras(62), lastActiveAt: diasAtras(11) },
-  { id: 'u-marcos', name: 'Marcos Areia', role: 'dono', venueId: 4, city: 'Goiânia, GO', createdAt: diasAtras(45), lastActiveAt: diasAtras(4) },
-  { id: 'u-julia', name: 'Julia Spin', role: 'dono', venueId: 5, city: 'Goiânia, GO', createdAt: diasAtras(30), lastActiveAt: diasAtras(19) },
-  { id: 'u-bruno', name: 'Bruno Cesta', role: 'dono', venueId: 6, city: 'Goiânia, GO', createdAt: diasAtras(15), lastActiveAt: diasAtras(2) }
+  { id: 'u-gabriel', name: 'Gabriel Lisboa', role: 'jogador', city: 'Aparecida de Goiânia', state: 'GO', createdAt: diasAtras(58), lastActiveAt: diasAtras(0) },
+  { id: 'u-rafael', name: 'Rafael Costa', role: 'jogador', city: 'Goiânia', state: 'GO', createdAt: diasAtras(54), lastActiveAt: diasAtras(1) },
+  { id: 'u-mariana', name: 'Mariana Alves', role: 'jogador', city: 'Goiânia', state: 'GO', createdAt: diasAtras(41), lastActiveAt: diasAtras(2) },
+  { id: 'u-joao', name: 'João Pedro', role: 'jogador', city: 'Aparecida de Goiânia', state: 'GO', createdAt: diasAtras(39), lastActiveAt: diasAtras(5) },
+  { id: 'u-camila', name: 'Camila Rocha', role: 'jogador', city: 'Goiânia', state: 'GO', createdAt: diasAtras(33), lastActiveAt: diasAtras(6) },
+  { id: 'u-thiago', name: 'Thiago Santos', role: 'jogador', city: 'Goiânia', state: 'GO', createdAt: diasAtras(28), lastActiveAt: diasAtras(9) },
+  { id: 'u-lucas', name: 'Lucas Oliveira', role: 'jogador', city: 'Uberlândia', state: 'MG', createdAt: diasAtras(24), lastActiveAt: diasAtras(14) },
+  { id: 'u-pedro', name: 'Pedro Henrique', role: 'jogador', city: 'Brasília', state: 'DF', createdAt: diasAtras(21), lastActiveAt: diasAtras(23) },
+  { id: 'u-ana', name: 'Ana Beatriz', role: 'jogador', city: 'Anápolis', state: 'GO', createdAt: diasAtras(17), lastActiveAt: diasAtras(31) },
+  { id: 'u-felipe', name: 'Felipe Augusto', role: 'jogador', city: 'Campinas', state: 'SP', createdAt: diasAtras(12), lastActiveAt: diasAtras(3) },
+  { id: 'u-carlos', name: 'Carlos Almeida', role: 'dono', venueId: 1, city: 'Goiânia', state: 'GO', createdAt: diasAtras(70), lastActiveAt: diasAtras(0) },
+  { id: 'u-sandra', name: 'Sandra Beach', role: 'dono', venueId: 2, city: 'Goiânia', state: 'GO', createdAt: diasAtras(66), lastActiveAt: diasAtras(1) },
+  { id: 'u-ze', name: 'José Ribeiro', role: 'dono', venueId: 3, city: 'Goiânia', state: 'GO', createdAt: diasAtras(62), lastActiveAt: diasAtras(11) },
+  { id: 'u-marcos', name: 'Marcos Areia', role: 'dono', venueId: 4, city: 'Goiânia', state: 'GO', createdAt: diasAtras(45), lastActiveAt: diasAtras(4) },
+  { id: 'u-julia', name: 'Julia Spin', role: 'dono', venueId: 5, city: 'Goiânia', state: 'GO', createdAt: diasAtras(30), lastActiveAt: diasAtras(19) },
+  { id: 'u-bruno', name: 'Bruno Cesta', role: 'dono', venueId: 6, city: 'Goiânia', state: 'GO', createdAt: diasAtras(15), lastActiveAt: diasAtras(2) }
 ];
+
+/* ═══════════════ Historico da plataforma ═══════════════
+   As reservas do jogador ("minhas reservas") nao tem dono: sao dele por
+   definicao. O painel do dono precisa do contrario — quem gastou quanto, de
+   onde, e quando. Por isso um historico separado, com userId e data ISO.
+
+   Sem isso, "quanto cada pessoa gastou", RPU e filtro por data eram
+   impossiveis: nao havia ligacao entre pessoa e valor, e as datas eram
+   rotulos ('Hoje', 'Sex, 12/06') que nao dao para comparar. */
+function diasAtrasISO(dias) {
+  return new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
+}
+
+/* Volume diferente por pessoa de proposito: com todo mundo igual, os
+   filtros nao teriam o que separar e o RPU seria uma media sem informacao. */
+const PADRAO_GASTO = [
+  ['u-gabriel', [0, 3, 8, 15, 22, 30, 44, 58]],
+  ['u-rafael', [1, 9, 17, 26, 40]],
+  ['u-mariana', [2, 12, 25, 38]],
+  ['u-joao', [5, 19, 34]],
+  ['u-camila', [6, 21, 45]],
+  ['u-thiago', [3, 16]],
+  ['u-bruna', [11, 29]],
+  ['u-diego', [23]],
+  ['u-larissa', [31]],
+  ['u-bruno', [2, 7, 13, 20]]
+];
+
+export const PLATFORM_BOOKINGS = PADRAO_GASTO.flatMap(([userId, dias], iu) =>
+  dias.map((d, i) => ({
+    code: `PQ-${(9000 + iu * 100 + i)}`,
+    userId,
+    venueId: ((iu + i) % 6) + 1,
+    dateISO: diasAtrasISO(d),
+    hour: `${String(18 + (i % 4)).padStart(2, '0')}:00`,
+    duration: i % 3 === 0 ? 2 : 1,
+    price: [90, 110, 120, 140, 160][(iu + i) % 5] * (i % 3 === 0 ? 2 : 1),
+    status: d < 2 ? 'Confirmada' : 'Concluida'
+  }))
+);
