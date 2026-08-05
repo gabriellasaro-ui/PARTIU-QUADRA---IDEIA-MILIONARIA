@@ -9,7 +9,7 @@
      que justificam mexer nisso (visualizacoes, conversao) e a previa real.
    - Espacos cadastrados: o catalogo, com ocupacao e preco de cada quadra.
 
-   Preco e status ficam em storage, entao o que a arena edita persiste. */
+   Preço e status ficam em storage, entao o que a arena edita persiste. */
 import { ARENA, COURTS } from '../../config/manager-data.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
@@ -97,6 +97,26 @@ export function renderManagerCourts(root) {
     contador.textContent = `${lista.length} quadras cadastradas · ${ativas} ativas`;
   }
 
+  // Os numeros da vitrine existiam em ARENA e ninguem lia: estavam escritos
+  // na mao no HTML.
+  const views = root.querySelector('[data-showcase-views]');
+  if (views) views.textContent = ARENA.views30d.toLocaleString('pt-BR');
+  const conv = root.querySelector('[data-showcase-conversion]');
+  if (conv) conv.textContent = `${String(ARENA.conversion).replace('.', ',')}%`;
+
+  // Turbinar: estado com prazo, nao booleano.
+  const boost = showcase();
+  const ativo = boost.featuredUntil && new Date(boost.featuredUntil) > new Date();
+  const status = root.querySelector('[data-boost-status]');
+  if (status) {
+    status.textContent = ativo
+      ? `Turbinada até ${new Date(boost.featuredUntil).toLocaleDateString('pt-BR')}.`
+      : 'Sua arena aparece na ordem normal, por avaliação.';
+  }
+  const btnBoost = root.querySelector('[data-boost-toggle]');
+  if (btnBoost) btnBoost.textContent = ativo ? 'Turbinada' : 'Turbinar';
+  root.querySelector('[data-boost]')?.classList.toggle('is-on', Boolean(ativo));
+
   // Vitrine: os toggles refletem o estado salvo, nao a classe escrita no HTML.
   const estado = showcase();
   root.querySelectorAll('[data-showcase-setting]').forEach((btn) => {
@@ -105,19 +125,6 @@ export function renderManagerCourts(root) {
     btn.setAttribute('aria-pressed', String(ligado));
   });
 
-  // Previa: e a primeira quadra ativa que o jogador veria no Explorar.
-  const destaque = lista.find((c) => c.active) || lista[0];
-  const preview = root.querySelector('[data-showcase-preview]');
-  if (preview && destaque) {
-    preview.innerHTML = `<div class="manager-showcase-preview__image">
-        <img src="${escapeHtml(destaque.photo)}" alt="${escapeHtml(ARENA.name)}">
-        <span><svg class="ic sm"><use href="#i-pin"/></svg> ${ARENA.distance} km</span>
-      </div>
-      <div class="manager-showcase-preview__body">
-        <div><strong>${escapeHtml(ARENA.name)}</strong><small>${escapeHtml(destaque.sport)} · ${escapeHtml(ARENA.neighborhood)}</small></div>
-        <span><svg class="ic sm"><use href="#i-star"/></svg> ${ARENA.rating}</span>
-      </div>`;
-  }
 
   window.pqRefreshIcons?.(root);
 }
@@ -127,7 +134,7 @@ export function initManagerCourts() {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
 
-    // Pausar/ativar e a unica edicao que vale a pena fazer sem sair da
+    // Pausar/ativar e a unica edição que vale a pena fazer sem sair da
     // lista. O resto abre o formulario completo, que e uma pagina.
     const toggle = event.target.closest('[data-court-toggle]');
     if (toggle) {
@@ -136,6 +143,27 @@ export function initManagerCourts() {
       saveCourt(court.id, { active: !court.active });
       renderManagerCourts(root);
       window.pqToast?.(court.active ? `${court.label} pausada` : `${court.label} ativada`);
+      return;
+    }
+
+    if (event.target.closest('[data-boost-toggle]')) {
+      const estado = showcase();
+      const ativo = estado.featuredUntil && new Date(estado.featuredUntil) > new Date();
+      if (ativo) {
+        window.pqToast?.('Sua arena já está turbinada');
+        return;
+      }
+      const ate = new Date();
+      ate.setDate(ate.getDate() + 30);
+      /* Grava tambem no override da quadra: e por venue_overrides que o
+         Explorar do jogador enxerga, e sem isso "turbinar" nao mudaria
+         nada na busca — a arena pagaria por um selo. */
+      storage.set(SHOWCASE_KEY, { ...estado, featured: true, featuredUntil: ate.toISOString() });
+      const over = storage.get('venue_overrides', {});
+      over[ARENA.id] = { ...(over[ARENA.id] || {}), boosted: true, boostedUntil: ate.toISOString() };
+      storage.set('venue_overrides', over);
+      renderManagerCourts(root);
+      window.pqToast?.('Arena turbinada por 30 dias');
       return;
     }
 

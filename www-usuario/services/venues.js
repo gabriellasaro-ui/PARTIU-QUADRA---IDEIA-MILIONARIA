@@ -26,6 +26,11 @@ async function fromApiOrLocal(path, localValue) {
   return api.get(path);
 }
 
+/* Destaque pago vale ate a data gravada pelo painel do gerente. */
+function boostAtivo(venue) {
+  return Boolean(venue?.boosted && venue.boostedUntil && new Date(venue.boostedUntil) > new Date());
+}
+
 function applyOverrides(venue) {
   if (!venue) return venue;
   const all = storage.get('venue_overrides', {});
@@ -71,10 +76,15 @@ export const venueService = {
     return venues
       .filter(matches)
       .map(applyOverrides)
-      /* Melhor avaliada primeiro; distancia so desempata. Antes era so
-         distancia, entao a quadra ruim da esquina ganhava da otima a 400m.
-         Como e no servico e nao na tela, mapa e favoritos herdam a regra. */
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0)
+      /* Turbinada primeiro, depois melhor avaliada, distancia so desempata.
+         Antes era so distancia, entao a quadra ruim da esquina ganhava da
+         otima a 400m. Como e no servico e nao na tela, mapa e favoritos
+         herdam a regra.
+
+         O turbinado tem prazo: uma arena que parou de pagar volta para a
+         ordem normal sozinha, sem ninguem precisar limpar nada. */
+      .sort((a, b) => Number(boostAtivo(b)) - Number(boostAtivo(a))
+        || (b.rating || 0) - (a.rating || 0)
         || (a.distancia || a.distance) - (b.distancia || b.distance));
   },
 

@@ -198,7 +198,7 @@ const DESKTOP_ROUTES = {
     page: './pages/desktop/financeiro.html',
     title: 'Financeiro - Qadras',
     heading: 'Financeiro',
-    sub: 'Receitas, repasses e pagamentos'
+    sub: 'Receitas e pagamentos'
   },
   quadras: {
     aliases: ['quadras', 'minhas-quadras'],

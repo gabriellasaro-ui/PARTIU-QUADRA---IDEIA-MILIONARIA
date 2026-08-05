@@ -5,19 +5,14 @@
    Carol Souza — tres clientes que nao existem em nenhum outro lugar do
    sistema. Nenhum numero conversava com as reservas da arena.
 
-   Aqui tudo deriva de ARENA_BOOKINGS e de ARENA_FEE_RATE — a taxa DA ARENA,
-   que e diferente da que o jogador paga no checkout.
+   Aqui tudo deriva de ARENA_BOOKINGS. Comissao nao aparece: por decisao do
+   dono, o gerente ve faturamento, nao repasse.
    O app antigo tinha ainda o seletor de periodo, o card de proximo repasse,
    a rosca de destino da receita e as duas tabelas exportaveis. Voltaram. */
-import { ARENA_BOOKINGS, ARENA_PAYOUTS, STATUS_CLASS } from '../../config/manager-data.js';
-import { ARENA_FEE_RATE } from '../../config/constants.js';
+import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
 import { formatCurrency } from '../../utils/formatters.js';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-/* A taxa da arena sai POR DENTRO do valor da quadra: de R$ 120 ela recebe
-   R$ 116,40. Nao confundir com a do jogador, que entra por cima. */
-const FATIA_TAXA = ARENA_FEE_RATE;
-const TAXA_PCT = Math.round(FATIA_TAXA * 100);
 
 let periodo = '7d';
 
@@ -75,30 +70,19 @@ function renderChart(root, valores) {
 }
 
 export function renderManagerFinance(root) {
-  if (!root.querySelector('[data-finance-payout]')) return;
+  /* Guard no grafico, nao no card de repasse: aquele elemento saiu junto com
+     a comissao, e um guard apontando para no inexistente derrubaria a tela
+     inteira sem erro nenhum no console. */
+  if (!root.querySelector('[data-finance-chart]')) return;
 
   const reservas = reservasDoPeriodo();
   const bruto = reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
-  const comissao = bruto * FATIA_TAXA;
-  const liquido = bruto - comissao;
   const ticket = reservas.length ? Math.round(bruto / reservas.length) : 0;
 
-  set(root, '[data-finance-payout]', formatCurrency(liquido));
   set(root, '[data-finance-gross]', formatCurrency(bruto));
-  set(root, '[data-finance-fee]', formatCurrency(comissao));
-  set(root, '[data-finance-fee-pct]', `Comissão (${TAXA_PCT}%)`);
   set(root, '[data-finance-count]', reservas.length);
   set(root, '[data-finance-ticket]', formatCurrency(ticket));
-  set(root, '[data-finance-net-arena]', formatCurrency(liquido));
-  set(root, '[data-finance-net-fee]', formatCurrency(comissao));
 
-  // A rosca e um conic-gradient dirigido por variavel CSS.
-  const donut = root.querySelector('[data-finance-donut]');
-  if (donut) {
-    donut.style.setProperty('--manager-net', `${100 - TAXA_PCT}%`);
-    donut.setAttribute('aria-label', `${100 - TAXA_PCT}% líquido para a arena e ${TAXA_PCT}% de comissão`);
-    donut.querySelector('strong').textContent = `${100 - TAXA_PCT}%`;
-  }
 
   // Ocupacao media das quadras ativas — o que sustenta o faturamento.
   const ocupacao = reservas.length
@@ -119,32 +103,15 @@ export function renderManagerFinance(root) {
   const ledger = root.querySelector('[data-finance-ledger]');
   if (ledger) {
     ledger.innerHTML = reservas.map((r) => {
-      const taxa = r.valor * FATIA_TAXA;
       return `<tr>
         <td data-label="Cliente"><strong>${escapeHtml(r.cliente)}</strong></td>
         <td data-label="Data">${escapeHtml(r.data)} · <span class="num">${escapeHtml(r.hora)}</span></td>
-        <td data-label="Bruto" class="num">${formatCurrency(r.valor)}</td>
-        <td data-label="Comissão" class="num">− ${formatCurrency(taxa)}</td>
-        <td data-label="Líquido" class="val num">${formatCurrency(r.valor - taxa)}</td>
+        <td data-label="Bruto" class="val num">${formatCurrency(r.valor)}</td>
         <td data-label="Status"><span class="status ${escapeHtml(STATUS_CLASS[r.status] || 'pendente')}">${escapeHtml(r.status)}</span></td>
       </tr>`;
     }).join('');
   }
 
-  const repasses = root.querySelector('[data-finance-payouts]');
-  if (repasses) {
-    repasses.innerHTML = ARENA_PAYOUTS.map((p) => {
-      const taxa = p.bruto * FATIA_TAXA;
-      return `<tr>
-        <td data-label="Período">${escapeHtml(p.periodo)}</td>
-        <td data-label="Reservas" class="num">${p.reservas}</td>
-        <td data-label="Bruto" class="num">${formatCurrency(p.bruto)}</td>
-        <td data-label="Comissão" class="num">− ${formatCurrency(taxa)}</td>
-        <td data-label="Líquido" class="val num">${formatCurrency(p.bruto - taxa)}</td>
-        <td data-label="Status"><span class="status ${escapeHtml(p.cls)}">${escapeHtml(p.status)}</span></td>
-      </tr>`;
-    }).join('');
-  }
 
   root.querySelectorAll('[data-finance-period]').forEach((b) => {
     b.classList.toggle('on', b.dataset.financePeriod === periodo);

@@ -6,7 +6,6 @@
    O mapa de calor e o grafico sao derivados, nao inventados: saem do padrão
    de horários que a arena ja tem. */
 import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
-import { ARENA_FEE_RATE } from '../../config/constants.js';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const HORAS = ['08h', '09h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h', '18h', '19h', '20h', '21h', '22h', '23h'];
@@ -103,11 +102,8 @@ export function renderManagerOverview(root) {
   // promise nao resolvia. O gerente ve as reservas da propria arena.
   const reservas = ARENA_BOOKINGS;
   const bruto = reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
-  const comissao = bruto * ARENA_FEE_RATE;
   const pendentes = reservas.filter((r) => r.status === 'Solicitada' || r.status === 'Pendente').length;
 
-  set(root, '[data-overview-payout]', brl(bruto - comissao));
-  set(root, '[data-overview-gross]', brl(bruto));
   const deHoje = reservas.filter((r) => r.data === 'Hoje');
   set(root, '[data-overview-today]', deHoje.length);
   // O rotulo diz "hoje", entao tem que ser hoje. Estava mostrando o bruto do

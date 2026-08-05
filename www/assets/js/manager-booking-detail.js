@@ -6,11 +6,7 @@
    oferece confirmar pagamento; o que ja esta encerrado nao oferece nada
    alem de voltar. */
 import { bookings, getBooking, setBookingStatus, encerrada, setPageMeta } from './manager-bookings.js';
-import { ARENA_FEE_RATE } from '../../config/constants.js';
 import { formatCurrency } from '../../utils/formatters.js';
-
-// A taxa da arena sai por dentro do valor da quadra.
-const FATIA = ARENA_FEE_RATE;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -56,7 +52,6 @@ export function renderManagerBookingDetail(root) {
 
   setPageMeta('Detalhes da reserva', `${r.cliente} · ${r.data}`);
 
-  const comissao = r.valor * FATIA;
   const set = (sel, valor) => {
     const el = wrap.querySelector(sel);
     if (el) el.textContent = valor;
@@ -66,10 +61,6 @@ export function renderManagerBookingDetail(root) {
   set('[data-bd-data]', r.data);
   set('[data-bd-hora]', r.hora);
   set('[data-bd-codigo]', r.codigo || '—');
-  set('[data-bd-valor]', formatCurrency(r.valor));
-  set('[data-bd-taxa-label]', `Comissão Qadras (${Math.round(FATIA * 100)}%)`);
-  set('[data-bd-taxa]', `− ${formatCurrency(comissao)}`);
-  set('[data-bd-repasse]', formatCurrency(r.valor - comissao));
   set('[data-bd-cliente]', r.cliente);
   set('[data-bd-ini]', String(r.cliente).charAt(0).toUpperCase());
   set('[data-bd-telefone]', r.telefone);

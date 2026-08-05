@@ -11,8 +11,8 @@
     <p>Controle a visibilidade e o destaque das suas quadras sem sair da gestão.</p>
 
     <div class="manager-showcase__stats">
-      <div><strong class="num">1.284</strong><small>visualizações em 30 dias</small></div>
-      <div><strong class="num">9,8%</strong><small>conversão em reservas</small></div>
+      <div><strong class="num" data-showcase-views>0</strong><small>visualizações em 30 dias</small></div>
+      <div><strong class="num" data-showcase-conversion>0%</strong><small>conversão em reservas</small></div>
     </div>
 
     <div class="manager-showcase__settings">
@@ -21,17 +21,22 @@
         <div><strong>Visível no Explorar</strong><small>Jogadores podem encontrar sua arena</small></div>
         <i></i>
       </button>
-      <button type="button" class="manager-setting-toggle" data-showcase-setting="featured" aria-pressed="false">
-        <span><svg class="ic"><use href="#i-zap"/></svg></span>
-        <div><strong>Destaque regional</strong><small>Apareça primeiro nas buscas próximas</small></div>
-        <i></i>
-      </button>
     </div>
-  </div>
 
-  <div class="manager-showcase-preview" aria-label="Prévia da arena no Explorar">
-    <span class="manager-showcase-preview__label">Prévia no aplicativo</span>
-    <article data-showcase-preview></article>
+    <!-- Turbinar e recurso pago: vira card com preco e prazo, nao um
+         interruptor solto. O efeito e real — a arena turbinada sobe no
+         Explorar do jogador. A cobranca entra quando houver adquirente. -->
+    <div class="manager-boost" data-boost>
+      <div class="manager-boost__copy">
+        <span class="manager-boost__tag"><svg class="ic sm"><use href="#i-zap"/></svg> Destaque regional</span>
+        <strong>Apareça primeiro nas buscas próximas</strong>
+        <small data-boost-status>Sua arena aparece na ordem normal, por avaliação.</small>
+      </div>
+      <div class="manager-boost__action">
+        <span class="manager-boost__price">R$ 79<em>/30 dias</em></span>
+        <button type="button" class="btn btn-primary" data-boost-toggle>Turbinar</button>
+      </div>
+    </div>
   </div>
 </section>
 

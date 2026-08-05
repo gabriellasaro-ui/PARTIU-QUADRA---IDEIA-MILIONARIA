@@ -118,7 +118,7 @@ export function renderManagerCourtForm(root) {
   window.pqRefreshIcons?.(root);
 }
 
-// ------------------------------------------------------------------ configuracoes
+// ------------------------------------------------------------------ configurações
 
 function renderCupons(root) {
   const lista = root.querySelector('[data-coupon-list]');

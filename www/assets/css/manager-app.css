@@ -1661,7 +1661,9 @@ html[data-manager-app] .manager-finance-note .ic {
 /* Vitrine e quadras */
 html[data-manager-app] .manager-showcase {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, .68fr);
+  /* Uma coluna: a previa do aplicativo saiu, e deixar o grid em duas
+     deixaria um buraco de 280px a direita do texto. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
   scroll-margin-top: 92px;
   margin-bottom: 28px;
@@ -3375,5 +3377,70 @@ html[data-manager-app] .manager-form-actions {
   html[data-manager-app] .manager-form-actions .btn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+
+/* ── Turbinar: recurso pago, nao interruptor ─────────────────────────── */
+
+html[data-manager-app] .manager-boost {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--line-2, #e6ece7);
+  border-radius: 18px;
+  margin-top: 12px;
+  background: #fff;
+}
+
+html[data-manager-app] .manager-boost.is-on {
+  border-color: #b9edcb;
+  background: #f2fbf5;
+}
+
+html[data-manager-app] .manager-boost__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0c8b52;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .manager-boost__copy strong {
+  display: block;
+  margin: 6px 0 3px;
+  font-size: 15px;
+}
+
+html[data-manager-app] .manager-boost__copy small { color: var(--muted); font-size: 13px; }
+
+html[data-manager-app] .manager-boost__action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+html[data-manager-app] .manager-boost__price {
+  font-size: 19px;
+  font-weight: 800;
+}
+
+html[data-manager-app] .manager-boost__price em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  html[data-manager-app] .manager-boost__action {
+    width: 100%;
+    justify-content: space-between;
   }
 }

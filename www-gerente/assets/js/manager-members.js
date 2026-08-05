@@ -12,7 +12,7 @@
      edita e remove.
 
    Mostrar as duas juntas e o ponto: para a operacao da quadra, os dois
-   ocupam o mesmo horario toda semana. A origem so muda quem pode alterar. */
+   ocupam o mesmo horário toda semana. A origem so muda quem pode alterar. */
 import venueService from '../../services/venues.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
@@ -120,7 +120,7 @@ export async function renderManagerMembers(root) {
   set('[data-member-count]', todos.length);
   set('[data-member-total]', todos.length);
   set('[data-member-revenue]', formatCurrency(receita));
-  // Cada mensalista trava um horario por semana — 4 sessoes no mes.
+  // Cada mensalista trava um horário por semana — 4 sessoes no mes.
   set('[data-member-slots]', todos.length * 4);
 
   const select = root.querySelector('[data-member-courts]');
