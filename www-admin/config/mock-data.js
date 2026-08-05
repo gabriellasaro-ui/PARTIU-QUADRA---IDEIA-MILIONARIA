@@ -267,21 +267,10 @@ export const CONVERSATIONS = [
   }
 ];
 
-export const WALLET = {
-  balance: 85,
-  transactions: [
-    { date: 'Hoje', description: 'Reserva - Arena Bola na Rede', value: -120 },
-    { date: 'Ontem', description: 'Cashback por indicacao', value: 20 },
-    { date: '28/06', description: 'Reserva - Beach Point Arena', value: -90 },
-    { date: '25/06', description: 'Adicao de saldo via Pix', value: 150 },
-    { date: '20/06', description: 'Reserva - Volei Sand Club', value: -70 }
-  ],
-  coupons: [
-    { code: 'PARTIU10', description: 'R$ 10 de bonus na sua proxima reserva' },
-    { code: 'AMIGO20', description: 'R$ 20 ao indicar um amigo que reservar' },
-    { code: 'NOITE15', description: '15% de desconto em horarios da noite' }
-  ]
-};
+/* Sem saldo, sem extrato, sem cupom: guardar dinheiro de usuario e coisa de
+   instituicao de pagamento. O que sobrou e meio de pagamento, e cartao nao
+   mora aqui — e markup da tela ate existir adquirente. */
+export const WALLET = { cards: [] };
 
 export const CURRENT_USER = {
   // Id proprio: a presenca na pelada precisa de chave estavel, e "Editar

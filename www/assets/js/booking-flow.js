@@ -4,8 +4,7 @@
   var MOCK_APPROVAL_DELAY_MS = 5000;
   var METHOD_LABELS = {
     pix: 'Pix',
-    card: 'Cartão de crédito',
-    wallet: 'Saldo Qadras'
+    card: 'Cartão de crédito'
   };
 
   function escapeHtml(value) {

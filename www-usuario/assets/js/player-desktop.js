@@ -19,8 +19,7 @@ const SPORT_ICONS = {
 };
 const PAYMENT_METHOD_LABELS = {
   pix: 'Pix',
-  card: 'Cartão de crédito',
-  wallet: 'Saldo Qadras'
+  card: 'Cartão de crédito'
 };
 
 function icon(name, className = 'ic') {
@@ -762,7 +761,6 @@ async function renderPayment(root, route) {
   });
   const requestedResult = routeQuery(route).get('resultado');
   if (requestedResult) confirmation.set('resultado', requestedResult);
-  const walletAvailable = Number(wallet.balance || 0) >= total;
   const avatar = profile.photo
     ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}">`
     : escapeHtml(profile.name.slice(0, 1));
@@ -811,11 +809,6 @@ async function renderPayment(root, route) {
                 <span><strong>Cartão de crédito</strong><small>Final 4321</small></span>
                 <span class="ck">${icon('check')}</span>
               </button>
-              <button type="button" class="method ${walletAvailable ? '' : 'is-unavailable'}" data-player-payment-method="wallet" ${walletAvailable ? '' : 'disabled'}>
-                <span class="badge-ic">${icon('wallet-cards')}</span>
-                <span><strong>Saldo Qadras</strong><small>${walletAvailable ? `${money(wallet.balance)} disponíveis` : `Saldo de ${money(wallet.balance)} insuficiente`}</small></span>
-                <span class="ck">${icon('check')}</span>
-              </button>
             </div>
           </section>
 
@@ -854,7 +847,7 @@ async function renderPayment(root, route) {
   const cta = root.querySelector('[data-player-payment-cta]');
   cta.dataset.paymentRoute = `#confirmado/${venue.id}`;
   cta.dataset.paymentQuery = confirmation.toString();
-  syncDesktopPaymentChoice(root, walletAvailable ? method : method === 'wallet' ? 'pix' : method);
+  syncDesktopPaymentChoice(root, method === 'wallet' ? 'pix' : method);
 }
 
 async function renderConfirmation(root, route) {
@@ -1139,43 +1132,24 @@ async function renderFavorites(root) {
       </div>`;
 }
 
+/* Pagamento no desktop. Saldo, extrato e cupom sairam: guardar dinheiro de
+   usuario e atividade de instituicao de pagamento. */
 async function renderWallet(root) {
-  const wallet = await venueService.wallet();
   root.innerHTML = `
     <div class="split-2">
       <div>
-        <div class="wallet-hero">
-          <div><div class="wh-label">Saldo disponivel</div><div class="wh-val num">${money(wallet.balance)}</div></div>
-          <div class="wh-actions">
-            <a href="#carteira/adicionar" class="btn btn-volt">Adicionar saldo</a>
-            <a href="#carteira/cupom" class="btn btn-ghost">Usar cupom</a>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><h2>Extrato</h2><button class="lk" type="button" data-csv-table="#player-statement" data-csv-name="extrato-partiu-quadra.csv">Exportar CSV</button></div>
-          <table class="tbl" id="player-statement">
-            <thead><tr><th>Data</th><th>Descricao</th><th>Valor</th></tr></thead>
-            <tbody>${wallet.transactions.map((item) => `
-              <tr>
-                <td>${escapeHtml(item.date)}</td>
-                <td>${escapeHtml(item.description)}</td>
-                <td class="val num" style="color:${item.value > 0 ? 'var(--green-600)' : 'var(--ink)'}">${item.value > 0 ? '+ ' : ''}${money(Math.abs(item.value))}</td>
-              </tr>`).join('')}</tbody>
-          </table>
-        </div>
-      </div>
-      <aside>
         <div class="card">
           <h2>Formas de pagamento</h2>
-          <div class="method on"><span class="badge-ic"><svg class="ic"><use href="#i-zap"/></svg></span><span>Pix <small>- aprovação na hora</small></span><span class="ck"><svg class="ic"><use href="#i-check"/></svg></span></div>
-          <div class="method"><span class="badge-ic"><svg class="ic"><use href="#i-card"/></svg></span><span>Cartão final 4321 <small>- Visa</small></span><span class="ck"><svg class="ic"><use href="#i-check"/></svg></span></div>
-          <a href="#carteira/cartao" class="btn btn-outline btn-block" style="margin-top:6px;"><svg class="ic sm"><use href="#i-plus"/></svg> Adicionar cartão</a>
+          <div class="rlist">
+            <div class="payment-row"><span class="badge-ic">${icon('zap')}</span><span><strong>Pix</strong><small>Aprovação na hora</small></span></div>
+            <div class="payment-row"><span class="badge-ic">${icon('credit-card')}</span><span><strong>Visa final 4321</strong><small>Cartão principal</small></span></div>
+          </div>
+          <a href="#carteira/cartao" class="btn btn-outline" style="margin-top:14px;">${icon('plus', 'ic sm')} Adicionar cartão</a>
         </div>
-        <div class="card" style="margin-bottom:0;">
-          <h2>Indique e ganhe</h2>
-          <p style="font-size:14px;color:var(--ink-2);line-height:1.6;">Cada amigo que reservar pela sua indicação vira <b>R$ 20 de cashback</b> na sua carteira.</p>
-          <button type="button" class="btn btn-primary btn-block" data-copy="https://qadras.app/r/GABRIEL20" data-copy-msg="Link de indicação copiado!" style="margin-top:8px;"><svg class="ic sm"><use href="#i-gift"/></svg> Copiar meu link</button>
-        </div>
+      </div>
+      <aside class="card">
+        <h2>Como funciona</h2>
+        <p class="muted">Você paga a cada reserva, direto no checkout. A Qadras não guarda saldo.</p>
       </aside>
     </div>`;
 }
@@ -1185,29 +1159,6 @@ async function renderWalletAction(root, route) {
   const action = route.params.action || 'adicionar';
   const pageTitle = document.querySelector('[data-page-title]');
   const pageSub = document.querySelector('[data-page-sub]');
-  if (action === 'cupom') {
-    if (pageTitle) pageTitle.textContent = 'Usar cupom';
-    if (pageSub) pageSub.textContent = 'Aplique um código e ganhe desconto ou bônus';
-    root.innerHTML = `
-      <a href="#carteira" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para a carteira</a>
-      <div class="split-2">
-        <form class="card" data-player-demo-form data-success="Cupom aplicado com sucesso">
-          <h2>Tem um cupom?</h2>
-          <div class="inp"><label>Código do cupom</label><input type="text" name="codigo" placeholder="Ex.: PARTIU10" required></div>
-          <button type="submit" class="btn btn-volt btn-lg btn-block"><svg class="ic sm"><use href="#i-gift"/></svg> Aplicar cupom</button>
-        </form>
-        <aside class="card">
-          <h2>Cupons disponíveis</h2>
-          <div class="rlist">${wallet.coupons.map((coupon) => `
-            <div class="coupon">
-              <div class="coupon-code">${escapeHtml(coupon.code)}</div>
-              <div class="coupon-desc">${escapeHtml(coupon.description)}</div>
-              <button type="button" class="btn btn-soft btn-xs" data-copy="${escapeHtml(coupon.code)}" data-copy-msg="Código copiado">Copiar</button>
-            </div>`).join('')}</div>
-        </aside>
-      </div>`;
-    return;
-  }
   if (action === 'cartao') {
     if (pageTitle) pageTitle.textContent = 'Adicionar cartão';
     if (pageSub) pageSub.textContent = 'Cadastre um cartão para pagar mais rápido';
@@ -1227,21 +1178,8 @@ async function renderWalletAction(root, route) {
       </form>`;
     return;
   }
-  if (pageTitle) pageTitle.textContent = 'Adicionar saldo';
-  if (pageSub) pageSub.textContent = 'Recarregue sua carteira via Pix';
-  root.innerHTML = `
-    <a href="#carteira" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para a carteira</a>
-    <form class="split-2" data-player-demo-form data-success="Pix gerado com sucesso">
-      <div>
-        <div class="card">
-          <h2>Quanto quer adicionar?</h2>
-          <div class="chips">${[30, 50, 100, 200].map((value) => `<button type="button" class="chip ${value === 100 ? 'on' : ''}" data-chip-toggle>${money(value)}</button>`).join('')}</div>
-          <div class="inp"><label>Ou digite um valor</label><input type="number" value="100" min="10" step="10"></div>
-        </div>
-        <div class="card"><h2>Forma de pagamento</h2><div class="method on"><span class="badge-ic"><svg class="ic"><use href="#i-zap"/></svg></span><span>Pix <small>- cai na hora</small></span><span class="ck"><svg class="ic"><use href="#i-check"/></svg></span></div></div>
-      </div>
-      <aside><div class="order-card"><h3>Sua carteira</h3><div class="line"><span class="muted">Saldo atual</span><span>${money(wallet.balance)}</span></div><div class="line"><span class="muted">Recarga</span><span>${money(100)}</span></div><div class="line total"><span>Novo saldo</span><span>${money(wallet.balance + 100)}</span></div><button type="submit" class="btn btn-volt btn-lg btn-block" style="margin-top:16px;">Gerar Pix</button></div></aside>
-    </form>`;
+  // Cartao e a unica acao que sobrou; qualquer outra volta para Pagamento.
+  location.hash = 'carteira';
 }
 
 async function renderProfile(root) {

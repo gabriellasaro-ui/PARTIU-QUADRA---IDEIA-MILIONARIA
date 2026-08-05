@@ -6522,3 +6522,19 @@ html[data-bottombar="none"] .screen {
   color: #c0392b;
   font-size: 13px;
 }
+
+/* Nota da tela de Pagamento: diz por que nao ha saldo. */
+.payment-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  margin: 18px 0 0;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-strong);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.payment-note .ic { flex: 0 0 auto; width: 17px; height: 17px; }

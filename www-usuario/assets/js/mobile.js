@@ -35,7 +35,6 @@ const SPORT_ICONS = {
 const PAYMENT_METHOD_LABELS = {
   pix: 'Pix',
   card: 'Cartão de crédito',
-  wallet: 'Saldo Qadras'
 };
 
 function icon(name, className = 'ic') {
@@ -889,10 +888,7 @@ function syncMobilePaymentChoice(root, requestedMethod = 'pix') {
 }
 
 async function renderPayment(root, route) {
-  const [context, wallet] = await Promise.all([
-    bookingContext(route),
-    venueService.wallet()
-  ]);
+  const context = await bookingContext(route);
   if (!context) {
     location.hash = 'quadras';
     return;
@@ -926,13 +922,6 @@ async function renderPayment(root, route) {
   root.querySelector('[data-payment-rent]').textContent = formatCurrency(subtotal);
   root.querySelector('[data-payment-fee]').textContent = formatCurrency(serviceFee);
   root.querySelector('[data-payment-total]').textContent = formatCurrency(total);
-  const walletMethod = root.querySelector('[data-payment-method="wallet"]');
-  const walletAvailable = Number(wallet.balance || 0) >= total;
-  walletMethod.disabled = !walletAvailable;
-  walletMethod.classList.toggle('is-unavailable', !walletAvailable);
-  walletMethod.querySelector('[data-payment-method-note]').textContent = walletAvailable
-    ? `${formatCurrency(wallet.balance)} disponíveis`
-    : `Saldo de ${formatCurrency(wallet.balance)} insuficiente`;
   const cta = root.querySelector('[data-payment-cta]');
   const confirmationQuery = new URLSearchParams({
     date,
@@ -946,7 +935,7 @@ async function renderPayment(root, route) {
   cta.dataset.paymentRoute = `#confirmado/${venue.id}`;
   cta.dataset.paymentQuery = confirmationQuery.toString();
   cta.querySelector('[data-payment-cta-label]').textContent = `Enviar solicitação - ${formatCurrency(total)}`;
-  syncMobilePaymentChoice(root, walletAvailable ? method : method === 'wallet' ? 'pix' : method);
+  syncMobilePaymentChoice(root, method === 'wallet' ? 'pix' : method);
 }
 
 /* Toda pelada nasce de uma reserva — nunca de um formulario solto.
@@ -1299,62 +1288,28 @@ async function renderFavorites(root) {
       </div>`;
 }
 
-async function renderWallet(root) {
-  const wallet = await venueService.wallet();
-  root.querySelector('[data-wallet-balance]').textContent = formatCurrency(wallet.balance);
-  root.querySelector('[data-wallet-transactions]').innerHTML = wallet.transactions.map((item) => `
-    <div class="transaction-row">
-      <div><strong>${escapeHtml(item.description)}</strong><span>${escapeHtml(item.date)}</span></div>
-      <b class="${item.value > 0 ? 'positive' : ''}">${item.value > 0 ? '+' : '-'} ${formatCurrency(Math.abs(item.value))}</b>
-    </div>`).join('');
-}
+/* A tela de Pagamento nao tem nada dinamico hoje: cartao e Pix sao markup
+   fixo ate existir adquirente. Fica como funcao para a rota nao precisar de
+   caso especial. */
+async function renderWallet() {}
 
 async function renderWalletAction(root, route) {
-  const action = route.params.action;
-  const wallet = await venueService.wallet();
   const title = root.querySelector('[data-wallet-action-title]');
   const content = root.querySelector('[data-wallet-action-content]');
 
-  if (action === 'adicionar') {
-    title.textContent = 'Adicionar saldo';
-    content.innerHTML = `
-      <div class="balance-inline">Saldo atual <strong>${formatCurrency(wallet.balance)}</strong></div>
-      <div class="sec-head"><h2>Escolha um valor</h2></div>
-      <div class="amount-grid">
-        ${[30, 50, 100, 200].map((value, index) => `<button type="button" class="amount-option ${index === 1 ? 'on' : ''}" data-amount="${value}">${formatCurrency(value)}</button>`).join('')}
-      </div>
-      <div class="field"><label>Outro valor</label><input type="number" min="10" step="5" placeholder="R$ 0,00"></div>
-      <button type="button" class="btn block" data-toast="Pix gerado para adicionar saldo">Gerar Pix</button>`;
-    return;
-  }
-
-  if (action === 'cartao') {
-    title.textContent = 'Adicionar cartão';
-    content.innerHTML = `
-      <form data-demo-form data-success="Cartão adicionado com sucesso">
-        <div class="field"><label>Número do cartão</label><input type="text" inputmode="numeric" placeholder="0000 0000 0000 0000" required></div>
-        <div class="field"><label>Nome impresso</label><input type="text" placeholder="GABRIEL LISBOA" required></div>
-        <div class="input-row mobile-two">
-          <div class="field"><label>Validade</label><input type="text" inputmode="numeric" placeholder="MM/AA" required></div>
-          <div class="field"><label>CVV</label><input type="text" inputmode="numeric" placeholder="000" required></div>
-        </div>
-        <button class="btn block" type="submit">Salvar cartão</button>
-      </form>`;
-    return;
-  }
-
-  title.textContent = 'Cupons';
+  // So cartao. "Adicionar saldo" e "Cupons" sairam junto com a carteira.
+  title.textContent = 'Adicionar cartão';
   content.innerHTML = `
-    <form class="coupon-form" data-demo-form data-success="Cupom aplicado com sucesso">
-      <div class="field"><label>Código do cupom</label><input type="text" placeholder="Digite seu cupom" required></div>
-      <button class="btn block" type="submit">Aplicar cupom</button>
-    </form>
-    <div class="sec-head"><h2>Cupons disponíveis</h2></div>
-    <div class="coupon-list">${wallet.coupons.map((coupon) => `
-      <button type="button" class="coupon-row" data-copy="${escapeHtml(coupon.code)}" data-copy-msg="Cupom copiado">
-        <span><strong>${escapeHtml(coupon.code)}</strong><small>${escapeHtml(coupon.description)}</small></span>
-        ${icon('chevron-right')}
-      </button>`).join('')}</div>`;
+    <form data-demo-form data-success="Cartão adicionado com sucesso">
+      <div class="field"><label>Número do cartão</label><input type="text" inputmode="numeric" placeholder="0000 0000 0000 0000" required></div>
+      <div class="field"><label>Nome impresso</label><input type="text" placeholder="GABRIEL LISBOA" required></div>
+      <div class="input-row mobile-two">
+        <div class="field"><label>Validade</label><input type="text" inputmode="numeric" placeholder="MM/AA" required></div>
+        <div class="field"><label>CVV</label><input type="text" inputmode="numeric" placeholder="000" required></div>
+      </div>
+      <button class="btn block" type="submit">Salvar cartão</button>
+    </form>`;
+  void route;
 }
 
 function syncMobileProfile(root, user) {
