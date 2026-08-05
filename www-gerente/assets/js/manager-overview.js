@@ -104,6 +104,10 @@ export function renderManagerOverview(root) {
   const bruto = reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
   const pendentes = reservas.filter((r) => r.status === 'Solicitada' || r.status === 'Pendente').length;
 
+  set(root, '[data-overview-gross]', Math.round(bruto).toLocaleString('pt-BR'));
+  set(root, '[data-overview-period-reservations]', reservas.length);
+  set(root, '[data-overview-period-requests]', pendentes);
+
   const deHoje = reservas.filter((r) => r.data === 'Hoje');
   set(root, '[data-overview-today]', deHoje.length);
   // O rotulo diz "hoje", entao tem que ser hoje. Estava mostrando o bruto do

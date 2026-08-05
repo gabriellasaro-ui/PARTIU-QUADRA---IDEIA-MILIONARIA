@@ -644,7 +644,8 @@ function renderBooking(root) {
       <div class="avail-lbl">${label}</div>
       <div class="avail-slots">${slots.map((slot) => {
         const hour = Number(slot.hour.slice(0, 2));
-        const selected = selectedHour && hour >= start && hour < start + duration;
+        const inBlock = selectedHour && hour >= start && hour < start + duration;
+        const selected = inBlock && isFreeAt(hour);
         const availableStart = canStartAt(hour) && !isPast(slot.hour);
         const reason = isPast(slot.hour)
           ? 'Horário já passou'

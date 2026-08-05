@@ -4,23 +4,36 @@
      inventados e sem filtro de quadra, navegacao de semana, lista por dia no
      mobile ou detalhe do agendamento. Tudo isso volta aqui, preenchido por
      assets/js/manager-agenda.js a partir das reservas da arena. -->
-<div class="cal-toolbar">
-  <div class="cal-range">
-    <button class="cal-nav" type="button" data-agenda-week="-1" aria-label="Semana anterior"><svg class="ic sm"><use href="#i-left"/></svg></button>
-    <strong data-agenda-range>Semana atual</strong>
-    <button class="cal-nav" type="button" data-agenda-week="1" aria-label="Próxima semana"><svg class="ic sm"><use href="#i-right"/></svg></button>
+<section class="manager-agenda-command">
+  <div class="manager-agenda-title">
+    <div>
+      <span>Central de horarios</span>
+      <h2 data-agenda-month>Agenda da arena</h2>
+    </div>
   </div>
-  <!-- No app antigo este filtro morava no topbar da rota. O topbar aqui e um
-       componente compartilhado, entao ele desce para a barra da agenda. -->
-  <div class="period" data-seg data-agenda-courts aria-label="Filtrar quadra"></div>
+  <div class="manager-agenda-command__right">
+    <div class="cal-range">
+      <button class="cal-nav" type="button" data-agenda-week="-1" aria-label="Semana anterior"><svg class="ic sm"><use href="#i-left"/></svg></button>
+      <div><small>Semana</small><strong data-agenda-range>Semana atual</strong></div>
+      <button class="cal-nav" type="button" data-agenda-week="1" aria-label="Proxima semana"><svg class="ic sm"><use href="#i-right"/></svg></button>
+    </div>
+    <div class="manager-agenda-stats" aria-label="Resumo da semana">
+      <article><strong data-agenda-stat-total>0</strong><span>Reservas</span></article>
+      <article><strong data-agenda-stat-pending>0</strong><span>Para aprovar</span></article>
+      <article><strong data-agenda-stat-revenue>R$ 0</strong><span>Previsto</span></article>
+    </div>
+  </div>
+</section>
+
+<section class="manager-agenda-workspace">
+<div class="cal-toolbar">
+  <div class="manager-agenda-court-filter" data-seg data-agenda-courts aria-label="Filtrar quadra"></div>
   <div class="cal-legend">
     <span><i class="pago"></i> Pago</span>
     <span><i class="confirmado"></i> Confirmado</span>
     <span><i class="pendente"></i> Aguardando</span>
   </div>
 </div>
-
-<div class="manager-agenda-court-filter" data-seg data-agenda-courts aria-label="Filtrar quadra"></div>
 
 <!-- Uma reserva por linha, dia a dia. No desktop a grade abaixo assume. -->
 <div class="manager-agenda-mobile" data-agenda-mobile></div>
@@ -31,7 +44,7 @@
     <div class="cal-body" data-agenda-body></div>
   </div>
 </div>
-
+</section>
 <div class="modal" data-agenda-event-modal hidden>
   <div class="modal-backdrop" data-agenda-event-close></div>
   <div class="modal-box ev-modal">

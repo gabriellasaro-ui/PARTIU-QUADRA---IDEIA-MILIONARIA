@@ -646,7 +646,7 @@ h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; letter-spacing: 
 .dur:hover { border-color: var(--green); }
 .dur.on { background: var(--green-ink); border-color: var(--green-ink); color: #fff; }
 .dur.off { opacity: .4; text-decoration: line-through; cursor: not-allowed; }
-.slots .slot.sel, .avail-slots .slot.sel { background: var(--green-ink); border-color: var(--green-ink); color: #fff; }
+.slots .slot.sel, .avail-slots .slot.sel { background: var(--green-ink); border-color: var(--green-ink); color: #fff; text-decoration: none; }
 
 /* estado vazio */
 .empty { text-align: center; padding: 56px 24px; }

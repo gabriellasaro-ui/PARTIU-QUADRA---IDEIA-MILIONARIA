@@ -82,6 +82,7 @@ export function renderManagerFinance(root) {
   set(root, '[data-finance-gross]', formatCurrency(bruto));
   set(root, '[data-finance-count]', reservas.length);
   set(root, '[data-finance-ticket]', formatCurrency(ticket));
+  set(root, '[data-finance-ticket-top]', formatCurrency(ticket));
 
 
   // Ocupacao media das quadras ativas — o que sustenta o faturamento.
@@ -89,6 +90,7 @@ export function renderManagerFinance(root) {
     ? Math.min(99, Math.round((reservas.length / (7 * 3)) * 100) + 40)
     : 0;
   set(root, '[data-finance-occ]', `${ocupacao}%`);
+  set(root, '[data-finance-occ-top]', `${ocupacao}%`);
 
   // Faturamento por dia da semana, a partir do dia real de cada reserva.
   const porDia = DIAS.map(() => 0);
@@ -98,6 +100,7 @@ export function renderManagerFinance(root) {
       : { Seg: 0, Ter: 1, Qua: 2, Qui: 3, Sex: 4, Sáb: 5, Dom: 6 }[r.data.split(',')[0]] ?? i % 7;
     porDia[dia] += Number(r.valor || 0);
   });
+  set(root, '[data-finance-peak]', formatCurrency(Math.max(...porDia, 0)));
   renderChart(root, porDia);
 
   const ledger = root.querySelector('[data-finance-ledger]');

@@ -7,13 +7,14 @@
      no topbar da rota e o do mobile no conteudo. O topbar aqui e um
      componente compartilhado, entao os dois descem para ca — a folha esconde
      um ou outro conforme a largura. -->
-<div class="manager-finance-toolbar">
-  <div class="period" data-seg aria-label="Período financeiro">
+<section class="manager-finance-command">
+  <div><span>Visao financeira</span><h2>Receitas da arena</h2></div>
+  <div class="period" data-seg aria-label="Periodo financeiro">
     <button type="button" data-finance-period="hoje">Hoje</button>
     <button type="button" class="on" data-finance-period="7d">7 dias</button>
     <button type="button" data-finance-period="30d">30 dias</button>
   </div>
-</div>
+</section>
 
 <div class="manager-mobile-period" data-seg aria-label="Período financeiro">
   <button type="button" data-finance-period="hoje">Hoje</button>
@@ -25,31 +26,32 @@
   <div class="manager-finance-metrics">
     <article><span><svg class="ic"><use href="#i-dollar"/></svg></span><div><small>Faturamento bruto</small><strong class="num" data-finance-gross>R$ 0,00</strong></div></article>
     <article><span><svg class="ic"><use href="#i-calendar"/></svg></span><div><small>Reservas no período</small><strong class="num" data-finance-count>0</strong></div></article>
+    <article><span><svg class="ic"><use href="#i-dollar"/></svg></span><div><small>Ticket médio</small><strong class="num" data-finance-ticket-top>R$ 0,00</strong></div></article>
+    <article><span><svg class="ic"><use href="#i-clock"/></svg></span><div><small>Ocupação média</small><strong class="num" data-finance-occ-top>0%</strong></div></article>
   </div>
 </section>
 
-<section class="manager-panel manager-finance-analytics">
-  <div class="manager-finance-chart">
+<div class="manager-finance-analytics">
+  <section class="manager-panel manager-finance-chart">
     <div class="manager-panel__head">
       <div><span>Desempenho</span><h2>Faturamento na semana</h2></div>
       <small>Últimos 7 dias</small>
     </div>
     <svg class="lc" viewBox="0 0 620 240" role="img" aria-label="Faturamento por dia" data-finance-chart>
-      <defs><linearGradient id="lcfin" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#16a765" stop-opacity=".22"/><stop offset="1" stop-color="#16a765" stop-opacity="0"/>
-      </linearGradient></defs>
-      <path class="lc-area" data-finance-area d="" fill="url(#lcfin)"/>
+      <path class="lc-area" data-finance-area d="" fill="#e7f5ed"/>
       <path class="lc-line" data-finance-line d=""/>
     </svg>
-  </div>
+  </section>
 
-  <div class="manager-finance-breakdown">
+  <section class="manager-panel manager-finance-breakdown">
+    <div class="manager-panel__head"><div><span>Indicadores</span><h2>Saude da operacao</h2></div></div>
     <div class="manager-finance-health">
       <div><span>Ticket médio</span><strong class="num" data-finance-ticket>R$ 0,00</strong></div>
       <div><span>Ocupação média</span><strong class="num" data-finance-occ>0%</strong></div>
+      <div><span>Maior faturamento diário</span><strong class="num" data-finance-peak>R$ 0,00</strong></div>
     </div>
-  </div>
-</section>
+  </section>
+</div>
 
 <section class="manager-panel manager-finance-ledger">
   <div class="manager-panel__head">

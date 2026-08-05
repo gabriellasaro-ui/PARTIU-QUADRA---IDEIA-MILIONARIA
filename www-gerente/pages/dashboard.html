@@ -20,31 +20,24 @@
   </div>
 </section>
 
-<section class="manager-summary" aria-label="Resumo da arena">
-
-  <div class="manager-metrics">
-    <article>
-      <span><svg class="ic"><use href="#i-calendar"/></svg></span>
-      <div class="manager-metric-copy">
-        <strong class="num"><span data-overview-today>0</span></strong>
-        <small>Reservas hoje</small>
-      </div>
-    </article>
-    <article>
-      <span><svg class="ic"><use href="#i-dollar"/></svg></span>
-      <div class="manager-metric-copy">
-        <strong class="num">R$ <span data-overview-revenue>0</span></strong>
-        <small>Faturamento hoje</small>
-      </div>
-    </article>
-    <article>
-      <span><svg class="ic"><use href="#i-clock"/></svg></span>
-      <div class="manager-metric-copy">
-        <strong class="num"><span data-overview-occ>0</span>%</strong>
-        <small>Ocupação média</small>
-      </div>
-    </article>
-  </div>
+<section class="manager-dashboard-kpis" aria-label="Resumo operacional">
+  <article class="manager-dashboard-kpi manager-dashboard-kpi--revenue">
+    <span><svg class="ic"><use href="#i-dollar"/></svg></span>
+    <div><small>Faturamento no periodo</small><strong class="num">R$ <span data-overview-gross>0</span></strong></div>
+    <a href="./dashboard.html#financeiro" aria-label="Abrir financeiro"><svg class="ic sm"><use href="#i-right"/></svg></a>
+  </article>
+  <article class="manager-dashboard-kpi">
+    <span><svg class="ic"><use href="#i-calendar"/></svg></span>
+    <div><small>Reservas no periodo</small><strong class="num" data-overview-period-reservations>0</strong></div>
+  </article>
+  <article class="manager-dashboard-kpi">
+    <span><svg class="ic"><use href="#i-bell"/></svg></span>
+    <div><small>Solicitacoes abertas</small><strong class="num" data-overview-period-requests>0</strong></div>
+  </article>
+  <article class="manager-dashboard-kpi">
+    <span><svg class="ic"><use href="#i-clock"/></svg></span>
+    <div><small>Ocupacao media</small><strong class="num"><span data-overview-occ>0</span>%</strong></div>
+  </article>
 </section>
 
 <section class="manager-section">
@@ -73,6 +66,26 @@
       <svg class="ic sm"><use href="#i-right"/></svg>
     </a>
   </nav>
+</section>
+
+<section class="manager-panel manager-panel--intelligence">
+  <div class="manager-panel__head">
+    <div><span>Inteligência da arena</span><h2>Faturamento da semana</h2></div>
+    <a href="./dashboard.html#financeiro">Abrir financeiro</a>
+  </div>
+  <div class="manager-chart">
+    <svg class="lc" data-overview-chart viewBox="0 0 620 240" role="img" aria-label="Faturamento dos últimos sete dias">
+      <path class="lc-area" data-chart-area d="" fill="#e7f5ed"/>
+      <path class="lc-line" data-chart-line d=""/>
+    </svg>
+  </div>
+</section>
+
+<section class="manager-panel manager-panel--opportunities">
+  <div class="manager-panel__head">
+    <div><span>Oportunidades</span><h2>Ações para melhorar a agenda</h2></div>
+  </div>
+  <div class="manager-insights" data-overview-insights></div>
 </section>
 
 <div class="manager-dashboard-grid">
@@ -110,29 +123,4 @@
     </div>
   </section>
 
-<section class="manager-panel manager-panel--intelligence">
-  <div class="manager-panel__head">
-    <div><span>Inteligência da arena</span><h2>Faturamento e oportunidades</h2></div>
-    <a href="./dashboard.html#financeiro">Abrir financeiro</a>
-  </div>
-  <div class="manager-intelligence-grid">
-    <div class="manager-chart">
-      <svg class="lc" data-overview-chart viewBox="0 0 620 240" role="img" aria-label="Faturamento dos últimos sete dias">
-        <defs>
-          <linearGradient id="manager-chart-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#16a765" stop-opacity=".22"/>
-            <stop offset="1" stop-color="#16a765" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        
-        <path class="lc-area" data-chart-area d="" fill="url(#manager-chart-fill)"/>
-        <path class="lc-line" data-chart-line d=""/>
-        
-      </svg>
-    </div>
-    <div class="manager-insights" data-overview-insights>
-      
-    </div>
-  </div>
-</section>
 </div>

@@ -4151,6 +4151,8 @@ html[data-route="mapa"] .phone {
 .avail-slots .slot.sel {
   border-color: var(--pq-brand-strong) !important;
   background: var(--pq-brand-strong) !important;
+  color: #fff !important;
+  text-decoration: none !important;
   box-shadow: 0 5px 12px rgba(0, 168, 90, .18) !important;
 }
 

@@ -514,7 +514,7 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
 .bb-line .bb-k .ic { color: var(--green); width: 16px; height: 16px; }
 .bb-total { border-top: 1.5px dashed var(--mint-2); margin-top: 6px; padding-top: 12px; font-size: 17px; font-weight: 800; color: var(--green-700); }
 .book-bar .btn { margin-top: 14px; }
-.slots .slot.sel, .avail-slots .slot.sel { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 8px 16px rgba(21,128,61,.25); }
+.slots .slot.sel, .avail-slots .slot.sel { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 8px 16px rgba(21,128,61,.25); text-decoration: none; }
 
 /* ---------- estado vazio ---------- */
 .empty { text-align: center; padding: 46px 20px; }

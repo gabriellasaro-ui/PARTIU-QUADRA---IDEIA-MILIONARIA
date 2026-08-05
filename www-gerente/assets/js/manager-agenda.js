@@ -48,6 +48,28 @@ function rotuloSemana(segunda) {
   return `${dia(segunda)} de ${MESES[segunda.getMonth()]} a ${dia(domingo)} de ${MESES[domingo.getMonth()]}`;
 }
 
+function rotuloMes(segunda) {
+  const quinta = new Date(segunda);
+  quinta.setDate(quinta.getDate() + 3);
+  return `${MESES[quinta.getMonth()]} ${quinta.getFullYear()}`;
+}
+
+function atualizarResumo(root, eventos, segunda) {
+  const total = eventos.length;
+  const pendentes = eventos.filter((e) => e.status === 'Solicitada' || e.status === 'Pendente').length;
+  const receita = eventos.reduce((sum, e) => sum + Number(e.valor || 0), 0);
+
+  const month = root.querySelector('[data-agenda-month]');
+  const statTotal = root.querySelector('[data-agenda-stat-total]');
+  const statPending = root.querySelector('[data-agenda-stat-pending]');
+  const statRevenue = root.querySelector('[data-agenda-stat-revenue]');
+
+  if (month) month.textContent = rotuloMes(segunda);
+  if (statTotal) statTotal.textContent = String(total);
+  if (statPending) statPending.textContent = String(pendentes);
+  if (statRevenue) statRevenue.textContent = formatCurrency(receita);
+}
+
 /* Eventos posicionados por DATA, nao por indice de dia da semana. Cada
    reserva cai na coluna cuja data bate; o que fica fora da semana visivel
    simplesmente nao aparece, que e o que torna a navegacao de semana
@@ -122,7 +144,7 @@ function renderDesktop(root, eventos, segunda) {
         return `<div class="cal-ev ${e.cls}" style="top:${top}px;height:${h}px" role="button" tabindex="0"
           title="${escapeHtml(e.cliente)} · ${escapeHtml(e.hora)}" ${atributosEvento(e)}>
           <div class="t">${escapeHtml(e.cliente)}</div>
-          <div class="h">${escapeHtml(e.horaCurta)}</div>
+          <div class="h">${escapeHtml(e.horaCurta)} <span>${escapeHtml(e.status)}</span></div>
         </div>`;
       }).join('')
     }</div>`;
@@ -153,11 +175,12 @@ function renderMobile(root, eventos, segunda) {
 
   const paineis = DIAS.map((dia, i) => {
     const doDia = eventos.filter((e) => e.dow === i);
+    const receitaDia = doDia.reduce((sum, e) => sum + Number(e.valor || 0), 0);
     return `<section class="manager-agenda-day-panel" id="agenda-panel-${i}" data-agenda-panel="${i}"
       role="tabpanel" aria-labelledby="agenda-tab-${i}" ${i === ativo ? '' : 'hidden'}>
       <header>
         <div><span>${dia}, dia ${String(diaDe(i).getDate()).padStart(2, '0')}</span><strong>Agenda do dia</strong></div>
-        <span>${doDia.length} ${doDia.length === 1 ? 'reserva' : 'reservas'}</span>
+        <span>${doDia.length} ${doDia.length === 1 ? 'reserva' : 'reservas'} - ${escapeHtml(formatCurrency(receitaDia))}</span>
       </header>
       <div class="manager-day-bookings">${
         doDia.length ? doDia.map((e) => `<button class="manager-day-booking ${e.cls}" type="button" ${atributosEvento(e)}>
@@ -182,10 +205,10 @@ export function renderManagerAgenda(root) {
 
   const rotulo = root.querySelector('[data-agenda-range]');
   if (rotulo) rotulo.textContent = rotuloSemana(segunda);
+  atualizarResumo(root, eventos, segunda);
 
-  // O filtro sai das quadras da arena, nao de uma lista escrita a mao. Sao
-  // duas caixas porque o app antigo tinha o filtro do desktop no topbar e o
-  // do mobile no conteudo; aqui as duas leem o mesmo atributo.
+  // O filtro sai das quadras da arena, nao de uma lista escrita a mao. Existe
+  // uma unica barra responsiva para evitar estados duplicados na agenda.
   const opcoes = [{ label: 'todas', texto: 'Todas as quadras' },
     ...courts().map((c) => ({ label: c.label, texto: c.label }))];
   root.querySelectorAll('[data-agenda-courts]').forEach((filtro) => {

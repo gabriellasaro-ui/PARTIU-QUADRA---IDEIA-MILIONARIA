@@ -173,7 +173,8 @@
       slots.forEach(function (slot, index) {
         var hour = hourOf(slot);
         var availableStart = canStartAt(hour);
-        var selected = state.hour !== null && hour >= state.hour && hour < state.hour + state.duration;
+        var inBlock = state.hour !== null && hour >= state.hour && hour < state.hour + state.duration;
+        var selected = inBlock && isFreeAt(hour);
         if (availableStart) availableStarts += 1;
 
         slot.classList.toggle('free', availableStart);
