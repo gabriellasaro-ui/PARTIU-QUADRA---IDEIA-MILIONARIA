@@ -28,13 +28,16 @@
   },
   "homepage": "https://github.com/gabriellasaro-ui/PARTIU-QUADRA---IDEIA-MILIONARIA#readme",
   "dependencies": {
-    "@capacitor/android": "^8.4.2",
-    "@capacitor/core": "^8.4.2",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
     "@capacitor/ios": "^8.4.2",
     "leaflet": "^1.9.4",
     "lucide": "^1.27.0"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.4.2"
+    "@capacitor/cli": "^8.5.0"
+  },
+  "directories": {
+    "doc": "docs"
   }
 }

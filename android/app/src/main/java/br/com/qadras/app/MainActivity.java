@@ -1,4 +1,4 @@
-package br.com.partiuquadra.app;
+package br.com.qadras.app;
 
 import com.getcapacitor.BridgeActivity;
 
