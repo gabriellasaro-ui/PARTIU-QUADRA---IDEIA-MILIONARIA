@@ -201,12 +201,12 @@
     <section class="game-tabpanel" id="gameTabCronometro" role="tabpanel"
              aria-labelledby="gameTabBtnCronometro" data-game-panel="cronometro" hidden>
       <div class="game-bigclock">
-        <div class="game-bigclock__label" data-game-clock-label>Tempo de jogo</div>
+        <div class="game-bigclock__label">Tempo da rodada</div>
         <!-- O anel mostra quanto ja correu. Antes o numero flutuava sozinho
              num cartao branco e nao dizia nada de relance. -->
         <div class="game-bigclock__dial" data-clock-dial style="--game-progress:0">
           <div class="game-bigclock__face">
-            <div class="game-bigclock__value" data-game-countdown data-game-timer>00:00</div>
+            <div class="game-bigclock__value" data-game-timer>00:00</div>
             <div class="game-bigclock__unit"><span data-round-label>Rodada 1</span></div>
           </div>
         </div>
@@ -219,7 +219,7 @@
         </button>
         <button class="game-btn game-btn--outline" type="button" data-round-reset>
           <i class="ic" data-lucide="rotate-ccw"></i>
-          Zerar
+          Do zero
         </button>
       </div>
 
@@ -296,7 +296,7 @@
 
       </div>
 
-      <div class="game-section-title">Em quadra</div>
+      <div class="game-section-title">Jogando agora</div>
 
       <!-- Um bloco com contexto no lugar de dois cartoes dizendo
            "Aguardando sorteio...". Mostrar quantos confirmados e quantos por
@@ -320,7 +320,7 @@
 
       <div data-queue-block hidden>
         <div class="game-section-title">
-          Na fila
+          De fora
           <span data-queue-count></span>
         </div>
         <div class="game-queue" data-queue-list></div>
@@ -340,15 +340,35 @@
     <div class="game-tv__stage">
       <div class="game-tv__timer" data-game-timer>00:00</div>
       <div class="game-tv__scores">
+        <!-- O numero e a area de toque: arrasta pra cima soma gol, pra baixo
+             tira. Sem botao no meio da tela cheia, e funciona com o celular
+             apoiado na grade e a mao suada. -->
         <span class="game-tv__team">
           <small data-team-label="A">Time A</small>
-          <b data-team-score="A">0</b>
+          <b data-team-score="A" data-score-drag="A" role="button" tabindex="0"
+             aria-label="Placar do time A. Arraste para cima para somar, para baixo para tirar.">0</b>
+          <i class="game-tv__hint">arraste</i>
         </span>
         <em>×</em>
         <span class="game-tv__team">
           <small data-team-label="B">Time B</small>
-          <b data-team-score="B">0</b>
+          <b data-team-score="B" data-score-drag="B" role="button" tabindex="0"
+             aria-label="Placar do time B. Arraste para cima para somar, para baixo para tirar.">0</b>
+          <i class="game-tv__hint">arraste</i>
         </span>
+      </div>
+
+      <!-- Controlar a rodada sem sair do placar: antes o overlay cobria os
+           botoes da aba Cronometro e nao dava para pausar nada. -->
+      <div class="game-tv__controls">
+        <button class="game-tv__btn" type="button" data-round-toggle>
+          <i class="ic" data-lucide="play"></i>
+          <span data-round-toggle-label>Iniciar</span>
+        </button>
+        <button class="game-tv__btn game-tv__btn--ghost" type="button" data-round-reset>
+          <i class="ic" data-lucide="rotate-ccw"></i>
+          Do zero
+        </button>
       </div>
     </div>
   </div>

@@ -268,15 +268,21 @@
   padding: 14px 0 0;
 }
 
+/* Indicador de etapa, nao botao.
+
+   Antes era pilula com borda, fundo e raio 999px — copia visual exata de
+   .game-tabs__tab, que E clicavel. As duas fileiras ficavam empilhadas na
+   mesma tela: tres pilulas que navegam em cima de tres que nao fazem nada.
+   Agora e ponto + rotulo com uma linha ligando, que e vocabulario de
+   progresso e ninguem tenta apertar. */
 .game-phase__step {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 6px;
-  padding: 7px 6px;
-  border: 1px solid var(--pq-line);
-  border-radius: 999px;
-  background: var(--pq-panel);
+  padding: 4px 2px 0;
+  background: none;
   color: var(--pq-muted);
   font-size: 9.5px;
   font-weight: 800;
@@ -284,32 +290,44 @@
   letter-spacing: .03em;
 }
 
-.game-phase__step i {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--pq-line-strong, #ccd5cb);
+/* A linha que liga uma etapa a outra. */
+.game-phase__step:not(:last-child)::after {
+  position: absolute;
+  top: 8px;
+  left: calc(50% + 12px);
+  width: calc(100% - 24px);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--pq-line);
+  content: '';
 }
 
-.game-phase__step.done {
-  border-color: var(--pq-signal);
-  background: var(--pq-signal-soft);
-  color: var(--pq-brand-deep);
+.game-phase__step.done:not(:last-child)::after {
+  background: var(--pq-brand);
 }
+
+.game-phase__step i {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border: 2px solid var(--pq-line-strong, #ccd5cb);
+  border-radius: 50%;
+  background: var(--pq-panel);
+}
+
+.game-phase__step.done { color: var(--pq-brand-deep); }
 
 .game-phase__step.done i {
+  border-color: var(--pq-brand);
   background: var(--pq-brand);
 }
 
-.game-phase__step.active {
-  border-color: transparent;
-  background: var(--pq-brand);
-  color: #fff;
-}
+.game-phase__step.active { color: var(--pq-brand-strong); }
 
 .game-phase__step.active i {
-  background: #fff;
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  box-shadow: 0 0 0 4px var(--pq-signal-soft);
 }
 
 .game-content {
@@ -1250,13 +1268,11 @@
   opacity: .5;
 }
 
-body.game-tv-open { overflow: hidden; }
+body.is-tv-open { overflow: hidden; }
 
-/* Botao solto no painel (fora de .game-actions, que ja e grid) */
-.game-tv-open {
-  width: 100%;
-  margin-top: 10px;
-}
+/* Este botao vive DENTRO de .game-actions, que ja e grid de 2 colunas.
+   A regra anterior (width:100% + margin-top:10px) empurrava so ele 10px
+   para baixo e desalinhava a dupla. O grid ja resolve largura e altura. */
 
 /* ── Chips (duracao da rodada, quantidade de times) ─────── */
 .game-chips {
@@ -1581,4 +1597,61 @@ body.game-tv-open { overflow: hidden; }
   color: var(--pq-muted);
   font-size: 12.5px;
   line-height: 1.45;
+}
+
+/* ── Controles dentro do Modo placar ───────────────────────────────────── */
+
+.game-tv__controls {
+  display: flex;
+  gap: clamp(8px, 2vmin, 16px);
+}
+
+.game-tv__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: clamp(9px, 1.8vmin, 15px) clamp(16px, 3.4vmin, 30px);
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+  font-family: inherit;
+  font-size: clamp(12px, 2.2vmin, 19px);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.game-tv__btn--ghost { background: none; }
+.game-tv__btn:active { transform: translateY(1px); }
+.game-tv__btn .ic { width: 1.1em; height: 1.1em; }
+
+/* O numero e a area de arraste. touch-action: none entrega o gesto vertical
+   ao pointermove — sem isso o navegador rola a pagina e o handler nunca
+   recebe o movimento. */
+.game-tv__team b[data-score-drag] {
+  padding: 0 clamp(8px, 2vmin, 20px);
+  border-radius: 18px;
+  cursor: ns-resize;
+  touch-action: none;
+  transition: background .15s ease, transform .15s ease;
+  user-select: none;
+}
+
+.game-tv__team b.is-dragging {
+  background: rgba(255, 255, 255, .16);
+  transform: scale(1.04);
+}
+
+.game-tv__hint {
+  margin-top: 2px;
+  font-size: clamp(9px, 1.5vmin, 13px);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .08em;
+  opacity: .45;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-tv__team b[data-score-drag] { transition: none; }
 }

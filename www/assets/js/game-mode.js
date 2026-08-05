@@ -5,6 +5,7 @@ import { qsa } from '../../utils/helpers.js';
 let match = null;
 let countdownInterval = null;
 let gameTimerInterval = null;
+let roundInterval = null;
 let matchObserver = null;
 let isGameActive = false;
 let tvWakeLock = null;
@@ -61,7 +62,7 @@ function teamListHtml(players) {
 
 function renderTeams() {
   renderTeamsEmpty();
-  const empty = '<div class="game-team-card__empty">Aguardando sorteio...</div>';
+  const empty = '<div class="game-team-card__empty">Ainda não sorteou</div>';
   const a = $id('teamAPlayers');
   const b = $id('teamBPlayers');
   if (a) a.innerHTML = teamOnSide('A') ? teamListHtml(teamOnSide('A').players) : empty;
@@ -137,7 +138,8 @@ function updatePreGame(m) {
   renderPlayers(m.players.confirmed, $id('gameConfirmedList'), true);
   renderPlayers(m.players.pending, $id('gamePendingList'), false);
   renderTeams();
-  setAll('[data-game-clock-label]', 'Sua partida começa em');
+  renderRoundClock();
+  renderRoundControls();
 
   if (countdownInterval) clearInterval(countdownInterval);
   updateCountdown(m);
@@ -175,7 +177,6 @@ function updateDuringGame(m) {
   $id('gamePostPhase').style.display = 'none';
   renderPhaseDots('during-game');
 
-  setAll('[data-game-clock-label]', 'Tempo restante');
   setAll('[data-game-countdown-unit]', '');  // o valor ja e mm:ss
   const halfNames = ['', '1º tempo', '2º tempo'];
   $id('gameHalf').textContent = halfNames[m.currentHalf] || `${m.currentHalf}º tempo`;
@@ -191,6 +192,11 @@ function updateDuringGame(m) {
   renderRoundControls();
   syncTeamLabels();
 
+  // A contagem regressiva da FASE morre aqui. Sem isto ela continua viva
+  // escrevendo '00:00' a cada segundo por cima do cronometro da rodada, e o
+  // relogio pisca entre o valor certo e zero.
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = null;
   if (gameTimerInterval) clearInterval(gameTimerInterval);
   tickDuringGame(m);
   gameTimerInterval = setInterval(() => tickDuringGame(m), 500);
@@ -220,7 +226,6 @@ function updatePostGame(m) {
   $id('gamePostPhase').style.display = '';
   renderPhaseDots('post-game');
 
-  setAll('[data-game-clock-label]', 'Partida encerrada');
   setAll('[data-game-countdown]', '00:00');
   setAll('[data-game-countdown-unit]', '');
   $id('gameFinalScoreA').textContent = m.score.teamA;
@@ -277,7 +282,11 @@ function switchPhase(phase) {
    ?partida=fim sao partidas diferentes — sem isso o placar de um demo
    vazaria para o outro. */
 function matchStateKey() {
-  return match ? `${match.id}:${match.startTimestamp}` : null;
+  /* So o id. Antes entrava tambem o startTimestamp, que e recalculado na
+     carga do modulo (Date.now() + offset do demo) — entao a chave mudava a
+     cada F5 e o estado salvo NUNCA casava. Placar, times e cronometro
+     sumiam em silencio a cada recarga. */
+  return match ? String(match.id) : null;
 }
 
 function saveMatchState() {
@@ -305,10 +314,11 @@ function restoreMatchState() {
   match.rounds = saved.rounds || [];
   match.roundNumber = saved.roundNumber || 1;
   match.round = saved.round || match.round;
-  // Um cronometro que ficou "rodando" enquanto o app estava fechado
-  // contaria o tempo parado — retoma pausado, com o acumulado certo.
+  /* Retoma PAUSADO, sem somar o tempo em que o app esteve fechado. O codigo
+     anterior dizia fazer isso no comentario e fazia o contrario: somava a
+     ausencia inteira, entao sair 15 minutos com uma rodada de 10 rodando
+     devolvia 00:00. */
   if (match.round?.running) {
-    match.round.elapsedMs += Date.now() - (match.round.startedAt || Date.now());
     match.round.startedAt = null;
     match.round.running = false;
   }
@@ -596,12 +606,31 @@ function renderRoundControls() {
   });
 }
 
+/* O cronometro da rodada precisa de tick PROPRIO.
+
+   Antes ele dependia de gameTimerInterval, que so nasce dentro de
+   updateDuringGame — ou seja, so quando a partida ja comecou. No caso
+   padrao (partida daqui a 25 min, fase pre-game) apertar Iniciar trocava o
+   rotulo do botao e o numero nunca se mexia. Era literalmente impossivel
+   cronometrar antes do horario da reserva. */
+function startRoundTicker() {
+  if (roundInterval) clearInterval(roundInterval);
+  roundInterval = setInterval(renderRoundClock, 250);
+}
+
+function stopRoundTicker() {
+  if (roundInterval) clearInterval(roundInterval);
+  roundInterval = null;
+}
+
 function startRound() {
   const r = roundState();
   if (r.running) return;
   if (roundRemainingMs() <= 0) r.elapsedMs = 0;
   r.startedAt = Date.now();
   r.running = true;
+  startRoundTicker();
+  renderRoundClock();
   renderRoundControls();
   saveMatchState();
 }
@@ -612,6 +641,8 @@ function pauseRound() {
   r.elapsedMs += Date.now() - (r.startedAt || Date.now());
   r.startedAt = null;
   r.running = false;
+  stopRoundTicker();
+  renderRoundClock();
   renderRoundControls();
   saveMatchState();
 }
@@ -626,10 +657,11 @@ function resetRound(opts) {
   r.elapsedMs = 0;
   r.startedAt = null;
   r.running = false;
+  stopRoundTicker();
   renderRoundClock();
   renderRoundControls();
   if (!opts || !opts.silent) {
-    window.pqToast?.('Cronometro zerado');
+    window.pqToast?.('Zerado');
     saveMatchState();
   }
 }
@@ -640,6 +672,7 @@ function setRoundDuration(min) {
   r.elapsedMs = 0;
   r.startedAt = null;
   r.running = false;
+  stopRoundTicker();
   renderRoundClock();
   renderRoundControls();
   saveMatchState();
@@ -692,11 +725,88 @@ function initGameTabs() {
 // Fullscreen, trava de orientacao e wake lock sao todos best-effort: cada um
 // falha em alguma plataforma e nenhum deles e necessario — a rotacao real
 // vem do CSS. Por isso os tres em try/catch separados.
+/* Placar por arraste, no Modo placar.
+
+   Nao existia nenhum handler de gesto no projeto — este e o primeiro. Tres
+   cuidados que fazem a diferenca no meio de um jogo:
+
+   - LIMIAR de 40px antes de contar o primeiro gol. Toque parado ou tremida
+     de mao nao viram placar.
+   - setPointerCapture, para o dedo poder sair de cima do numero sem soltar
+     o gesto no meio.
+   - o eixo e travado no primeiro movimento: se a pessoa comecou arrastando
+     de lado, nao vira gol nenhum. Evita gol acidental ao tentar rolar.
+
+   Cada 40px arrastados = 1 gol, entao da para somar varios num gesto so. */
+const DRAG_STEP = 40;
+
+function bindScoreDrag() {
+  document.querySelectorAll('[data-score-drag]').forEach((el) => {
+    if (el.dataset.dragBound) return;
+    el.dataset.dragBound = '1';
+
+    let inicioY = 0;
+    let inicioX = 0;
+    let aplicados = 0;
+    let eixo = null;
+
+    let arrastando = false;
+
+    el.addEventListener('pointerdown', (event) => {
+      inicioY = event.clientY;
+      inicioX = event.clientX;
+      aplicados = 0;
+      eixo = null;
+      arrastando = true;
+      // A captura e conveniencia, nao pre-requisito: em alguns navegadores
+      // ela recusa, e travar o gesto atras dela mataria o arraste inteiro.
+      try { el.setPointerCapture(event.pointerId); } catch (erro) { /* segue sem */ }
+      el.classList.add('is-dragging');
+    });
+
+    el.addEventListener('pointermove', (event) => {
+      if (!arrastando) return;
+      const dy = inicioY - event.clientY;
+      const dx = event.clientX - inicioX;
+
+      if (!eixo) {
+        if (Math.abs(dy) < 12 && Math.abs(dx) < 12) return;
+        eixo = Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x';
+      }
+      if (eixo !== 'y') return;
+      event.preventDefault();
+
+      const passos = Math.trunc(dy / DRAG_STEP);
+      if (passos === aplicados) return;
+      const delta = passos - aplicados;
+      aplicados = passos;
+      stepScore(el.dataset.scoreDrag, delta);
+      navigator.vibrate?.(12);
+    });
+
+    const soltar = (event) => {
+      arrastando = false;
+      el.classList.remove('is-dragging');
+      try { el.releasePointerCapture(event.pointerId); } catch (erro) { /* ja solto */ }
+    };
+    el.addEventListener('pointerup', soltar);
+    el.addEventListener('pointercancel', soltar);
+
+    // Teclado: o gesto nao pode ser o unico caminho.
+    el.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowUp') { event.preventDefault(); stepScore(el.dataset.scoreDrag, 1); }
+      if (event.key === 'ArrowDown') { event.preventDefault(); stepScore(el.dataset.scoreDrag, -1); }
+    });
+  });
+}
+
 async function openTvMode() {
   const el = $id('gameTvMode');
   if (!el) return;
   el.hidden = false;
-  document.body.classList.add('game-tv-open');
+  document.body.classList.add('is-tv-open');
+  bindScoreDrag();
+  renderRoundControls();
   try { await document.documentElement.requestFullscreen?.(); } catch (e) { /* recusado: segue */ }
   try { await screen.orientation?.lock?.('landscape'); } catch (e) { /* iOS sempre recusa */ }
   try { tvWakeLock = await navigator.wakeLock?.request('screen'); } catch (e) { /* sem suporte */ }
@@ -705,7 +815,7 @@ async function openTvMode() {
 async function closeTvMode() {
   const el = $id('gameTvMode');
   if (el) el.hidden = true;
-  document.body.classList.remove('game-tv-open');
+  document.body.classList.remove('is-tv-open');
   try { screen.orientation?.unlock?.(); } catch (e) { /* nao travou */ }
   try { if (document.fullscreenElement) await document.exitFullscreen?.(); } catch (e) { /* nada */ }
   try { await tvWakeLock?.release(); } catch (e) { /* nada */ }
@@ -876,6 +986,7 @@ export function isInGameMode() {
 export function destroyGame() {
   if (countdownInterval) clearInterval(countdownInterval);
   if (gameTimerInterval) clearInterval(gameTimerInterval);
+  stopRoundTicker();
   // Sair da rota com o placar aberto deixaria a pessoa presa em tela cheia
   // e travada em paisagem — o overlay some junto com o fragmento da rota.
   closeTvMode();
