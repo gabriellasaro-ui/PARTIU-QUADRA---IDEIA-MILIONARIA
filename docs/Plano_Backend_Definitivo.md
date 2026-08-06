@@ -120,7 +120,7 @@ backend/app/
 ### 2.9 Plataforma/telemetria
 
 - **audit_logs** — id, actor_id, actor_role, action, entity_type, entity_id, arena_id, correlation_id, data jsonb.
-- **domain_events** (outbox) — id, event_type (lista §13 da documentação), occurred_at, actor_id, actor_role, arena_id, entity_type, entity_id, correlation_id, data jsonb, delivered_at (consumido pelo dispatch → FCM + WS + notificações).
+- **domain_events** (outbox) — id, event_type (lista §13 da documentação), occurred_at, actor_id, actor_role, arena_id, entity_type, entity_id, correlation_id, data jsonb, delivered_at. **Fase 7 adiada**: a emissão é **direta** nos mutators (notificação in-app + WS + push no pós-commit, com `ignore_result=True`); o outbox entra quando houver múltiplos consumidores e necessidade de garantia de entrega.
 
 ### 2.10 Geo
 
@@ -162,7 +162,7 @@ backend/app/
   - Expirar cotações/slots `pending_payment` não pagos (a cada minuto).
   - Concluir reservas após o horário (`→ completed`).
   - Gerar `settlements` semanais e marcar repasses.
-  - Enviar push FCM em massa via outbox de `domain_events`.
+  - Enviar push FCM em massa (quando houver outbox `domain_events`; na F7 o dispatch é direto nos mutators).
   - Limpeza de sessões/notificações antigas.
 - **Assíncronas:** dispatch de push (FCM), processamento de webhook de pagamento (idempotente), notificações in-app, upload/processamento de mídia.
 
@@ -179,13 +179,16 @@ backend/app/
 ## 7. Push notifications (Firebase FCM)
 
 - Plugin **`@capacitor/push-notifications`** no `www-usuario` (Android `google-services.json`, iOS APNs, web VAPID).
-- `POST /api/devices` registra `fcm_token` por usuário (tabela `user_devices`).
-- Serviço de notificação (Celery) envia por **tópico por usuário** (`user:{id}`) via firebase-admin.
-- **Notificação de duas vias (fluxo central do produto):**
-  1. `booking.requested` → push + notificação in-app **ao dono da arena** ("Nova solicitação").
-  2. Dono aprova → `booking.confirmed` → push + notificação **ao jogador** ("Reserva confirmada").
-  3. Recusa → `booking.rejected` → jogador recebe push + reabre chat sugerido.
-  4. `payment.confirmed` → ambos; `message.new` → destinatário da conversa.
+- `POST /api/devices` registra `fcmToken` por usuário (tabela `user_devices`; upsert, token único, transferência de dono).
+- **Provider plugável** (`backend/app/services/push/`): `PushProvider` ABC + `MockPushProvider` (padrão, sem rede, grava em `push_logs`) + `FcmPushProvider` (import lazy de `firebase-admin`, ativo só com `FCM_CREDENTIALS_PATH`; sem credencial → 503). Seleção por `PUSH_PROVIDER=mock|fcm`.
+- Celery envia **por device** (`user_devices` do destinatário) via task `enviar_notificacao_push(user_id, notification_id, type, title, body, data)` com `ignore_result=True`; cada tentativa grava `push_logs`. Fire-and-forget: sem `ignore_result=True` o backend Redis faz subscribe e trava com o broker fora do ar.
+- **Notificação de duas vias (fluxo central do produto), eventos `notifications.type` implementados na F7:**
+  1. `payment.confirmed` → push + notificação in-app **ao jogador e ao dono da arena** ("Pagamento confirmado").
+  2. Dono aprova → `booking.approved` → push + notificação **ao jogador** ("Reserva confirmada").
+  3. Recusa → `booking.rejected` → jogador ("Reserva não aceita").
+  4. `booking.cancelled` → jogador + dono; `booking.completed` e `booking.expired` → jogador.
+  5. `message.new` → push **ao destinatário da conversa**, sem linha in-app (badge do chat).
+- Todos os eventos acima também disparam WebSocket `notification.new` (+ `booking.updated`/`message.new` já existentes).
 
 ---
 
@@ -227,7 +230,7 @@ Deploy em **EasyPanel** (VPS + Docker + Traefik). Todos os containers vivem no E
 |---|---|---|
 | PostgreSQL | template do EasyPanel | credenciais entram em `DATABASE_URL` |
 | Redis | template do EasyPanel | credenciais entram em `REDIS_URL` |
-| api | repositório GitHub (público) | Dockerfile: `backend/Dockerfile`, porta 8000, domínio `api.partiuquadra.com.br` |
+| api | repositório GitHub (público) | Dockerfile: `backend/Dockerfile`, porta 8000, domínio `api.qadras.com.br` |
 | worker | mesmo repositório | comando `celery -A app.core.celery_app:celery_app worker` |
 | beat | mesmo repositório | comando `celery -A app.core.celery_app:celery_app beat` |
 
@@ -239,7 +242,7 @@ Deploy em **EasyPanel** (VPS + Docker + Traefik). Todos os containers vivem no E
 DATABASE_URL=postgresql+psycopg://USUARIO:SENHA@<app-postgres>:5432/qadras
 REDIS_URL=redis://:SENHA@<app-redis>:6379/0
 JWT_SECRET=<openssl rand -hex 32>
-CORS_ORIGINS=https://app.partiuquadra.com.br,https://gerente.partiuquadra.com.br,https://admin.partiuquadra.com.br
+CORS_ORIGINS=https://app.qadras.com.br,https://gerente.qadras.com.br,https://admin.qadras.com.br
 ENVIRONMENT=production
 TIMEZONE=America/Sao_Paulo
 ```
@@ -271,7 +274,7 @@ Referência completa: `backend/.env.example`. Nenhum segredo entra no repositór
 4. **Reservas:** cotação, lock de slot, criação idempotente, máquina de estados, cancelamento, WS de status.
 5. **Pagamentos:** adapter mock + webhook idempotente + ledger + `GET /api/carteira`.
 6. **Mensagens:** conversas (arena/user/club), WS, badges, autorização de vínculo (§3.2 da documentação).
-7. **Notificações:** FCM, `user_devices`, notificações in-app, eventos de domínio → dispatch.
+7. **Notificações:** ~~FCM, `user_devices`, notificações in-app, eventos de domínio → dispatch~~ → **concluída na F7**: `notifications`/`user_devices`/`push_logs`, API `/api/notifications` + `/api/devices`, push plugável (mock/FCM), hooks nos mutators, WS `notification.new`. Outbox `domain_events` adiado (emissão direta).
 8. **Gerente:** overview, agenda, aprovação, CRUD quadras, financeiro/repasse, mensalistas, cupons, avaliações.
 9. **Clubes/peladas/partidas:** CRUD, presença, partida ativa, placar/eventos.
 10. **Admin:** overview/arenas/reservas/clubs/users + ações com auditoria.

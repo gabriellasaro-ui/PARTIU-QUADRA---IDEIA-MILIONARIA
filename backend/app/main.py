@@ -18,10 +18,15 @@ from .api import (
     perfil,
     favoritos,
     auth,
+    payments,
+    notifications,
+    devices,
+    ws,
 )
 from .core.config import settings
 from .core.database import check_database
 from .core.redis import ping_redis
+from .core.ws import manager
 
 app = FastAPI(
     title=settings.app_name,
@@ -45,6 +50,20 @@ app.include_router(carteira.router)
 app.include_router(perfil.router)
 app.include_router(favoritos.router)
 app.include_router(auth.router)
+app.include_router(payments.router)
+app.include_router(notifications.router)
+app.include_router(devices.router)
+app.include_router(ws.router)
+
+
+@app.on_event("startup")
+def _start_ws_subscriber():
+    manager.start_subscriber()
+
+
+@app.on_event("shutdown")
+def _stop_ws_subscriber():
+    manager.stop_subscriber()
 
 
 @app.get("/api/health")

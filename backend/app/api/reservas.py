@@ -1,91 +1,144 @@
-from fastapi import APIRouter
-from ..core import data, store
+"""Reservas do jogador + aprovacao/recusa do gerente (Fase 4).
+
+Rotas:
+  POST /api/reservas/quote        — cotacao (preco server-side)
+  POST /api/reservas              — cria reserva/grupo mensalista (Idempotency-Key)
+  GET  /api/reservas              — lista do jogador ({reservas:[...]})
+  GET  /api/reservas/{id}         — detalhe + breakdown
+  GET  /api/reservas/{id}/events  — eventos de status (polling; WS na Fase 6)
+  POST /api/reservas/{id}/pagar   — mock F4: pending_payment -> requested
+  POST /api/reservas/{id}/aprovar | /recusar — gerente dono da arena
+  POST /api/reservas/{id}/cancelar
+  POST /api/reservas/{id}/avaliar — so reserva concluida, 1 por booking
+
+Dependencias de Idempotency-Key vêm do header; replay devolve a reserva
+original com replay=true.
+"""
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy.orm import Session
+
+from ..auth.deps import get_current_manager, get_current_user
+from ..core.database import get_db
+from ..models import User
+from ..schemas.reservas import ActionBody, BookingCreate, QuoteRequest, ReviewCreate
+from ..services import bookings as svc
 
 router = APIRouter(prefix="/api/reservas", tags=["reservas"])
 
 
+@router.post("/quote")
+def cotacao(
+    body: QuoteRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return svc.quote_booking(
+        db, court_id=body.quadraId, date=body.data, hora=body.hora,
+        dur=body.dur, plan=body.plano,
+    )
+
+
+@router.post("")
+def criar_reserva(
+    body: BookingCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+):
+    created, replay = svc.create_booking(
+        db,
+        user=user,
+        court_id=body.quadraId,
+        date=body.data,
+        hora=body.hora,
+        dur=body.dur,
+        plan=body.plano,
+        weekday=body.dia,
+        payment_method=body.pagamento,
+        idempotency_key=idempotency_key,
+    )
+    return {"reservas": [svc.serialize(db, b) for b in created], "replay": replay}
+
+
 @router.get("")
-def listar_reservas():
-    return {"reservas": data.reservas_jogador()}
-
-
-@router.get("/todas")
-def todas_reservas():
-    return {"reservas": store.reservas()}
+def listar_reservas(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return {"reservas": svc.list_for_player(db, user)}
 
 
 @router.get("/{rid}")
-def detalhe_reserva(rid: int):
-    r = store.get_reserva(rid)
-    if not r:
-        return {"error": "Reserva nao encontrada"}, 404
-    comissao = round(r["valor"] * data.TAXA_PLATAFORMA, 2)
-    repasse = round(r["valor"] - comissao, 2)
-    conv = store.conversa_arena_cliente(r["cliente"])
-    return {
-        "r": r,
-        "comissao": comissao,
-        "repasse": repasse,
-        "taxa": int(data.TAXA_PLATAFORMA * 100),
-        "chat_cid": conv["id"] if conv else None,
-    }
+def detalhe_reserva(
+    rid: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    booking, court, arena = svc.get_reservation(db, user, rid)
+    return {"reserva": svc.serialize(db, booking), "events": svc.get_events(db, user, rid)}
 
 
-@router.post("/{rid}/status")
-def atualizar_status(rid: int, status: str):
-    r = store.set_status(rid, status)
-    if not r:
-        return {"error": "Reserva nao encontrada"}, 404
-    return {"reserva": r}
-
-
-@router.post("/{rid}/aprovar")
-def aprovar_reserva(rid: int):
-    r = store.set_status(rid, "Confirmado")
-    if not r:
-        return {"error": "Reserva nao encontrada"}, 404
-    store.avisar_cliente(
-        r,
-        "Boa notícia! Sua reserva na %s para %s (%s) foi confirmada. Te espero na quadra."
-        % (r["quadra"], r["data"], r["hora"]),
-    )
-    return {"reserva": r, "message": "Reserva aprovada"}
-
-
-@router.post("/{rid}/recusar")
-def recusar_reserva(rid: int):
-    r = store.set_status(rid, "Recusada")
-    if not r:
-        return {"error": "Reserva nao encontrada"}, 404
-    store.avisar_cliente(
-        r,
-        "Oi! Infelizmente não consigo confirmar sua reserva na %s para %s (%s). Me chama aqui que a gente acha outro horário."
-        % (r["quadra"], r["data"], r["hora"]),
-    )
-    return {"reserva": r, "message": "Reserva recusada"}
+@router.get("/{rid}/events")
+def eventos_reserva(
+    rid: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return {"events": svc.get_events(db, user, rid)}
 
 
 @router.post("/{rid}/pagar")
-def pagar_reserva(rid: int):
-    r = store.set_status(rid, "Pago")
-    if not r:
-        return {"error": "Reserva nao encontrada"}, 404
-    store.avisar_cliente(
-        r,
-        "Recebemos o pagamento da sua reserva na %s (%s, %s). Está tudo certo, bom jogo!"
-        % (r["quadra"], r["data"], r["hora"]),
-    )
-    return {"reserva": r, "message": "Pagamento confirmado"}
+def pagar_reserva(
+    rid: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    booking, payment, replay = svc.pay_booking(db, user, rid)
+    return {
+        "reserva": svc.serialize(db, booking),
+        "payment": svc.serialize_payment(payment),
+        "replay": replay,
+    }
+
+
+@router.post("/{rid}/aprovar")
+def aprovar_reserva(
+    rid: str,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    booking = svc.approve_booking(db, user, rid)
+    return {"reserva": svc.serialize(db, booking)}
+
+
+@router.post("/{rid}/recusar")
+def recusar_reserva(
+    rid: str,
+    body: ActionBody | None = None,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    booking = svc.reject_booking(db, user, rid, reason=body.motivo if body else None)
+    return {"reserva": svc.serialize(db, booking)}
 
 
 @router.post("/{rid}/cancelar")
-def cancelar_reserva(rid: int):
-    r = store.set_status(rid, "Cancelada")
-    if not r:
-        return {"error": "Reserva nao encontrada"}, 404
-    store.avisar_cliente(
-        r,
-        "Precisei cancelar sua reserva na %s (%s, %s). Desculpa o transtorno — me chama aqui para remarcar."
-        % (r["quadra"], r["data"], r["hora"]),
-    )
-    return {"reserva": r, "message": "Reserva cancelada"}
+def cancelar_reserva(
+    rid: str,
+    body: ActionBody | None = None,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    booking = svc.cancel_booking(db, user, rid, reason=body.motivo if body else None)
+    return {"reserva": svc.serialize(db, booking)}
+
+
+@router.post("/{rid}/avaliar")
+def avaliar_reserva(
+    rid: str,
+    body: ReviewCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    review = svc.create_review(db, user, rid, body.nota, body.comentario)
+    return {"ok": True, "reviewId": str(review.id)}

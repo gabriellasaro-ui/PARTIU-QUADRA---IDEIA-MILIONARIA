@@ -16,3 +16,7 @@ celery==5.4.0
 bcrypt==4.2.0
 pyjwt==2.9.0
 google-auth==2.34.0
+
+# Push (Fase 7) — FCM real; import lazy apenas quando FCM_CREDENTIALS_PATH
+# estiver configurado. O provider mock nao importa firebase-admin.
+firebase-admin==6.5.0

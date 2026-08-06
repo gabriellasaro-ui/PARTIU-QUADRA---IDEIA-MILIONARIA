@@ -286,9 +286,9 @@ Arquivo: `www/pages/mensagens.html`; renderização: `renderMessages()`.
 
 **Eventos:** abrir lista; selecionar conversa; carregar thread; digitar; enviar; impedir mensagem vazia; atualizar badge; tratar conversa indisponível; voltar; fazer polling/receber nova mensagem.
 
-**Contrato atual:** `GET /api/mensagens?role=jogador`, `GET /api/mensagens/:id`, `POST /api/mensagens/:id/enviar?texto=&de=` e `GET /api/mensagens/nav/badges`. A API atual aceita `de` vindo do cliente; isso precisa ser removido e inferido pela sessão.
+**Contrato atual:** `GET /api/mensagens?role=jogador`, `GET /api/mensagens/:id`, `POST /api/mensagens/:id/enviar?texto=` e `GET /api/mensagens/nav/badges`, mais `POST /api/mensagens/:id/read` (Fase 6). O `de` vindo do cliente é **ignorado** — a identidade/remetente vêm do token. Serialização no shape do SPA: `{id, venueId, venue, subject, messages:[{from:'player'|'venue', text, time}], unread}`.
 
-**Regra atual de produto:** a interface informa que mensagens ficam disponíveis após uma reserva confirmada. Essa autorização deve ser implementada no serviço de domínio e verificada em cada leitura/envio.
+**Regra atual de produto:** a conversa só existe a partir do pagamento confirmado do booking (criada no `confirm_payment`); essa autorização é verificada no domínio em cada leitura/envio. Tempo real via `WS /ws?token=` com eventos `message.new` e `booking.updated`.
 
 ### 4.11 Perfil — `#perfil`
 
@@ -345,6 +345,23 @@ Arquivos: `www/pages/game.html`, `assets/js/game-mode.js`, `assets/js/mobile.js`
 **Eventos dos times:** escolher de 2 a 6 times; sortear times; ajustar placar A/B; somar/remover gol; selecionar aba; abrir modo TV; fechar modo TV.
 
 **Persistência atual:** estado do jogo em `match_state` no storage local. Contratos chamados: `GET /api/partidas/ativa`, `GET /api/partidas/historico`, `PUT /api/partidas/:id/score`, `POST /goal`, `/card`, `/teams`, `/end`, `/rate`, `/confirmar`, `/atraso`, `/compartilhar-localizacao`, `/media` — todos precisam de router, permissão e regras de concorrência.
+
+### 4.16 Notificações — central de notificações (Fase 7)
+
+**Contratos implementados (Fase 7):** `GET /api/notifications` (lista, só as do usuário), `GET /api/notifications/unread-count` (badge), `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all` e `POST /api/devices` (registro do token de push `{fcmToken, platform}`; 401 sem token).
+
+**Eventos que geram notificação in-app + WebSocket `notification.new` + push:**
+
+| Evento | Tipo (`notifications.type`) | Destinatários | Título |
+|---|---|---|---|
+| Pagamento confirmado | `payment.confirmed` | jogador + dono da arena | "Pagamento confirmado" |
+| Aprovação do gerente | `booking.approved` | jogador | "Reserva confirmada" |
+| Recusa | `booking.rejected` | jogador | "Reserva não aceita" |
+| Cancelamento | `booking.cancelled` | jogador + dono da arena | "Reserva cancelada" |
+| Horário concluído | `booking.completed` | jogador | "Reserva concluída" |
+| Prazo expirado | `booking.expired` | jogador | "Reserva expirada" |
+
+**Regras:** `message.new` é push + `message.new` do chat **sem linha in-app** (o badge do chat cobre isso). Arenas sem dono não notificam o dono. Push é **plugável**: `PUSH_PROVIDER=mock` (padrão, grava em `push_logs` sem enviar) ou `fcm` (real, requer `FCM_CREDENTIALS_PATH`; sem credencial o provider responde 503). Cada tentativa de push gera uma linha em `push_logs` (auditoria). O token de push é upsert por usuário em `user_devices`; um token vindo de outro usuário é transferido para o dono atual.
 
 ## 5. Telas do jogador desktop
 

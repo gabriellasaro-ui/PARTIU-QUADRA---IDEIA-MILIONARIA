@@ -1,4 +1,4 @@
 window.__PQ_CONFIG__ = {
-  API_BASE_URL: 'https://api.partiuquadra.com.br',
+  API_BASE_URL: 'https://api.qadras.com.br',
   STORAGE_PREFIX: 'pq'
 };

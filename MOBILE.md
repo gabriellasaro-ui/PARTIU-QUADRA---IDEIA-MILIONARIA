@@ -30,7 +30,7 @@ A Play Store empacota a PWA como **TWA (Trusted Web Activity)** — um app Andro
 que abre a sua PWA em tela cheia. Ferramenta oficial: **Bubblewrap** (ou PWABuilder.com,
 versão sem terminal).
 
-Pré-requisitos: o site no ar em **HTTPS** com um domínio (ex.: `app.partiuquadra.com.br`)
+Pré-requisitos: o site no ar em **HTTPS** com um domínio (ex.: `app.qadras.com.br`)
 e conta de desenvolvedor Google Play (US$ 25, uma vez).
 
 ```bash
@@ -49,7 +49,7 @@ de URL do Chrome aparece dentro do app):
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "br.com.partiuquadra.app",
+    "package_name": "br.com.qadras.app",
     "sha256_cert_fingerprints": ["<SHA256_DO_BUBBLEWRAP>"]
   }
 }]

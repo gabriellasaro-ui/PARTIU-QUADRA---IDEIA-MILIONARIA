@@ -1,38 +1,34 @@
-from pydantic import BaseModel
-from typing import Optional
+"""DTOs de reservas (Fase 4).
+
+Contrato do app: GET /api/reservas -> {reservas:[{id, code, venueId, ...}]}.
+O cliente informa apenas quadra/data/hora/duracao/plano/dia; dinheiro e
+status sao sempre calculados e derivados pelo servidor.
+"""
+from pydantic import BaseModel, Field
 
 
-class Reserva(BaseModel):
-    id: int
-    cliente: str
-    telefone: str
-    quadra: str
-    data: str
-    hora: str
-    valor: float
-    status: str
+class QuoteRequest(BaseModel):
+    quadraId: str = Field(min_length=1)
+    data: str | None = None
+    hora: str = "19:00"
+    dur: int = Field(default=1, ge=1, le=3)
+    plano: str = "avulso"
 
 
-class ReservaUpdate(BaseModel):
-    status: str
+class BookingCreate(BaseModel):
+    quadraId: str = Field(min_length=1)
+    data: str | None = None
+    hora: str = "19:00"
+    dur: int = Field(default=1, ge=1, le=3)
+    plano: str = "avulso"
+    dia: int | None = Field(default=None, ge=0, le=6)
+    pagamento: str = "pix"
 
 
-class ReservaJogador(BaseModel):
-    id: int
-    nome: str
-    esporte: str
-    bairro: str
-    foto: str
-    valor: float
-    data: str
-    hora: str
-    status: str
-    status_class: str
+class ReviewCreate(BaseModel):
+    nota: int = Field(ge=1, le=5)
+    comentario: str | None = None
 
 
-class ReservaDetalhe(BaseModel):
-    r: dict
-    comissao: float
-    repasse: float
-    taxa: int
-    chat_cid: Optional[int] = None
+class ActionBody(BaseModel):
+    motivo: str | None = None

@@ -78,3 +78,36 @@ def get_current_admin(user: User = Depends(get_current_user)) -> User:
             detail="Acesso restrito a administradores",
         )
     return user
+
+
+def authenticate_ws(token: str | None, db: Session) -> User | None:
+    """Autentica um WebSocket pelo token de acesso (query ?token=)."""
+    if not token:
+        return None
+    try:
+        payload = decode_token(token)
+    except Exception:
+        return None
+    if payload.get("type") != TOKEN_TYPE_ACCESS:
+        return None
+    if _is_blacklisted(payload.get("jti")):
+        return None
+    try:
+        parsed_id = uuid.UUID(payload.get("sub", ""))
+    except (ValueError, TypeError):
+        return None
+    user = db.get(User, parsed_id)
+    if not user or user.deleted_at:
+        return None
+    return user
+
+
+def get_optional_user(
+    authorization: str | None = Header(None),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Igual a current_user, mas devolve None (em vez de 401) sem sessao."""
+    try:
+        return get_current_user(authorization=authorization, db=db)
+    except HTTPException:
+        return None

@@ -41,6 +41,18 @@ class Settings(BaseSettings):
     # R$116,40; Qadras fica R$14,40.
     player_fee_rate: float = 0.09
     arena_fee_rate: float = 0.03
+    booking_payment_expire_minutes: int = 15
+    booking_approval_expire_minutes: int = 15
+    booking_code_prefix: str = "PQ-"
+    payment_provider: str = "mock"
+    payment_mock_confirm_seconds: int = 15
+
+    # Push (Fase 7): "mock" por padrao (grava em push_logs, sem rede). O
+    # provider FCM entra quando FCM_CREDENTIALS_PATH apontar para o service
+    # account JSON do Firebase — como o login Google, vazio => não configurado.
+    push_provider: str = "mock"
+    fcm_credentials_path: str = ""
+    fcm_project_id: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:
