@@ -1,6 +1,6 @@
 # CHECKPOINT — Qadras Backend Definitivo
 
-Data: 06/08/2026 · Fases 1, 2, 3, 4, 5, 6 e 7 concluídas · Próxima: Fase 8 (Gerente)
+Data: 11/08/2026 · Fases 1, 2, 3, 4, 5, 6, 7, 8 e 9 concluídas · Próxima: Fase 10 (Admin)
 
 ## Decisões fixadas
 
@@ -172,15 +172,68 @@ Detalhes que os testes pegaram e já estão corrigidos:
 - `celery_app.send_task` sem `ignore_result=True` faz o backend Redis assinar o resultado e entrar em `retry_over_time` infinito com broker fora do ar → fire-and-forget com `ignore_result=True`.
 - `push_logs` recebe ids como string do worker → `_uuid()` normaliza para UUID no SQLite.
 
+## Fase 8 — Gerente (concluída)
+
+Decisões aprovadas pelo dono: **reserva manual com `user_id` nulo + `client_name/phone/email`** (sem auto-criar conta; sem chat/carteira para manuais), **cupons só CRUD do gerente** (aplicação no checkout fica para fase de pagamentos futura), **mensalista sem PATCH** (editar = cancelar/recriar), **settlements reais** (tabela própria + task semanal — nunca só leitura derivada). Financeiro sempre do ledger de `payments.confirmed` (nunca status visual).
+
+| Item | Status |
+|---|---|
+| `models/settlement.py` — `settlements` (arena_id, period_start/end, gross/commission/net_cents, bookings_count, status pending/paid/failed, due_at, paid_at, receipt_url) + `models/coupon.py` — `coupons` (arena_id, court_id nullable, code UNIQUE, discount_percent, active, expires_at, max_uses, used_count) | ✅ |
+| `models/booking.py` — `user_id` nullable + `client_name/client_phone/client_email`; `models/payment.py` — `user_id` nullable (Payment `provider=manual` não tem usuário) | ✅ |
+| Migração `i4c5d6e7f8a9` (fase 8 gerente) — SQL renderizado e aplicado no Postgres externo (ALTERs user_id → NULL, client_*, CREATE settlements/coupons) | ✅ |
+| `repositories/gerente.py` — tudo parte da arena do gerente (`arenas.owner_id`): bookings com cliente, `revenue_for_period` (ledger confirmado; comissão = 9% jogador + 3% arena; líquido = subtotal×0.97), settlements, coupons, courts, avaliações + distribuição 5→1, slots/ocupação, próximas | ✅ |
+| `services/gerente.py` — dashboard (KPIs hoje/semana, ocupação, bruto/comissão/repasse, ticket médio, pendências, próximas), agenda (semana `YYYY-MM-DD`, colunas/quadras/horas 8–23/eventos), reservas (lista + filtro status/q), reserva manual (`confirmed` + Payment `manual` confirmado, lock + overlap, `valor` override, 409 passado/ocupado), mensalistas (4 sessões semanais, list/sessões/cancelar grupo), financeiro (`today|7d|30d` + repasses), `generate_settlements` (semana anterior, nunca duplica arena+period_start), quadras (CRUD + esconder da vitrine), avaliações (list + resposta), cupons (CRUD, 409 código duplicado), perfil/config (settings.notifications), desativação (is_active=False + cancelamento das futuras) | ✅ |
+| `schemas/gerente.py` — DTOs camelCase (BookingCreate, MensalistaCreate com `dia` 0–6, CourtCreate/Update, AvaliacaoReply, CouponCreate, ArenaProfileUpdate, ArenaConfigUpdate, DesativacaoBody) | ✅ |
+| `api/gerente.py` reescrito (removeu mock `core/data`/`domain`/`store`): dashboard, agenda, reservas GET/POST, mensalistas GET/POST/sessoes/DELETE, financeiro, quadras GET/POST/GET{PATCH `{id}`, avaliacoes + resposta, cupons GET/POST/DELETE, perfil GET/PATCH, configuracoes GET/PATCH, desativacao — tudo `get_current_manager` + checagem da arena (403/404 cross-arena) | ✅ |
+| Celery: task `gerar_settlements_semanais` + beat `crontab(day_of_week=0, hour=3)` (segunda 03:00) | ✅ |
+| Seed idempotente: payments confirmados do ledger (F8), reserva manual "Time da Firma" + Payment manual, cupom `QADRAS10`, settlement pago demo | ✅ |
+| Verificação SQLite (77 asserts): 401/403/404 (jogador, gerente sem arena), dashboard, agenda, reserva manual (conflito 409, passado 409, outra arena 404, override de valor), mensalistas (4 sessões, conflito, cancelar grupo), financeiro + `generate_settlements` (cria ≥1, idempotente 0), quadras (CRUD, escondida some da vitrine), avaliações (dist/media/resposta), cupons (duplicado 409, delete), perfil/config, desativação (cancelou futuras, some da vitrine) | ✅ |
+| Regressão F4–F7 (24 asserts): criar/pagar/webhook confirmado → conversa + notificação, replay webhook, aprovar, events, mensagem, push mock → push_logs, expire/complete/avaliação, dashboard F8 | ✅ |
+| Postgres externo: `alembic upgrade head` → `i4c5d6e7f8a9` + seed (3 payments, 1 manual, 1 coupon, 1 settlement) idempotente | ✅ |
+
+Detalhes que os testes pegaram e já estão corrigidos:
+- `payments.user_id` era NOT NULL no model F5 — a reserva manual exigiu `nullable` no model **e** ALTER na migração F8.
+- `services/gerente.py` importava `TERMINAL` de `..models` (não existe lá) e usava `STATUS_EXPIRED` sem importar — corrigidos.
+
+**Não commitado** — Fases 1–8 pendentes em `git status` (aguardando confirmação).
+
+## Fase 9 — Clubes / Peladas / Partidas (Game Day) (concluída)
+
+Decisões aprovadas pelo dono: **um clube por usuário** (409 ao entrar em outro sem sair; membro nasce do perfil; sair sendo o último apaga o clube; apagar só dono com clube vazio), **pelada nasce só da reserva** (`reservationCode`/`bookingId`; idempotente por `(source_booking_id, date_iso)`; mensalista gera 4 com +7 dias; data/hora/quadra/esporte sempre derivados da reserva no servidor; `avulsa` a menos que `clubId` explícito), **partida materializada sob demanda** no `GET /api/partidas/ativa` (id estável; janela 48h; exclui reservas cuja partida já encerrou; sem match → `null`), fase `pre/during/post` calculada por timestamps (nunca persistida), código de convite 6 chars sem hífen com alfabeto sem ambíguos (I/L/O/0/1) e match exato.
+
+| Item | Status |
+|---|---|
+| `models/club.py` — `clubs` (code UNIQUE 6 chars, sport, city, is_active), `club_members` (UNIQUE club+user, role dono/membro, bornFrom, since), `club_messages` (texto≤500, author, read_by JSON) | ✅ |
+| `models/pelada.py` — `peladas` (UNIQUE `(source_booking_id, date_iso)`, kind avulsa/clube, arena, sport, date_iso, start_time, duration_min, max_players, organizer, plan, reservation_code, status) + `pelada_attendance` (UNIQUE pelada+user, sim/talvez/nao) | ✅ |
+| `models/match.py` — `matches` (booking_id UNIQUE, status scheduled/live/ended, scores JSON, teams JSON `{version,rule,list,onCourt,queue}`, ratings JSON `{userId:stars}`, venue_id/venue_name/venue_photo, organizer_name/phone) + `match_teams/players/events/media` (gol/cartão/tempo/fase), mídia por URL (`type` photo\|video) | ✅ |
+| Migração `j5d6e7f8a9b1` (fase 9) — SQL renderizado e aplicado no Postgres externo (10 tabelas + índices + FKs) | ✅ |
+| `repositories/clubs.py` (get/list/by_code/is_member/my_club/join/leave/remove/delete/mensagens), `repositories/peladas.py` (by_booking_date/upsert_attendance/visíveis), `repositories/matches.py` (list_candidate_bookings 48h excluindo encerradas, players/events/media, snapshots) | ✅ |
+| `services/clubs.py` — criar (409 `active` já existe), código de convite gerado, entrar (409 em outro clube; membro nasce do perfil), sair (último → apaga clube), remover membro (só dono), apagar (só dono, 409 com membros), mural ler/postar (403 não-membro, texto≤500) | ✅ |
+| `services/peladas.py` — criar da reserva (403 não é dono/estado inválido, 409 status, 404 sem código, replay idempotente), presença (403 não-membro em pelada de clube, 422 valor), notificação `pelada.criada` p/ membros do clube + `pelada.presenca` p/ organizador | ✅ |
+| `services/matches.py` — materialização sob demanda na `ativa`, fase por timestamps (normalizando naive-UTC do SQLite com `_as_local`), placar/gol/cartão/times/fim só organizador (403), confirmar/atraso/nota/mídia/localização de participantes, `end_match` → `partida.encerrada` p/ todos | ✅ |
+| `api/clubes.py` (`GET/POST /api/clubes` + `?codigo=`, `POST /:id/entrar\|sair`, `DELETE /:id`, `DELETE /:id/membros/:mid`, `GET/POST /:id/mensagens`), `api/peladas.py` (`GET/POST /api/peladas`, `POST /:id/presenca`), `api/partidas.py` (`GET /ativa\|historico`, `PUT /:id/score`, `POST /:id/goal\|card\|teams\|end\|rate\|confirmar\|atraso\|compartilhar-localizacao\|media`) — app passa a 90 rotas /api | ✅ |
+| Constantes de notificação F9 + seed idempotente: clube "Bola na Rede F.C." (code BANRED, 5 membros), 5 peladas (1 avulsa + 4 mensalistas), 1 partida da reserva avulsa confirmada | ✅ |
+| Verificação SQLite (99 asserts): clube (convite exato, 1 por usuário, membro nasce do perfil, sair apaga último, dono remove/apaga, mural), pelada (5 seedadas, replay, data/hora derivadas, presença livre/clube, 422/403/404), partida (ativa com id estável, fase pre/during/post, permissões 403, placar/gol/cartão/times/fim, encerrada sai da ativa, histórico, presença/atraso/nota/mídia/localização), notificações + regressão F4–F8 | ✅ |
+| Postgres externo: `alembic upgrade head` → `j5d6e7f8a9b1` + seed idempotente (1 clube/5 membros, 5 peladas, 1 partida) | ✅ |
+
+Detalhes que os testes pegaram e já estão corrigidos:
+- `bookings_repo.get_booking` retorna 3-tupla `(Booking, Court, Arena)` — `_is_visible`/`_audience` acessavam `booking.user_id` direto (AttributeError) → normalizar com `row[0]`.
+- Organizador da partida com `client_name` nulo (reserva via app) → fallback para o nome do usuário (antes vinha `null` no ACTIVE_MATCH).
+- Partida encerrada reaparecia na `ativa` (a reserva continua confirmada) → candidatos excluem bookings com `Match.status == ended`.
+- Pelada sem `clubId` assumia o clube do usuário (`my_club`) → contrato define `avulsa`; `clube` só com `clubId` explícito.
+- `matches.ratings` usa chave string (uuid str) — o `ncount` do harness compara `uuid.UUID` direto (falhava com `'str' object has no attribute 'hex'`); na API o `#rate` normaliza.
+
+**Não commitado** — Fases 1–9 pendentes em `git status` (aguardando confirmação).
+
 ## Pendências futuras (resumo)
 
 | Fase | Domínio |
 |---|---|
-| 8 | Gerente (dashboard, agenda, aprovação, **financeiro/settlements**, mensalistas) |
-| 9 | Clubes/peladas/partidas + mensagens clubes/jogador↔jogador |
 | 10 | Admin (overview, arenas, reservas, clubes, pessoas) |
 | 11 | Frontend wiring + plugins Capacitor (Push, Geolocation, WebSocket no `venues.js`/`mobile.js` — trocar `Number(id)` por string nos ids de conversa) |
 | 12 | Hardening (testes, rate limit, deploy) |
+
+Fora de escopo da F8 (adiados): wire do frontend gerente (F11), aplicação de cupom no checkout do jogador (fase de pagamentos futura), upload de mídia das quadras, provedor Pix real (interface pronta — `payment_provider` plugável), repasse automático via provedor (task grava settlement; o pagamento ao dono segue fora do backend).
 
 Fora de escopo da F7 (adiados): wire do frontend (F11), provider FCM real com credenciais (pronto — basta `FCM_CREDENTIALS_PATH`), outbox `domain_events` (quando houver consumidores múltiplos).
 

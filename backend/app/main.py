@@ -22,6 +22,9 @@ from .api import (
     notifications,
     devices,
     ws,
+    clubes,
+    peladas,
+    partidas,
 )
 from .core.config import settings
 from .core.database import check_database
@@ -54,6 +57,9 @@ app.include_router(payments.router)
 app.include_router(notifications.router)
 app.include_router(devices.router)
 app.include_router(ws.router)
+app.include_router(clubes.router)
+app.include_router(peladas.router)
+app.include_router(partidas.router)
 
 
 @app.on_event("startup")

@@ -32,7 +32,7 @@ class Payment(Base):
     booking_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("bookings.id"), unique=True
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), index=True
     )
     provider: Mapped[str] = mapped_column(String(20), default="mock")

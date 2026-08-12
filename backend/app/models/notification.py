@@ -40,6 +40,14 @@ NOTIF_BOOKING_EXPIRED = "booking.expired"
 # Push da mensagem: NAO vira linha in-app
 NOTIF_MESSAGE_NEW = "message.new"
 
+# Fase 9 — clubes/peladas/partidas
+NOTIF_CLUBE_ENTROU = "clube.entrou"
+NOTIF_PELADA_CRIADA = "pelada.criada"
+NOTIF_PELADA_PRESENCA = "pelada.presenca"
+NOTIF_PARTIDA_PRESENCA = "partida.presenca"
+NOTIF_PARTIDA_ATRASO = "partida.atraso"
+NOTIF_PARTIDA_ENCERRADA = "partida.encerrada"
+
 PUSH_STATUS_OK = "ok"
 PUSH_STATUS_ERRORED = "errored"
 

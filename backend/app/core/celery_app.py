@@ -5,6 +5,7 @@ agendamento (expirar sessoes, concluir reservas, gerar repasses, push FCM)
 e preenchido conforme as fases avancam.
 """
 from celery import Celery
+from celery.schedules import crontab
 
 from .config import settings
 
@@ -38,6 +39,12 @@ celery_app.conf.update(
         "confirmar-pagamentos-pendentes": {
             "task": "app.workers.tasks.confirmar_pagamentos_pendentes",
             "schedule": 10.0,
+        },
+        # Fase 8 (gerente): segunda-feira 03:00 grava os repasses da semana
+        # anterior por arena (settlements pending).
+        "gerar-settlements-semanais": {
+            "task": "app.workers.tasks.gerar_settlements_semanais",
+            "schedule": crontab(day_of_week=0, hour=3, minute=0),
         },
     },
 )

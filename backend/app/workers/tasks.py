@@ -105,3 +105,17 @@ def enviar_notificacao_push(
                 enviados += 1
         db.commit()
     return {"destinatario": user_id, "dispositivos": len(devices), "enviados": enviados}
+
+
+@celery_app.task(name="app.workers.tasks.gerar_settlements_semanais")
+def gerar_settlements_semanais() -> dict:
+    """Fase 8: grava um settlement `pending` por arena (semana anterior).
+
+    Roda uma vez por semana (beat). Nunca duplica: o repositorio verifica se
+    ja existe settlement para arena+period_start antes de inserir.
+    """
+    from ..services import gerente as gerente_svc
+
+    with SessionLocal() as db:
+        created = gerente_svc.generate_settlements(db)
+    return {"criados": created}

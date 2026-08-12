@@ -70,9 +70,14 @@ class Booking(Base):
     court_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("courts.id"), index=True
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), index=True
     )
+    # Reserva manual do gerente (Fase 8): cliente pode nao ter conta no app.
+    # client_* guarda o identificador; user_id fica nulo nesse caso.
+    client_name: Mapped[str | None] = mapped_column(String(140))
+    client_phone: Mapped[str | None] = mapped_column(String(20))
+    client_email: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(30), default=STATUS_PENDING_PAYMENT, index=True)
     plan: Mapped[str] = mapped_column(
         String(15), default=PLAN_AVULSO, server_default=PLAN_AVULSO

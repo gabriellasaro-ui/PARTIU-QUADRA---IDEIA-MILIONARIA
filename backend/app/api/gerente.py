@@ -1,67 +1,242 @@
-from fastapi import APIRouter, Query
-from ..core import data, store, domain
+"""Painel do gerente — Fase 8.
+
+Todos os contratos em camelCase. Cada rota resolve a arena pelo token do
+gerente (`manager_arena_or_404`) e opera nela; acessos a dados de outra arena
+respondem 403. Reservas manuais e mensalistas criam Payment provider="manual"
+para a arena ser ressarcida pelo mesmo fluxo do ledger.
+"""
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from ..auth.deps import get_current_manager
+from ..core.database import get_db
+from ..models import User
+from ..schemas.gerente import (
+    ArenaConfigUpdate,
+    ArenaProfileUpdate,
+    AvaliacaoReply,
+    BookingCreate,
+    CouponCreate,
+    CourtCreate,
+    CourtUpdate,
+    DesativacaoBody,
+    MensalistaCreate,
+)
+from ..services import gerente as svc
 
 router = APIRouter(prefix="/api/gerente", tags=["gerente"])
 
 
 @router.get("/dashboard")
-def dashboard():
-    return {"g": domain.gerente_dados()}
+def dashboard(
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.dashboard(db, user)
 
 
 @router.get("/agenda")
-def agenda(semana: int = Query(0)):
-    offset = max(-12, min(12, semana))
-    return {"ag": domain.agenda_semana(offset)}
+def agenda(
+    semana: str | None = Query(default=None, description="YYYY-MM-DD"),
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.agenda(db, user, semana)
 
 
 @router.get("/reservas")
-def reservas():
-    return {"reservas": store.reservas()}
+def listar_reservas(
+    status: str | None = Query(default=None),
+    q: str | None = Query(default=None),
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return {"reservas": svc.list_reservas(db, user, status_filtro=status, q=q)}
 
 
-@router.get("/quadras")
-def quadras():
-    minhas = [
-        {**data.QUADRAS[0], "rotulo": "Society 1", "ativa": True, "ocup": 78},
-        {**data.QUADRAS[2], "rotulo": "Society 2", "ativa": True, "ocup": 64},
-        {**data.QUADRAS[3], "rotulo": "Areia", "ativa": False, "ocup": 0},
-    ]
-    return {"quadras": minhas, "esportes": data.ESPORTES}
+@router.post("/reservas")
+def criar_reserva_manual(
+    body: BookingCreate,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    booking = svc.create_manual_booking(db, user, body)
+    court = svc.repo.get_court_in_arena(db, booking.court_id, booking.arena_id)
+    return {"reserva": svc.serialize_booking(booking, court, svc.manager_arena_or_404(db, user), None)}
+
+
+@router.get("/mensalistas")
+def listar_mensalistas(
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return {"mensalistas": svc.list_mensalistas(db, user)}
+
+
+@router.post("/mensalistas")
+def criar_mensalista(
+    body: MensalistaCreate,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    created = svc.create_manual_mensalista(db, user, body)
+    return {"mensalistas": svc.list_mensalistas(db, user), "criadas": len(created)}
+
+
+@router.get("/mensalistas/{rid}/sessoes")
+def sessoes_mensalista(
+    rid: str,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return {"sessoes": svc.mensalista_sessions(db, user, rid)}
+
+
+@router.delete("/mensalistas/{rid}")
+def cancelar_mensalista(
+    rid: str,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.cancel_mensalista(db, user, rid)
 
 
 @router.get("/financeiro")
-def financeiro():
-    g = domain.gerente_dados()
+def financeiro(
+    periodo: str = Query(default="30d"),
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.financeiro(db, user, periodo)
 
-    def _repasse(periodo, bruto, status, cls):
-        com = round(bruto * data.TAXA_PLATAFORMA, 2)
-        return {"periodo": periodo, "bruto": bruto, "comissao": com,
-                "liquido": round(bruto - com, 2), "status": status, "cls": cls}
 
-    repasses = [
-        _repasse("Esta semana", g["bruto"], "Em aberto", "pendente"),
-        _repasse("23–29 jun", 4980, "Pago", "pago"),
-        _repasse("16–22 jun", 5320, "Pago", "pago"),
-        _repasse("09–15 jun", 4610, "Pago", "pago"),
-    ]
-    return {"g": g, "repasses": repasses}
+@router.get("/quadras")
+def listar_quadras(
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.list_quadras(db, user)
+
+
+@router.post("/quadras")
+def criar_quadra(
+    body: CourtCreate,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    court = svc.create_quadra(db, user, body)
+    return {"quadra": svc.serialize_court(court)}
+
+
+@router.get("/quadras/{cid}")
+def detalhe_quadra(
+    cid: str,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    arena = svc.manager_arena_or_404(db, user)
+    court = svc.repo.get_court_in_arena(db, cid, arena.id)
+    if court is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Quadra não encontrada")
+    return {"quadra": svc.serialize_court(court)}
+
+
+@router.patch("/quadras/{cid}")
+def atualizar_quadra(
+    cid: str,
+    body: CourtUpdate,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    court = svc.update_quadra(db, user, cid, body)
+    return {"quadra": svc.serialize_court(court)}
 
 
 @router.get("/avaliacoes")
-def avaliacoes():
-    avaliacoes = [
-        {"cliente": "Lucas Andrade", "nota": 5, "quando": "há 2 dias", "texto": "Quadra impecável, gramado novo e iluminação ótima pra jogar à noite."},
-        {"cliente": "Marina Souza", "nota": 5, "quando": "há 5 dias", "texto": "Vestiário limpo e atendimento rápido. Voltarei com certeza."},
-        {"cliente": "Rafael Lima", "nota": 4, "quando": "há 1 semana", "texto": "Muito boa, só faltou estacionamento mais perto. No mais, top."},
-        {"cliente": "Time da Firma", "nota": 5, "quando": "há 2 semanas", "texto": "Melhor society da região, reserva pelo app é super prática."},
-    ]
-    dist = [{"n": 5, "qtd": 168}, {"n": 4, "qtd": 32}, {"n": 3, "qtd": 9}, {"n": 2, "qtd": 3}, {"n": 1, "qtd": 2}]
-    total = sum(d["qtd"] for d in dist)
-    media = round(sum(d["n"] * d["qtd"] for d in dist) / total, 1)
-    return {"avaliacoes": avaliacoes, "dist": dist, "total": total, "media": media}
+def avaliacoes(
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.list_avaliacoes(db, user)
 
 
-@router.get("/config")
-def config():
-    return {"taxa": int(data.TAXA_PLATAFORMA * 100)}
+@router.post("/avaliacoes/{rid}/resposta")
+def responder_avaliacao(
+    rid: str,
+    body: AvaliacaoReply,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.reply_avaliacao(db, user, rid, body.resposta)
+
+
+@router.get("/cupons")
+def listar_cupons(
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return {"cupons": svc.list_cupons(db, user)}
+
+
+@router.post("/cupons")
+def criar_cupom(
+    body: CouponCreate,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    coupon = svc.create_cupom(db, user, body)
+    arena = svc.manager_arena_or_404(db, user)
+    return {"cupom": svc._serialize_coupon(coupon, arena)}
+
+
+@router.delete("/cupons/{cid}")
+def excluir_cupom(
+    cid: str,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.delete_cupom(db, user, cid)
+
+
+@router.get("/perfil")
+def perfil(
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.arena_profile(db, user)
+
+
+@router.patch("/perfil")
+def atualizar_perfil(
+    body: ArenaProfileUpdate,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.update_arena_profile(db, user, body)
+
+
+@router.get("/configuracoes")
+def configuracoes(
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.arena_config(db, user)
+
+
+@router.patch("/configuracoes")
+def atualizar_configuracoes(
+    body: ArenaConfigUpdate,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.update_arena_config(db, user, body)
+
+
+@router.post("/desativacao")
+def desativar(
+    body: DesativacaoBody,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.desativar_arena(db, user, body.motivo, body.periodo)

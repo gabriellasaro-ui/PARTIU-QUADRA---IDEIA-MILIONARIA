@@ -25,7 +25,7 @@ O `www` é a SPA mais completa e contém as experiências do jogador e do gerent
 - A persistência atual do backend é `backend/state.json`, manipulada por `backend/app/core/store.py`; ainda não há models, repositories ou migrations implementados.
 - O frontend alterna entre API e dados locais. Quando `API_BASE_URL` está vazio, `services/venues.js` usa `config/mock-data.js` e `storage/storage.js`.
 - O painel `www-admin` ainda calcula tudo em memória a partir de mocks e `localStorage`; não existe router administrativo equivalente no FastAPI.
-- Clubes, peladas e partidas aparecem no frontend e são chamados pelo cliente, mas seus endpoints não estão presentes nos routers atuais do backend.
+- Clubes, peladas e partidas aparecem no frontend e são chamados pelo cliente; endpoints implementados na Fase 9 (`/api/clubes/*`, `/api/peladas`, `/api/partidas/*`), ver §4.13 e §4.15.
 - O modo de confirmação usa espera simulada de cinco segundos e janela visual de quinze minutos. A decisão de reserva precisa ser feita pelo servidor.
 
 Legenda usada nesta documentação:
@@ -320,7 +320,9 @@ Arquivos: `www/pages/clubes.html` e `clube.html`; renderização: `renderClubSea
 
 **Ações de chat:** carregar mensagens; enviar; validar até 500 caracteres; atualizar lista.
 
-**Contratos chamados pelo frontend e ainda ausentes no backend:** `GET/POST /api/clubes`, `GET /api/clubes?codigo=`, `POST /api/clubes/:id/entrar`, `POST /api/clubes/:id/sair`, `DELETE /api/clubes/:id`, `DELETE /api/clubes/:id/membros/:member_id`, `GET/POST /api/clubes/:id/mensagens`, `GET/POST /api/peladas`, `POST /api/peladas/:id/presenca`.
+**Contratos implementados (Fase 9):** `GET /api/clubes` (listar do usuário + `?codigo=` por código de convite), `POST /api/clubes` (criar; 409 se já participa de um clube ativo), `POST /api/clubes/:id/entrar` (409 em outro clube; membro nasce do perfil), `POST /api/clubes/:id/sair` (último membro apaga o clube), `DELETE /api/clubes/:id` (só dono, 409 com membros), `DELETE /api/clubes/:id/membros/:member_id` (só dono), `GET/POST /api/clubes/:id/mensagens` (mural; não-membro 403; texto≤500), `GET/POST /api/peladas` e `POST /api/peladas/:id/presenca`.
+
+**Regras de clube:** um usuário participa de **um** clube ativo por vez; o código de convite tem 6 caracteres sem hífen do alfabeto `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (sem I/L/O/0/1); busca por código é match exato.
 
 ### 4.14 Onboarding — `#onboarding`
 
@@ -344,7 +346,7 @@ Arquivos: `www/pages/game.html`, `assets/js/game-mode.js`, `assets/js/mobile.js`
 
 **Eventos dos times:** escolher de 2 a 6 times; sortear times; ajustar placar A/B; somar/remover gol; selecionar aba; abrir modo TV; fechar modo TV.
 
-**Persistência atual:** estado do jogo em `match_state` no storage local. Contratos chamados: `GET /api/partidas/ativa`, `GET /api/partidas/historico`, `PUT /api/partidas/:id/score`, `POST /goal`, `/card`, `/teams`, `/end`, `/rate`, `/confirmar`, `/atraso`, `/compartilhar-localizacao`, `/media` — todos precisam de router, permissão e regras de concorrência.
+**Persistência (Fase 9):** partida materializada no `GET /api/partidas/ativa` a partir da próxima reserva confirmada (janela 48h) ou pelada do clube; `GET /api/partidas/historico`; fase `pre/during/post` calculada por timestamps + status (nunca persistida); placar/gol/cartão/times/fim só do organizador (403); confirmar/atraso/nota/mídia/compartilhar localização de participantes. Contratos implementados: `GET /api/partidas/ativa`, `GET /api/partidas/historico`, `PUT /api/partidas/:id/score`, `POST /api/partidas/:id/goal`, `/card`, `/teams`, `/end`, `/rate`, `/confirmar`, `/atraso`, `/compartilhar-localizacao`, `/media?type=photo|video`.
 
 ### 4.16 Notificações — central de notificações (Fase 7)
 
@@ -360,6 +362,14 @@ Arquivos: `www/pages/game.html`, `assets/js/game-mode.js`, `assets/js/mobile.js`
 | Cancelamento | `booking.cancelled` | jogador + dono da arena | "Reserva cancelada" |
 | Horário concluído | `booking.completed` | jogador | "Reserva concluída" |
 | Prazo expirado | `booking.expired` | jogador | "Reserva expirada" |
+| Entrou em clube | `clube.entrou` | dono do clube | "Novo membro no clube" |
+| Nova pelada | `pelada.criada` | membros do clube | "Nova pelada agendada" |
+| Presença na pelada | `pelada.presenca` | organizador | "Presença na pelada" |
+| Presença na partida | `partida.presenca` | organizador | "Presença na partida" |
+| Atraso na partida | `partida.atraso` | organizador | "Atraso informado" |
+| Partida encerrada | `partida.encerrada` | participantes | "Partida encerrada" |
+
+**Regras (F9):** `clube.entrou` vai para o dono; `pelada.criada` para os membros (nunca o próprio organizador); `pelada.presenca` e `partida.presenca/atraso` para o organizador; `partida.encerrada` para todos os participantes. Gol/cartão não geram notificação (só atualização WebSocket `partida.updated`).
 
 **Regras:** `message.new` é push + `message.new` do chat **sem linha in-app** (o badge do chat cobre isso). Arenas sem dono não notificam o dono. Push é **plugável**: `PUSH_PROVIDER=mock` (padrão, grava em `push_logs` sem enviar) ou `fcm` (real, requer `FCM_CREDENTIALS_PATH`; sem credencial o provider responde 503). Cada tentativa de push gera uma linha em `push_logs` (auditoria). O token de push é upsert por usuário em `user_devices`; um token vindo de outro usuário é transferido para o dono atual.
 
@@ -391,7 +401,7 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** abrir reserva; abrir solicitação; navegar para agenda, quadras, financeiro, avaliações ou mensagens; atualizar dados; visualizar badges.
 
-**Contrato atual:** `GET /api/gerente/dashboard`. Parte dos valores ainda é calculada por `domain.gerente_dados()` sobre seed.
+**Contrato (F8):** `GET /api/gerente/dashboard` — autenticado `get_current_manager`, dados reais da arena do gerente (KPIs hoje/semana, ocupação, bruto/comissão/repasse sobre o ledger de `payments.confirmed`, ticket médio, pendências, próximas).
 
 ### 6.2 Reservas — `#reservas`
 
@@ -399,7 +409,7 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** buscar por cliente/código/quadra; filtrar; aprovar; recusar; abrir detalhe; criar reserva manual; gerenciar mensalistas.
 
-**Contratos:** `GET /api/gerente/reservas`, `GET /api/reservas/todas`, `POST /api/reservas/:id/aprovar`, `/recusar`, `/pagar`, `/cancelar`, `/status`. A autorização por arena e transição válida ainda precisa ser implementada.
+**Contratos (F8):** `GET /api/gerente/reservas?status=&q=` (reservas da arena, com cliente/código), `POST /api/gerente/reservas` (reserva manual), `GET /api/reservas/:id/aprovar` e `/recusar` (F4, autorização por arena e transição válida implementadas).
 
 ### 6.3 Nova reserva manual — `#reserva-nova`
 
@@ -407,7 +417,7 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** preencher; selecionar quadra/horário; calcular valor; validar; criar; cancelar.
 
-**Contrato-alvo:** `POST /api/gerente/reservas`, com auditoria de quem criou e distinção `manual`/`app`. O backend atual não possui criação.
+**Contrato (F8):** `POST /api/gerente/reservas` — `clientName/clientPhone/clientEmail`, `courtId`, `startAt`, `duration`, `valor` opcional (override). Cria reserva `confirmed` + Payment `provider=manual` confirmado sem usuário (`user_id` nulo). Auditoria via `booking_status_events`; 409 se passado/ocupado; lock da quadra + overlap. Campo `source='manual'` distingue do app.
 
 ### 6.4 Detalhe da reserva — `#reserva/:id`
 
@@ -423,7 +433,7 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** semana anterior/próxima; abrir evento; fechar detalhe; falar com cliente; alternar visual desktop/mobile; selecionar quadra quando houver mais de uma.
 
-**Contrato atual:** `GET /api/gerente/agenda?semana=`. O servidor deve receber datas ISO/timezone e não apenas offset numérico.
+**Contrato (F8):** `GET /api/gerente/agenda?semana=YYYY-MM-DD` — retorna semana com dias (segunda a domingo), quadras e eventos posicionados por início/duração com status, cliente, telefone, valor e código; datas ISO/timezone (`America/Sao_Paulo`).
 
 ### 6.6 Minhas quadras — `#quadras`
 
@@ -431,7 +441,7 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** abrir/editar quadra; alternar ativa/inativa; marcar visível; marcar destaque; atualizar preview; abrir cadastro.
 
-**Contratos atuais/parciais:** `GET /api/gerente/quadras`; o frontend espera `PUT /api/quadras/:id`, ausente no router atual. As configurações de vitrine estão locais.
+**Contratos (F8):** `GET /api/gerente/quadras`, `POST /api/gerente/quadras` (criação), `GET/PATCH /api/gerente/quadras/:id` (edição e status ativa/inativa/visível).
 
 ### 6.7 Cadastro/edição de quadra — `#quadra`
 
@@ -439,7 +449,7 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** abrir formulário novo/edição; upload/preview de foto; preencher; alternar comodidade; salvar; cancelar; atualizar lista.
 
-**Contrato-alvo:** `POST /api/gerente/quadras`, `GET/PATCH /api/gerente/quadras/:id`, upload de mídia, validação de horário e conflito de alteração de preço.
+**Contrato (F8):** `POST /api/gerente/quadras`, `GET/PATCH /api/gerente/quadras/:id` — validação de horário e conflito de alteração de preço; preços em centavos. Upload de mídia permanece pendente.
 
 ### 6.8 Mensalistas — `#mensalistas`
 
@@ -447,9 +457,9 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** pesquisar; criar; editar; salvar; cancelar; remover; associar quadra/dia/horário; gerar sessões do plano.
 
-**Regra:** mensalista não é apenas uma reserva repetida. Deve ter plano, vigência, cobrança, sessões geradas, cancelamento e política de falha de pagamento.
+**Regra:** mensalista não é apenas uma reserva repetida. Tem plano (4 sessões semanais por `dia` fixo + `hora`/`duracao`), criação e cancelamento propagado ao grupo. Edição = cancelar/recriar (PATCH adiado).
 
-**Contrato-alvo:** `GET/POST/PATCH/DELETE /api/gerente/mensalistas` e `GET /api/gerente/mensalistas/:id/sessoes`.
+**Contrato (F8):** `GET/POST /api/gerente/mensalistas`, `DELETE /api/gerente/mensalistas/:id` (cancela grupo), `GET /api/gerente/mensalistas/:id/sessoes`.
 
 ### 6.9 Financeiro — `#financeiro`
 
@@ -457,9 +467,9 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** trocar período; visualizar gráfico; exportar receitas; exportar repasses; abrir reserva; acompanhar status de repasse.
 
-**Contrato atual:** `GET /api/gerente/financeiro`; valores ainda são derivados de seed. O CSV é gerado no cliente e não substitui relatório auditável.
+**Contrato (F8):** `GET /api/gerente/financeiro?periodo=today|7d|30d` — bruto/comissão/repasse sobre o ledger de `payments.confirmed`; repasses da tabela `settlements`. CSV continua gerado no cliente.
 
-**Regra crítica:** o financeiro deve usar ledger e eventos de pagamento, não recalcular com base em status visual. O repasse deve possuir ciclo, vencimento, pagamento, falha e comprovante.
+**Regra crítica (atendida):** o financeiro usa o ledger de `payments.confirmed`, nunca status visual. O repasse possui ciclo (task semanal `gerar_settlements_semanais`, segunda 03:00), vencimento, pagamento, falha e comprovante na tabela `settlements`.
 
 ### 6.10 Avaliações — `#avaliacoes`
 
@@ -467,7 +477,7 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** carregar; abrir caixa de resposta; escrever; enviar resposta; cancelar; atualizar média/lista.
 
-**Contrato atual:** `GET /api/gerente/avaliacoes`; respostas são locais em `manager-review-replies`. Contrato-alvo: `GET /api/avaliacoes?arena_id=`, `POST /api/avaliacoes/:id/resposta`.
+**Contrato (F8):** `GET /api/gerente/avaliacoes` (média, distribuição 5→1, lista da arena) e `POST /api/gerente/avaliacoes/:id/resposta` (resposta do gerente persistida, visível no contrato da quadra).
 
 ### 6.11 Configurações da arena — `#config`
 
@@ -475,9 +485,9 @@ Os eventos devem gerar os mesmos comandos de domínio do mobile. A diferença de
 
 **Eventos:** trocar logo; editar dados; salvar; criar cupom; cancelar cupom; remover cupom; sair; solicitar desativação.
 
-**Regra:** desativar arena deve ser uma operação administrativa com confirmação, motivo, período de bloqueio e impacto em reservas futuras; não pode ser apenas toast.
+**Regra (atendida):** desativar arena é operação administrativa persistida (`is_active=False` + cancelamento das reservas futuras), não apenas toast.
 
-**Contratos-alvo:** `GET/PATCH /api/gerente/perfil`, `GET/PATCH /api/gerente/configuracoes`, `GET/POST/DELETE /api/gerente/cupons`, `POST /api/gerente/desativacao`.
+**Contratos (F8):** `GET/PATCH /api/gerente/perfil`, `GET/PATCH /api/gerente/configuracoes` (settings.notifications), `GET/POST/DELETE /api/gerente/cupons`, `POST /api/gerente/desativacao`.
 
 ## 7. Painel administrativo da plataforma
 
@@ -499,7 +509,7 @@ Exibe planos mensalistas, reservas avulsas e sessões agendadas. Deve permitir b
 
 ### 7.4 Clubes — `#clubes`
 
-Exibe clubes, esporte, cidade, membros e peladas. Depende dos domínios de clubes/peladas ainda ausentes no FastAPI.
+Exibe clubes, esporte, cidade, membros e peladas. Domínios implementados na Fase 9 (endpoints em `/api/clubes/*` e `/api/peladas`); a leitura administrativa cross-arena fica para a Fase 10 (Admin).
 
 ### 7.5 Pessoas — `#pessoas`
 
@@ -605,11 +615,11 @@ Antes de considerar o backend estruturado, implementar ou remover conscientement
 - Reservas: `POST /api/reservas`, cotação, pagamento, cancelamento do jogador, reagendamento, avaliação e eventos de status.
 - Perfil: `PATCH /api/perfil` ou padronização para o `POST` existente.
 - Favoritos: `POST` e `DELETE` por quadra.
-- Clubes: CRUD, membros, convite, mensagens e presença.
-- Peladas: listagem, criação e presença.
-- Partidas: partida ativa/histórico, placar, gols, cartões, times, fim, avaliação, atraso, localização e mídia.
+- Clubes: CRUD, membros, convite, mensagens e presença — **implementado na F9** (`/api/clubes/*`, `?codigo=`), ver §4.13.
+- Peladas: listagem, criação e presença — **implementado na F9** (`/api/peladas`), ver §4.13.
+- Partidas: partida ativa/histórico, placar, gols, cartões, times, fim, avaliação, atraso, localização e mídia — **implementado na F9** (`/api/partidas/*`), ver §4.15.
 - Jogador: preferências, notificações, cartões tokenizados e indicação.
-- Gerente: CRUD de quadras, reservas manuais, mensalistas, perfil, configurações, cupons, respostas de avaliação e desativação.
+- Gerente: CRUD de quadras, reservas manuais, mensalistas, perfil, configurações, cupons, respostas de avaliação e desativação — **implementado na F8** (`/api/gerente/*`, ver §6).
 - Admin: visão geral, arenas, reservas, clubes, pessoas, auditoria e ações administrativas.
 
 ## 12. Arquitetura FastAPI recomendada

@@ -24,20 +24,42 @@ from .models import (
     STATUS_CONFIRMED,
     STATUS_PENDING_PAYMENT,
     STATUS_REQUESTED,
+    PAYMENT_CONFIRMED,
+    SETTLEMENT_PAID,
     CONVERSATION_ACTIVE,
     CONVERSATION_KIND_ARENA,
     MESSAGE_TYPE_TEXT,
+    CLUB_ROLE_DONO,
+    CLUB_ROLE_MEMBRO,
+    ATTENDANCE_SIM,
+    PELADA_KIND_AVULSA,
+    PELADA_KIND_CLUBE,
+    PELADA_STATUS_AGENDADA,
+    MATCH_STATUS_SCHEDULED,
     Arena,
     Booking,
     BookingStatusEvent,
+    Club,
+    ClubMember,
+    ClubMessage,
     Conversation,
     ConversationParticipant,
+    Coupon,
     Court,
     CourtBlock,
     CourtRecurringAvailability,
+    Match,
+    MatchEvent,
+    MatchMedia,
+    MatchPlayer,
+    MatchTeam,
     Message,
     Notification,
+    Payment,
+    Pelada,
+    PeladaAttendance,
     Review,
+    Settlement,
     User,
     UserDevice,
     UserFavorite,
@@ -505,6 +527,348 @@ def _seed_devices(db) -> int:
     return 1
 
 
+def _seed_payments(db) -> int:
+    """Ledger demo (Fase 5/8): payments confirmados do financeiro.
+
+    Cria um payment confirmado por booking ativo/concluido nao-sessao (1 por
+    booking). Reservas manuais trazem o proprio Payment provider=manual.
+    """
+    if db.execute(select(Payment.id).limit(1)).first():
+        return 0
+    bookings = db.execute(
+        select(Booking).where(
+            Booking.status.in_((STATUS_CONFIRMED, STATUS_COMPLETED)),
+            Booking.is_session.is_(False),
+            Booking.source != "manual",
+        )
+    ).scalars().all()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    count = 0
+    for b in bookings:
+        db.add(Payment(
+            id=uuid.uuid4(),
+            booking_id=b.id,
+            user_id=b.user_id,
+            provider="mock",
+            method="pix",
+            amount_cents=b.total_cents or b.subtotal_cents,
+            status=PAYMENT_CONFIRMED,
+            paid_at=now - timedelta(days=1),
+        ))
+        count += 1
+    db.flush()
+    return count
+
+
+def _seed_manual_booking(db) -> int:
+    """Reserva manual demo (Fase 8): criada no balcao pelo gerente.
+
+    `source=manual` + Payment provider="manual" — a arena e ressarcida pelo
+    mesmo fluxo do ledger; nao ha usuario (user_id nulo, client_* preenchido).
+    """
+    if db.execute(
+        select(Booking.id).where(Booking.source == "manual").limit(1)
+    ).first():
+        return 0
+    arena = db.execute(
+        select(Arena).where(Arena.name == "Arena Bola na Rede")
+    ).scalar_one_or_none()
+    court = None
+    if arena:
+        court = db.execute(
+            select(Court).where(Court.arena_id == arena.id)
+        ).scalars().first()
+    if not (arena and court):
+        return 0
+    today = datetime.now(TZ).date()
+    start = datetime.combine(
+        today + timedelta(days=4), time(21, 0), tzinfo=TZ
+    ).astimezone(timezone.utc).replace(tzinfo=None)
+    subtotal = court.price_cents
+    booking = Booking(
+        id=uuid.uuid4(),
+        code=f"{settings.booking_code_prefix}{uuid.uuid4().int % 90_000 + 10_000}",
+        arena_id=arena.id,
+        court_id=court.id,
+        user_id=None,
+        client_name="Time da Firma",
+        client_phone="(62) 99999-0000",
+        client_email="",
+        status=STATUS_CONFIRMED,
+        plan=PLAN_AVULSO,
+        start_at=start,
+        end_at=start + timedelta(hours=1),
+        duration_h=1,
+        subtotal_cents=subtotal,
+        service_fee_cents=0,
+        total_cents=subtotal,
+        payment_method="pix",
+        quote_snapshot={"subtotal_cents": subtotal, "service_fee_cents": 0, "total_cents": subtotal},
+        source="manual",
+        created_by=arena.owner_id,
+    )
+    db.add(booking)
+    db.flush()
+    db.add(BookingStatusEvent(
+        id=uuid.uuid4(), booking_id=booking.id, from_status=None,
+        to_status=STATUS_CONFIRMED, actor_id=arena.owner_id,
+        actor_role=ROLE_GERENTE, reason="Reserva manual",
+    ))
+    db.add(Payment(
+        id=uuid.uuid4(),
+        booking_id=booking.id,
+        user_id=None,
+        provider="manual",
+        method="pix",
+        amount_cents=subtotal,
+        status=PAYMENT_CONFIRMED,
+        paid_at=datetime.now(timezone.utc).replace(tzinfo=None),
+    ))
+    db.flush()
+    return 1
+
+
+def _seed_coupons(db) -> int:
+    """Um cupom demo (Fase 8) para a Arena Bola na Rede."""
+    if db.execute(select(Coupon.id).limit(1)).first():
+        return 0
+    arena = db.execute(
+        select(Arena).where(Arena.name == "Arena Bola na Rede")
+    ).scalar_one_or_none()
+    if not arena:
+        return 0
+    db.add(Coupon(
+        id=uuid.uuid4(),
+        arena_id=arena.id,
+        code="QADRAS10",
+        discount_percent=10,
+        active=True,
+        expires_at=datetime.now(TZ) + timedelta(days=30),
+        max_uses=50,
+    ))
+    db.flush()
+    return 1
+
+
+def _seed_settlements(db) -> int:
+    """Um repasse pago demo (Fase 8) para a arena do gerente."""
+    if db.execute(select(Settlement.id).limit(1)).first():
+        return 0
+    arena = db.execute(
+        select(Arena).where(Arena.name == "Arena Bola na Rede")
+    ).scalar_one_or_none()
+    if not arena:
+        return 0
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    today = datetime.now(TZ).date()
+    last_monday = today - timedelta(days=today.weekday())
+    week_start = datetime.combine(
+        last_monday - timedelta(days=7), time(0, 0), tzinfo=TZ
+    ).astimezone(timezone.utc).replace(tzinfo=None)
+    subtotal = 440_000  # R$4.400
+    gross = round(subtotal * 1.09)  # +9% fee do jogador
+    db.add(Settlement(
+        id=uuid.uuid4(),
+        arena_id=arena.id,
+        period_start=week_start,
+        period_end=week_start + timedelta(days=7),
+        gross_cents=gross,
+        commission_cents=round(subtotal * 0.12),  # 9% jogador + 3% arena
+        net_cents=round(subtotal * 0.97),
+        bookings_count=8,
+        status=SETTLEMENT_PAID,
+        due_at=week_start + timedelta(days=7),
+        paid_at=now - timedelta(days=1),
+        receipt_url="qadras.app/pix/comprovante-demo",
+    ))
+    db.flush()
+    return 1
+
+
+def _seed_clubs(db) -> int:
+    """Um clube demo (Fase 9) espelhando CLUBS do mock-data.js.
+
+    Gabriel e o dono; os demais jogadores demo entram como membros (cada um
+    nasce do perfil). O codigo de convite segue o alfabeto do app.
+    """
+    if db.execute(select(Club.id).limit(1)).first():
+        return 0
+    users = {u.email: u for u in db.execute(select(User)).scalars()}
+    gabriel = users.get("gabriel@email.com")
+    if not gabriel:
+        return 0
+    club = Club(
+        id=uuid.uuid4(),
+        name="Bola na Rede F.C.",
+        code="BANRED",
+        sport="Futebol Society",
+        city="Goiania",
+        state="GO",
+        description="Turma das quartas na Arena Bola na Rede. Resenha garantida.",
+        owner_id=gabriel.id,
+    )
+    db.add(club)
+    db.flush()
+    ordem = [("gabriel@email.com", CLUB_ROLE_DONO),
+             ("mariana@email.com", CLUB_ROLE_MEMBRO),
+             ("joao@email.com", CLUB_ROLE_MEMBRO),
+             ("rafael@email.com", CLUB_ROLE_MEMBRO),
+             ("camila@email.com", CLUB_ROLE_MEMBRO)]
+    for email, role in ordem:
+        user = users.get(email)
+        if user:
+            db.add(ClubMember(club_id=club.id, user_id=user.id, role=role))
+    db.add(ClubMessage(
+        id=uuid.uuid4(), club_id=club.id, member_id=gabriel.id,
+        name=gabriel.name, text="Boa galera! Pelada da semana confirmada.",
+    ))
+    db.flush()
+    return 1
+
+
+def _local_date_of(dt) -> str:
+    """Data local (America/Sao_Paulo) de uma dt armazenada como UTC naive."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(TZ).strftime("%Y-%m-%d")
+
+
+def _local_time_of(dt) -> str:
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(TZ).strftime("%H:%M")
+
+
+def _mensal_dates(booking) -> list[str]:
+    today = datetime.now(TZ).date()
+    start_day = _as_local_date(booking.start_at)
+    delta = (start_day - today).days if start_day > today else 0
+    return [
+        (today + timedelta(days=delta + week * 7)).strftime("%Y-%m-%d")
+        for week in range(4)
+    ]
+
+
+def _as_local_date(dt) -> object:
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(TZ).date()
+
+
+def _seed_peladas(db) -> int:
+    """Peladas demo (Fase 9): avulsa da reserva confirmada de amanha + as 4
+    sessoes do mensalista, vinculadas ao clube demo."""
+    if db.execute(select(Pelada.id).limit(1)).first():
+        return 0
+    user = db.execute(
+        select(User).where(User.email == "gabriel@email.com")
+    ).scalar_one_or_none()
+    club = db.execute(select(Club).limit(1)).scalar_one_or_none()
+    if not user:
+        return 0
+    courts = {c.id: c for c in db.execute(select(Court)).scalars()}
+    arenas = {a.id: a for a in db.execute(select(Arena)).scalars()}
+    bookings = db.execute(
+        select(Booking).where(
+            Booking.user_id == user.id,
+            Booking.status == STATUS_CONFIRMED,
+            Booking.is_session.is_(False),
+        )
+    ).scalars().all()
+    count = 0
+    for b in bookings:
+        arena = arenas.get(b.arena_id)
+        court = courts.get(b.court_id)
+        if not arena:
+            continue
+        is_club = b.plan == PLAN_MENSALISTA and club is not None
+        if b.plan == PLAN_MENSALISTA:
+            dates = _mensal_dates(b)
+        else:
+            dates = [_local_date_of(b.start_at)]
+        for date_iso in dates:
+            pelada = Pelada(
+                id=uuid.uuid4(),
+                club_id=club.id if is_club else None,
+                source_booking_id=b.id,
+                kind=PELADA_KIND_CLUBE if is_club else PELADA_KIND_AVULSA,
+                title="Pelada de Quarta" if is_club else f"Jogo na {arena.name}",
+                arena_id=arena.id,
+                venue_name=arena.name,
+                sport=court.sport if court else arena.name,
+                date_iso=date_iso,
+                start_time=_local_time_of(b.start_at),
+                duration_min=b.duration_h * 60,
+                max_players=14,
+                organizer_id=user.id,
+                plan=b.plan,
+                reservation_code=b.code,
+                status=PELADA_STATUS_AGENDADA,
+            )
+            db.add(pelada)
+            db.flush()
+            seen = {user.id}
+            db.add(PeladaAttendance(pelada_id=pelada.id, user_id=user.id, value=ATTENDANCE_SIM))
+            if is_club:
+                for m in db.execute(
+                    select(ClubMember).where(ClubMember.club_id == club.id)
+                ).scalars():
+                    if m.user_id in seen:
+                        continue
+                    seen.add(m.user_id)
+                    db.add(PeladaAttendance(pelada_id=pelada.id, user_id=m.user_id, value=ATTENDANCE_SIM))
+            count += 1
+    db.flush()
+    return count
+
+
+def _seed_match(db) -> int:
+    """Uma partida demo (Fase 9) da reserva confirmada de amanha, com times e
+    jogadores, espelhando ACTIVE_MATCH do mock-data.js."""
+    if db.execute(select(Match.id).limit(1)).first():
+        return 0
+    user = db.execute(
+        select(User).where(User.email == "gabriel@email.com")
+    ).scalar_one_or_none()
+    booking = None
+    if user:
+        booking = db.execute(
+            select(Booking).where(
+                Booking.user_id == user.id,
+                Booking.status == STATUS_CONFIRMED,
+                Booking.plan == PLAN_AVULSO,
+            )
+        ).scalars().first()
+    if not (user and booking):
+        return 0
+    match = Match(
+        id=uuid.uuid4(),
+        booking_id=booking.id,
+        arena_id=booking.arena_id,
+        venue_name="Arena Bola na Rede",
+        sport="Futebol Society",
+        start_at=booking.start_at,
+        end_at=booking.end_at,
+        duration_min=booking.duration_h * 60,
+        status=MATCH_STATUS_SCHEDULED,
+        score={"teamA": 0, "teamB": 0},
+    )
+    db.add(match)
+    db.flush()
+    for email in ("gabriel@email.com", "mariana@email.com", "joao@email.com",
+                  "rafael@email.com", "camila@email.com"):
+        member = db.execute(
+            select(User).where(User.email == email)
+        ).scalar_one_or_none()
+        if member:
+            db.add(MatchPlayer(
+                match_id=match.id, user_id=member.id, name=member.name,
+                position=member.position, rating=member.rating, confirmed=True,
+            ))
+    db.flush()
+    return 1
+
+
 def seed() -> dict:
     with SessionLocal() as db:
         counts = {
@@ -519,6 +883,13 @@ def seed() -> dict:
             "conversations": _seed_conversations(db),
             "notifications": _seed_notifications(db),
             "devices": _seed_devices(db),
+            "payments": _seed_payments(db),
+            "manual_bookings": _seed_manual_booking(db),
+            "coupons": _seed_coupons(db),
+            "settlements": _seed_settlements(db),
+            "clubs": _seed_clubs(db),
+            "peladas": _seed_peladas(db),
+            "match": _seed_match(db),
         }
         db.commit()
     bump_catalog_version()
