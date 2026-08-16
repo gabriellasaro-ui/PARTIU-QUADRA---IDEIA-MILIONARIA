@@ -5,10 +5,13 @@
    detalhe e a agenda — leem do mesmo lugar. Sem isto o gerente aprovava numa
    tela e a outra continuava mostrando "Solicitada".
 
-   O override fica em storage por id: os dados base seguem no modulo de
-   dados, entao mudar o mock nao esbarra numa copia velha no navegador. */
+   Com API_BASE_URL as acoes falam com /api/reservas/{id}/aprovar|recusar|cancelar
+   e a lista vem de /api/gerente/reservas (mapBooking normaliza rotulo/classe).
+   Sem API, o override fica em storage por id como sempre. */
 import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
 import storage from '../../storage/storage.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../services/manager-api.js';
 
 const KEY = 'manager-booking-status';
 const NOVAS = 'manager-bookings-novas';
@@ -28,6 +31,17 @@ export function bookings() {
 
 export const getBooking = (id) => bookings().find((b) => String(b.id) === String(id));
 
+/* Lista viva: do backend quando houver API, do mock caso contrario. */
+export async function loadBookings() {
+  if (!API_BASE_URL) return bookings();
+  return managerService.reservas();
+}
+
+export async function loadBooking(id) {
+  if (!API_BASE_URL) return getBooking(id);
+  return managerService.reserva(id);
+}
+
 export function setBookingStatus(id, status) {
   storage.set(KEY, { ...overrides(), [id]: status });
 }
@@ -35,6 +49,17 @@ export function setBookingStatus(id, status) {
 export function addBooking(booking) {
   const manuais = storage.get(NOVAS, []);
   storage.set(NOVAS, [...manuais, booking]);
+}
+
+/* Aprovar/recusar/cancelar: backend quando houver API, storage no mock. */
+export async function applyBookingAction(id, action) {
+  if (!API_BASE_URL) {
+    setBookingStatus(id, action);
+    return;
+  }
+  if (action === 'Confirmado') await managerService.aprovarReserva(id);
+  else if (action === 'Recusada') await managerService.recusarReserva(id);
+  else if (action === 'Cancelada') await managerService.cancelarReserva(id);
 }
 
 /* Status que ainda pedem uma decisao do gerente. */

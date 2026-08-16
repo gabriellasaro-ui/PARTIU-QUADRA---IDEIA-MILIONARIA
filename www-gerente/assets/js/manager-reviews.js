@@ -6,6 +6,8 @@
    duas como texto fixo. */
 import { ARENA_REVIEWS, REVIEW_DIST } from '../../config/manager-data.js';
 import storage from '../../storage/storage.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../../services/manager-api.js';
 
 const KEY = 'manager-review-replies';
 
@@ -19,50 +21,65 @@ const respostas = () => storage.get(KEY, {});
 const estrelas = (n) => Array.from({ length: 5 },
   (_, i) => `<svg class="ic${i < n ? ' on' : ''}"><use href="#i-star"/></svg>`).join('');
 
-export function renderManagerReviews(root) {
+export async function renderManagerReviews(root) {
   const lista = root.querySelector('[data-reviews-list]');
   if (!lista) return;
 
-  const total = REVIEW_DIST.reduce((t, d) => t + d.qtd, 0);
-  const media = REVIEW_DIST.reduce((t, d) => t + d.n * d.qtd, 0) / total;
+  // Com API a media/distribuicao vêm do backend; sem API, do dado antigo.
+  let avaliacoes;
+  let dist;
+  let total;
+  let media;
+  if (API_BASE_URL) {
+    const data = await managerService.avaliacoes();
+    avaliacoes = data.avaliacoes;
+    dist = data.dist;
+    total = data.total;
+    media = data.media;
+  } else {
+    avaliacoes = ARENA_REVIEWS.map((a, i) => ({ ...a, id: i, resposta: respostas()[i] || '' }));
+    dist = REVIEW_DIST;
+    total = REVIEW_DIST.reduce((t, d) => t + d.qtd, 0);
+    media = REVIEW_DIST.reduce((t, d) => t + d.n * d.qtd, 0) / total;
+  }
 
   const set = (sel, valor) => {
     const el = root.querySelector(sel);
     if (el) el.textContent = valor;
   };
-  set('[data-reviews-average]', media.toFixed(1).replace('.', ','));
+  set('[data-reviews-average]', Number(media).toFixed(1).replace('.', ','));
   set('[data-reviews-total]', total);
 
   const caixaEstrelas = root.querySelector('[data-reviews-stars]');
-  if (caixaEstrelas) caixaEstrelas.innerHTML = estrelas(Math.floor(media));
+  if (caixaEstrelas) caixaEstrelas.innerHTML = estrelas(Math.floor(Number(media)));
 
-  const dist = root.querySelector('[data-reviews-dist]');
-  if (dist) {
-    dist.innerHTML = REVIEW_DIST.map((d) => `<div class="dist-row">
+  const distBox = root.querySelector('[data-reviews-dist]');
+  if (distBox) {
+    distBox.innerHTML = dist.map((d) => `<div class="dist-row">
       <span class="dist-n num">${d.n}<svg class="ic sm"><use href="#i-star"/></svg></span>
-      <div class="faixa-bar"><span style="width:${Math.round(d.qtd / total * 100)}%"></span></div>
+      <div class="faixa-bar"><span style="width:${total ? Math.round(d.qtd / total * 100) : 0}%"></span></div>
       <span class="dist-q num">${d.qtd}</span>
     </div>`).join('');
   }
 
-  const salvas = respostas();
-  lista.innerHTML = ARENA_REVIEWS.map((a, i) => {
-    const resposta = salvas[i];
-    return `<div class="review" data-review="${i}">
+  lista.innerHTML = avaliacoes.map((a) => {
+    const id = a.id ?? a.cliente;
+    const resposta = a.resposta;
+    return `<div class="review" data-review="${escapeHtml(id)}">
       <div class="review-top">
-        <span class="av">${escapeHtml(a.cliente.charAt(0))}</span>
+        <span class="av">${escapeHtml(String(a.cliente).charAt(0))}</span>
         <div>
           <strong>${escapeHtml(a.cliente)}</strong>
-          <div class="review-stars">${estrelas(a.nota)}<span class="review-when">${escapeHtml(a.quando)}</span></div>
+          <div class="review-stars">${estrelas(Number(a.nota))}<span class="review-when">${escapeHtml(a.quando)}</span></div>
         </div>
       </div>
       <p>${escapeHtml(a.texto)}</p>
       ${resposta
         ? `<div class="review-answer"><strong>Resposta do dono:</strong> ${escapeHtml(resposta)}</div>`
-        : `<button type="button" class="review-reply" data-reply-toggle="${i}">Responder</button>
-           <div class="review-reply-box" data-reply-box="${i}" hidden>
+        : `<button type="button" class="review-reply" data-reply-toggle="${escapeHtml(id)}">Responder</button>
+           <div class="review-reply-box" data-reply-box="${escapeHtml(id)}" hidden>
              <textarea placeholder="Escreva sua resposta ao cliente..."></textarea>
-             <button type="button" class="btn btn-primary btn-xs" data-reply-send="${i}">Enviar resposta</button>
+             <button type="button" class="btn btn-primary btn-xs" data-reply-send="${escapeHtml(id)}">Enviar resposta</button>
            </div>`}
     </div>`;
   }).join('');
@@ -71,13 +88,13 @@ export function renderManagerReviews(root) {
 }
 
 export function initManagerReviews() {
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
 
     const abrir = event.target.closest('[data-reply-toggle]');
     if (abrir) {
-      const caixa = root.querySelector(`[data-reply-box="${abrir.dataset.replyToggle}"]`);
+      const caixa = root.querySelector(`[data-reply-box="${CSS.escape(abrir.dataset.replyToggle)}"]`);
       if (caixa) {
         caixa.hidden = !caixa.hidden;
         caixa.querySelector('textarea')?.focus();
@@ -87,11 +104,21 @@ export function initManagerReviews() {
 
     const enviar = event.target.closest('[data-reply-send]');
     if (!enviar) return;
-    const i = enviar.dataset.replySend;
-    const texto = root.querySelector(`[data-reply-box="${i}"] textarea`)?.value.trim();
+    const id = enviar.dataset.replySend;
+    const caixa = root.querySelector(`[data-reply-box="${CSS.escape(id)}"]`);
+    const texto = caixa?.querySelector('textarea')?.value.trim();
     if (!texto) return;
-    storage.set(KEY, { ...respostas(), [i]: texto });
-    renderManagerReviews(root);
+    if (API_BASE_URL) {
+      try {
+        await managerService.responderAvaliacao(id, texto);
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível enviar');
+        return;
+      }
+    } else {
+      storage.set(KEY, { ...respostas(), [id]: texto });
+    }
+    await renderManagerReviews(root);
     window.pqToast?.('Resposta enviada');
   });
 }

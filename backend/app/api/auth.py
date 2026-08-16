@@ -11,9 +11,10 @@ estiver preenchido; senao responde 503 para o app nao quebrar na tela.
 from datetime import datetime, timedelta, timezone
 import uuid
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from starlette.responses import Response
 
 from ..auth.deps import get_current_user
 from ..auth.security import (
@@ -27,6 +28,7 @@ from ..auth.security import (
 )
 from ..core.config import settings
 from ..core.database import get_db
+from ..core.ratelimit import LIMIT_AUTH_IP, LIMIT_AUTH_REFRESH_IP, limiter
 from ..core.redis import redis_client
 from ..models import (
     PROVIDER_GOOGLE,
@@ -146,7 +148,8 @@ def _resolve_optional_user(authorization: str | None, db: Session) -> User | Non
 
 
 @router.post("/login")
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit(LIMIT_AUTH_IP)
+def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db), response: Response = None):
     email = payload.email.lower().strip()
     user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if not user or user.deleted_at or not verify_password(payload.senha, user.password_hash):
@@ -155,7 +158,8 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/register")
-def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit(LIMIT_AUTH_IP)
+def register(request: Request, payload: RegisterRequest, db: Session = Depends(get_db), response: Response = None):
     email = payload.email.lower().strip()
     if db.execute(select(User).where(User.email == email)).first():
         raise HTTPException(
@@ -175,7 +179,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/google")
-def google(payload: GoogleRequest, db: Session = Depends(get_db)):
+@limiter.limit(LIMIT_AUTH_REFRESH_IP)
+def google(request: Request, payload: GoogleRequest, db: Session = Depends(get_db), response: Response = None):
     if not settings.google_client_id:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -227,7 +232,8 @@ def onboarding(
 
 
 @router.post("/refresh")
-def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
+@limiter.limit(LIMIT_AUTH_REFRESH_IP)
+def refresh(request: Request, payload: RefreshRequest, db: Session = Depends(get_db), response: Response = None):
     session = db.execute(
         select(UserSession).where(
             UserSession.refresh_token_hash == hash_refresh_token(payload.refreshToken)
@@ -249,6 +255,7 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
     session.expires_at = utcnow() + timedelta(days=settings.refresh_token_expire_days)
     access = create_access_token(user.id, session.id, jti=session.access_jti)
     session.access_jti = decode_token(access)["jti"]
+    user.last_active_at = utcnow()
     db.commit()
     db.refresh(session)
 

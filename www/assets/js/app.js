@@ -2,22 +2,15 @@ import { loadComponents, refreshIcons } from './component-loader.js';
 import { isProtectedRoute, authHashFor } from '../../middleware/auth.js';
 import { qsa } from '../../utils/helpers.js';
 import authService from '../../services/auth.js';
+import storage from '../../storage/storage.js';
+import notificationService from '../../services/notifications.js';
+import { connectWS, disconnectWS } from '../../services/ws.js';
+import pushService from '../../services/push.js';
 import { API_BASE_URL } from '../../config/constants.js';
-import { parseMobileRouteHash, ROUTES } from '../../config/routes.js';
+import { parseMobileRouteHash } from '../../config/routes.js';
 import { initMobileActions, renderMobilePage } from './mobile.js';
 import { initPlayerDesktopActions, renderPlayerDesktopPage } from './player-desktop.js';
 import { loadGame, destroyGame } from './game-mode.js';
-import { renderManagerCourts, initManagerCourts } from './manager-courts.js';
-import { renderManagerReservations, initManagerReservations } from './manager-reservations.js';
-import { renderManagerMembers, initManagerMembers } from './manager-members.js';
-import { renderManagerOverview } from './manager-overview.js';
-import { renderManagerAgenda, initManagerAgenda } from './manager-agenda.js';
-import { renderManagerReviews, initManagerReviews } from './manager-reviews.js';
-import { renderManagerBookingDetail, initManagerBookingDetail } from './manager-booking-detail.js';
-import {
-  renderManagerBookingForm, renderManagerCourtForm, renderManagerSettings, initManagerForms
-} from './manager-forms.js';
-import { renderManagerFinance, initManagerFinance } from './manager-finance.js';
 
 const MOBILE_ROUTES = {
   home: {
@@ -136,93 +129,6 @@ const MOBILE_ROUTES = {
   }
 };
 
-const DESKTOP_ROUTES = {
-  dashboard: {
-    aliases: ['', 'dashboard'],
-    page: './pages/dashboard.html',
-    title: 'Dashboard - Qadras',
-    heading: 'Dashboard',
-    sub: 'Arena Bola na Rede'
-  },
-  reservas: {
-    aliases: ['reservas'],
-    page: './pages/desktop/reservas.html',
-    title: 'Reservas - Qadras',
-    heading: 'Reservas',
-    sub: 'Fila, status e próximos horários'
-  },
-  mensagens: {
-    aliases: ['mensagens', 'chat'],
-    page: './pages/desktop/mensagens.html',
-    title: 'Mensagens - Qadras',
-    heading: 'Mensagens',
-    sub: 'Conversas com jogadores'
-  },
-  reservaNova: {
-    aliases: ['reserva-nova'],
-    page: './pages/desktop/reserva-nova.html',
-    title: 'Nova reserva - Qadras',
-    heading: 'Nova reserva',
-    sub: 'Agende manualmente para um cliente'
-  },
-  reservaDetalhe: {
-    aliases: ['reserva'],
-    page: './pages/desktop/reserva-detalhe.html',
-    title: 'Detalhes da reserva - Qadras',
-    heading: 'Detalhes da reserva',
-    sub: 'Aprove, confirme o pagamento ou cancele'
-  },
-  quadraForm: {
-    aliases: ['quadra'],
-    page: './pages/desktop/quadra-form.html',
-    title: 'Cadastrar quadra - Qadras',
-    heading: 'Cadastrar quadra',
-    sub: 'Dados, preço, comodidades e status do espaço'
-  },
-  mensalistas: {
-    aliases: ['mensalistas'],
-    page: './pages/desktop/mensalistas.html',
-    title: 'Mensalistas - Qadras',
-    heading: 'Mensalistas',
-    sub: 'Quem tem dia e horário fixos na sua grade'
-  },
-  agenda: {
-    aliases: ['agenda'],
-    page: './pages/desktop/agenda.html',
-    title: 'Agenda - Qadras',
-    heading: 'Agenda',
-    sub: 'Semana de reservas por horário'
-  },
-  financeiro: {
-    aliases: ['financeiro'],
-    page: './pages/desktop/financeiro.html',
-    title: 'Financeiro - Qadras',
-    heading: 'Financeiro',
-    sub: 'Receitas e pagamentos'
-  },
-  quadras: {
-    aliases: ['quadras', 'minhas-quadras'],
-    page: './pages/desktop/quadras.html',
-    title: 'Minhas quadras - Qadras',
-    heading: 'Minhas quadras',
-    sub: 'Estrutura, precos e disponibilidade'
-  },
-  avaliacoes: {
-    aliases: ['avaliacoes'],
-    page: './pages/desktop/avaliacoes.html',
-    title: 'Avaliações - Qadras',
-    heading: 'Avaliações',
-    sub: 'Notas e respostas aos jogadores'
-  },
-  config: {
-    aliases: ['config', 'configurações'],
-    page: './pages/desktop/config.html',
-    title: 'Configurações - Qadras',
-    heading: 'Configurações',
-    sub: 'Perfil da arena e operacao'
-  }
-};
-
 const PLAYER_DESKTOP_ROUTES = {
   quadras: {
     page: './pages/player-desktop/explorar.html',
@@ -318,14 +224,6 @@ function markActiveNav() {
     if (active) item.setAttribute('aria-current', 'page');
     else item.removeAttribute('aria-current');
   });
-}
-
-function routeFromHash(routes, fallback) {
-  const hash = location.hash.replace(/^#/, '').trim();
-  // Rotas com parametro: #reserva/7 e #quadra/2 resolvem pela primeira parte.
-  const base = hash.split('/')[0];
-  return Object.entries(routes)
-    .find(([, route]) => route.aliases.includes(hash) || route.aliases.includes(base))?.[0] || fallback;
 }
 
 async function setFragment(container, path) {
@@ -451,12 +349,8 @@ async function renderPlayerDesktopRoute() {
     return;
   }
 
-  const prevRoute = view.dataset.currentRoute;
   view.dataset.currentRoute = routeState.signature;
   updatePlayerDesktopMeta(routeName, route);
-  if (prevRoute && prevRoute !== routeState.signature && routeName !== 'game') {
-    destroyGame();
-  }
   await setFragment(view, route.page);
   await renderPlayerDesktopPage(routeState, view);
   refreshIcons(view);
@@ -471,66 +365,6 @@ function initPlayerDesktopRouter() {
   return renderPlayerDesktopRoute();
 }
 
-function updateDesktopMeta(routeName, route) {
-  document.documentElement.dataset.page = routeName;
-  document.title = route.title;
-
-  const title = document.querySelector('[data-page-title]');
-  const sub = document.querySelector('[data-page-sub]');
-  if (title) title.textContent = route.heading;
-  if (sub) sub.textContent = route.sub;
-}
-
-async function renderDesktopRoute() {
-  const view = document.querySelector('[data-desktop-route-view]');
-  if (!view) return;
-
-  const routeName = routeFromHash(DESKTOP_ROUTES, 'dashboard');
-  const route = DESKTOP_ROUTES[routeName];
-
-  if (view.dataset.currentRoute === routeName && view.dataset.currentHash === location.hash) {
-    updateDesktopMeta(routeName, route);
-    markActiveNav();
-    return;
-  }
-
-  view.dataset.currentRoute = routeName;
-  view.dataset.currentHash = location.hash;
-  document.documentElement.dataset.managerView = routeName;
-  updateDesktopMeta(routeName, route);
-  await setFragment(view, route.page);
-  // As paginas do gerente ainda sao HTML fixo; quadras e a primeira ligada
-  // a dados, e outras entram aqui do mesmo jeito.
-  if (routeName === 'dashboard') await renderManagerOverview(view);
-  if (routeName === 'quadras') renderManagerCourts(view);
-  if (routeName === 'reservas') renderManagerReservations(view);
-  if (routeName === 'mensalistas') await renderManagerMembers(view);
-  if (routeName === 'agenda') renderManagerAgenda(view);
-  if (routeName === 'financeiro') renderManagerFinance(view);
-  if (routeName === 'avaliacoes') renderManagerReviews(view);
-  if (routeName === 'config') renderManagerSettings(view);
-  if (routeName === 'reservaNova') renderManagerBookingForm(view);
-  if (routeName === 'reservaDetalhe') renderManagerBookingDetail(view);
-  if (routeName === 'quadraForm') renderManagerCourtForm(view);
-  markActiveNav();
-  document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
-  window.scrollTo({ top: 0, behavior: 'auto' });
-}
-
-function initDesktopRouter() {
-  if (!document.querySelector('[data-desktop-route-view]')) return;
-  initManagerCourts();
-  initManagerReservations();
-  initManagerMembers();
-  initManagerAgenda();
-  initManagerFinance();
-  initManagerReviews();
-  initManagerBookingDetail();
-  initManagerForms();
-  window.addEventListener('hashchange', renderDesktopRoute);
-  return renderDesktopRoute();
-}
-
 function initAppShell() {
   const app = document.getElementById('app');
   if (!app) return;
@@ -540,21 +374,6 @@ function initAppShell() {
 
   qsa('[data-nav-open]').forEach((button) => button.addEventListener('click', openNav));
   qsa('[data-nav-close]').forEach((button) => button.addEventListener('click', closeNav));
-
-  /* No mobile a gaveta cobre a tela inteira: toque fora fecha, e Esc
-     tambem. Sem isso, abrir o Menu e mudar de ideia deixava a pessoa presa
-     atras do painel — nao havia botao de fechar visivel. */
-  document.addEventListener('click', (event) => {
-    if (!app.classList.contains('nav-open')) return;
-    if (event.target.closest('.sidebar, [data-nav-open]')) return;
-    closeNav();
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeNav();
-  });
-
-  // Trocar de rota fecha a gaveta; senao ela fica aberta sobre a tela nova.
-  window.addEventListener('hashchange', closeNav);
   qsa('.sidebar a').forEach((link) => link.addEventListener('click', closeNav));
   qsa('.web-account a').forEach((link) => link.addEventListener('click', () => {
     link.closest('.web-account')?.removeAttribute('open');
@@ -641,7 +460,7 @@ function initLoginForms() {
 
       try {
         await authService.login(Object.fromEntries(new FormData(form)));
-        window.location.assign(ROUTES.dashboard);
+        window.location.assign('./index.html');
       } catch (error) {
         window.pqToast?.(error.message || 'Não foi possível entrar');
       } finally {
@@ -649,6 +468,25 @@ function initLoginForms() {
       }
     });
   });
+}
+
+/* WS + badges so valem com sessao e API. O evento do WS (booking.updated,
+   message.new) refresca os baloes com um debounce curto. */
+function initRealtime() {
+  if (!storage.getAuthToken()) return;
+  connectWS();
+  notificationService.refreshNavBadges().catch(() => {});
+  pushService.initPush();
+  window.addEventListener('pq:auth-logout', () => pushService.disposePush());
+
+  window.addEventListener('pq:ws:event', () => {
+    window.clearTimeout(window.__pqBadgeTimer);
+    window.__pqBadgeTimer = window.setTimeout(() => {
+      notificationService.refreshNavBadges().catch(() => {});
+    }, 800);
+  });
+  window.addEventListener('pq:auth-expired', disconnectWS);
+  window.addEventListener('pq:auth-logout', disconnectWS);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -659,10 +497,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPlayerDesktopActions();
   await initMobileRouter();
   await initPlayerDesktopRouter();
-  await initDesktopRouter();
   markActiveNav();
   initAppShell();
   initModals();
   initRedirectToast();
   initLoginForms();
+  initRealtime();
 });

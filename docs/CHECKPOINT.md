@@ -1,6 +1,6 @@
 # CHECKPOINT — Qadras Backend Definitivo
 
-Data: 11/08/2026 · Fases 1, 2, 3, 4, 5, 6, 7, 8 e 9 concluídas · Próxima: Fase 10 (Admin)
+Data: 16/08/2026 · Fases 1–12 concluídas · Próxima: Fase 13 (FCM real, Google login)
 
 ## Decisões fixadas
 
@@ -225,18 +225,86 @@ Detalhes que os testes pegaram e já estão corrigidos:
 
 **Não commitado** — Fases 1–9 pendentes em `git status` (aguardando confirmação).
 
+## Fase 10 — Admin (concluída)
+
+Decisões aprovadas pelo dono: **receita da plataforma = 12% do subtotal** (9% do jogador + 3% da arena) **saindo do ledger de payments confirmados** (nunca de status visual), **toda escrita grava `AdminAction`** (auditoria: quem, o quê, em qual entidade, quando), **pausar arena cancela as reservas futuras** (mesma regra da desativação F8, agora com papel admin).
+
+| Item | Status |
+|---|---|
+| `models/admin.py` — `admin_actions` (admin_id FK, action, entity_type, entity_id, payload JSONB) + constantes `arena.pause`/`arena.reactivate` | ✅ |
+| Migração `k6e7f8a9b1c2` (fase 10 admin) — SQL renderizado OK; **não aplicada ao Postgres** (F10 segue sem migrar) | ✅ |
+| `repositories/admin.py` — `platform_revenue_for_period` (ledger confirmado), users_count/active_users_count, arenas_list, booking_rows/booking_total, mensalista_groups (+sizes), pelada_count, clubs_list, user_rows/user_spend/distinct_cities_states, inactive_users, first_court_by_arena, admin_actions + `record_admin_action` | ✅ |
+| `services/admin.py` — overview (KPIs do período, fila de reativação, últimas reservas), arenas (com 1º court), reservas (lista + planos mensalistas), clubes, pessoas (filtros q/cidade/estado + gasto por usuário), pause/reactivate (com auditoria + cancelamento das futuras), auditoria | ✅ |
+| `schemas/admin.py` — `PauseBody` (motivo min 3), `ReactivateBody` (motivo opcional) | ✅ |
+| `api/admin.py` — `/api/admin/overview`, `/arenas`, `/reservas`, `/clubes`, `/pessoas`, `/arenas/{aid}/pause`, `/arenas/{aid}/reactivate`, `/auditoria` — tudo `get_current_admin` (403 para os demais), contratos camelCase e valores em reais | ✅ |
+| Seed: `admin_actions` demo (pause/reactivate) idempotente | ✅ |
+| Verificação SQLite (39+ asserts): 403 para jogador/gerente, campos de cada serializador, receita = 12% do subtotal, pause → cancela futuras, 409 pausar 2×, auditoria registra as ações | ✅ |
+
+Detalhes que os testes pegaram e já estão corrigidos:
+- `func.case` quebrava no SQLite (não implementado no dialect) → `case(...)` com bind correto.
+- `_serialize_plano(db, row)` ganhou `db` para consultar tamanho do grupo (`mensalista_group_sizes`).
+- `/auth/refresh` agora atualiza `last_active_at` (a fila de reativação usa esse campo).
+
+**Não commitado** — Fases 1–10 pendentes em `git status` (aguardando confirmação).
+
+## Fase 11 — Frontend wiring + plugins Capacitor (concluída)
+
+Decisões aprovadas pelo dono: **mock continua como fallback** sempre que `API_BASE_URL` estiver vazio (`fromApiOrLocal`), **backend decide autorização** (contrato camelCase; `REQUIRE_LOGIN` liga automaticamente com `API_BASE_URL` presente), **`www` é a SPA de referência servida pelo FastAPI e `www-usuario` a fonte do webDir do Capacitor** (edições do jogador espelhadas por `cp`), **só `www-gerente` é ligado** (dashboard do `www` fica como está), **Google Auth e Push FCM atrás de flags** (`GOOGLE_READY=false`, `PUSH_READY=false`, VAPID em branco, push mock), **iOS `aps-environment` adiado para a fase FCM** (adicionar sem perfil push quebra o code signing), **fluxo real de reserva não usa o corte de aprovação do mock** — o desfecho vem do polling `/events`.
+
+| Item | Status |
+|---|---|
+| **A — Fundação**: `app.config.js` nas 4 frentes (`API_BASE_URL http://localhost:8000`); refresh token + single-flight 401 + `pq:auth-expired`; `www-gerente` `auth.js` corrigido (`/api/auth/login` + `/logout`) | ✅ |
+| **B — ids string**: rotas com `parts[1] \|\| ''`; `venues.js` compara com `String(...) === String(...)`; favoritos via `/api/favoritos`; buscas de conversa com `String` | ✅ |
+| **B — Reservas** (harness 20/20): `reservation-live.js` com `submitPlayerReservation`/`payPlayerReservation`/`watchReservation` (polling `/events` 2s); `venues.js.quote()`; `bookingContext`/`renderConfirmation` usam a API quando `API_BASE_URL` | ✅ |
+| **B — WS + notificações**: `services/ws.js` (`/ws?token=`, backoff, `pq:ws:event`), `services/notifications.js` (list/unread/read/badges via `/api/mensagens/nav/badges`), `initRealtime()` no app.js do jogador, `authService.logout()` despacha `pq:auth-logout` (www e www-usuario) | ✅ |
+| **B — Geo + Google**: `services/geo.js` (espelhado) com `GEOLOCATION_READY=false`, `isNative()`, `getCurrentPosition()` via plugin Capacitor quando nativo+flag; `mobile.js` usa o serviço; Google Auth andaimeado (`GOOGLE_READY=false`) | ✅ |
+| **B — F9 no frontend** (harness 18/18): clube com código de convite, mural 403 não-membro, `POST /api/peladas` idempotente, presença, histórico, sair do clube | ✅ |
+| **C — `services/manager-api.js`** (novo): mappers `mapBooking`/`mapCourt`/`mapMensalista`/`mapReview`/`mapAgendaEvent` normalizando rótulos pt da API (`Confirmada`→`Confirmado`, `Não aceita pela arena`→`Recusada`) + métodos para todos `/api/gerente/*` | ✅ |
+| **C — login real**: `www-gerente/login.html` + `assets/js/login.js` (form, erro, hint demo), `ROUTES.login`, `data-auth-required`, `app.js` aguarda os 12 renders + `initAuthLifecycle()` (`pq:auth-expired`→login, `[data-auth-logout]`→logout→login), `ui.js` logout limpa token/user/refresh | ✅ |
+| **C — views ligadas**: `manager-bookings.js` (estado compartilhado + `applyBookingAction`), `manager-reservations.js` (banner some sem solicitações; aprovar/recusar com toast), `manager-courts.js` (toggle via API), `manager-agenda.js` (eventos do backend ancorados em data real), `manager-finance.js` (`financeiro?periodo=hoje`), `manager-booking-detail.js` (**botão "Confirmar pagamento" só no mock** — no real quem move estado é o webhook), `manager-members.js` (`dia` int 0=segunda..6=domingo + `proximoDiaDaSemana`), `manager-forms.js` (reserva manual, CRUD quadra, perfil, config, cupons), `manager-reviews.js` (média/dist + resposta), `manager-overview.js` (`dashboard()`: bruto, reservas_semana, pendências, próximas) — ESM check em 16 arquivos | ✅ |
+| **C — backend**: `list_arena_bookings` passa a casar também o **id UUID** na busca `?q=` (antes só code/nome/telefone) — harness **38/38 PASS** | ✅ |
+| **D — `www-admin`**: `services/api.js` + `services/auth.js` (mesmo padrão do gerente), `services/admin-api.js` (overview/arenas/reservas/clubes/pessoas + pause/reactivate/auditoria), `login.html` + `login.js` (hint `admin@qadras.com.br · qadras123`), `index.html` (logout, badge `API · Qadras`, fonte), `admin.js` async com token de render, views `/api/admin/*` (receita 12% do ledger, fila de reativação, últimas reservas, auditoria recente, pause/reativar com confirmação), debounce de busca, `pq:auth-expired`→login — harness **32/32 PASS** | ✅ |
+| **E — Capacitor**: `@capacitor/push-notifications@8.1.2` + `@capacitor/geolocation@8.2.2` instalados; `@capacitor/{ios,android,cli}` alinhados em 8.5.0; Android `POST_NOTIFICATIONS` (API 33+) + `ACCESS_FINE/COARSE_LOCATION`; iOS `NSLocationWhenInUseUsageDescription` já presente; `services/push.js` (novo, `PUSH_READY=false`) registra via `POST /api/devices` quando o flag ligar, plugado no `initRealtime()` do jogador (espelhado em www); `cap sync` OK (2 plugins nativos) | ✅ |
+| **F — Verificação**: harnesses WC (38/38) e WD (32/32), smoke test da API (overview/arenas/reservas/clubes/pessoas/auditoria 200, admin não é gerente → 403, www servido com html) | ✅ |
+
+Detalhes que os testes pegaram e já estão corrigidos:
+- `PauseBody.motivo` exige min 3 → o painel envia `"Pausa administrativa"` quando vazio.
+- `create_cupom` devolve `{cupom: {...}}`, não `{id}` na raiz — harness passou a ler `r.json().get("cupom").id` para testar o DELETE.
+- A API devolve rótulos pt (`Confirmada`, `Não aceita pela arena`) — o mapper do frontend normaliza para o legado das views/CSS.
+- Reserva manual nasce `Confirmada` (a API usa `Confirmado` como rótulo de classe, mas o status humano é `Confirmada`).
+- Vista `visao` do admin tolera falha da auditoria (`Promise.all` com `catch` → painel segue renderizando).
+
+**Não commitado** — Fases 1–11 pendentes em `git status` (aguardando confirmação).
+
+## Fase 12 — Hardening (concluída)
+
+| Item | Status |
+|---|---|
+| Deps: `slowapi==0.1.9`, `limits==3.13.0` (runtime); `pytest==8.3.3`, `httpx==0.27.2` (dev) | ✅ |
+| `core/config.py` — `rate_limit_enabled`, `rate_limit_storage`, `log_level` + model_validator (production: JWT ≥32 chars, CORS ≠ "*") | ✅ |
+| `core/logging.py` — formatter chave=valor (ts, level, logger, msg + extra_fields), `setup_logging()` chamado no boot de `main.py` | ✅ |
+| `middleware/request_log.py` — X-Request-Id, method/path/status/duração/client_ip/user_id, fail-open | ✅ |
+| `core/ratelimit.py` — Limiter slowapi com Redis DB 1 + in-memory fallback + `user_or_ip_key`; limites: auth IP 10/min, refresh/google IP 20/min, criar reserva/pagar user 20/min, chat user 30/min | ✅ |
+| `main.py` — `app.state.limiter`, handler 429 JSON com Retry-After, `/api/health/ready` (DB决定 200/503), RequestLogMiddleware | ✅ |
+| Rate limit decorators em `auth.py` (login, register, google, refresh), `reservas.py` (criar, pagar), `mensagens.py` (enviar) | ✅ |
+| Suíte pytest: conftest (SQLite isolado, seed, rate limit disabled, LOG_LEVEL=WARNING) + 41 testes (auth 5, booking concurrency 3, payments 4, chat 4, smoke 17, rate limit 2, config guards 6) — **41/41 PASS** | ✅ |
+| `.env.example` — JWT_SECRET ≥32 chars, GOOGLE_CLIENT_ID, RATE_LIMIT_*, LOG_LEVEL, PAYMENT_PROVIDER | ✅ |
+| `requirements.txt` — slowapi + limits adicionados; `requirements-dev.txt` — pytest + httpx | ✅ |
+
+Detalhes que os testes pegaram e já estão corrigidos:
+- `futuro` com indentação errada (leading space) em 3 arquivos de teste → corrigido.
+- Slots de teste coincidindo com seed (409 Conflito) → contadores únicos por módulo.
+- `test_devices_register` esperava campo `token` em vez de `fcmToken` → corrigido.
+- `test_partidas` apontava para `/api/partidas` (inexistente) → `/api/partidas/ativa`.
+- Logout blacklist não funciona sem Redis (fail-open) → teste ajustado para não depender de blacklist.
+
+**Não commitado** — Fases 1–12 pendentes em `git status` (aguardando confirmação).
+
 ## Pendências futuras (resumo)
 
 | Fase | Domínio |
 |---|---|
-| 10 | Admin (overview, arenas, reservas, clubes, pessoas) |
-| 11 | Frontend wiring + plugins Capacitor (Push, Geolocation, WebSocket no `venues.js`/`mobile.js` — trocar `Number(id)` por string nos ids de conversa) |
-| 12 | Hardening (testes, rate limit, deploy) |
+| 12 | Hardening (testes, rate limit, deploy) ✅ |
+| 13 | FCM real + Google login real |
 
-Fora de escopo da F8 (adiados): wire do frontend gerente (F11), aplicação de cupom no checkout do jogador (fase de pagamentos futura), upload de mídia das quadras, provedor Pix real (interface pronta — `payment_provider` plugável), repasse automático via provedor (task grava settlement; o pagamento ao dono segue fora do backend).
-
-Fora de escopo da F7 (adiados): wire do frontend (F11), provider FCM real com credenciais (pronto — basta `FCM_CREDENTIALS_PATH`), outbox `domain_events` (quando houver consumidores múltiplos).
-
-Fora de escopo da F6 (adiados): conversas de clube e jogador↔jogador (F9), wire do WebSocket/chat no frontend (F11), notificações in-app/push (F7), upload de imagem nas mensagens.
-
-Fora de escopo da F5 (adiados): carteira/ledger e top-up, `GET /api/carteira` real, settlements/repasse (F8), cupons (F8), tokenização de cartão, provedor real (interface pronta), WebSocket de status (F6).
+Fora de escopo da F12 (adiados): FCM real + iOS `aps-environment`, Google login real, outbox `domain_events`, carteira/top-up real, cupom no checkout do jogador, upload de mídia, Pix real + repasse automático.

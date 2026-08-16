@@ -76,16 +76,18 @@ def list_arena_bookings(
         stmt = stmt.where(Booking.status == status)
     if q:
         like = f"%{q.strip()}%"
-        stmt = stmt.where(
-            or_(
-                Booking.code.ilike(like),
-                Booking.client_name.ilike(like),
-                Booking.client_phone.ilike(like),
-                Court.name.ilike(like),
-                User.name.ilike(like),
-                User.phone.ilike(like),
-            )
-        )
+        conds = [
+            Booking.code.ilike(like),
+            Booking.client_name.ilike(like),
+            Booking.client_phone.ilike(like),
+            Court.name.ilike(like),
+            User.name.ilike(like),
+            User.phone.ilike(like),
+        ]
+        bid = _uuid(q.strip())
+        if bid is not None:
+            conds.append(Booking.id == bid)
+        stmt = stmt.where(or_(*conds))
     stmt = stmt.order_by(Booking.start_at.desc()).limit(limit)
     return list(db.execute(stmt).all())
 

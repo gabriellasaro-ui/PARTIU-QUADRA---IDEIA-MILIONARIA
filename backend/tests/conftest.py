@@ -1,0 +1,51 @@
+"""Configuracoes compartilhadas da suite pytest (Fase 12).
+
+Env vars sao setadas ANTES de qualquer import do `app` (o settings e um
+singleton criado no import). RATE_LIMIT_ENABLED=false desliga o slowapi nos
+testes; o DB e SQLite isolado em /tmp; LOG_LEVEL=WARNING silencia os logs.
+"""
+import os
+
+_PQ_DB = "/tmp/opencode/pq_pytest.db"
+
+os.environ["DATABASE_URL"] = f"sqlite:///{_PQ_DB}"
+os.environ["ENVIRONMENT"] = "test"
+os.environ["RATE_LIMIT_ENABLED"] = "false"
+os.environ["JWT_SECRET"] = "test-only-secret-0123456789abcdef-xyz"
+os.environ["PAYMENT_PROVIDER"] = "mock"
+os.environ["PUSH_PROVIDER"] = "mock"
+os.environ["LOG_LEVEL"] = "WARNING"
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _app_db():
+    if os.path.exists(_PQ_DB):
+        os.remove(_PQ_DB)
+    from app.core.database import Base, engine
+    from app.seed import seed
+
+    Base.metadata.create_all(engine)
+    seed()
+    yield
+    engine.dispose()
+
+
+@pytest.fixture()
+def client():
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.fixture()
+def login(client):
+    def _login(email: str, senha: str = "qadras123") -> dict:
+        r = client.post("/api/auth/login", json={"email": email, "senha": senha})
+        assert r.status_code == 200, r.text
+        data = r.json()
+        return {"Authorization": f"Bearer {data['token']}"}
+
+    return _login

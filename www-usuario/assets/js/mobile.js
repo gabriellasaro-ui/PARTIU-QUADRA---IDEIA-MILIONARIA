@@ -2,12 +2,15 @@ import venueService from '../../services/venues.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/formatters.js';
 import { SERVICE_FEE_RATE } from '../../config/constants.js';
+import { API_BASE_URL } from '../../config/constants.js';
 import { SPORTS, POSITIONS, LEVELS, FEET } from '../../config/mock-data.js';
 import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
+import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
 import { authHashFor, safeNext, requiresLogin } from '../../middleware/auth.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
+import geoService from '../../services/geo.js';
 
 let currentRoute = null;
 let activeMobileMap = null;
@@ -868,6 +871,20 @@ async function bookingContext(route) {
   const plan = query.get('plano') === 'mensalista' ? 'mensalista' : 'avulso';
   const weekday = Number(query.get('dia') || 3);
   const amounts = calculateCheckoutAmounts(planPriceBase(venue, plan), duration);
+  let quoteAmounts = null;
+  if (API_BASE_URL) {
+    try {
+      quoteAmounts = await venueService.quote({
+        quadraId: venue.id,
+        data: date,
+        hora: hour,
+        dur: duration,
+        plano: plan
+      });
+    } catch (error) {
+      quoteAmounts = null;
+    }
+  }
   return {
     venue,
     date,
@@ -879,7 +896,7 @@ async function bookingContext(route) {
     hour,
     duration,
     endHour: addHours(hour, duration),
-    ...amounts,
+    ...(quoteAmounts || amounts),
     method: PAYMENT_METHOD_LABELS[query.get('metodo')] ? query.get('metodo') : 'pix'
   };
 }
@@ -1013,12 +1030,12 @@ async function renderConfirmation(root, route) {
     hour,
     duration,
     endHour,
-    subtotal,
-    serviceFee,
-    total,
     method
   } = context;
-  const code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
+  let subtotal = context.subtotal;
+  let serviceFee = context.serviceFee;
+  let total = context.total;
+  let code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
   const query = routeQuery(route);
   const requestedDeadline = Number(query.get('deadline'));
   const deadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
@@ -1027,6 +1044,7 @@ async function renderConfirmation(root, route) {
   const forcedResult = query.get('resultado') || 'aceito';
   const content = root.querySelector('[data-approval-content]');
   let settled = false;
+  let apiReserva = null;
 
   const reservationData = {
     code,
@@ -1182,6 +1200,27 @@ async function renderConfirmation(root, route) {
     refreshApprovalIcons();
   }
 
+  if (API_BASE_URL) {
+    try {
+      const submit = await submitPlayerReservation(context);
+      apiReserva = submit.reserva;
+      if (apiReserva) {
+        code = apiReserva.code || code;
+        subtotal = Number.isFinite(apiReserva.subtotal) ? apiReserva.subtotal : subtotal;
+        serviceFee = Number.isFinite(apiReserva.serviceFee) ? apiReserva.serviceFee : serviceFee;
+        total = Number.isFinite(apiReserva.price) ? apiReserva.price : total;
+        reservationData.id = apiReserva.id;
+        reservationData.code = code;
+        reservationData.subtotal = subtotal;
+        reservationData.serviceFee = serviceFee;
+        reservationData.price = total;
+        await payPlayerReservation(apiReserva.id);
+      }
+    } catch (error) {
+      apiReserva = null;
+    }
+  }
+
   await venueService.saveReservation({
     ...reservationData,
     status: 'Aguardando aprovação',
@@ -1190,6 +1229,20 @@ async function renderConfirmation(root, route) {
   });
   document.title = 'Aguardando aprovação - Qadras';
   renderPending(Math.max(0, deadline - Date.now()));
+
+  if (API_BASE_URL && apiReserva) {
+    watchReservation(apiReserva.id, {
+      onDone: async (status) => {
+        if (status === 'confirmed' || status === 'completed') {
+          await renderAccepted();
+        } else if (status === 'expired') {
+          await renderRejected('expired');
+        } else {
+          await renderRejected('declined');
+        }
+      }
+    });
+  }
 
   async function tickApproval() {
     if (!document.contains(root)) {
@@ -1202,6 +1255,17 @@ async function renderConfirmation(root, route) {
     const progress = content.querySelector('[data-approval-progress]');
     if (countdown) countdown.textContent = formatApprovalCountdown(remaining);
     if (progress) progress.style.width = `${Math.max(0, Math.min(100, (remaining / APPROVAL_WINDOW_MS) * 100))}%`;
+
+    // Na API o desfecho chega pelo polling de /events (ou WS depois); o
+    // cronometro so cuida do limite de 15 minutos.
+    if (API_BASE_URL) {
+      if (!apiReserva) {
+        await renderRejected('declined');
+      } else if (remaining <= 0 || forcedResult === 'expirado') {
+        await renderRejected('expired');
+      }
+      return;
+    }
 
     if (remaining <= 0 || forcedResult === 'expirado') {
       await renderRejected('expired');
@@ -1412,8 +1476,8 @@ async function renderProfile(root) {
 
 async function renderMessages(root, route) {
   const conversations = await venueService.conversations();
-  const conversationId = Number(route.params.id || 0);
-  const active = conversations.find((item) => item.id === conversationId);
+  const conversationId = String(route.params.id || '');
+  const active = conversations.find((item) => String(item.id) === String(conversationId));
   const list = root.querySelector('[data-conversation-list]');
   const thread = root.querySelector('[data-conversation-thread]');
   const navbar = root.querySelector('.messages-navbar');
@@ -2124,26 +2188,25 @@ export function initMobileActions() {
 
     const useCurrentLocation = event.target.closest('[data-use-current-location]');
     if (useCurrentLocation) {
-      if (!navigator.geolocation) {
+      if (!geoService.geolocationSupported()) {
         window.pqToast?.('Localização do aparelho indisponível');
         return;
       }
       useCurrentLocation.disabled = true;
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          storage.set('current_coordinates', [position.coords.latitude, position.coords.longitude]);
+      geoService.getCurrentPosition()
+        .then(({ latitude, longitude }) => {
+          storage.set('current_coordinates', [latitude, longitude]);
           storage.set('current_location', 'Localização atual');
           syncMarketplaceState(document);
           closeMarketSheet(useCurrentLocation.closest('[data-market-sheet]'));
-          useCurrentLocation.disabled = false;
           window.pqToast?.('Localização atualizada');
-        },
-        () => {
-          useCurrentLocation.disabled = false;
+        })
+        .catch(() => {
           window.pqToast?.('Não foi possível acessar sua localização');
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-      );
+        })
+        .finally(() => {
+          useCurrentLocation.disabled = false;
+        });
       return;
     }
 
@@ -2158,28 +2221,26 @@ export function initMobileActions() {
 
     const locate = event.target.closest('[data-map-locate]');
     if (locate && activeMobileMap) {
-      if (!navigator.geolocation) {
+      if (!geoService.geolocationSupported()) {
         activeMobileMap.setView(currentCoordinates(), 15, { animate: true });
         window.pqToast?.('Localização do aparelho indisponível');
         return;
       }
       window.pqToast?.('Buscando sua localização...');
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coordinates = [position.coords.latitude, position.coords.longitude];
+      geoService.getCurrentPosition()
+        .then(({ latitude, longitude }) => {
+          const coordinates = [latitude, longitude];
           storage.set('current_coordinates', coordinates);
           storage.set('current_location', 'Localização atual');
           syncMarketplaceState(document);
           activeUserMarker?.setLatLng(coordinates);
           activeMobileMap?.setView(coordinates, 15, { animate: true });
           activeUserMarker?.openPopup();
-        },
-        () => {
+        })
+        .catch(() => {
           activeMobileMap?.setView(currentCoordinates(), 15, { animate: true });
           window.pqToast?.('Não foi possível acessar sua localização');
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-      );
+        });
       return;
     }
 

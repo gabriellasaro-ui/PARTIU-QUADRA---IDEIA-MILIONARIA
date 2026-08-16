@@ -77,11 +77,15 @@
   document.addEventListener('click', function (e) {
     var authLogout = e.target.closest('[data-auth-logout]');
     if (authLogout) {
+      e.preventDefault();
       try {
         var pfx = (((window.__PQ_CONFIG__ || {}).STORAGE_PREFIX) || 'pq') + ':';
         localStorage.removeItem(pfx + 'auth_token');
         localStorage.removeItem(pfx + 'auth_user');
+        localStorage.removeItem(pfx + 'auth_refresh');
       } catch (error) {}
+      window.location.assign('./login.html');
+      return;
     }
 
     var sportOption = e.target.closest('[data-sport-option]');

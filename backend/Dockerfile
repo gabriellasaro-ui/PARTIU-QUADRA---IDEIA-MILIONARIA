@@ -7,9 +7,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     TZ=America/Sao_Paulo
 
 # tzdata garante America/Sao_Paulo dentro do container (datetime/pendente).
+# curl para HEALTHCHECK.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends tzdata \
+    && apt-get install -y --no-install-recommends tzdata curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Usuario nao-root por seguranca.
+RUN useradd -m -r -s /bin/bash appuser
 
 WORKDIR /app/backend
 
@@ -22,8 +26,14 @@ RUN pip install --upgrade pip && pip install -r ./requirements.txt
 COPY backend/ ./
 COPY www/ /app/www/
 
-RUN chmod +x ./docker-entrypoint.sh
+# Permissoes para o usuario nao-root.
+RUN chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health/ready || exit 1
 
 CMD ["./docker-entrypoint.sh"]

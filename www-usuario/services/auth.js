@@ -21,6 +21,7 @@ import { requestGoogleCredential } from './google-auth.js';
 /* Um so lugar escreve a sessao. Devolve para o chamador poder encadear. */
 function persistir(session) {
   if (session?.token) storage.setAuthToken(session.token);
+  if (session?.refreshToken) storage.setAuthRefreshToken(session.refreshToken);
   if (session?.user) storage.setAuthUser(session.user);
   return session;
 }
@@ -71,6 +72,7 @@ export const authService = {
       if (API_BASE_URL) await api.post('/api/auth/logout', {});
     } finally {
       storage.clearSession();
+      window.dispatchEvent(new CustomEvent('pq:auth-logout'));
     }
   },
 

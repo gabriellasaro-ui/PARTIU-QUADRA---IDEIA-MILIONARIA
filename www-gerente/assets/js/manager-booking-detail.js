@@ -5,8 +5,9 @@
    no JS, mas e a mesma: Solicitada oferece aprovar e recusar; Pendente
    oferece confirmar pagamento; o que ja esta encerrado nao oferece nada
    alem de voltar. */
-import { bookings, getBooking, setBookingStatus, encerrada, setPageMeta } from './manager-bookings.js';
+import { bookings, getBooking, loadBooking, loadBookings, setBookingStatus, applyBookingAction, encerrada, setPageMeta } from './manager-bookings.js';
 import { formatCurrency } from '../../utils/formatters.js';
+import { API_BASE_URL } from '../../config/constants.js';
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -27,18 +28,22 @@ function acoes(r) {
     return `<div class="set-hint" style="margin:0;"><svg class="ic"><use href="#i-x-circle"/></svg> Reserva ${escapeHtml(r.status.toLowerCase())}. Não há mais ações disponíveis.</div>
       <a href="./dashboard.html#reservas" class="btn btn-soft btn-block" style="margin-top:14px;">Voltar para reservas</a>`;
   }
-  return `${r.status === 'Pendente'
+  // Com API o pagamento pendente nao se confirma na mao: quem move a reserva
+  // de "aguardando pagamento" e o webhook do pagamento. O botao so existe no
+  // mock, onde o gerente e a propria maquina.
+  return `${r.status === 'Pendente' && !API_BASE_URL
       ? '<button type="button" class="btn btn-primary btn-block" style="margin-bottom:10px;" data-bd-action="Pago">Confirmar pagamento</button>'
       : ''}
     <a href="./dashboard.html#agenda" class="btn btn-soft btn-block" style="margin-bottom:10px;">Ver na agenda</a>
     <button type="button" class="btn btn-danger btn-block" data-bd-action="Cancelada">Cancelar reserva</button>`;
 }
 
-export function renderManagerBookingDetail(root) {
+export async function renderManagerBookingDetail(root) {
   const wrap = root.querySelector('[data-booking-detail]');
   if (!wrap) return;
 
-  const r = getBooking(bookingIdFromHash());
+  const id = bookingIdFromHash();
+  const r = (API_BASE_URL ? await loadBooking(id) : null) || getBooking(id);
   if (!r) {
     wrap.innerHTML = `<div class="manager-empty-list">
       <svg class="ic"><use href="#i-calendar"/></svg>
@@ -67,7 +72,8 @@ export function renderManagerBookingDetail(root) {
 
   // "8 no total" era numero fixo no template antigo. Aqui e a contagem real
   // de reservas deste cliente.
-  const doCliente = bookings().filter((b) => b.cliente === r.cliente).length;
+  const todas = API_BASE_URL ? await loadBookings() : bookings();
+  const doCliente = todas.filter((b) => b.cliente === r.cliente).length;
   set('[data-bd-historico]', `${doCliente} ${doCliente === 1 ? 'reserva' : 'reservas'}`);
 
   const status = wrap.querySelector('[data-bd-status]');
@@ -83,13 +89,23 @@ export function renderManagerBookingDetail(root) {
 }
 
 export function initManagerBookingDetail() {
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const botao = event.target.closest('[data-bd-action]');
     if (!botao) return;
     const root = document.querySelector('[data-desktop-route-view]');
     const id = bookingIdFromHash();
-    setBookingStatus(id, botao.dataset.bdAction);
-    renderManagerBookingDetail(root);
-    window.pqToast?.(`Reserva ${botao.dataset.bdAction.toLowerCase()}`);
+    const acao = botao.dataset.bdAction;
+    if (API_BASE_URL && acao !== 'Pago') {
+      try {
+        await applyBookingAction(id, acao);
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível concluir');
+        return;
+      }
+    } else {
+      setBookingStatus(id, acao);
+    }
+    await renderManagerBookingDetail(root);
+    window.pqToast?.(`Reserva ${acao.toLowerCase()}`);
   });
 }

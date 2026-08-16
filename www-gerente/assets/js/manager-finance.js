@@ -11,6 +11,8 @@
    a rosca de destino da receita e as duas tabelas exportaveis. Voltaram. */
 import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
 import { formatCurrency } from '../../utils/formatters.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../../services/manager-api.js';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
@@ -69,21 +71,22 @@ function renderChart(root, valores) {
     <text class="lc-xl" x="${p.x.toFixed(1)}" y="${H - 9}" style="text-anchor:${i === 0 ? 'start' : (i === pontos.length - 1 ? 'end' : 'middle')}">${p.lab}</text>`).join(''));
 }
 
-export function renderManagerFinance(root) {
+export async function renderManagerFinance(root) {
   /* Guard no grafico, nao no card de repasse: aquele elemento saiu junto com
      a comissao, e um guard apontando para no inexistente derrubaria a tela
      inteira sem erro nenhum no console. */
   if (!root.querySelector('[data-finance-chart]')) return;
 
-  const reservas = reservasDoPeriodo();
-  const bruto = reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
-  const ticket = reservas.length ? Math.round(bruto / reservas.length) : 0;
+  const periodoApi = periodo === 'hoje' ? 'today' : periodo;
+  const dados = API_BASE_URL ? await managerService.financeiro(periodoApi) : null;
+  const reservas = API_BASE_URL ? await managerService.reservas() : reservasDoPeriodo();
+  const bruto = API_BASE_URL ? dados.bruto : reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
+  const ticket = API_BASE_URL ? dados.ticket_medio : (reservas.length ? Math.round(bruto / reservas.length) : 0);
 
   set(root, '[data-finance-gross]', formatCurrency(bruto));
-  set(root, '[data-finance-count]', reservas.length);
+  set(root, '[data-finance-count]', API_BASE_URL ? dados.reservas : reservas.length);
   set(root, '[data-finance-ticket]', formatCurrency(ticket));
   set(root, '[data-finance-ticket-top]', formatCurrency(ticket));
-
 
   // Ocupacao media das quadras ativas — o que sustenta o faturamento.
   const ocupacao = reservas.length
@@ -94,10 +97,22 @@ export function renderManagerFinance(root) {
 
   // Faturamento por dia da semana, a partir do dia real de cada reserva.
   const porDia = DIAS.map(() => 0);
-  ARENA_BOOKINGS.forEach((r, i) => {
-    const dia = r.data === 'Hoje' ? (new Date().getDay() + 6) % 7
-      : r.data === 'Amanhã' ? ((new Date().getDay() + 6) % 7 + 1) % 7
-      : { Seg: 0, Ter: 1, Qua: 2, Qui: 3, Sex: 4, Sáb: 5, Dom: 6 }[r.data.split(',')[0]] ?? i % 7;
+  reservas.forEach((r, i) => {
+    const data = API_BASE_URL
+      ? r.dataValue
+        ? new Date(`${r.dataValue}T12:00:00`)
+        : null
+      : r.data === 'Hoje' ? new Date()
+      : r.data === 'Amanhã' ? new Date(Date.now() + 86400000)
+      : null;
+    let dia;
+    if (data) {
+      dia = (data.getDay() + 6) % 7;
+    } else {
+      dia = r.data === 'Hoje' ? (new Date().getDay() + 6) % 7
+        : r.data === 'Amanhã' ? ((new Date().getDay() + 6) % 7 + 1) % 7
+        : { Seg: 0, Ter: 1, Qua: 2, Qui: 3, Sex: 4, Sáb: 5, Dom: 6 }[String(r.data).split(',')[0]] ?? i % 7;
+    }
     porDia[dia] += Number(r.valor || 0);
   });
   set(root, '[data-finance-peak]', formatCurrency(Math.max(...porDia, 0)));
@@ -110,7 +125,7 @@ export function renderManagerFinance(root) {
         <td data-label="Cliente"><strong>${escapeHtml(r.cliente)}</strong></td>
         <td data-label="Data">${escapeHtml(r.data)} · <span class="num">${escapeHtml(r.hora)}</span></td>
         <td data-label="Bruto" class="val num">${formatCurrency(r.valor)}</td>
-        <td data-label="Status"><span class="status ${escapeHtml(STATUS_CLASS[r.status] || 'pendente')}">${escapeHtml(r.status)}</span></td>
+        <td data-label="Status"><span class="status ${escapeHtml(r.cls || STATUS_CLASS[r.status] || 'pendente')}">${escapeHtml(r.status)}</span></td>
       </tr>`;
     }).join('');
   }

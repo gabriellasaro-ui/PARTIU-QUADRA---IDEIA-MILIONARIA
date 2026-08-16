@@ -3,6 +3,11 @@
 Importar este modulo registra todas as tabelas no metadata do Alembic e
 garante que seed/services enxerguem o schema completo.
 """
+from .admin import (
+    ADMIN_ACTION_ARENA_PAUSE,
+    ADMIN_ACTION_ARENA_REACTIVATE,
+    AdminAction,
+)
 from .arena import Arena
 from .booking import (
     ACTIVE_STATUSES,
@@ -115,6 +120,9 @@ __all__ = [
     "User",
     "UserSession",
     "Arena",
+    "AdminAction",
+    "ADMIN_ACTION_ARENA_PAUSE",
+    "ADMIN_ACTION_ARENA_REACTIVATE",
     "Court",
     "CourtBlock",
     "CourtRecurringAvailability",

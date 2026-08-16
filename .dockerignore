@@ -1,0 +1,34 @@
+# .dockerignore — raiz do repo (build context do backend)
+# Evita enviar pastas grandes/irrelevantes ao Docker daemon.
+
+# Mobile (Capacitor)
+ios/
+android/
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+venv/
+.env
+.env.*
+*.egg-info/
+
+# Docs / legado
+docs/
+_legacy/
+*.md
+*.log
+
+# State legado
+backend/state.json

@@ -91,6 +91,60 @@ body {
   line-height: 1.5;
 }
 
+.admin-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 12px;
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-logout:hover { background: rgba(255, 255, 255, .2); }
+
+.admin-logout[hidden] { display: none; }
+
+.admin-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.admin-actions button {
+  border: 0;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-actions button.admin-action--pause { background: var(--pq-amber-soft); color: var(--pq-amber-strong); }
+.admin-actions button.admin-action--reactivate { background: var(--pq-signal-soft); color: var(--pq-brand-deep); }
+.admin-actions button:disabled { opacity: .55; cursor: default; }
+
+.auditoria { list-style: none; }
+
+.auditoria li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--pq-line);
+  font-size: 13px;
+}
+
+.auditoria li:last-child { border-bottom: 0; }
+
+.auditoria li small { color: var(--pq-muted); white-space: nowrap; }
+
 /* ── conteudo ── */
 .admin-main { padding: 26px 30px 60px; }
 

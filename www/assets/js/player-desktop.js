@@ -1,7 +1,9 @@
 import venueService from '../../services/venues.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
-import { loadGame } from './game-mode.js';
+import { loadGame, destroyGame } from './game-mode.js';
 
 let currentRoute = null;
 let desktopMap = null;
@@ -233,15 +235,6 @@ function availabilityForDay(base, dayIndex) {
     ...slot,
     status: base[(index + dayIndex) % base.length].status
   }));
-}
-
-function isPastSlot(hour, dateValue) {
-  const date = dateValue || localDateValue();
-  if (date !== localDateValue()) return false;
-  const slotTotal = Number(String(hour).slice(0, 2)) * 60;
-  const now = new Date();
-  const nowTotal = now.getHours() * 60 + now.getMinutes();
-  return slotTotal <= nowTotal;
 }
 
 function routeQuery(route) {
@@ -607,6 +600,15 @@ async function renderVenue(root, route) {
   setDesktopBookingStage(root, 'date');
 }
 
+function isPastSlot(hour, dateValue) {
+  const date = dateValue || localDateValue();
+  if (date !== localDateValue()) return false;
+  const slotTotal = Number(String(hour).slice(0, 2)) * 60;
+  const now = new Date();
+  const nowTotal = now.getHours() * 60 + now.getMinutes();
+  return slotTotal <= nowTotal;
+}
+
 function renderBooking(root) {
   const booking = root.querySelector('[data-player-booking]');
   if (!booking) return;
@@ -644,13 +646,12 @@ function renderBooking(root) {
       <div class="avail-lbl">${label}</div>
       <div class="avail-slots">${slots.map((slot) => {
         const hour = Number(slot.hour.slice(0, 2));
-        const selected = selectedHour && hour >= start && hour < start + duration;
+        const inBlock = selectedHour && hour >= start && hour < start + duration;
+        const selected = inBlock && isFreeAt(hour);
         const availableStart = canStartAt(hour) && !isPast(slot.hour);
         const reason = isPast(slot.hour)
           ? 'Horário já passou'
-          : slot.status === 'busy'
-            ? 'Horário ocupado'
-            : `Não há ${duration}h consecutivas a partir daqui`;
+          : slot.status === 'busy' ? 'Horário ocupado' : `Não há ${duration}h consecutivas a partir daqui`;
         return `<button type="button" class="slot ${availableStart ? 'free' : 'busy'} ${selected ? 'sel' : ''}" data-player-slot="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
       }).join('')}</div>
     </div>`).join('');
@@ -700,6 +701,20 @@ async function bookingContext(route) {
   const hour = query.get('hora') || '19:00';
   const duration = Math.max(1, Math.min(3, Number(query.get('dur') || 1)));
   const amounts = calculateCheckoutAmounts(venue.price, duration);
+  let quoteAmounts = null;
+  if (API_BASE_URL) {
+    try {
+      quoteAmounts = await venueService.quote({
+        quadraId: venue.id,
+        data: date,
+        hora: hour,
+        dur: duration,
+        plano: 'avulso'
+      });
+    } catch (error) {
+      quoteAmounts = null;
+    }
+  }
   return {
     venue,
     date,
@@ -707,7 +722,7 @@ async function bookingContext(route) {
     hour,
     duration,
     endHour: addHours(hour, duration),
-    ...amounts,
+    ...(quoteAmounts || amounts),
     method: PAYMENT_METHOD_LABELS[query.get('metodo')] ? query.get('metodo') : 'pix'
   };
 }
@@ -865,12 +880,12 @@ async function renderConfirmation(root, route) {
     hour,
     duration,
     endHour,
-    subtotal,
-    serviceFee,
-    total,
     method
   } = context;
-  const code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
+  let subtotal = context.subtotal;
+  let serviceFee = context.serviceFee;
+  let total = context.total;
+  let code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
   const query = routeQuery(route);
   const requestedDeadline = Number(query.get('deadline'));
   const deadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
@@ -878,6 +893,7 @@ async function renderConfirmation(root, route) {
     : Date.now() + APPROVAL_WINDOW_MS;
   const forcedResult = query.get('resultado') || 'aceito';
   let settled = false;
+  let apiReserva = null;
 
   const reservationData = {
     code,
@@ -1038,6 +1054,27 @@ async function renderConfirmation(root, route) {
     refreshApprovalIcons();
   }
 
+  if (API_BASE_URL) {
+    try {
+      const submit = await submitPlayerReservation(context);
+      apiReserva = submit.reserva;
+      if (apiReserva) {
+        code = apiReserva.code || code;
+        subtotal = Number.isFinite(apiReserva.subtotal) ? apiReserva.subtotal : subtotal;
+        serviceFee = Number.isFinite(apiReserva.serviceFee) ? apiReserva.serviceFee : serviceFee;
+        total = Number.isFinite(apiReserva.price) ? apiReserva.price : total;
+        reservationData.id = apiReserva.id;
+        reservationData.code = code;
+        reservationData.subtotal = subtotal;
+        reservationData.serviceFee = serviceFee;
+        reservationData.price = total;
+        await payPlayerReservation(apiReserva.id);
+      }
+    } catch (error) {
+      apiReserva = null;
+    }
+  }
+
   await venueService.saveReservation({
     ...reservationData,
     status: 'Aguardando aprovação',
@@ -1045,6 +1082,20 @@ async function renderConfirmation(root, route) {
     group: 'proxima'
   });
   renderPending(Math.max(0, deadline - Date.now()));
+
+  if (API_BASE_URL && apiReserva) {
+    watchReservation(apiReserva.id, {
+      onDone: async (status) => {
+        if (status === 'confirmed' || status === 'completed') {
+          await renderAccepted();
+        } else if (status === 'expired') {
+          await renderRejected('expired');
+        } else {
+          await renderRejected('declined');
+        }
+      }
+    });
+  }
 
   async function tickApproval() {
     if (!document.contains(root)) {
@@ -1057,6 +1108,17 @@ async function renderConfirmation(root, route) {
     const progress = root.querySelector('[data-player-approval-progress]');
     if (countdown) countdown.textContent = formatApprovalCountdown(remaining);
     if (progress) progress.style.width = `${Math.max(0, Math.min(100, (remaining / APPROVAL_WINDOW_MS) * 100))}%`;
+
+    // Na API o desfecho chega pelo polling de /events (ou WS depois); o
+    // cronometro so cuida do limite de 15 minutos.
+    if (API_BASE_URL) {
+      if (!apiReserva) {
+        await renderRejected('declined');
+      } else if (remaining <= 0 || forcedResult === 'expirado') {
+        await renderRejected('expired');
+      }
+      return;
+    }
 
     if (remaining <= 0 || forcedResult === 'expirado') {
       await renderRejected('expired');
@@ -1080,7 +1142,7 @@ async function renderReservations(root) {
   const cards = reservations.map((reservation) => {
     const venue = venues.find((item) => item.id === reservation.venueId);
     if (!venue) return '';
-    const conversation = conversations.find((item) => Number(item.venueId) === Number(venue.id));
+    const conversation = conversations.find((item) => String(item.venueId) === String(venue.id));
     return `
       <article class="ritem" data-status="${escapeHtml(reservation.group)}" ${reservation.group === 'proxima' ? '' : 'style="display:none"'}>
         <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
@@ -1331,7 +1393,7 @@ async function renderConfig(root) {
 async function renderMessages(root, route) {
   const conversations = await venueService.conversations();
   const selectedId = route.params.id || 0;
-  const active = conversations.find((item) => item.id === Number(selectedId));
+  const active = conversations.find((item) => String(item.id) === String(selectedId));
   root.innerHTML = `
     <div class="chat ${active ? 'has-active' : ''}">
       <aside class="chat-list">
@@ -1376,6 +1438,16 @@ function updateTopbar(route) {
   window.pqRefreshIcons?.(actions);
 }
 
+async function renderGame(root) {
+  const status = await loadGame();
+  if (status === 'ok') return;
+  // 'empty' = nao ha partida. 'error' = a tela nao montou — nao mentir dizendo
+  // que nao ha jogo; o motivo real fica no console.
+  root.innerHTML = status === 'empty'
+    ? '<div class="empty"><h3>Nenhuma partida ativa</h3><p>Quando você tiver um jogo marcado ele aparece aqui.</p><a class="btn" href="#quadras">Encontrar uma quadra</a></div>'
+    : '<div class="empty"><h3>Não foi possível abrir a partida</h3><p>Recarregue a tela. Se continuar, feche e abra o app.</p><button class="btn" type="button" data-game-reload>Recarregar</button></div>';
+}
+
 export async function renderPlayerDesktopPage(route, root) {
   if (activeDesktopApprovalTimer) {
     clearInterval(activeDesktopApprovalTimer);
@@ -1405,16 +1477,6 @@ export async function renderPlayerDesktopPage(route, root) {
   await renderers[route.name](page, route);
   updateTopbar(route);
   window.pqRefreshIcons?.(page);
-}
-
-async function renderGame(root) {
-  const status = await loadGame();
-  if (status === 'ok') return;
-  // 'empty' = nao ha partida. 'error' = a tela nao montou — nao mentir dizendo
-  // que nao ha jogo; o motivo real fica no console.
-  root.innerHTML = status === 'empty'
-    ? '<div class="empty"><h3>Nenhuma partida ativa</h3><p>Quando você tiver um jogo marcado ele aparece aqui.</p><a class="btn" href="#quadras">Encontrar uma quadra</a></div>'
-    : '<div class="empty"><h3>Não foi possível abrir a partida</h3><p>Recarregue a tela. Se continuar, feche e abra o app.</p><button class="btn" type="button" data-game-reload>Recarregar</button></div>';
 }
 
 export function initPlayerDesktopActions() {

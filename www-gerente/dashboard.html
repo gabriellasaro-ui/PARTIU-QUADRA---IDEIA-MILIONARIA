@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- data-manager-app: as regras do manager-app.css vivem sob esse seletor.
      Sem o atributo, a folha carrega e nao pinta nada. -->
-<html lang="pt-br" data-page="dashboard" data-manager-app data-manager-view="dashboard">
+<html lang="pt-br" data-page="dashboard" data-manager-app data-manager-view="dashboard" data-auth-required="true">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -33,6 +33,7 @@
   </div>
   <div data-component="./components/modal/schedule-modal.html"></div>
   <div data-component="./components/toast/toast.html"></div>
+  <script src="./config/app.config.js"></script>
   <script src="./assets/js/ui.js" defer></script>
   <script type="module" src="./assets/js/app.js"></script>
 </body>

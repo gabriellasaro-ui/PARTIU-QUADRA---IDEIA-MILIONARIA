@@ -13,6 +13,8 @@
 import { ARENA, COURTS } from '../../config/manager-data.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../../services/manager-api.js';
 
 const COURTS_KEY = 'manager-courts';
 const SHOWCASE_KEY = 'manager-showcase';
@@ -41,6 +43,12 @@ export function saveCourt(id, patch) {
   const over = overrides();
   over[id] = { ...(over[id] || {}), ...patch };
   storage.set(COURTS_KEY, over);
+}
+
+/* Quadras vivas: /api/gerente/quadras quando houver API. */
+export async function loadCourts() {
+  if (!API_BASE_URL) return courts();
+  return managerService.quadras();
 }
 
 export const showcase = () => ({
@@ -78,8 +86,8 @@ function courtCard(court) {
   </article>`;
 }
 
-export function renderManagerCourts(root) {
-  const lista = courts();
+export async function renderManagerCourts(root) {
+  const lista = API_BASE_URL ? await loadCourts() : courts();
 
   const grid = root.querySelector('[data-court-list]');
   if (grid) {
@@ -130,7 +138,7 @@ export function renderManagerCourts(root) {
 }
 
 export function initManagerCourts() {
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
 
@@ -138,10 +146,20 @@ export function initManagerCourts() {
     // lista. O resto abre o formulario completo, que e uma pagina.
     const toggle = event.target.closest('[data-court-toggle]');
     if (toggle) {
-      const court = courts().find((c) => String(c.id) === toggle.dataset.courtToggle);
+      const court = (API_BASE_URL ? await loadCourts() : courts())
+        .find((c) => String(c.id) === toggle.dataset.courtToggle);
       if (!court) return;
-      saveCourt(court.id, { active: !court.active });
-      renderManagerCourts(root);
+      if (API_BASE_URL) {
+        try {
+          await managerService.atualizarQuadra(court.id, { ativa: !court.active });
+        } catch (error) {
+          window.pqToast?.(error.message || 'Não foi possível salvar');
+          return;
+        }
+      } else {
+        saveCourt(court.id, { active: !court.active });
+      }
+      await renderManagerCourts(root);
       window.pqToast?.(court.active ? `${court.label} pausada` : `${court.label} ativada`);
       return;
     }

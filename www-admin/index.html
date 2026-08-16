@@ -31,8 +31,11 @@
       </nav>
 
       <div class="admin-side__foot">
-        <p>Os dados vêm do mesmo armazenamento do app. Enquanto não houver
+        <p data-admin-source>Os dados vêm do mesmo armazenamento do app. Enquanto não houver
           backend, cada navegador enxerga o próprio.</p>
+        <button type="button" class="admin-logout" data-auth-logout hidden>
+          <i class="ic" data-lucide="log-out"></i>Sair
+        </button>
       </div>
     </aside>
 
@@ -42,13 +45,14 @@
           <h1 data-admin-title>Visão geral</h1>
           <p data-admin-sub>A plataforma inteira num lugar só</p>
         </div>
-        <span class="admin-badge"><i class="ic" data-lucide="database"></i>dados locais</span>
+        <span class="admin-badge" data-admin-badge><i class="ic" data-lucide="database"></i><span data-admin-badge-label>dados locais</span></span>
       </header>
 
       <div data-admin-view></div>
     </main>
   </div>
 
+  <script src="./config/app.config.js"></script>
   <script src="./assets/vendor/lucide/lucide.min.js" defer></script>
   <script type="module" src="./assets/js/admin.js"></script>
 </body>

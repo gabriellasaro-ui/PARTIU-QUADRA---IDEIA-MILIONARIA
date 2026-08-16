@@ -1,4 +1,6 @@
 import venueService from '../../services/venues.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame } from './game-mode.js';
@@ -699,6 +701,20 @@ async function bookingContext(route) {
   const hour = query.get('hora') || '19:00';
   const duration = Math.max(1, Math.min(3, Number(query.get('dur') || 1)));
   const amounts = calculateCheckoutAmounts(venue.price, duration);
+  let quoteAmounts = null;
+  if (API_BASE_URL) {
+    try {
+      quoteAmounts = await venueService.quote({
+        quadraId: venue.id,
+        data: date,
+        hora: hour,
+        dur: duration,
+        plano: 'avulso'
+      });
+    } catch (error) {
+      quoteAmounts = null;
+    }
+  }
   return {
     venue,
     date,
@@ -706,7 +722,7 @@ async function bookingContext(route) {
     hour,
     duration,
     endHour: addHours(hour, duration),
-    ...amounts,
+    ...(quoteAmounts || amounts),
     method: PAYMENT_METHOD_LABELS[query.get('metodo')] ? query.get('metodo') : 'pix'
   };
 }
@@ -864,12 +880,12 @@ async function renderConfirmation(root, route) {
     hour,
     duration,
     endHour,
-    subtotal,
-    serviceFee,
-    total,
     method
   } = context;
-  const code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
+  let subtotal = context.subtotal;
+  let serviceFee = context.serviceFee;
+  let total = context.total;
+  let code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
   const query = routeQuery(route);
   const requestedDeadline = Number(query.get('deadline'));
   const deadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
@@ -877,6 +893,7 @@ async function renderConfirmation(root, route) {
     : Date.now() + APPROVAL_WINDOW_MS;
   const forcedResult = query.get('resultado') || 'aceito';
   let settled = false;
+  let apiReserva = null;
 
   const reservationData = {
     code,
@@ -1037,6 +1054,27 @@ async function renderConfirmation(root, route) {
     refreshApprovalIcons();
   }
 
+  if (API_BASE_URL) {
+    try {
+      const submit = await submitPlayerReservation(context);
+      apiReserva = submit.reserva;
+      if (apiReserva) {
+        code = apiReserva.code || code;
+        subtotal = Number.isFinite(apiReserva.subtotal) ? apiReserva.subtotal : subtotal;
+        serviceFee = Number.isFinite(apiReserva.serviceFee) ? apiReserva.serviceFee : serviceFee;
+        total = Number.isFinite(apiReserva.price) ? apiReserva.price : total;
+        reservationData.id = apiReserva.id;
+        reservationData.code = code;
+        reservationData.subtotal = subtotal;
+        reservationData.serviceFee = serviceFee;
+        reservationData.price = total;
+        await payPlayerReservation(apiReserva.id);
+      }
+    } catch (error) {
+      apiReserva = null;
+    }
+  }
+
   await venueService.saveReservation({
     ...reservationData,
     status: 'Aguardando aprovação',
@@ -1044,6 +1082,20 @@ async function renderConfirmation(root, route) {
     group: 'proxima'
   });
   renderPending(Math.max(0, deadline - Date.now()));
+
+  if (API_BASE_URL && apiReserva) {
+    watchReservation(apiReserva.id, {
+      onDone: async (status) => {
+        if (status === 'confirmed' || status === 'completed') {
+          await renderAccepted();
+        } else if (status === 'expired') {
+          await renderRejected('expired');
+        } else {
+          await renderRejected('declined');
+        }
+      }
+    });
+  }
 
   async function tickApproval() {
     if (!document.contains(root)) {
@@ -1056,6 +1108,17 @@ async function renderConfirmation(root, route) {
     const progress = root.querySelector('[data-player-approval-progress]');
     if (countdown) countdown.textContent = formatApprovalCountdown(remaining);
     if (progress) progress.style.width = `${Math.max(0, Math.min(100, (remaining / APPROVAL_WINDOW_MS) * 100))}%`;
+
+    // Na API o desfecho chega pelo polling de /events (ou WS depois); o
+    // cronometro so cuida do limite de 15 minutos.
+    if (API_BASE_URL) {
+      if (!apiReserva) {
+        await renderRejected('declined');
+      } else if (remaining <= 0 || forcedResult === 'expirado') {
+        await renderRejected('expired');
+      }
+      return;
+    }
 
     if (remaining <= 0 || forcedResult === 'expirado') {
       await renderRejected('expired');
@@ -1079,7 +1142,7 @@ async function renderReservations(root) {
   const cards = reservations.map((reservation) => {
     const venue = venues.find((item) => item.id === reservation.venueId);
     if (!venue) return '';
-    const conversation = conversations.find((item) => Number(item.venueId) === Number(venue.id));
+    const conversation = conversations.find((item) => String(item.venueId) === String(venue.id));
     return `
       <article class="ritem" data-status="${escapeHtml(reservation.group)}" ${reservation.group === 'proxima' ? '' : 'style="display:none"'}>
         <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
@@ -1330,7 +1393,7 @@ async function renderConfig(root) {
 async function renderMessages(root, route) {
   const conversations = await venueService.conversations();
   const selectedId = route.params.id || 0;
-  const active = conversations.find((item) => item.id === Number(selectedId));
+  const active = conversations.find((item) => String(item.id) === String(selectedId));
   root.innerHTML = `
     <div class="chat ${active ? 'has-active' : ''}">
       <aside class="chat-list">

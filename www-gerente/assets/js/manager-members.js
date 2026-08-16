@@ -17,9 +17,13 @@ import venueService from '../../services/venues.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import { ARENA_MEMBERS } from '../../config/manager-data.js';
-import { courts } from './manager-courts.js';
+import { courts, loadCourts } from './manager-courts.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../../services/manager-api.js';
 
 const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+// Dia da semana em ingles no formato do backend (0=segunda..6=domingo).
+const DIA_INDICE = { domingo: 6, segunda: 0, terça: 1, quarta: 2, quinta: 3, sexta: 4, sábado: 5 };
 // Mesma chave do app antigo: quem ja tinha mensalista cadastrado nao perde.
 const KEY = 'manager-members';
 
@@ -43,6 +47,7 @@ function manuais() {
 
 function linha({ id, name, court, day, time, price, status, origem }) {
   const doApp = origem === 'app';
+  const editavel = origem === 'manual';
   return `<article class="manager-member" data-member-id="${escapeHtml(id)}">
     <span class="manager-avatar">${escapeHtml(String(name).charAt(0).toUpperCase())}</span>
     <div class="manager-member__person">
@@ -57,7 +62,7 @@ function linha({ id, name, court, day, time, price, status, origem }) {
     <div class="manager-row-actions">
       ${doApp
         ? '<span class="manager-locked" title="Este plano vem de uma reserva do app">—</span>'
-        : `<button type="button" class="manager-row-menu" data-member-edit="${escapeHtml(id)}" aria-label="Editar ${escapeHtml(name)}"><svg class="ic"><use href="#i-pencil"/></svg></button>
+        : `${editavel ? `<button type="button" class="manager-row-menu" data-member-edit="${escapeHtml(id)}" aria-label="Editar ${escapeHtml(name)}"><svg class="ic"><use href="#i-pencil"/></svg></button>` : ''}
            <button type="button" class="manager-row-menu is-danger" data-member-remove="${escapeHtml(id)}" aria-label="Remover ${escapeHtml(name)}"><svg class="ic"><use href="#i-x"/></svg></button>`}
     </div>
   </article>`;
@@ -104,8 +109,20 @@ export async function renderManagerMembers(root) {
   const list = root.querySelector('[data-member-list]');
   if (!list) return;
 
-  const doApp = await planosDoApp();
-  const todos = [...doApp, ...manuais().map((m) => ({ ...m, origem: 'manual' }))];
+  // Com API a lista inteira vem do backend — incluindo os planos abertos
+  // pelo app, entao o extra do venueService (catalogo do marketplace) nao se
+  // aplica. Sem API, o comportamento e o antigo: planos do app + cadastros
+  // manuais do storage.
+  let todos;
+  let opcoesQuadras;
+  if (API_BASE_URL) {
+    todos = (await managerService.mensalistas()).map((m) => ({ ...m, origem: 'api' }));
+    opcoesQuadras = await loadCourts();
+  } else {
+    const doApp = await planosDoApp();
+    todos = [...doApp, ...manuais().map((m) => ({ ...m, origem: 'manual' }))];
+    opcoesQuadras = courts();
+  }
 
   list.innerHTML = todos.length
     ? todos.map(linha).join('')
@@ -126,7 +143,7 @@ export async function renderManagerMembers(root) {
   const select = root.querySelector('[data-member-courts]');
   if (select) {
     const atual = select.value;
-    select.innerHTML = courts().map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
+    select.innerHTML = opcoesQuadras.map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
     if (atual) select.value = atual;
   }
 
@@ -169,7 +186,17 @@ export function initManagerMembers() {
 
     const remover = event.target.closest('[data-member-remove]');
     if (remover) {
-      storage.set(KEY, manuais().filter((m) => m.id !== remover.dataset.memberRemove));
+      const id = remover.dataset.memberRemove;
+      if (API_BASE_URL) {
+        try {
+          await managerService.cancelarMensalista(id);
+        } catch (error) {
+          window.pqToast?.(error.message || 'Não foi possível remover');
+          return;
+        }
+      } else {
+        storage.set(KEY, manuais().filter((m) => m.id !== id));
+      }
       await renderManagerMembers(root);
       window.pqToast?.('Mensalista removido');
     }
@@ -183,6 +210,30 @@ export function initManagerMembers() {
 
     const root = document.querySelector('[data-desktop-route-view]');
     const data = new FormData(form);
+
+    if (API_BASE_URL) {
+      const nome = String(data.get('name') || '').trim();
+      const diaPt = String(data.get('day') || 'quarta').toLowerCase();
+      const hora = String(data.get('time') || '20:00');
+      const quadra = String(data.get('court') || '');
+      const quadras = await loadCourts();
+      const courtId = quadras.find((c) => c.label === quadra)?.id || quadras[0]?.id;
+      // O backend quer o indice do dia (0=segunda..6=domingo).
+      const dia = DIA_INDICE[diaPt] ?? 2;
+      const date = proximoDiaDaSemana(dia);
+      try {
+        await managerService.criarMensalista({ courtId, dia, date, hora, clientName: nome });
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível salvar');
+        return;
+      }
+      root.querySelector('[data-member-dialog]').hidden = true;
+      form.reset();
+      await renderManagerMembers(root);
+      window.pqToast?.('Mensalista salvo');
+      return;
+    }
+
     const id = String(data.get('id') || '') || `member-${Date.now()}`;
     const anterior = manuais().find((m) => m.id === id);
     const membro = {
@@ -202,4 +253,15 @@ export function initManagerMembers() {
     await renderManagerMembers(root);
     window.pqToast?.('Mensalista salvo');
   });
+}
+
+/* Proxima data futura que cai no dia da semana pedido (0=segunda..6=domingo) —
+   o backend nao aceita start_at no passado, entao hoje sozinho nao basta. */
+function proximoDiaDaSemana(diaIndice) {
+  const hoje = new Date();
+  const alvo = (diaIndice + 1) % 7;
+  let diff = (alvo - hoje.getDay() + 7) % 7;
+  if (diff === 0) diff = 7;
+  const d = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + diff);
+  return d.toISOString().slice(0, 10);
 }

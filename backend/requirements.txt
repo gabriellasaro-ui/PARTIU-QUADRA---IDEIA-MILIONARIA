@@ -20,3 +20,9 @@ google-auth==2.34.0
 # Push (Fase 7) — FCM real; import lazy apenas quando FCM_CREDENTIALS_PATH
 # estiver configurado. O provider mock nao importa firebase-admin.
 firebase-admin==6.5.0
+
+# Rate limiting (Fase 12) — slowapi + limits com storage no Redis
+# (in_memory_fallback_enabled=True quando o Redis cai).
+slowapi==0.1.9
+limits==3.13.0
+

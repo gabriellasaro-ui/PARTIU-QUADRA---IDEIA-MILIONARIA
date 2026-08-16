@@ -25,6 +25,35 @@ async function parseResponse(response) {
   return response.text();
 }
 
+/* Uma tentativa de refresh por vez: se duas chamadas tomarem 401 juntas,
+   esperam a mesma promessa em vez de disparar refresh duplicados. */
+let refreshing = null;
+
+async function tryRefreshToken() {
+  if (refreshing) return refreshing;
+  refreshing = (async () => {
+    const refreshToken = storage.getAuthRefreshToken();
+    if (!refreshToken) return false;
+    const session = await fetch(buildUrl('/api/auth/refresh'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken })
+    });
+    if (!session.ok) return false;
+    const data = await session.json();
+    if (!data?.token) return false;
+    storage.setAuthToken(data.token);
+    storage.setAuthUser(data.user ?? storage.getAuthUser());
+    if (data.refreshToken) storage.setAuthRefreshToken(data.refreshToken);
+    return true;
+  })();
+  try {
+    return await refreshing;
+  } finally {
+    refreshing = null;
+  }
+}
+
 export async function apiRequest(path, options = {}) {
   const {
     method = 'GET',
@@ -54,6 +83,19 @@ export async function apiRequest(path, options = {}) {
   });
 
   const payload = await parseResponse(response);
+
+  /* Access token vencido (1h): tenta refresh silencioso uma vez e repete a
+     chamada original. Falhou o refresh => sessao morre e o app devolve para
+     o login. */
+  if (response.status === 401 && auth && !path.includes('/auth/refresh')) {
+    if (await tryRefreshToken()) {
+      return apiRequest(path, options);
+    }
+    storage.clearSession();
+    window.dispatchEvent(new CustomEvent('pq:auth-expired'));
+    throw new ApiError('Sessão expirada, faça login novamente', response, payload);
+  }
+
   if (!response.ok) {
     const message = payload?.message || payload?.detail || 'Falha na comunicacao com a API';
     throw new ApiError(message, response, payload);

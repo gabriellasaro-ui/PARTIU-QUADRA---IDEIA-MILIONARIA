@@ -4,11 +4,13 @@
 token. Conversas so existem a partir do pagamento confirmado (booking pago),
 logo conversa inexistente vira 404 para quem nao participa dela.
 """
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
+from starlette.responses import Response
 
 from ..auth.deps import get_current_user
 from ..core.database import get_db
+from ..core.ratelimit import LIMIT_CHAT_USER, limiter, user_or_ip_key
 from ..models import User
 from ..services import messages as svc
 
@@ -43,12 +45,15 @@ def conversa_detalhe(
 
 
 @router.post("/{cid}/enviar")
+@limiter.limit(LIMIT_CHAT_USER, key_func=user_or_ip_key)
 def enviar_mensagem(
+    request: Request,
     cid: str,
     texto: str = Query(""),
     de: str = Query("jogador"),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    response: Response = None,
 ):
     return {"conversa": svc.send_message(db, user, cid, texto)}
 

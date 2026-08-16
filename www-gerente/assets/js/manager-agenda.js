@@ -11,6 +11,8 @@
 import { ARENA_BOOKINGS, STATUS_CLASS, bookingDate, bookingHours } from '../../config/manager-data.js';
 import { courts } from './manager-courts.js';
 import { formatCurrency } from '../../utils/formatters.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../../services/manager-api.js';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -23,6 +25,7 @@ const ALTURA_HORA = 58;
 // pagina e remontada a cada render e nao pode esquecer onde a pessoa estava.
 let offsetSemana = 0;
 let quadraFiltro = 'todas';
+let quadrasCarregadas = null;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -74,7 +77,7 @@ function atualizarResumo(root, eventos, segunda) {
    reserva cai na coluna cuja data bate; o que fica fora da semana visivel
    simplesmente nao aparece, que e o que torna a navegacao de semana
    honesta. */
-function eventosDaSemana(segunda) {
+function eventosMock(segunda) {
   const dias = DIAS.map((_, i) => {
     const d = new Date(segunda);
     d.setDate(d.getDate() + i);
@@ -96,6 +99,36 @@ function eventosDaSemana(segunda) {
       };
     })
     .filter((e) => e.dow >= 0);
+}
+
+/* Mesma coisa vinda do backend: /api/gerente/agenda ja devolve eventos
+   ancorados em data real (dia YYYY-MM-DD, inicio/fim numericos). */
+function eventosApi(quadras) {
+  return quadras.map((e) => {
+    const d = new Date(`${e.dia}T12:00:00`);
+    const dow = (d.getDay() + 6) % 7;
+    const inicio = Number(e.inicio);
+    const fim = Number(e.fim);
+    return {
+      ...e,
+      dow,
+      inicio,
+      fim,
+      cls: e.cls || 'pendente',
+      duracao: `${fim - inicio}h`,
+      horaCurta: e.horaCurta || String(e.inicio),
+      hora: e.hora || `${String(e.inicio)} – ${String(e.fim)}`
+    };
+  });
+}
+
+async function eventosDaSemana(segunda) {
+  if (API_BASE_URL) {
+    const data = await managerService.agenda(segunda.toISOString().slice(0, 10));
+    quadrasCarregadas = data.quadras;
+    return eventosApi(data.eventos);
+  }
+  return eventosMock(segunda);
 }
 
 function atributosEvento(e) {
@@ -197,11 +230,11 @@ function renderMobile(root, eventos, segunda) {
   wrap.innerHTML = `<div class="manager-agenda-days" role="tablist" aria-label="Dias da semana">${abas}</div>${paineis}`;
 }
 
-export function renderManagerAgenda(root) {
+export async function renderManagerAgenda(root) {
   if (!root.querySelector('[data-agenda-body]')) return;
 
   const segunda = segundaDaSemana();
-  const eventos = eventosDaSemana(segunda);
+  const eventos = await eventosDaSemana(segunda);
 
   const rotulo = root.querySelector('[data-agenda-range]');
   if (rotulo) rotulo.textContent = rotuloSemana(segunda);
@@ -210,7 +243,7 @@ export function renderManagerAgenda(root) {
   // O filtro sai das quadras da arena, nao de uma lista escrita a mao. Existe
   // uma unica barra responsiva para evitar estados duplicados na agenda.
   const opcoes = [{ label: 'todas', texto: 'Todas as quadras' },
-    ...courts().map((c) => ({ label: c.label, texto: c.label }))];
+    ...(API_BASE_URL ? quadrasCarregadas : courts()).map((c) => ({ label: c.label, texto: c.label }))];
   root.querySelectorAll('[data-agenda-courts]').forEach((filtro) => {
     filtro.innerHTML = opcoes
       .map((o) => `<button type="button" class="${o.label === quadraFiltro ? 'on' : ''}" data-agenda-court="${escapeHtml(o.label)}">${escapeHtml(o.texto)}</button>`)
@@ -257,21 +290,21 @@ function abrirDetalhe(root, el) {
 }
 
 export function initManagerAgenda() {
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
 
     const passo = event.target.closest('[data-agenda-week]');
     if (passo) {
       offsetSemana += Number(passo.dataset.agendaWeek);
-      renderManagerAgenda(root);
+      await renderManagerAgenda(root);
       return;
     }
 
     const quadra = event.target.closest('[data-agenda-court]');
     if (quadra) {
       quadraFiltro = quadra.dataset.agendaCourt;
-      renderManagerAgenda(root);
+      await renderManagerAgenda(root);
       return;
     }
 

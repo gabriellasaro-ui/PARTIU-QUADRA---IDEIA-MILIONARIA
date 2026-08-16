@@ -14,11 +14,13 @@ Rotas:
 Dependencias de Idempotency-Key vêm do header; replay devolve a reserva
 original com replay=true.
 """
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
+from starlette.responses import Response
 
 from ..auth.deps import get_current_manager, get_current_user
 from ..core.database import get_db
+from ..core.ratelimit import LIMIT_WRITE_USER, limiter, user_or_ip_key
 from ..models import User
 from ..schemas.reservas import ActionBody, BookingCreate, QuoteRequest, ReviewCreate
 from ..services import bookings as svc
@@ -39,11 +41,14 @@ def cotacao(
 
 
 @router.post("")
+@limiter.limit(LIMIT_WRITE_USER, key_func=user_or_ip_key)
 def criar_reserva(
+    request: Request,
     body: BookingCreate,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    response: Response = None,
 ):
     created, replay = svc.create_booking(
         db,
@@ -88,10 +93,13 @@ def eventos_reserva(
 
 
 @router.post("/{rid}/pagar")
+@limiter.limit(LIMIT_WRITE_USER, key_func=user_or_ip_key)
 def pagar_reserva(
+    request: Request,
     rid: str,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    response: Response = None,
 ):
     booking, payment, replay = svc.pay_booking(db, user, rid)
     return {

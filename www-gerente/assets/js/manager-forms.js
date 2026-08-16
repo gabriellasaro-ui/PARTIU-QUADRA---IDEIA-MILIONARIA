@@ -8,9 +8,11 @@
 import {
   ARENA_PROFILE, ARENA_COUPONS, SPORTS, AMENITIES
 } from '../../config/manager-data.js';
-import { courts, saveCourt } from './manager-courts.js';
+import { courts, loadCourts, saveCourt } from './manager-courts.js';
 import { addBooking, setPageMeta } from './manager-bookings.js';
 import storage from '../../storage/storage.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../../services/manager-api.js';
 
 const PROFILE_KEY = 'manager-profile';
 const COUPONS_KEY = 'manager-coupons';
@@ -24,6 +26,20 @@ function escapeHtml(value) {
 
 const profile = () => ({ ...ARENA_PROFILE, ...storage.get(PROFILE_KEY, {}) });
 const coupons = () => storage.get(COUPONS_KEY, ARENA_COUPONS);
+
+/* Data ISO para o backend. O campo aceita "Hoje" / "Amanhã" / texto livre;
+   a API so entende YYYY-MM-DD, entao normalize o que da e caia em hoje. */
+function dataISO(valor) {
+  const v = String(valor || '').trim();
+  if (!v || v.toLowerCase() === 'hoje') return new Date().toISOString().slice(0, 10);
+  if (v.toLowerCase() === 'amanhã' || v.toLowerCase() === 'amanha') {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+  const parse = new Date(`${v}T12:00:00`);
+  return Number.isNaN(parse.getTime()) ? new Date().toISOString().slice(0, 10) : parse.toISOString().slice(0, 10);
+}
 
 const horas = (de, ate, selecionada) => {
   let html = '';
@@ -42,12 +58,12 @@ function pintarSwitch(el, ligado) {
 
 // ---------------------------------------------------------------- nova reserva
 
-export function renderManagerBookingForm(root) {
+export async function renderManagerBookingForm(root) {
   const form = root.querySelector('[data-booking-form]');
   if (!form) return;
 
   const quadras = root.querySelector('[data-booking-courts]');
-  if (quadras) quadras.innerHTML = courts().map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
+  if (quadras) quadras.innerHTML = (API_BASE_URL ? await loadCourts() : courts()).map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
 
   const inicio = root.querySelector('[data-booking-hours]');
   if (inicio) inicio.innerHTML = horas(6, 23, 19);
@@ -60,12 +76,13 @@ export function renderManagerBookingForm(root) {
 /* O id vem do hash: #quadra/2 edita; #quadra sozinho cadastra. */
 const courtIdFromHash = () => (location.hash.split('/')[1] || '').trim();
 
-export function renderManagerCourtForm(root) {
+export async function renderManagerCourtForm(root) {
   const form = root.querySelector('[data-court-form]');
   if (!form) return;
 
   const id = courtIdFromHash();
-  const quadra = id ? courts().find((c) => String(c.id) === id) : null;
+  const lista = API_BASE_URL ? await loadCourts() : courts();
+  const quadra = id ? lista.find((c) => String(c.id) === id) : null;
 
   setPageMeta(
     quadra ? `Editar ${quadra.label}` : 'Cadastrar quadra',
@@ -120,10 +137,10 @@ export function renderManagerCourtForm(root) {
 
 // ------------------------------------------------------------------ configurações
 
-function renderCupons(root) {
+async function renderCupons(root) {
   const lista = root.querySelector('[data-coupon-list]');
   if (!lista) return;
-  const atuais = coupons();
+  const atuais = API_BASE_URL ? await managerService.cupons() : coupons();
   lista.innerHTML = atuais.length
     ? atuais.map((c) => `<article class="manager-coupon" data-coupon-id="${escapeHtml(c.id)}">
         <span><svg class="ic"><use href="#i-gift"/></svg></span>
@@ -139,11 +156,29 @@ const formatarData = (iso) => {
   return d ? `${d}/${m}` : iso;
 };
 
-export function renderManagerSettings(root) {
+export async function renderManagerSettings(root) {
   const form = root.querySelector('[data-settings-form]');
   if (!form) return;
 
-  const dados = profile();
+  // Com API o perfil e as configuracoes vivem no backend; sem API, storage.
+  let dados;
+  if (API_BASE_URL) {
+    const [perfilApi, configApi] = await Promise.all([
+      managerService.perfil(),
+      managerService.configuracoes()
+    ]);
+    dados = {
+      ...ARENA_PROFILE,
+      ...perfilApi,
+      notificaReserva: configApi.notificaReserva,
+      notificaPagamento: configApi.notificaPagamento,
+      notificaAvaliacao: configApi.notificaAvaliacao,
+      notificaResumo: configApi.notificaResumo
+    };
+  } else {
+    dados = profile();
+  }
+
   const esportes = root.querySelector('[data-settings-sports]');
   if (esportes) {
     esportes.innerHTML = SPORTS.map((s) =>
@@ -157,8 +192,9 @@ export function renderManagerSettings(root) {
 
   // Contagem real das quadras ativas — no template antigo era "2" fixo, e
   // desencontrava de Minhas quadras assim que a arena pausasse uma.
+  const listaQuadras = API_BASE_URL ? await loadCourts() : courts();
   if (form.elements.quadrasAtivas) {
-    form.elements.quadrasAtivas.value = courts().filter((c) => c.active).length;
+    form.elements.quadrasAtivas.value = listaQuadras.filter((c) => c.active).length;
   }
 
   root.querySelectorAll('[data-switch]').forEach((el) => {
@@ -170,17 +206,17 @@ export function renderManagerSettings(root) {
   const seletor = root.querySelector('[data-coupon-courts]');
   if (seletor) {
     seletor.innerHTML = '<option>Todas as quadras</option>'
-      + courts().map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
+      + listaQuadras.map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
   }
 
-  renderCupons(root);
+  await renderCupons(root);
   window.pqRefreshIcons?.(root);
 }
 
 // ------------------------------------------------------------------------ eventos
 
 export function initManagerForms() {
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
 
@@ -203,8 +239,18 @@ export function initManagerForms() {
 
     const remover = event.target.closest('[data-coupon-remove]');
     if (remover) {
-      storage.set(COUPONS_KEY, coupons().filter((c) => c.id !== remover.dataset.couponRemove));
-      renderCupons(root);
+      const id = remover.dataset.couponRemove;
+      if (API_BASE_URL) {
+        try {
+          await managerService.excluirCupom(id);
+        } catch (error) {
+          window.pqToast?.(error.message || 'Não foi possível remover');
+          return;
+        }
+      } else {
+        storage.set(COUPONS_KEY, coupons().filter((c) => c.id !== id));
+      }
+      await renderCupons(root);
       window.pqToast?.('Cupom removido');
     }
   });
@@ -217,7 +263,7 @@ export function initManagerForms() {
     pintarSwitch(chave, !chave.classList.contains('on'));
   });
 
-  document.addEventListener('submit', (event) => {
+  document.addEventListener('submit', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
 
     const reserva = event.target.closest('[data-booking-form]');
@@ -228,6 +274,30 @@ export function initManagerForms() {
       const inicio = String(d.get('inicio'));
       const dur = Number(d.get('duracao'));
       const fim = `${String(Math.floor(Number(inicio.split(':')[0]) + dur)).padStart(2, '0')}:${dur % 1 ? '30' : '00'}`;
+
+      if (API_BASE_URL) {
+        try {
+          const quadras = await loadCourts();
+          const quadra = String(d.get('quadra'));
+          const courtId = quadras.find((c) => c.label === quadra)?.id || quadras[0]?.id;
+          await managerService.criarReservaManual({
+            courtId,
+            date: dataISO(String(d.get('data'))),
+            hora: inicio,
+            dur,
+            clientName: String(d.get('cliente')).trim(),
+            clientPhone: String(d.get('telefone')).trim(),
+            valor: Number(d.get('valor'))
+          });
+        } catch (error) {
+          window.pqToast?.(error.message || 'Não foi possível criar');
+          return;
+        }
+        window.pqToast?.('Reserva criada');
+        location.hash = '#reservas';
+        return;
+      }
+
       const id = `nova-${Date.now()}`;
       addBooking({
         id,
@@ -250,6 +320,33 @@ export function initManagerForms() {
       event.preventDefault();
       if (!quadra.reportValidity()) return;
       const d = new FormData(quadra);
+
+      if (API_BASE_URL) {
+        const id = String(d.get('id') || '').trim();
+        const body = {
+          nome: String(d.get('label')).trim(),
+          esporte: String(d.get('sport')),
+          descricao: String(d.get('descricao')).trim(),
+          preco: Number(d.get('price')),
+          abertura: String(d.get('abre')),
+          fechamento: String(d.get('fecha')),
+          ativa: root.querySelector('[data-switch="active"]')?.classList.contains('on') ?? true
+        };
+        try {
+          if (id) {
+            await managerService.atualizarQuadra(id, body);
+          } else {
+            await managerService.criarQuadra(body);
+          }
+        } catch (error) {
+          window.pqToast?.(error.message || 'Não foi possível salvar');
+          return;
+        }
+        window.pqToast?.('Quadra salva');
+        location.hash = '#quadras';
+        return;
+      }
+
       const id = Number(d.get('id')) || Date.now();
       const anterior = courts().find((c) => c.id === id);
       saveCourt(id, {
@@ -279,6 +376,32 @@ export function initManagerForms() {
     if (config) {
       event.preventDefault();
       const d = new FormData(config);
+
+      if (API_BASE_URL) {
+        try {
+          await managerService.atualizarPerfil({
+            nome: String(d.get('nome') ?? ''),
+            descricao: String(d.get('descricao') ?? ''),
+            endereco: String(d.get('endereco') ?? ''),
+            telefone: String(d.get('telefone') ?? ''),
+            email: String(d.get('email') ?? ''),
+            pixChave: String(d.get('pixChave') ?? '')
+          });
+          const configs = {};
+          root.querySelectorAll('[data-switch]').forEach((el) => {
+            if (!el.dataset.switch.startsWith('amenity:')) {
+              configs[el.dataset.switch] = el.classList.contains('on');
+            }
+          });
+          await managerService.atualizarConfiguracoes(configs);
+        } catch (error) {
+          window.pqToast?.(error.message || 'Não foi possível salvar');
+          return;
+        }
+        window.pqToast?.('Configurações salvas');
+        return;
+      }
+
       const salvo = { ...profile() };
       ['nome', 'esporte', 'descricao', 'endereco', 'telefone', 'email', 'pixTipo', 'pixChave', 'pixTitular']
         .forEach((campo) => { salvo[campo] = String(d.get(campo) ?? ''); });
@@ -297,6 +420,25 @@ export function initManagerForms() {
       event.preventDefault();
       if (!cupom.reportValidity()) return;
       const d = new FormData(cupom);
+
+      if (API_BASE_URL) {
+        try {
+          await managerService.criarCupom({
+            codigo: String(d.get('code')).trim().toUpperCase(),
+            descontoPercent: Number(d.get('discount')),
+            expiraEm: String(d.get('expires'))
+          });
+        } catch (error) {
+          window.pqToast?.(error.message || 'Não foi possível criar');
+          return;
+        }
+        root.querySelector('[data-coupon-dialog]').hidden = true;
+        cupom.reset();
+        await renderCupons(root);
+        window.pqToast?.('Cupom criado');
+        return;
+      }
+
       storage.set(COUPONS_KEY, [...coupons(), {
         id: `cupom-${Date.now()}`,
         code: String(d.get('code')).trim().toUpperCase(),
@@ -306,7 +448,7 @@ export function initManagerForms() {
       }]);
       root.querySelector('[data-coupon-dialog]').hidden = true;
       cupom.reset();
-      renderCupons(root);
+      await renderCupons(root);
       window.pqToast?.('Cupom criado');
     }
   });

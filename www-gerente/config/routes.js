@@ -1,6 +1,6 @@
 export const ROUTES = {
   home: './dashboard.html',
-  login: './dashboard.html',
+  login: './login.html',
   dashboard: './dashboard.html',
   gerenteReservas: './dashboard.html#reservas',
   gerenteMensagens: './dashboard.html#mensagens',

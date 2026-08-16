@@ -8,9 +8,11 @@
    Banner, resumo e filtros vem junto porque sao o que responde "o que
    precisa de mim agora". */
 import { ARENA_MEMBERS } from '../../config/manager-data.js';
-import { bookings, setBookingStatus, pedeAcao } from './manager-bookings.js';
+import { loadBookings, applyBookingAction } from './manager-bookings.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../../services/manager-api.js';
 
 const MEMBERS_KEY = 'manager-members';
 
@@ -60,11 +62,11 @@ function cardMensalista(m) {
   </article>`;
 }
 
-export function renderManagerReservations(root) {
+export async function renderManagerReservations(root) {
   const lista = root.querySelector('[data-manager-reservation-list]');
   if (!lista) return;
 
-  const todas = bookings();
+  const todas = await loadBookings();
   const solicitadas = todas.filter((r) => r.status === 'Solicitada');
 
   // O banner some quando nao ha o que responder — um aviso permanente vira
@@ -101,7 +103,12 @@ export function renderManagerReservations(root) {
     b.classList.toggle('on', b.dataset.bookingFilter === filtro);
   });
 
-  const mensalistas = storage.get(MEMBERS_KEY, ARENA_MEMBERS);
+  let mensalistas = storage.get(MEMBERS_KEY, ARENA_MEMBERS);
+  if (API_BASE_URL) {
+    try {
+      mensalistas = await managerService.mensalistas();
+    } catch (error) {}
+  }
   const box = root.querySelector('[data-manager-mensal-list]');
   if (box) {
     box.innerHTML = mensalistas.length
@@ -114,30 +121,38 @@ export function renderManagerReservations(root) {
 }
 
 export function initManagerReservations() {
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
 
     const aprovar = event.target.closest('[data-booking-approve]');
     if (aprovar) {
-      setBookingStatus(aprovar.dataset.bookingApprove, 'Confirmado');
-      renderManagerReservations(root);
-      window.pqToast?.('Reserva aprovada');
+      try {
+        await applyBookingAction(aprovar.dataset.bookingApprove, 'Confirmado');
+        await renderManagerReservations(root);
+        window.pqToast?.('Reserva aprovada');
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível aprovar');
+      }
       return;
     }
 
     const recusar = event.target.closest('[data-booking-refuse]');
     if (recusar) {
-      setBookingStatus(recusar.dataset.bookingRefuse, 'Recusada');
-      renderManagerReservations(root);
-      window.pqToast?.('Reserva recusada');
+      try {
+        await applyBookingAction(recusar.dataset.bookingRefuse, 'Recusada');
+        await renderManagerReservations(root);
+        window.pqToast?.('Reserva recusada');
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível recusar');
+      }
       return;
     }
 
     const aba = event.target.closest('[data-booking-filter]');
     if (aba) {
       filtro = aba.dataset.bookingFilter;
-      renderManagerReservations(root);
+      await renderManagerReservations(root);
     }
   });
 
@@ -148,5 +163,3 @@ export function initManagerReservations() {
     renderManagerReservations(document.querySelector('[data-desktop-route-view]'));
   });
 }
-
-export { pedeAcao };

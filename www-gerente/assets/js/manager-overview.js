@@ -6,6 +6,8 @@
    O mapa de calor e o grafico sao derivados, nao inventados: saem do padrão
    de horários que a arena ja tem. */
 import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
+import { API_BASE_URL } from '../../config/constants.js';
+import managerService from '../../services/manager-api.js';
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const HORAS = ['08h', '09h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h', '18h', '19h', '20h', '21h', '22h', '23h'];
@@ -92,48 +94,74 @@ function renderChart(root, valores) {
   return { pico, valores };
 }
 
-export function renderManagerOverview(root) {
+export async function renderManagerOverview(root) {
   // Sem guard de tudo-ou-nada: cada bloco confere o proprio elemento. Assim
   // um pedaco ausente nao derruba os outros em silencio.
   //
-  // Sincrono e de proposito. A versao anterior lia venueService, que e o
-  // catalogo do marketplace e as reservas DO JOGADOR — dados errados para
-  // esta tela, e assincronos, o que deixava os numeros em zero quando a
-  // promise nao resolvia. O gerente ve as reservas da propria arena.
-  const reservas = ARENA_BOOKINGS;
-  const bruto = reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
-  const pendentes = reservas.filter((r) => r.status === 'Solicitada' || r.status === 'Pendente').length;
+  // Com API, os numeros sao os do /api/gerente/dashboard (faturamento do
+  // backend, proximas reservas reais). Sem API, caem nos dados do app antigo.
+  let bruto;
+  let total;
+  let pendentes;
+  let deHoje;
+  let receitaHoje;
+  let proximas;
+  let ocupacao;
+
+  if (API_BASE_URL) {
+    const data = await managerService.dashboard();
+    bruto = data.bruto;
+    total = data.reservas_semana;
+    pendentes = data.solicitacoes_pendentes + (data.aguardando_pagamento || 0);
+    deHoje = data.reservas_hoje;
+    receitaHoje = data.kpis.find((k) => k.cls === 'hoje')?.valor ?? 0;
+    ocupacao = data.ocupacao;
+    proximas = data.proximas;
+  } else {
+    const reservas = ARENA_BOOKINGS;
+    bruto = reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
+    total = reservas.length;
+    pendentes = reservas.filter((r) => r.status === 'Solicitada' || r.status === 'Pendente').length;
+    deHoje = reservas.filter((r) => r.data === 'Hoje').length;
+    receitaHoje = deHoje.reduce((t, r) => t + Number(r.valor || 0), 0);
+    ocupacao = Math.round(((faixas(reservas.length).reduce((t, f) => t + f.occ, 0)) / 3));
+    proximas = reservas;
+  }
 
   set(root, '[data-overview-gross]', Math.round(bruto).toLocaleString('pt-BR'));
-  set(root, '[data-overview-period-reservations]', reservas.length);
+  set(root, '[data-overview-period-reservations]', total);
   set(root, '[data-overview-period-requests]', pendentes);
 
-  const deHoje = reservas.filter((r) => r.data === 'Hoje');
-  set(root, '[data-overview-today]', deHoje.length);
+  set(root, '[data-overview-today]', deHoje);
   // O rotulo diz "hoje", entao tem que ser hoje. Estava mostrando o bruto do
   // periodo inteiro debaixo de um rotulo diario.
-  set(root, '[data-overview-revenue]', deHoje.reduce((t, r) => t + Number(r.valor || 0), 0));
+  set(root, '[data-overview-revenue]', Math.round(receitaHoje).toLocaleString('pt-BR'));
   set(root, '[data-overview-requests]',
     `${pendentes} ${pendentes === 1 ? 'solicitação aguardando' : 'solicitações aguardando'}`);
 
-  const lista = faixas(reservas.length);
-  set(root, '[data-overview-occ]', Math.round(lista.reduce((t, f) => t + f.occ, 0) / lista.length));
+  set(root, '[data-overview-occ]', ocupacao);
 
   const upcoming = root.querySelector('[data-overview-upcoming]');
-  if (upcoming) upcoming.innerHTML = reservas.length
-    ? reservas.slice(0, 4).map((r) => `<article>
-          <span class="manager-avatar">${escapeHtml(r.cliente.charAt(0))}</span>
+  if (upcoming) upcoming.innerHTML = proximas.length
+    ? proximas.slice(0, 4).map((r) => {
+        const cliente = r.cliente || '';
+        const status = r.status;
+        const cls = r.cls || STATUS_CLASS[status] || 'pendente';
+        return `<article>
+          <span class="manager-avatar">${escapeHtml(cliente.charAt(0))}</span>
           <div class="manager-upcoming__person">
-            <strong>${escapeHtml(r.cliente)}</strong>
+            <strong>${escapeHtml(cliente)}</strong>
             <small>${escapeHtml(r.quadra)} · ${escapeHtml(r.data)} · ${escapeHtml(r.hora)}</small>
           </div>
           <div class="manager-upcoming__value">
-            <strong class="num">R$ ${Math.round(r.valor)}</strong>
-            <span class="status ${escapeHtml(STATUS_CLASS[r.status] || 'pendente')}">${escapeHtml(r.status)}</span>
+            <strong class="num">R$ ${Math.round(Number(r.valor || 0))}</strong>
+            <span class="status ${escapeHtml(cls)}">${escapeHtml(status)}</span>
           </div>
-        </article>`).join('')
+        </article>`;
+      }).join('')
     : '<div class="manager-empty-inline"><svg class="ic"><use href="#i-calendar"/></svg><span>Nenhuma reserva próxima.</span></div>';
 
+  const lista = faixas(total);
   if (root.querySelector('[data-overview-occupancy]')) root.querySelector('[data-overview-occupancy]').innerHTML = lista.map((f) => `
     <div>
       <p><span>${f.lab} <small>${f.sub}</small></span><strong>${f.occ}%</strong></p>

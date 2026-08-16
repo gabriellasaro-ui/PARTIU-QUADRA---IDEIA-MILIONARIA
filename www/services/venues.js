@@ -100,7 +100,7 @@ export const venueService = {
       const data = await api.get(`/api/quadras/${id}`);
       return data?.quadra || data || null;
     }
-    return applyOverrides(clone(VENUES.find((venue) => venue.id === Number(id)) || null));
+    return applyOverrides(clone(VENUES.find((venue) => String(venue.id) === String(id)) || null));
   },
 
   async featuredSports() {
@@ -143,7 +143,27 @@ export const venueService = {
     return clone(reservation);
   },
 
+  /* Preco server-side do checkout. A estimativa local continua como fallback
+     visual; na hora de confirmar o servidor manda. */
+  async quote(payload) {
+    if (API_BASE_URL) {
+      const data = await api.post('/api/reservas/quote', payload);
+      const q = data?.quote || {};
+      return {
+        subtotal: (q.subtotal_cents || 0) / 100,
+        serviceFee: (q.service_fee_cents || 0) / 100,
+        total: (q.total_cents || 0) / 100,
+        validUntil: data?.validUntil || null
+      };
+    }
+    return null;
+  },
+
   async favoriteIds() {
+    if (API_BASE_URL) {
+      const data = await api.get('/api/favoritos');
+      return (data?.quadras || []).map((q) => String(q.id));
+    }
     return storage.get('favorite_venues', [1, 2, 4]);
   },
 
@@ -157,6 +177,16 @@ export const venueService = {
   },
 
   async toggleFavorite(id) {
+    if (API_BASE_URL) {
+      const data = await api.get('/api/favoritos');
+      const active = (data?.quadras || []).some((q) => String(q.id) === String(id));
+      if (active) {
+        await api.delete(`/api/favoritos/${id}`);
+        return false;
+      }
+      await api.post(`/api/favoritos/${id}`);
+      return true;
+    }
     const venueId = Number(id);
     const ids = await this.favoriteIds();
     const active = ids.includes(venueId);
@@ -178,7 +208,7 @@ export const venueService = {
       return api.post(`/api/mensagens/${conversationId}/enviar?texto=${encodeURIComponent(text)}&de=jogador`);
     }
     const conversations = await this.conversations();
-    const conversation = conversations.find((item) => item.id === Number(conversationId));
+    const conversation = conversations.find((item) => String(item.id) === String(conversationId));
     if (!conversation) return null;
     conversation.messages.push({
       from: 'player',
@@ -191,7 +221,8 @@ export const venueService = {
 
   async ensureConversationForVenue(venue) {
     const conversations = await this.conversations();
-    let conversation = conversations.find((item) => Number(item.venueId) === Number(venue?.id));
+    let conversation = conversations.find((item) => String(item.venueId) === String(venue?.id));
+    if (!conversation && API_BASE_URL) return null;
     if (!conversation) {
       conversation = {
         id: conversations.reduce((max, item) => Math.max(max, item.id), 0) + 1,

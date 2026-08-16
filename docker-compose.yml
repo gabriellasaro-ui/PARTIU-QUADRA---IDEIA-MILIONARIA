@@ -1,0 +1,55 @@
+# docker-compose.yml — Qadras Backend (dev local)
+# Uso: docker-compose up --build
+# A API fica em http://localhost:8000
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: qadras
+      POSTGRES_PASSWORD: qadras
+      POSTGRES_DB: qadras
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qadras"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql+psycopg://qadras:qadras@postgres:5432/qadras"
+      REDIS_URL: "redis://redis:6379/0"
+      ENVIRONMENT: development
+      JWT_SECRET: "dev-local-jwt-secret-minimum-32-chars-ok"
+      CORS_ORIGINS: "*"
+      RATE_LIMIT_ENABLED: "false"
+      LOG_LEVEL: INFO
+      PAYMENT_PROVIDER: mock
+      PUSH_PROVIDER: mock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:

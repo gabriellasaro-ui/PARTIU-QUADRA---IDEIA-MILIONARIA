@@ -107,6 +107,23 @@ function applyRouteGuards() {
   if (page.dataset.guestOnly === 'true') globalThis.location.assign(ROUTES.dashboard);
 }
 
+/* Sessao vencida apos refresh falho: o api.js despacha pq:auth-expired.
+   Cai para o login sem o usuario ver um catch de 401 pelado. */
+function initAuthLifecycle() {
+  window.addEventListener('pq:auth-expired', () => {
+    globalThis.location.assign(ROUTES.login);
+  });
+  document.addEventListener('click', async (event) => {
+    const sair = event.target.closest('[data-auth-logout]');
+    if (!sair) return;
+    try {
+      const { authService } = await import('../../services/auth.js');
+      await authService.logout();
+    } catch (error) {}
+    globalThis.location.assign(ROUTES.login);
+  });
+}
+
 function markActiveNav() {
   const current = document.documentElement.dataset.page;
   qsa('[data-nav-page]').forEach((item) => {
@@ -175,17 +192,17 @@ async function renderDesktopRoute() {
   document.documentElement.dataset.managerView = routeName;
   updateDesktopMeta(routeName, route);
   await setFragment(view, route.page);
-  if (routeName === 'dashboard') renderManagerOverview(view);
-  if (routeName === 'quadras') renderManagerCourts(view);
-  if (routeName === 'reservas') renderManagerReservations(view);
+  if (routeName === 'dashboard') await renderManagerOverview(view);
+  if (routeName === 'quadras') await renderManagerCourts(view);
+  if (routeName === 'reservas') await renderManagerReservations(view);
   if (routeName === 'mensalistas') await renderManagerMembers(view);
-  if (routeName === 'agenda') renderManagerAgenda(view);
-  if (routeName === 'financeiro') renderManagerFinance(view);
-  if (routeName === 'avaliacoes') renderManagerReviews(view);
-  if (routeName === 'config') renderManagerSettings(view);
-  if (routeName === 'reservaNova') renderManagerBookingForm(view);
-  if (routeName === 'reservaDetalhe') renderManagerBookingDetail(view);
-  if (routeName === 'quadraForm') renderManagerCourtForm(view);
+  if (routeName === 'agenda') await renderManagerAgenda(view);
+  if (routeName === 'financeiro') await renderManagerFinance(view);
+  if (routeName === 'avaliacoes') await renderManagerReviews(view);
+  if (routeName === 'config') await renderManagerSettings(view);
+  if (routeName === 'reservaNova') await renderManagerBookingForm(view);
+  if (routeName === 'reservaDetalhe') await renderManagerBookingDetail(view);
+  if (routeName === 'quadraForm') await renderManagerCourtForm(view);
   markActiveNav();
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -304,6 +321,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadComponents();
   window.pqSyncAuthControls?.();
   applyRouteGuards();
+  initAuthLifecycle();
   await initDesktopRouter();
   markActiveNav();
   initAppShell();

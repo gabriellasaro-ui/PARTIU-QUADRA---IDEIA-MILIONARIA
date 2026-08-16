@@ -1,0 +1,251 @@
+/* Camada viva do painel do gerente — liga as telas ao /api/gerente/*.
+
+   Toda funcao devolve EXATAMENTE o formato que as views ja consomem
+   (manager-data.js / manager-bookings.js), so que vindo do backend real. Com
+   API_BASE_URL vazio nada muda: as views caem no mock de sempre.
+
+   O backend ja devolve status em rotulo humano ("Solicitada", "Confirmada",
+   ...); aqui esses rotulos sao normalizados para os do mock antigo, que e o
+   que o CSS e as condicoes das views conhecem.
+ */
+import { API_BASE_URL } from '../config/constants.js';
+import api from './api.js';
+
+/* Rotulo da API -> rotulo legado das views + classe de cor do CSS.
+   Nao ha "Pago" na API: pagamento confirmado vira "Solicitada" (aguarda
+   aprovacao) ou "Confirmado" (ja aprovado). O unico que nao existia no mock
+   e "Aguardando pagamento", que aqui vira "Pendente" para o gerente saber
+   que aquela reserva nao esta pronta para jogar. */
+const STATUS_LEGACY = {
+  'Aguardando pagamento': 'Pendente',
+  'Solicitada': 'Solicitada',
+  'Confirmada': 'Confirmado',
+  'Concluída': 'Confirmado',
+  'Não aceita pela arena': 'Recusada',
+  'Tempo expirado': 'Recusada',
+  'Cancelada': 'Cancelada',
+  'Pagamento falhou': 'Cancelada',
+  'Reembolsada': 'Cancelada'
+};
+
+const STATUS_CLS = {
+  'Solicitada': 'solicitada',
+  'Pendente': 'pendente',
+  'Confirmado': 'confirmado',
+  'Recusada': 'recusada',
+  'Cancelada': 'cancelada'
+};
+
+export const mapBooking = (b) => {
+  const status = STATUS_LEGACY[b.status] || b.status;
+  return {
+    id: b.id,
+    codigo: b.code,
+    cliente: b.cliente,
+    telefone: b.telefone,
+    quadra: b.quadra,
+    esporte: b.esporte,
+    data: b.data,
+    dataValue: b.dataValue,
+    hora: b.hora,
+    valor: b.valor,
+    total: b.total,
+    repasse: b.repasse,
+    status,
+    cls: STATUS_CLS[status] || b.statusClass || 'pendente',
+    plan: b.plan,
+    source: b.source,
+    statusAt: b.statusAt
+  };
+};
+
+const mapCourt = (c) => ({
+  id: c.id,
+  label: c.nome,
+  sport: c.esporte,
+  bairro: c.descricao || '',
+  descricao: c.descricao || '',
+  price: c.preco,
+  priceMonthly: c.precoMensalista ?? c.preco * 4,
+  active: c.ativa,
+  abre: Number(String(c.abertura).split(':')[0]),
+  fecha: Number(String(c.fechamento).split(':')[0]),
+  photo: (c.fotos && c.fotos[0]) || '',
+  occupancy: 0,
+  amenities: c.comodidades || []
+});
+
+const mapMensalista = (m) => ({
+  id: m.id,
+  name: m.cliente,
+  court: m.quadra,
+  day: weekdayPt(m.dia),
+  time: m.hora,
+  price: m.preco,
+  status: m.status,
+  group_id: m.group_id
+});
+
+const mapReview = (a) => ({
+  id: a.id,
+  cliente: a.cliente,
+  nota: a.nota,
+  quando: a.quando,
+  texto: a.texto,
+  resposta: a.resposta
+});
+
+/* Dia da semana do servidor ("Tuesday") -> nome em portugues em minusculo,
+   que e o formato do mock e do formulario. */
+const WEEKDAYS_PT = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+export function weekdayPt(value) {
+  const mapa = {
+    Monday: 'segunda', Tuesday: 'terça', Wednesday: 'quarta',
+    Thursday: 'quinta', Friday: 'sexta', Saturday: 'sábado', Sunday: 'domingo'
+  };
+  if (mapa[value]) return mapa[value];
+  const numero = Number(value);
+  if (Number.isInteger(numero) && numero >= 0 && numero <= 6) return WEEKDAYS_PT[numero];
+  return String(value || '').toLowerCase();
+}
+
+/* Reserva -> formato que a agenda consome: dia concreto, inicio/fim numericos. */
+const horaNumero = (t) => {
+  const [h, m] = String(t).split(':').map(Number);
+  return h + (m || 0) / 60;
+};
+
+export const mapAgendaEvent = (e) => {
+  const status = STATUS_LEGACY[e.status] || e.status;
+  const inicio = horaNumero(e.inicio);
+  const fim = horaNumero(e.fim);
+  return {
+    ...e,
+    dataValue: e.dia,
+    data: e.dia,
+    codigo: e.code,
+    status,
+    cls: STATUS_CLS[status] || e.statusClass || 'pendente',
+    inicio,
+    fim,
+    duracao: `${fim - inicio}h`,
+    horaCurta: e.inicio
+  };
+};
+
+export const managerService = {
+  async dashboard() {
+    return api.get('/api/gerente/dashboard');
+  },
+
+  async agenda(semana) {
+    const data = await api.get(`/api/gerente/agenda${semana ? `?semana=${encodeURIComponent(semana)}` : ''}`);
+    return {
+      quadras: (data.quadras || []).map(mapCourt),
+      eventos: (data.eventos || []).map(mapAgendaEvent),
+      colunas: data.colunas || []
+    };
+  },
+
+  async reservas() {
+    const data = await api.get('/api/gerente/reservas');
+    return (data.reservas || []).map(mapBooking);
+  },
+
+  async reserva(id) {
+    const data = await api.get(`/api/gerente/reservas${id ? `?q=${encodeURIComponent(id)}` : ''}`);
+    return (data.reservas || []).find((b) => String(b.id) === String(id)) || null;
+  },
+
+  async criarReservaManual(body) {
+    const data = await api.post('/api/gerente/reservas', body);
+    return mapBooking(data.reserva);
+  },
+
+  aprovarReserva(id) {
+    return api.post(`/api/reservas/${id}/aprovar`, {});
+  },
+
+  recusarReserva(id) {
+    return api.post(`/api/reservas/${id}/recusar`, {});
+  },
+
+  cancelarReserva(id) {
+    return api.post(`/api/reservas/${id}/cancelar`, {});
+  },
+
+  async mensalistas() {
+    const data = await api.get('/api/gerente/mensalistas');
+    return (data.mensalistas || []).map(mapMensalista);
+  },
+
+  criarMensalista(body) {
+    return api.post('/api/gerente/mensalistas', body);
+  },
+
+  cancelarMensalista(id) {
+    return api.delete(`/api/gerente/mensalistas/${id}`);
+  },
+
+  async financeiro(periodo = '7d') {
+    return api.get(`/api/gerente/financeiro?periodo=${encodeURIComponent(periodo)}`);
+  },
+
+  async quadras() {
+    const data = await api.get('/api/gerente/quadras');
+    return (data.quadras || []).map(mapCourt);
+  },
+
+  criarQuadra(body) {
+    return api.post('/api/gerente/quadras', body);
+  },
+
+  atualizarQuadra(id, body) {
+    return api.patch(`/api/gerente/quadras/${id}`, body);
+  },
+
+  async avaliacoes() {
+    const data = await api.get('/api/gerente/avaliacoes');
+    return {
+      avaliacoes: (data.avaliacoes || []).map(mapReview),
+      dist: data.dist || [],
+      total: data.total || 0,
+      media: data.media || 0
+    };
+  },
+
+  responderAvaliacao(id, resposta) {
+    return api.post(`/api/gerente/avaliacoes/${id}/resposta`, { resposta });
+  },
+
+  async cupons() {
+    const data = await api.get('/api/gerente/cupons');
+    return data.cupons || [];
+  },
+
+  criarCupom(body) {
+    return api.post('/api/gerente/cupons', body);
+  },
+
+  excluirCupom(id) {
+    return api.delete(`/api/gerente/cupons/${id}`);
+  },
+
+  async perfil() {
+    return api.get('/api/gerente/perfil');
+  },
+
+  atualizarPerfil(body) {
+    return api.patch('/api/gerente/perfil', body);
+  },
+
+  async configuracoes() {
+    return api.get('/api/gerente/configuracoes');
+  },
+
+  atualizarConfiguracoes(body) {
+    return api.patch('/api/gerente/configuracoes', body);
+  }
+};
+
+export default managerService;

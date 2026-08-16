@@ -69,9 +69,9 @@ export function parseMobileRouteHash(hashValue = '') {
   const params = {};
 
   if (name === 'quadra' || name === 'pagamento' || name === 'confirmado') {
-    params.id = Number(parts[1] || 1);
+    params.id = parts[1] || '';
   }
-  if (name === 'mensagens') params.id = Number(parts[1] || 0);
+  if (name === 'mensagens') params.id = parts[1] || '';
   if (name === 'carteira' && parts[1]) {
     name = 'carteiraAcao';
     params.action = parts[1];

@@ -4,6 +4,7 @@ Cada grupo insere apenas se a tabela correspondente estiver vazia (users
 sao upsert por e-mail, para redeploy nao violar FK de reviews). Rodado pelo
 entrypoint no boot e manualmente com `python -m app.seed`.
 """
+import secrets
 import uuid
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -36,6 +37,8 @@ from .models import (
     PELADA_KIND_CLUBE,
     PELADA_STATUS_AGENDADA,
     MATCH_STATUS_SCHEDULED,
+    ADMIN_ACTION_ARENA_PAUSE,
+    AdminAction,
     Arena,
     Booking,
     BookingStatusEvent,
@@ -66,6 +69,19 @@ from .models import (
 )
 
 DEMO_PASSWORD = "qadras123"
+
+# Em producao, o admin recebe uma senha aleatoria impressa no log.
+if settings.environment == "production":
+    _admin_password = secrets.token_urlsafe(16)
+    import logging
+    logging.getLogger("app.seed").warning(
+        "SENHA DO ADMIN (producao): %s  —  "
+        "guarde esta senha; ela NAO sera exibida novamente.",
+        _admin_password,
+    )
+else:
+    _admin_password = DEMO_PASSWORD
+
 TZ = ZoneInfo(settings.timezone)
 
 IMG = "https://images.unsplash.com/"
@@ -163,10 +179,11 @@ def _seed_users(db) -> int:
         exists = db.execute(select(User.id).where(User.email == data["email"])).first()
         if exists:
             continue
+        pwd = _admin_password if data.get("role") == ROLE_ADMIN else DEMO_PASSWORD
         db.add(
             User(
                 id=uuid.uuid4(),
-                password_hash=hash_password(DEMO_PASSWORD),
+                password_hash=hash_password(pwd),
                 provider="password",
                 city="Goiania",
                 state="GO",
@@ -869,6 +886,31 @@ def _seed_match(db) -> int:
     return 1
 
 
+def _seed_admin_actions(db) -> int:
+    """Uma acao demo (Fase 10): o admin pausou a Top Spin para auditoria."""
+    if db.execute(select(AdminAction.id).limit(1)).first():
+        return 0
+    admin = db.execute(
+        select(User).where(User.email == "admin@qadras.com.br")
+    ).scalar_one_or_none()
+    arena = db.execute(
+        select(Arena).where(Arena.name == "Top Spin Tenis")
+    ).scalar_one_or_none()
+    if not (admin and arena):
+        return 0
+    db.add(AdminAction(
+        id=uuid.uuid4(),
+        admin_id=admin.id,
+        action=ADMIN_ACTION_ARENA_PAUSE,
+        entity_type="arena",
+        entity_id=str(arena.id),
+        payload={"motivo": "Exemplo de auditoria", "arena": arena.name, "canceladas": 0},
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1),
+    ))
+    db.flush()
+    return 1
+
+
 def seed() -> dict:
     with SessionLocal() as db:
         counts = {
@@ -890,6 +932,7 @@ def seed() -> dict:
             "clubs": _seed_clubs(db),
             "peladas": _seed_peladas(db),
             "match": _seed_match(db),
+            "admin_actions": _seed_admin_actions(db),
         }
         db.commit()
     bump_catalog_version()

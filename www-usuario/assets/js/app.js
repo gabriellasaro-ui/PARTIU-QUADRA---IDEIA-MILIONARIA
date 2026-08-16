@@ -2,6 +2,10 @@ import { loadComponents, refreshIcons } from './component-loader.js';
 import { isProtectedRoute, authHashFor } from '../../middleware/auth.js';
 import { qsa } from '../../utils/helpers.js';
 import authService from '../../services/auth.js';
+import storage from '../../storage/storage.js';
+import notificationService from '../../services/notifications.js';
+import { connectWS, disconnectWS } from '../../services/ws.js';
+import pushService from '../../services/push.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import { parseMobileRouteHash } from '../../config/routes.js';
 import { initMobileActions, renderMobilePage } from './mobile.js';
@@ -466,6 +470,25 @@ function initLoginForms() {
   });
 }
 
+/* WS + badges so valem com sessao e API. O evento do WS (booking.updated,
+   message.new) refresca os baloes com um debounce curto. */
+function initRealtime() {
+  if (!storage.getAuthToken()) return;
+  connectWS();
+  notificationService.refreshNavBadges().catch(() => {});
+  pushService.initPush();
+  window.addEventListener('pq:auth-logout', () => pushService.disposePush());
+
+  window.addEventListener('pq:ws:event', () => {
+    window.clearTimeout(window.__pqBadgeTimer);
+    window.__pqBadgeTimer = window.setTimeout(() => {
+      notificationService.refreshNavBadges().catch(() => {});
+    }, 800);
+  });
+  window.addEventListener('pq:auth-expired', disconnectWS);
+  window.addEventListener('pq:auth-logout', disconnectWS);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   window.pqRefreshIcons = refreshIcons;
   await loadComponents();
@@ -479,4 +502,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   initModals();
   initRedirectToast();
   initLoginForms();
+  initRealtime();
 });

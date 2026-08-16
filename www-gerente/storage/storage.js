@@ -2,6 +2,7 @@ import { STORAGE_PREFIX } from '../config/constants.js';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
+const REFRESH_KEY = 'auth_refresh';
 
 function key(name) {
   return `${STORAGE_PREFIX}:${name}`;
@@ -41,12 +42,19 @@ export const storage = {
   clearSession() {
     remove(TOKEN_KEY);
     remove(USER_KEY);
+    remove(REFRESH_KEY);
   },
   getAuthToken() {
     return read(TOKEN_KEY);
   },
   setAuthToken(token) {
     return write(TOKEN_KEY, token);
+  },
+  getAuthRefreshToken() {
+    return read(REFRESH_KEY);
+  },
+  setAuthRefreshToken(token) {
+    return write(REFRESH_KEY, token);
   },
   getAuthUser() {
     return read(USER_KEY);

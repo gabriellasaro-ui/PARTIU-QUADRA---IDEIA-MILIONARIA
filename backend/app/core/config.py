@@ -5,6 +5,7 @@ arquivo backend/.env pode ser criado a partir de .env.example.
 """
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,6 +33,18 @@ class Settings(BaseSettings):
 
     timezone: str = "America/Sao_Paulo"
 
+    # Telemetria (Fase 12) — nivel de log: DEBUG | INFO | WARNING | ERROR.
+    log_level: str = "INFO"
+
+    # Workers uvicorn (Fase 12) — configuravel por env var.
+    # Em VPS pequena (1GB), 2 workers evita OOM com Postgres + Redis + Celery.
+    uvicorn_workers: int = 2
+
+    # Rate limiting (Fase 12) — slowapi com storage no REDIS_URL por padrao.
+    # rate_limit_enabled=false desliga tudo (usado nos testes e em dev).
+    rate_limit_enabled: bool = True
+    rate_limit_storage: str = ""
+
     # Login Google — preencher GOOGLE_CLIENT_ID (client_id web do OAuth 2.0)
     # para validar o idToken real. Vazio => endpoint /api/auth/google responde 503.
     google_client_id: str = ""
@@ -53,6 +66,26 @@ class Settings(BaseSettings):
     push_provider: str = "mock"
     fcm_credentials_path: str = ""
     fcm_project_id: str = ""
+
+    @model_validator(mode="after")
+    def _guard_production(self):
+        """Em producao, segredo fraco ou CORS aberto impedem o boot.
+
+        Um JWT com secret adivinhavel permite forjar qualquer token; CORS
+        '*' libera qualquer origem a usar credenciais do navegador.
+        """
+        if self.environment == "production":
+            if not self.jwt_secret or len(self.jwt_secret.strip()) < 32:
+                raise ValueError(
+                    "JWT_SECRET muito curto em producao (minimo 32 chars). "
+                    "Gere com: openssl rand -hex 32"
+                )
+            if self.cors_origins.strip() in ("", "*"):
+                raise ValueError(
+                    "CORS_ORIGINS='*' nao pode em producao. Liste as origens: "
+                    "https://app.qadras.com.br,https://gerente.qadras.com.br,..."
+                )
+        return self
 
     @property
     def cors_origin_list(self) -> list[str]:

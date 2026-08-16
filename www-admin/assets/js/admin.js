@@ -9,9 +9,17 @@
    backend, isso significa que cada navegador enxerga o proprio dado; o
    painel diz isso na lateral em vez de fingir ser producao. */
 import { VENUES, CLUBS, PELADAS, INITIAL_RESERVATIONS, USERS, PLATFORM_BOOKINGS } from '../../config/mock-data.js';
-import { SERVICE_FEE_RATE } from '../../config/constants.js';
+import { API_BASE_URL, ARENA_FEE_RATE, SERVICE_FEE_RATE } from '../../config/constants.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
+import adminService from '../services/admin-api.js';
+import authService from '../services/auth.js';
+
+/* Com API_BASE_URL preenchido as telas consomem o /api/admin/* (visao geral,
+   arenas, reservas, clubes e pessoas) e o painel exige login de admin. Sem
+   backend, segue o mock de sempre. */
+const viaApi = Boolean(API_BASE_URL);
+const TAXA_PLATAFORMA = SERVICE_FEE_RATE + ARENA_FEE_RATE;
 
 const WEEKDAYS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
@@ -140,7 +148,21 @@ function kpi(label, valor, nota, destaque) {
   </article>`;
 }
 
-function viewVisao() {
+/* Dias desde uma data ISO (ou ISO datetime). Usado so no modo API, onde o
+   backend ja calcula os numeros; aqui vira legenda humana. */
+function diasAtras(value) {
+  if (!value) return '—';
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? `${value}T12:00` : value;
+  const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  return dias <= 0 ? 'hoje' : `${dias} dias atrás`;
+}
+
+/* A API devolve "19:00 – 20:00"; o painel mostra so o inicio. */
+function horaInicio(hora) {
+  return String(hora || '').split(/[–-]/)[0].trim();
+}
+
+function viewVisaoMock() {
   const lista = venues();
   // O periodo vale sobre o historico da plataforma, que tem data real.
   const res = reservasNoPeriodo();
@@ -233,7 +255,7 @@ function viewVisao() {
 }
 
 
-function viewArenas() {
+function viewArenasMock() {
   const res = reservations();
   return `<section class="panel">
     <h2>Arenas na plataforma</h2>
@@ -253,7 +275,7 @@ function viewArenas() {
   </section>`;
 }
 
-function viewReservas() {
+function viewReservasMock() {
   const mensais = planos();
   const res = reservations();
   const avulsas = res.filter((r) => !mensais.has(r.code));
@@ -280,7 +302,7 @@ function viewReservas() {
   </section>`;
 }
 
-function viewClubes() {
+function viewClubesMock() {
   const lista = clubs();
   const todas = peladas();
   return `<section class="panel">
@@ -299,7 +321,7 @@ function viewClubes() {
   </section>`;
 }
 
-function viewPessoas() {
+function viewPessoasMock() {
   const noPeriodo = reservasNoPeriodo();
   const ordenados = pessoasFiltradas()
     .map((u) => ({ ...u, gasto: gastoPor(u.id, noPeriodo) }))
@@ -343,29 +365,288 @@ function viewPessoas() {
   </section>`;
 }
 
-const VIEWS = { visao: viewVisao, arenas: viewArenas, reservas: viewReservas, clubes: viewClubes, pessoas: viewPessoas };
+/* ═══════════════ Views no modo API ═══════════════
 
-function render() {
+   O backend ja devolve camelCase com valores em reais; aqui os campos vao
+   direto para o template. A receita da plataforma sai do ledger de pagamentos
+   confirmados (12% do subtotal). */
+
+async function viewVisaoApi() {
+  const [d, audit] = await Promise.all([
+    adminService.overview(filtros.periodo, filtros.inatividade),
+    adminService.auditoria().catch(() => ({ acoes: [] }))
+  ]);
+  const corte = Number(filtros.inatividade) || 7;
+  const fila = d.filaReativacao || [];
+  const res = d.ultimasReservas || [];
+  const acoes = audit.acoes || [];
+
+  const compradores = d.compradores || 0;
+  const filaLinhas = fila.map((u) => `<tr>
+    <td><strong>${escapeHtml(u.nome)}</strong></td>
+    <td>${escapeHtml(u.papel)}</td>
+    <td>${escapeHtml(u.cidade)}</td>
+    <td class="num"><span class="tag tag--pendente">${u.diasInativo} dias</span></td>
+    <td class="num">${diasAtras(u.cadastro)}</td>
+  </tr>`).join('');
+
+  const resLinhas = res.map((r) => `<tr>
+    <td class="mono">${escapeHtml(r.code)}</td>
+    <td>${escapeHtml(r.cliente)}</td>
+    <td>${escapeHtml(r.arena)}</td>
+    <td>${escapeHtml(r.data)} · ${escapeHtml(horaInicio(r.hora))}</td>
+    <td class="num">${formatCurrency(r.valor)}</td>
+    <td class="num strong">${formatCurrency(r.plataforma)}</td>
+  </tr>`).join('');
+
+  const auditoria = acoes.length ? `<section class="panel">
+    <h2>Auditoria recente</h2>
+    <ul class="auditoria">
+      ${acoes.map((a) => `<li>
+        <strong>${escapeHtml(a.acao)}</strong>
+        <span>${escapeHtml(a.dados?.arena || a.entidadeId || '')} · ${escapeHtml(a.admin)}</span>
+        <small>${escapeHtml(diasAtras(a.quando))}</small>
+      </li>`).join('')}
+    </ul>
+  </section>` : '';
+
+  return `<div class="admin-toolbar">
+    <span class="admin-toolbar__label">Período</span>
+    ${segmento('periodo', PERIODOS, filtros.periodo)}
+  </div>
+
+  <div class="kpi-grid">
+    ${kpi('Receita da plataforma', formatCurrency(d.receitaPlataforma), `taxa de ${Math.round(TAXA_PLATAFORMA * 100)}% sobre o subtotal`, true)}
+    ${kpi('Volume transacionado', formatCurrency(d.volume), `${d.reservas} reservas`)}
+    ${kpi('Jogos marcados', d.jogosMarcados, 'peladas nascidas de reservas')}
+    ${kpi('Planos mensalistas', d.planosMensalistas, 'receita recorrente')}
+  </div>
+
+  <div class="kpi-grid">
+    ${kpi('Cadastrados', d.cadastrados, `${d.jogadores} jogadores · ${d.donos} donos de quadra`)}
+    ${kpi('Ativos', d.ativos, `usaram nos últimos ${corte} dias`)}
+    ${kpi(`Inativos há +${corte} dias`, d.inativos, d.inativos ? 'candidatos a notificação' : 'ninguém sumido')}
+    ${kpi('Arenas ativas', d.arenasAtivas, `de ${d.arenasTotal} cadastradas`)}
+  </div>
+
+  <div class="kpi-grid">
+    ${kpi('RPU', formatCurrency(d.rpu), `receita ÷ ${compradores} ${compradores === 1 ? 'pessoa que reservou' : 'pessoas que reservaram'}`, true)}
+    ${kpi('Ticket médio', formatCurrency(d.ticketMedio), 'por reserva')}
+    ${kpi('Reservas no período', d.reservas, 'com data real')}
+    ${kpi('Volume no período', formatCurrency(d.volume), 'transacionado')}
+  </div>
+
+  <div class="admin-toolbar">
+    <span class="admin-toolbar__label">Sem usar há</span>
+    ${segmento('inatividade', FAIXAS_INATIVIDADE, filtros.inatividade)}
+  </div>
+
+  ${fila.length ? `<section class="panel">
+    <h2>Fila de reativação</h2>
+    <p class="muted" style="margin-bottom:14px">Quem não abre o app há mais de ${corte} dias. É esta lista que alimenta o disparo de notificação.</p>
+    <table class="tbl">
+      <thead><tr><th>Pessoa</th><th>Papel</th><th>Cidade</th><th>Sem usar</th><th>Cadastro</th></tr></thead>
+      <tbody>${filaLinhas}</tbody>
+    </table>
+  </section>` : ''}
+
+  <section class="panel">
+    <h2>Últimas reservas</h2>
+    <table class="tbl">
+      <thead><tr><th>Código</th><th>Pessoa</th><th>Arena</th><th>Quando</th><th>Valor</th><th>Plataforma</th></tr></thead>
+      <tbody>${resLinhas}</tbody>
+    </table>
+  </section>
+
+  ${auditoria}`;
+}
+
+async function viewArenasApi() {
+  const data = await adminService.arenas();
+  const arenas = data.arenas || [];
+  return `<section class="panel">
+    <h2>Arenas na plataforma <span class="muted">· ${data.total}</span></h2>
+    <table class="tbl">
+      <thead><tr><th>Arena</th><th>Esporte</th><th>Avulso</th><th>Mensalista</th><th>Reservas</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        ${arenas.map((v) => `<tr>
+          <td><strong>${escapeHtml(v.nome)}</strong><br><small>${escapeHtml(v.bairro)} · ${escapeHtml(v.cidade)}</small></td>
+          <td>${escapeHtml(v.esporte)}</td>
+          <td class="num">${formatCurrency(v.avulso)}</td>
+          <td class="num">${formatCurrency(v.mensalista)}</td>
+          <td class="num">${v.reservas}</td>
+          <td><span class="tag tag--${v.ativa ? 'pago' : 'pendente'}">${v.ativa ? 'Ativa' : 'Pausada'}</span></td>
+          <td><div class="admin-actions">
+            ${v.ativa
+              ? `<button type="button" class="admin-action--pause" data-admin-arena-action="pause" data-id="${escapeHtml(v.id)}">Pausar</button>`
+              : `<button type="button" class="admin-action--reactivate" data-admin-arena-action="reactivate" data-id="${escapeHtml(v.id)}">Reativar</button>`}
+          </div></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+async function viewReservasApi() {
+  const data = await adminService.reservas();
+  const planos = data.planos || [];
+  return `<div class="kpi-grid">
+    ${kpi('Mensalistas', data.mensalistas, 'cobrança recorrente')}
+    ${kpi('Avulsas', data.avulsas, 'cobrança única')}
+    ${kpi('Sessões agendadas', data.sessoesAgendadas, 'peladas nascidas de reservas')}
+  </div>
+
+  <section class="panel">
+    <h2>Planos mensalistas</h2>
+    ${planos.length ? `<table class="tbl">
+      <thead><tr><th>Reserva</th><th>Arena</th><th>Compromisso</th><th>Sessões</th></tr></thead>
+      <tbody>
+        ${planos.map((p) => `<tr>
+          <td class="mono">${escapeHtml(p.code)}</td>
+          <td>${escapeHtml(p.arena)}</td>
+          <td>${escapeHtml(p.compromisso)}</td>
+          <td class="num">${p.sessoes}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p class="muted">Nenhum plano mensalista ainda. Eles aparecem aqui assim que alguém assinar.</p>'}
+  </section>`;
+}
+
+async function viewClubesApi() {
+  const data = await adminService.clubes();
+  const lista = data.clubes || [];
+  return `<section class="panel">
+    <h2>Clubes</h2>
+    ${lista.length ? `<div class="club-grid">
+      ${lista.map((club) => `<article class="club-tile">
+        <span class="club-tile__mark">${escapeHtml(club.nome.charAt(0))}</span>
+        <strong>${escapeHtml(club.nome)}</strong>
+        <small>${escapeHtml(club.esporte)} · ${escapeHtml(club.cidade)}</small>
+        <div class="club-tile__nums">
+          <span><b>${club.membros}</b> membros</span>
+          <span><b>${club.peladas}</b> peladas</span>
+        </div>
+      </article>`).join('')}
+    </div>` : '<p class="muted">Nenhum clube criado ainda.</p>'}
+  </section>`;
+}
+
+async function viewPessoasApi() {
+  const data = await adminService.pessoas({
+    q: filtros.busca,
+    cidade: filtros.cidade,
+    estado: filtros.estado,
+    periodo: filtros.periodo,
+    inatividade: filtros.inatividade
+  });
+  const pessoas = data.pessoas || [];
+
+  return `<div class="admin-toolbar admin-toolbar--wrap">
+    <input type="search" class="admin-input" placeholder="Buscar pessoa"
+           data-admin-search value="${escapeHtml(filtros.busca)}">
+    <select class="admin-select" data-admin-filter="cidade">
+      <option value="">Todas as cidades</option>
+      ${(data.cidades || []).map((c) => `<option${c === filtros.cidade ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+    </select>
+    <select class="admin-select" data-admin-filter="estado">
+      <option value="">Todos os estados</option>
+      ${(data.estados || []).map((e) => `<option${e === filtros.estado ? ' selected' : ''}>${escapeHtml(e)}</option>`).join('')}
+    </select>
+    ${segmento('periodo', PERIODOS, filtros.periodo)}
+  </div>
+
+  <section class="panel">
+    <h2>Todo mundo na plataforma <span class="muted">· ${data.total}</span></h2>
+    ${pessoas.length ? `<table class="tbl">
+      <thead><tr><th>Pessoa</th><th>Papel</th><th>Cidade</th><th>Gastou</th><th>Cadastro</th><th>Última atividade</th><th>Situação</th></tr></thead>
+      <tbody>
+        ${pessoas.map((u) => `<tr>
+          <td><strong>${escapeHtml(u.nome)}</strong></td>
+          <td>${escapeHtml(u.papel)}</td>
+          <td>${escapeHtml(u.cidade)}${u.estado ? ` · ${escapeHtml(u.estado)}` : ''}</td>
+          <td class="num strong">${u.gastou ? formatCurrency(u.gastou) : '—'}</td>
+          <td class="num">${diasAtras(u.cadastro)}</td>
+          <td class="num">${diasAtras(u.ultimaAtividade)}</td>
+          <td><span class="tag tag--${u.ativo ? 'pago' : 'pendente'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : '<p class="muted">Ninguém com esses filtros.</p>'}
+  </section>`;
+}
+
+const VIEWS = {
+  visao: () => (viaApi ? viewVisaoApi() : viewVisaoMock()),
+  arenas: () => (viaApi ? viewArenasApi() : viewArenasMock()),
+  reservas: () => (viaApi ? viewReservasApi() : viewReservasMock()),
+  clubes: () => (viaApi ? viewClubesApi() : viewClubesMock()),
+  pessoas: () => (viaApi ? viewPessoasApi() : viewPessoasMock())
+};
+
+/* Token de render: dois renders em sequencia (ex.: digitar e clicar num
+   filtro) nao deixam a resposta mais antiga sobrescrever a mais nova. */
+let renderToken = 0;
+
+async function render() {
+  const token = ++renderToken;
   const pedido = location.hash.replace('#', '') || 'visao';
   const chave = VIEWS[pedido] ? pedido : 'visao';
   const [titulo, sub] = TITLES[chave];
 
   document.querySelector('[data-admin-title]').textContent = titulo;
   document.querySelector('[data-admin-sub]').textContent = sub;
-  document.querySelector('[data-admin-view]').innerHTML = VIEWS[chave]();
+  const viewEl = document.querySelector('[data-admin-view]');
+  viewEl.innerHTML = viaApi ? '<p class="muted">Carregando…</p>' : '';
   document.querySelectorAll('[data-admin-nav]').forEach((link) => {
     link.classList.toggle('on', link.dataset.adminNav === chave);
   });
   window.lucide?.createIcons?.({ icons: window.lucide.icons });
+
+  try {
+    const html = await VIEWS[chave]();
+    if (token !== renderToken) return;
+    viewEl.innerHTML = html;
+    window.lucide?.createIcons?.({ icons: window.lucide.icons });
+  } catch (error) {
+    if (token !== renderToken) return;
+    viewEl.innerHTML = `<p class="muted">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
+  }
 }
 
 /* Delegacao no document porque cada render substitui o innerHTML inteiro:
    um listener preso ao elemento morreria no primeiro clique. */
 document.addEventListener('click', (event) => {
   const botao = event.target.closest('button[data-admin-filter][data-valor]');
-  if (!botao) return;
-  filtros[botao.dataset.adminFilter] = botao.dataset.valor;
-  render();
+  if (botao) {
+    filtros[botao.dataset.adminFilter] = botao.dataset.valor;
+    render();
+    return;
+  }
+
+  const arena = event.target.closest('button[data-admin-arena-action]');
+  if (arena) {
+    const acao = arena.dataset.adminArenaAction;
+    const motivo = prompt(acao === 'pause' ? 'Motivo da pausa (opcional)' : 'Motivo da reativação (opcional)');
+    if (motivo === null) return;
+    arena.setAttribute('disabled', 'disabled');
+    (acao === 'pause'
+      ? adminService.pausarArena(arena.dataset.id, motivo || 'Pausa administrativa')
+      : adminService.reativarArena(arena.dataset.id, motivo)
+    )
+      .then(() => render())
+      .catch((error) => {
+        alert(error.message || 'Não foi possível concluir a ação');
+        render();
+      });
+    return;
+  }
+
+  const logout = event.target.closest('[data-auth-logout]');
+  if (logout) {
+    logout.setAttribute('disabled', 'disabled');
+    authService.logout()
+      .catch(() => {})
+      .finally(() => location.assign('./login.html'));
+  }
 });
 
 document.addEventListener('change', (event) => {
@@ -375,19 +656,46 @@ document.addEventListener('change', (event) => {
   render();
 });
 
+/* Busca com debounce no modo API (cada tecla batia no backend). O render
+   recria o input, entao foco e cursor voltam depois que a resposta chega. */
+let buscaDebounce = null;
 document.addEventListener('input', (event) => {
   const campo = event.target.closest('[data-admin-search]');
   if (!campo) return;
   filtros.busca = campo.value;
-  render();
-  // O render recria o input, entao foco e cursor precisam voltar.
-  const novo = document.querySelector('[data-admin-search]');
-  if (novo) {
-    novo.focus();
-    novo.setSelectionRange(novo.value.length, novo.value.length);
-  }
+  clearTimeout(buscaDebounce);
+  buscaDebounce = setTimeout(async () => {
+    await render();
+    const novo = document.querySelector('[data-admin-search]');
+    if (novo) {
+      novo.focus();
+      novo.setSelectionRange(novo.value.length, novo.value.length);
+    }
+  }, viaApi ? 250 : 0);
 });
 
 window.addEventListener('hashchange', render);
 window.addEventListener('load', render);
+
+/* Modo API: painel exige sessao de admin e avisa na lateral de onde vem o
+   dado. Token expirado (pq:auth-expired) volta para o login. */
+if (viaApi) {
+  const usuario = authService.currentUser();
+  if (!authService.hasSession() || usuario?.role !== 'admin') {
+    storage.clearSession();
+    location.replace('./login.html');
+  } else {
+    const rotulo = document.querySelector('[data-admin-badge-label]');
+    if (rotulo) rotulo.textContent = 'API · Qadras';
+    const icone = document.querySelector('[data-admin-badge] .ic');
+    if (icone) icone.setAttribute('data-lucide', 'cloud');
+    window.lucide?.createIcons?.({ icons: window.lucide.icons });
+    const fonte = document.querySelector('[data-admin-source]');
+    if (fonte) fonte.textContent = 'Dados vivos do backend.';
+    const sair = document.querySelector('[data-auth-logout]');
+    if (sair) sair.hidden = false;
+  }
+  window.addEventListener('pq:auth-expired', () => location.replace('./login.html'));
+}
+
 render();

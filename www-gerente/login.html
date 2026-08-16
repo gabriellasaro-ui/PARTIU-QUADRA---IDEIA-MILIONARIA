@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-manager-app data-guest-page>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Entrar - Qadras Gerente</title>
+  <meta name="theme-color" content="#1b7a3e">
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/desktop.css">
+  <link rel="stylesheet" href="./assets/css/manager-app.css">
+  <style>
+    .gerente-login {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(1200px 500px at 50% -10%, #e7f5ed, transparent 60%), #f4f6f4;
+    }
+    .gerente-login__card {
+      width: 100%;
+      max-width: 400px;
+      background: #fff;
+      border: 1px solid #e3e8e3;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 18px 40px -24px rgba(23, 43, 31, 0.25);
+    }
+    .gerente-login__logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: #1b7a3e;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+    .gerente-login h1 { font-size: 22px; margin: 0 0 4px; }
+    .gerente-login p.lead { color: #66705f; margin: 0 0 24px; font-size: 14px; }
+    .gerente-login label { display: block; font-weight: 600; font-size: 13px; margin: 14px 0 6px; }
+    .gerente-login input[type="email"],
+    .gerente-login input[type="password"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d7ddd6;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+    .gerente-login .btn { margin-top: 22px; width: 100%; }
+    .gerente-login .error { color: #b42318; font-size: 13px; margin-top: 12px; min-height: 18px; }
+    .gerente-login .hint {
+      margin-top: 18px; padding-top: 16px; border-top: 1px solid #edf0ec;
+      font-size: 12px; color: #8a9187;
+    }
+  </style>
+</head>
+<body class="gerente-login">
+  <main class="gerente-login__card">
+    <div class="gerente-login__logo">Q</div>
+    <h1>Painel da arena</h1>
+    <p class="lead">Entre para gerenciar reservas, quadras e financeiro.</p>
+
+    <form data-login-form novalidate>
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" autocomplete="email" required>
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" autocomplete="current-password" required minlength="6">
+      <button type="submit" class="btn btn-primary">Entrar</button>
+      <div class="error" data-login-error></div>
+    </form>
+
+    <p class="hint">Demo: dono@arenabolanarede.com.br · qadras123</p>
+  </main>
+  <script src="./config/app.config.js"></script>
+  <script type="module" src="./assets/js/login.js"></script>
+</body>
+</html>
