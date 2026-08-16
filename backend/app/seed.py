@@ -185,10 +185,10 @@ def _photo(pid: str) -> str:
 def _seed_users(db) -> int:
     created = 0
     for data in DEMO_USERS:
-        exists = db.execute(select(User.id).where(User.email == data["email"])).scalar_one_or_none()
-        if exists:
+        user = db.execute(select(User).where(User.email == data["email"])).scalar_one_or_none()
+        if user:
             if _reset_admin and data.get("role") == ROLE_ADMIN:
-                exists.password_hash = hash_password(_admin_password)
+                user.password_hash = hash_password(_admin_password)
                 created += 1
             continue
         pwd = _admin_password if data.get("role") == ROLE_ADMIN else DEMO_PASSWORD
