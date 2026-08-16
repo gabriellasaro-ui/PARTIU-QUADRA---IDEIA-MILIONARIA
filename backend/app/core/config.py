@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     fcm_credentials_path: str = ""
     fcm_project_id: str = ""
 
+    # Reset de senha do admin — quando "true", o seed regenera a senha
+    # e imprime no log. Usar UMA VEZ e depois remover a env var.
+    reset_admin_password: str = ""
+
     @model_validator(mode="after")
     def _guard_production(self):
         """Em producao, segredo fraco ou CORS aberto impedem o boot.

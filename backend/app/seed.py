@@ -71,14 +71,23 @@ from .models import (
 DEMO_PASSWORD = "qadras123"
 
 # Em producao, o admin recebe uma senha aleatoria impressa no log.
+# Se RESET_ADMIN_PASSWORD=true, a senha e regenerada e atualizada no banco.
+_reset_admin = str(getattr(settings, "reset_admin_password", "")).lower() in ("true", "1", "yes")
+
 if settings.environment == "production":
     _admin_password = secrets.token_urlsafe(16)
     import logging
-    logging.getLogger("app.seed").warning(
-        "SENHA DO ADMIN (producao): %s  —  "
-        "guarde esta senha; ela NAO sera exibida novamente.",
-        _admin_password,
-    )
+    if _reset_admin:
+        logging.getLogger("app.seed").warning(
+            "RESET_ADMIN_PASSWORD=true: senha do admin sera REGENERADA: %s",
+            _admin_password,
+        )
+    else:
+        logging.getLogger("app.seed").warning(
+            "SENHA DO ADMIN (producao): %s  —  "
+            "guarde esta senha; ela NAO sera exibida novamente.",
+            _admin_password,
+        )
 else:
     _admin_password = DEMO_PASSWORD
 
@@ -176,8 +185,11 @@ def _photo(pid: str) -> str:
 def _seed_users(db) -> int:
     created = 0
     for data in DEMO_USERS:
-        exists = db.execute(select(User.id).where(User.email == data["email"])).first()
+        exists = db.execute(select(User.id).where(User.email == data["email"])).scalar_one_or_none()
         if exists:
+            if _reset_admin and data.get("role") == ROLE_ADMIN:
+                exists.password_hash = hash_password(_admin_password)
+                created += 1
             continue
         pwd = _admin_password if data.get("role") == ROLE_ADMIN else DEMO_PASSWORD
         db.add(
