@@ -31,7 +31,7 @@
       raiz.dataset.runtime = nativo ? 'app' : 'web';
 
       if (nativo || forcado === 'mobile' || params.get('modo') === 'app') return;
-      if (toque) return;             // celular fica no mobile
+      if (toque && forcado !== 'web') return;             // celular fica no mobile
 
       var url = new URL('./pc.html', window.location.href);
       url.search = window.location.search;
