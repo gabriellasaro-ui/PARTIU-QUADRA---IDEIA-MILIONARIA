@@ -22,3 +22,9 @@ Thumbs.db
 
 # Local servers / logs
 *.log
+
+# Banco SQLite de dev local (stopgap enquanto nao ha Postgres)
+*.sqlite
+*.sqlite3
+qadras-dev.db
+backend/qadras-dev.db
