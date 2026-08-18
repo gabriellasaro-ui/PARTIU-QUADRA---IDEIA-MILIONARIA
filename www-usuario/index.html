@@ -19,10 +19,12 @@
       var nativo = Boolean(cap && cap.isNativePlatform && cap.isNativePlatform());
       var params = new URLSearchParams(window.location.search);
       var forcado = params.get('layout');
+      var temPonteiroFino = window.matchMedia('(any-pointer: fine)').matches;
       var toque = nativo
-        || (window.matchMedia('(pointer: coarse)').matches
-            && window.matchMedia('(hover: none)').matches)
-        || (navigator.maxTouchPoints || 0) > 1;
+        || (!temPonteiroFino
+            && ((window.matchMedia('(pointer: coarse)').matches
+                 && window.matchMedia('(hover: none)').matches)
+                || (navigator.maxTouchPoints || 0) > 1));
 
       var raiz = document.documentElement;
       raiz.dataset.device = toque ? 'touch' : 'pointer';

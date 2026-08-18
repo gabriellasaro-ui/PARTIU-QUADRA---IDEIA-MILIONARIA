@@ -26,6 +26,7 @@ export function isNative() {
 export function isTouchDevice() {
   if (typeof window === 'undefined') return false;
   if (isNative()) return true;
+  if (window.matchMedia?.('(any-pointer: fine)')?.matches) return false;
   const grosseiro = window.matchMedia?.('(pointer: coarse)')?.matches;
   const semHover = window.matchMedia?.('(hover: none)')?.matches;
   const toques = navigator.maxTouchPoints || 0;
