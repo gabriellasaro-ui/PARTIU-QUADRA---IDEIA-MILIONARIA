@@ -5,22 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Explorar quadras - Qadras</title>
   <script>
+    /* Layout por APARELHO, nunca por largura da janela.
+
+       Antes isto ouvia matchMedia('change') com breakpoint de largura: dar
+       zoom no navegador encolhe a viewport CSS, o evento disparava e a
+       pagina era TROCADA — era isso o "quando dou zoom ele abre a versao
+       mobile". Aparelho nao muda de tipo no meio da sessao, entao nao ha
+       listener nenhum aqui: a decisao e tomada uma vez, na carga.
+
+       Escape: ?layout=web força o desktop, ?layout=mobile força o mobile. */
     (function () {
-      var mobileMedia = window.matchMedia('(max-width: 899px)');
+      var cap = window.Capacitor;
+      var nativo = Boolean(cap && cap.isNativePlatform && cap.isNativePlatform());
+      var params = new URLSearchParams(window.location.search);
+      var forcado = params.get('layout');
+      var toque = nativo
+        || (window.matchMedia('(pointer: coarse)').matches
+            && window.matchMedia('(hover: none)').matches)
+        || (navigator.maxTouchPoints || 0) > 1;
 
-      function openMobile() {
-        var capacitor = window.Capacitor;
-        var nativeApp = Boolean(capacitor && capacitor.isNativePlatform && capacitor.isNativePlatform());
-        if (!nativeApp && !mobileMedia.matches) return;
+      var raiz = document.documentElement;
+      raiz.dataset.device = toque ? 'touch' : 'pointer';
+      raiz.dataset.runtime = nativo ? 'app' : 'web';
 
-        var mobileUrl = new URL('./index.html', window.location.href);
-        mobileUrl.search = window.location.search;
-        mobileUrl.hash = window.location.hash;
-        window.location.replace(mobileUrl.href);
-      }
+      if (forcado === 'web') return;
+      if (!toque) return;            // mouse/trackpad: fica no desktop, em qualquer zoom
 
-      openMobile();
-      if (mobileMedia.addEventListener) mobileMedia.addEventListener('change', openMobile);
+      var url = new URL('./index.html', window.location.href);
+      url.search = window.location.search;
+      url.hash = window.location.hash;
+      window.location.replace(url.href);
     })();
   </script>
   <meta name="theme-color" content="#16a765">

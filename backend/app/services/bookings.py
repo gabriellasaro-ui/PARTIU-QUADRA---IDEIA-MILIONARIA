@@ -13,10 +13,11 @@ import uuid
 from datetime import datetime, time, timedelta, timezone
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..core.config import settings
-from ..core.timezone import TZ, now_local
+from ..core.timezone import TZ, now_local, utc_now
 from ..core.ws import publish_user_event
 from ..models import (
     PLAN_AVULSO,
@@ -359,7 +360,17 @@ def create_booking(
         )
         created.append(booking)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Rede de protecao para a corrida que escapa do lock da court: o indice
+        # parcial uq_booking_slot_ativo pega no banco. O cliente recebe o mesmo
+        # 409 da checagem de sobreposicao, nunca um erro de banco cru.
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Horário já reservado para esta quadra",
+        )
     return created, False
 
 
@@ -590,6 +601,11 @@ def confirm_payment(
     webhook_id UNIQUE vira replay silencioso; IntegrityError nunca e devolvido
     ao provedor. Booking terminal (webhook atrasado) -> Payment refunded,
     sem transicionar estado terminal de volta.
+
+    `amount_cents` e obrigatorio e precisa bater com o valor cobrado: o
+    callback diz quanto entrou, e uma reserva so avanca se entrou o valor
+    inteiro. Sem essa conferencia, um callback com 1 centavo confirmava uma
+    reserva de R$ 130,80.
     """
     payment = None
     if provider_ref:
@@ -601,6 +617,17 @@ def confirm_payment(
 
     if payment.status in (PAYMENT_CONFIRMED, PAYMENT_FAILED, PAYMENT_REFUNDED):
         return payment, True  # replay de callback
+
+    if status == "confirmed":
+        if amount_cents is None:
+            raise HTTPException(
+                status_code=400, detail="Callback sem o valor pago"
+            )
+        if int(amount_cents) != int(payment.amount_cents):
+            raise HTTPException(
+                status_code=400,
+                detail="Valor do pagamento não confere com a cobrança",
+            )
 
     if webhook_id:
         used = pay_repo.get_by_webhook_id(db, webhook_id)
@@ -616,7 +643,7 @@ def confirm_payment(
 
     if status == "confirmed":
         payment.status = PAYMENT_CONFIRMED
-        payment.paid_at = now_local()
+        payment.paid_at = utc_now()
         if booking.status == STATUS_PENDING_PAYMENT:
             _transition_booking(
                 db, booking, STATUS_PAYMENT_CONFIRMED,
@@ -728,7 +755,13 @@ def cancel_booking(db: Session, user, booking_id, reason: str | None = None) -> 
 # --- Sistema (Celery) ------------------------------------------------------
 
 def expire_stale(db: Session, *, now: datetime | None = None) -> int:
-    """Expira pending_payment vencidas e requested sem resposta da arena."""
+    """Expira pending_payment vencidas e requested sem resposta da arena.
+
+    A janela de aprovacao conta a partir do PAGAMENTO, nao da criacao: as duas
+    janelas sao 15 min, entao contar de `created_at` daria a arena so o que
+    sobrou do relogio do jogador — quem pagasse no minuto 14 deixaria 1 minuto
+    para a arena responder, e a reserva morreria com o dinheiro ja retido.
+    """
     now = now or now_local()
     targets = db.execute(
         select(Booking).where(
@@ -738,11 +771,15 @@ def expire_stale(db: Session, *, now: datetime | None = None) -> int:
     count = 0
     notified: list[Booking] = []
     for booking in targets:
+        pay = pay_repo.get_by_booking(db, booking.id)
         if booking.status == STATUS_PENDING_PAYMENT:
             window = timedelta(minutes=settings.booking_payment_expire_minutes)
+            inicio = _as_local(booking.created_at)
         else:
             window = timedelta(minutes=settings.booking_approval_expire_minutes)
-        if now - _as_local(booking.created_at) >= window:
+            pago_em = pay.paid_at if pay is not None else None
+            inicio = _as_local(pago_em or booking.created_at)
+        if now - inicio >= window:
             _transition_group(
                 db,
                 booking,
@@ -751,10 +788,17 @@ def expire_stale(db: Session, *, now: datetime | None = None) -> int:
                 actor_role=ROLE_SISTEMA,
                 reason="Prazo de pagamento/aprovação expirado",
             )
-            pay = pay_repo.get_by_booking(db, booking.id)
             if pay is not None and pay.status == PAYMENT_PENDING:
                 pay.status = PAYMENT_FAILED
                 pay.payload = {**(pay.payload or {}), "expired": True}
+            elif pay is not None and pay.status == PAYMENT_CONFIRMED:
+                # O jogador pagou e a arena nao respondeu: o dinheiro volta.
+                get_provider(pay.provider).refund(pay)
+                pay.status = PAYMENT_REFUNDED
+                pay.payload = {
+                    **(pay.payload or {}),
+                    "refund": "Arena não respondeu no prazo",
+                }
             count += 1
             notified.append(booking)
             db.flush()

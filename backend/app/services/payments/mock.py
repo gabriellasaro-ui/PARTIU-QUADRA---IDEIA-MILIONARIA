@@ -4,6 +4,7 @@ Gera um Pix "copia-e-cola" fake (so para demonstracao) e confia no webhook.
 A auto-confirmacao (tarefa Celery) usa `auto_result()` para simular o
 callback do provedor alguns segundos depois da criacao.
 """
+import hmac
 import json
 import uuid
 
@@ -13,6 +14,28 @@ from .base import PaymentIntent, PaymentProvider, WebhookResult
 from datetime import timedelta
 
 _FALLBACK_QR = "https://qadras.app/pix/mock.png"
+
+# Header que o "provedor" mock usa para provar que o callback e dele. O
+# provedor real troca isto por assinatura HMAC do corpo — o ponto e que
+# parse_webhook JAMAIS aceite um payload sem provar a origem.
+WEBHOOK_SECRET_HEADER = "x-qadras-webhook-secret"
+
+
+def _segredo_confere(headers) -> bool:
+    """Sem segredo configurado, nao exige nada (dev). Com segredo, exige.
+
+    Producao nunca chega aqui: a guarda de Settings recusa o boot com
+    PAYMENT_PROVIDER=mock.
+    """
+    esperado = settings.payment_webhook_secret
+    if not esperado:
+        return True
+    enviado = ""
+    for chave, valor in dict(headers or {}).items():
+        if str(chave).lower() == WEBHOOK_SECRET_HEADER:
+            enviado = str(valor)
+            break
+    return hmac.compare_digest(enviado, esperado)
 
 
 def _copia_e_cola(provider_ref: str, amount_cents: int) -> str:
@@ -48,6 +71,8 @@ class MockProvider(PaymentProvider):
 
     def parse_webhook(self, headers, body: bytes) -> WebhookResult | None:
         if not body:
+            return None
+        if not _segredo_confere(headers):
             return None
         try:
             data = json.loads(body)

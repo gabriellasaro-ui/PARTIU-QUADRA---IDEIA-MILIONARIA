@@ -1091,7 +1091,7 @@ html[data-player-desktop] .composer input {
   border-radius: 999px;
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1280px) and (pointer: coarse) {
   html[data-player-desktop] .web-header__main {
     gap: 18px;
   }
@@ -1121,7 +1121,7 @@ html[data-player-desktop] .composer input {
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1100px) and (pointer: coarse) {
   html[data-player-desktop] .web-header__main,
   html[data-player-desktop] .web-context {
     padding-right: 22px;
@@ -1160,7 +1160,7 @@ html[data-player-desktop] .composer input {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 899px) and (pointer: coarse) {
   html[data-player-desktop] .web-header {
     position: static;
   }
@@ -1685,7 +1685,7 @@ html[data-player-desktop] .web-login-card__footer a {
   font-weight: 750;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1100px) and (pointer: coarse) {
   html[data-player-desktop] .web-app-cta {
     width: 42px;
     padding: 0;
@@ -1737,7 +1737,7 @@ html[data-player-desktop] .web-login-card__footer a {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 899px) and (pointer: coarse) {
   html[data-player-desktop] .web-login {
     margin-left: auto;
   }
@@ -2295,7 +2295,7 @@ html[data-player-desktop] .calendar-day.on {
   box-shadow: none !important;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1100px) and (pointer: coarse) {
   html[data-player-desktop] .desktop-request-progress {
     grid-template-columns: auto minmax(180px, 1fr);
   }
@@ -2315,7 +2315,7 @@ html[data-player-desktop] .calendar-day.on {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 899px) and (pointer: coarse) {
   html[data-player-desktop] .web-login {
     padding: 0 8px;
   }
@@ -2343,3 +2343,15 @@ html[data-player-desktop] .calendar-day.on {
     margin: 0 0 4px;
   }
 }
+
+
+/* ---------------------------------------------------------------
+   O wordmark ja escreve QADRAS — o circulo com icone generico ao lado
+   era redundante e comia a largura que o logo precisa.
+
+   Esta regra mora AQUI, e nao no desktop.css, de proposito: o bloco
+   .web-brand__mark acima declara display:grid com a mesma
+   especificidade, e player-web.css carrega depois de desktop.css. La
+   ela perdia em silencio.
+   --------------------------------------------------------------- */
+html[data-player-desktop] .web-brand__mark { display: none; }

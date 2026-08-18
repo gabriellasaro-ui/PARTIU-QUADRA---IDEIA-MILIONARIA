@@ -5,23 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Qadras</title>
   <script>
+    /* Layout por APARELHO, nunca por largura da janela.
+
+       Antes isto ouvia matchMedia('change') com breakpoint de largura: dar
+       zoom no navegador encolhe a viewport CSS, o evento disparava e a
+       pagina era TROCADA — era isso o "quando dou zoom ele abre a versao
+       mobile". Aparelho nao muda de tipo no meio da sessao, entao nao ha
+       listener nenhum aqui: a decisao e tomada uma vez, na carga.
+
+       Escape: ?layout=web força o desktop, ?layout=mobile força o mobile. */
     (function () {
-      var desktopMedia = window.matchMedia('(min-width: 900px)');
+      var cap = window.Capacitor;
+      var nativo = Boolean(cap && cap.isNativePlatform && cap.isNativePlatform());
+      var params = new URLSearchParams(window.location.search);
+      var forcado = params.get('layout');
+      var toque = nativo
+        || (window.matchMedia('(pointer: coarse)').matches
+            && window.matchMedia('(hover: none)').matches)
+        || (navigator.maxTouchPoints || 0) > 1;
 
-      function openDesktop() {
-        var capacitor = window.Capacitor;
-        var nativeApp = Boolean(capacitor && capacitor.isNativePlatform && capacitor.isNativePlatform());
-        var forceApp = new URLSearchParams(window.location.search).get('modo') === 'app';
-        if (nativeApp || forceApp || !desktopMedia.matches) return;
+      var raiz = document.documentElement;
+      raiz.dataset.device = toque ? 'touch' : 'pointer';
+      raiz.dataset.runtime = nativo ? 'app' : 'web';
 
-        var desktopUrl = new URL('./pc.html', window.location.href);
-        desktopUrl.search = window.location.search;
-        desktopUrl.hash = window.location.hash || '#quadras';
-        window.location.replace(desktopUrl.href);
-      }
+      if (nativo || forcado === 'mobile' || params.get('modo') === 'app') return;
+      if (toque) return;             // celular fica no mobile
 
-      openDesktop();
-      if (desktopMedia.addEventListener) desktopMedia.addEventListener('change', openDesktop);
+      var url = new URL('./pc.html', window.location.href);
+      url.search = window.location.search;
+      url.hash = window.location.hash || '#quadras';
+      window.location.replace(url.href);
     })();
   </script>
   <meta name="theme-color" content="#16a765">

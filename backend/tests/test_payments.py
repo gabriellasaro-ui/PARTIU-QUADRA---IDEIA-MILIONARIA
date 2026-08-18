@@ -7,6 +7,8 @@ idempotente no replay.
 import uuid
 from datetime import date, timedelta
 
+from conftest import WEBHOOK_HEADERS
+
 _SLOT_COUNTER = 40
 
 
@@ -95,7 +97,7 @@ def test_webhook_confirm(client, login):
     payment = r.json()["payment"]
     prov_ref = payment["providerRef"]
 
-    r2 = client.post("/api/payments/webhook/mock", json={
+    r2 = client.post("/api/payments/webhook/mock", headers=WEBHOOK_HEADERS, json={
         "webhookId": f"webhook-{uuid.uuid4().hex[:8]}",
         "status": "confirmed",
         "paymentRef": prov_ref,
@@ -128,7 +130,7 @@ def test_webhook_idempotent(client, login):
     prov_ref = payment["providerRef"]
     wh_id = f"webhook-idempotent-{uuid.uuid4().hex[:8]}"
 
-    r2 = client.post("/api/payments/webhook/mock", json={
+    r2 = client.post("/api/payments/webhook/mock", headers=WEBHOOK_HEADERS, json={
         "webhookId": wh_id,
         "status": "confirmed",
         "paymentRef": prov_ref,
@@ -136,7 +138,7 @@ def test_webhook_idempotent(client, login):
     })
     assert r2.status_code == 200
 
-    r3 = client.post("/api/payments/webhook/mock", json={
+    r3 = client.post("/api/payments/webhook/mock", headers=WEBHOOK_HEADERS, json={
         "webhookId": wh_id,
         "status": "confirmed",
         "paymentRef": prov_ref,

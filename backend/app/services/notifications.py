@@ -135,6 +135,9 @@ def dispatch_notification(n: Notification) -> None:
                 n.data or {},
             ],
             ignore_result=True,
+            # Sem isso o kombu reconecta com backoff e segura o request do
+            # usuario esperando uma fila que pode estar fora.
+            retry=False,
         )
     except Exception:  # noqa: BLE001 — fila indisponivel nao derruba o request
         logger.warning("push nao enfileirado (fila indisponivel)", exc_info=True)

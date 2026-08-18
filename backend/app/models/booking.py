@@ -6,8 +6,12 @@ Maquina de estados (decisao: paga primeiro, conforme doc §9.1):
 
 Saidas: payment_failed, rejected, cancelled, expired, refunded.
 
-O slot e garantido por UNIQUE(court_id, start_at) + validacao de sobreposicao
-dentro de transacao com lock da court (SELECT ... FOR UPDATE no Postgres).
+O slot e garantido por um indice unico PARCIAL sobre (court_id, start_at) que
+vale so para os status ativos (uq_booking_slot_ativo), mais a validacao de
+sobreposicao dentro de transacao com lock da court (SELECT ... FOR UPDATE no
+Postgres). O indice precisa ser parcial: um unique cru sobre (court_id,
+start_at) faria uma reserva cancelada/expirada bloquear aquele horario para
+sempre, mesmo o codigo considerando o slot livre.
 O servidor calcula preco/fee/total e grava o snapshot; o cliente nunca envia
 valores de dinheiro.
 """
@@ -18,11 +22,12 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -54,10 +59,23 @@ ACTIVE_STATUSES = {
 }
 
 
+# WHERE do indice parcial de slot, montado a partir de ACTIVE_STATUSES para que
+# banco e codigo (repositories.bookings.overlapping_bookings) nunca discordem
+# sobre o que ocupa um horario. `sorted` mantem o DDL estavel entre execucoes.
+_SLOT_OCUPADO = "status IN (%s)" % ", ".join(f"'{s}'" for s in sorted(ACTIVE_STATUSES))
+
+
 class Booking(Base):
     __tablename__ = "bookings"
     __table_args__ = (
-        UniqueConstraint("court_id", "start_at", name="uq_booking_slot"),
+        Index(
+            "uq_booking_slot_ativo",
+            "court_id",
+            "start_at",
+            unique=True,
+            postgresql_where=text(_SLOT_OCUPADO),
+            sqlite_where=text(_SLOT_OCUPADO),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

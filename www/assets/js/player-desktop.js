@@ -1,5 +1,5 @@
 import venueService from '../../services/venues.js';
-import { API_BASE_URL } from '../../config/constants.js';
+import { API_BASE_URL, SERVICE_FEE_RATE } from '../../config/constants.js';
 import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
@@ -11,14 +11,36 @@ let activeDesktopApprovalTimer = null;
 const USER_LOCATION = [-16.6950, -49.2550];
 const APPROVAL_WINDOW_MS = 15 * 60 * 1000;
 const MOCK_APPROVAL_DELAY_MS = 5000;
-const SPORT_ICONS = {
-  'Futebol Society': 'goal',
-  'Beach Tennis': 'circle-dot',
-  Volei: 'volleyball',
-  Basquete: 'target',
-  Tenis: 'activity',
-  Futsal: 'trophy'
+const SPORT_ICON_SHAPES = {
+  futebol: '<circle cx="12" cy="12" r="10"/><path d="M12 7.8 15.99 10.7 14.47 15.38H9.53L8.01 10.7Z"/><path d="M12 7.8V2.8"/><path d="m15.99 10.7 4.76-1.54"/><path d="m14.47 15.38 2.94 4.06"/><path d="M9.53 15.38 6.59 19.44"/><path d="M8.01 10.7 3.25 9.16"/>',
+  basquete: '<circle cx="12" cy="12" r="10"/><path d="M12 2v20"/><path d="M2 12h20"/><path d="M5 4.2c3.6 3.4 3.6 12.2 0 15.6"/><path d="M19 4.2c-3.6 3.4-3.6 12.2 0 15.6"/>',
+  volei: '<circle cx="12" cy="12" r="10"/><path d="M11 7a16 16 20 0 1 10.98 4.362"/><path d="M12 12a13 13 0 0 1-8.66 5"/><path d="M16.83 13.634a16 16 0 0 1-9.267 7.328"/><path d="M20.66 17A13 13 0 0 0 12 12a13 13 0 0 1 0-10"/><path d="M8.17 15.366a16 16 0 0 1-1.713-11.69"/>',
+  tenis: '<circle cx="12" cy="12" r="10"/><path d="M3.6 6.2c5 2.7 11.8 2.7 16.8 0"/><path d="M3.6 17.8c5-2.7 11.8-2.7 16.8 0"/>',
+  beach: '<circle cx="12" cy="9.5" r="6.4"/><path d="M6.1 7c3.7 1.7 8.1 1.7 11.8 0"/><path d="M6.1 12c3.7-1.7 8.1-1.7 11.8 0"/><path d="M2.5 19.5c2.2-1.5 4.4-1.5 6.5 0s4.3 1.5 6.5 0 4.4-1.5 6-.4"/>'
 };
+
+const SPORT_ICONS = {
+  'Futebol Society': 'futebol',
+  Futsal: 'futebol',
+  Basquete: 'basquete',
+  Volei: 'volei',
+  Tenis: 'tenis',
+  'Beach Tennis': 'beach'
+};
+
+/* Cada esporte com a sua bola. O Lucide empacotado no projeto nao tem bola
+   nenhuma alem de volleyball — por isso o mapa antigo caia em target,
+   circle-dot e trophy, que nao dizem nada. Estas sao desenhadas na mesma
+   grade do Lucide (24x24, traco 2, pontas arredondadas) e entram como SVG
+   inline; a classe .ic cuida do tamanho e da cor. Futsal e Society dividem a
+   bola porque e a mesma bola. */
+function sportIcon(sport, className = 'ic') {
+  const chave = SPORT_ICONS[sport]
+    || SPORT_ICONS[String(sport ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')];
+  const corpo = chave && SPORT_ICON_SHAPES[chave];
+  if (!corpo) return icon('trophy', className);
+  return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true">${corpo}</svg>`;
+}
 const PAYMENT_METHOD_LABELS = {
   pix: 'Pix',
   card: 'Cartão de crédito'
@@ -255,13 +277,13 @@ function venueCard(venue, favorite = false) {
         <span class="pill tr">${icon('navigation')}${venue.distance.toLocaleString('pt-BR')} km</span>
         <span class="pill star tl">${icon('star')}${venue.rating}</span>
         <span class="desktop-availability">${icon('clock-3')}${availability}</span>
-        <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" loading="lazy">
+        <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" loading="lazy" decoding="async">
       </div>
       <div class="bd">
-        <div class="qcard-kicker">${icon(SPORT_ICONS[venue.sport] || 'trophy')}${escapeHtml(venue.sport)}</div>
+        <div class="qcard-kicker">${sportIcon(venue.sport)}${escapeHtml(venue.sport)}</div>
         <h3>${escapeHtml(venue.name)}</h3>
         <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${venue.distance.toLocaleString('pt-BR')} km</p>
-        <div class="tags">${venue.tags.slice(0, 2).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
+        <div class="tags">${venue.tags.slice(0, 3).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
         <div class="foot">
           <div class="price">${money(venue.price)}<small> /hora</small></div>
           <a href="#quadra/${venue.id}" class="btn btn-primary">Ver horários${icon('arrow-right', 'ic sm')}</a>
@@ -273,7 +295,7 @@ function venueCard(venue, favorite = false) {
 function mapPopup(venue) {
   return `
     <a href="#quadra/${venue.id}" style="display:flex;gap:10px;align-items:center;min-width:220px">
-      <img src="${escapeHtml(venue.image)}" alt="" style="width:64px;height:58px;object-fit:cover;border-radius:7px">
+      <img src="${escapeHtml(venue.image)}" alt="" style="width:64px;height:58px;object-fit:cover;border-radius:7px" decoding="async" loading="lazy">
       <span>
         <strong style="display:block">${escapeHtml(venue.name)}</strong>
         <small style="display:block;margin:3px 0">${escapeHtml(venue.neighborhood)}</small>
@@ -331,7 +353,7 @@ async function renderExplore(root, route) {
           <input type="hidden" name="esporte" value="${escapeHtml(sport)}">
           <button class="desktop-sport-trigger" type="button" data-sport-trigger
                   aria-haspopup="listbox" aria-expanded="false">
-            ${icon(SPORT_ICONS[sport] || 'trophy')}
+            ${sportIcon(sport)}
             <span data-sport-label>${escapeHtml(sport || 'Todos os esportes')}</span>
             ${icon('chevron-down', 'desktop-sport-chevron')}
           </button>
@@ -341,7 +363,7 @@ async function renderExplore(root, route) {
             </button>
             ${sports.map((item) => `
               <button type="button" class="${item === sport ? 'is-selected' : ''}" data-sport-option="${escapeHtml(item)}" role="option" aria-selected="${String(item === sport)}">
-                ${icon(SPORT_ICONS[item] || 'trophy')}<span>${escapeHtml(item)}</span>${icon('check', 'desktop-sport-check')}
+                ${sportIcon(item)}<span>${escapeHtml(item)}</span>${icon('check', 'desktop-sport-check')}
               </button>`).join('')}
           </div>
         </div>
@@ -391,8 +413,56 @@ function initExploreMap(root) {
     window.L.marker(position).addTo(desktopMap).bindPopup(mapPopup(venue));
     bounds.push(position);
   });
+
+  /* "Voce esta aqui". Antes o mapa CENTRAVA na posicao do usuario e a usava
+     para enquadrar, mas nunca a desenhava — dava para ver as quadras e nao
+     dava para saber de onde elas estavam perto. Circulo em vez de alfinete,
+     para nao competir com os marcadores das quadras. */
+  /* Um circulo de 7px verde some no meio de alfinetes azuis grandes: nao
+     dava para saber que aquilo era voce. Agora sao tres camadas — halo,
+     anel branco e nucleo — mais um rotulo fixo, para o ponto se declarar
+     sem depender de clique. */
+  const haloUsuario = window.L.circleMarker(USER_LOCATION, {
+    radius: 20,
+    stroke: false,
+    fillColor: '#16a765',
+    fillOpacity: 0.18,
+    interactive: false
+  }).addTo(desktopMap);
+  const marcadorUsuario = window.L.circleMarker(USER_LOCATION, {
+    radius: 10,
+    color: '#ffffff',
+    weight: 4,
+    fillColor: '#0c8b52',
+    fillOpacity: 1
+  }).addTo(desktopMap);
+  marcadorUsuario.bindTooltip('Você está aqui', {
+    permanent: true,
+    direction: 'top',
+    offset: [0, -12],
+    className: 'mapa-voce'
+  });
+
   if (bounds.length > 1) desktopMap.fitBounds(bounds, { padding: [34, 34], maxZoom: 14 });
   setTimeout(() => desktopMap?.invalidateSize(), 50);
+
+  /* Posicao real quando o usuario permitir. Recusa, falta de sinal ou http
+     sem TLS nao podem quebrar o mapa: fica no ponto padrao de Goiania.
+     Quando GEOLOCATION_READY (services/geo.js) for ligado para o app nativo,
+     esta chamada deve passar a ir por la, que tem o plugin do Capacitor. */
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (!desktopMap) return;
+        const aqui = [pos.coords.latitude, pos.coords.longitude];
+        marcadorUsuario.setLatLng(aqui);
+        haloUsuario.setLatLng(aqui);
+        desktopMap.panTo(aqui);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  }
 }
 
 async function renderVenue(root, route) {
@@ -419,11 +489,11 @@ async function renderVenue(root, route) {
 
     <section class="desktop-booking-hero">
       <div class="desktop-venue-gallery__grid">
-        <img class="desktop-venue-gallery__main" data-player-gallery-hero src="${escapeHtml(gallery[0])}" alt="${escapeHtml(venue.name)}">
+        <img class="desktop-venue-gallery__main" data-player-gallery-hero src="${escapeHtml(gallery[0])}" alt="${escapeHtml(venue.name)}" decoding="async" fetchpriority="high">
         <div class="desktop-venue-gallery__side">
           ${gallery.slice(1, 3).map((photo, index) => `
             <button type="button" data-player-gallery-image="${escapeHtml(photo)}" aria-label="Abrir foto ${index + 2}">
-              <img src="${escapeHtml(photo)}" alt="" loading="lazy">
+              <img src="${escapeHtml(photo)}" alt="" loading="lazy" decoding="async">
             </button>`).join('')}
         </div>
       </div>
@@ -779,7 +849,7 @@ async function renderPayment(root, route) {
   const requestedResult = routeQuery(route).get('resultado');
   if (requestedResult) confirmation.set('resultado', requestedResult);
   const avatar = profile.photo
-    ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}">`
+    ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}" decoding="async" loading="lazy">`
     : escapeHtml(profile.name.slice(0, 1));
   root.innerHTML = `
     <div class="desktop-checkout-page" data-player-payment-page>
@@ -800,7 +870,7 @@ async function renderPayment(root, route) {
               <a href="#quadra/${venue.id}">${icon('pencil', 'ic sm')}Alterar horário</a>
             </div>
             <div class="desktop-checkout-venue">
-              <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
+              <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" decoding="async" loading="lazy">
               <div><h3>${escapeHtml(venue.name)}</h3><p>${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</p></div>
               <div class="desktop-checkout-facts">
                 <span>${icon('calendar-days', 'ic sm')}<b>${escapeHtml(dateText)}</b></span>
@@ -956,7 +1026,7 @@ async function renderConfirmation(root, route) {
           </div>
 
           <div class="desktop-approval-reservation">
-            <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
+            <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" decoding="async" loading="lazy">
             <div><span>Sua partida</span><strong>${escapeHtml(dateText)} · ${hour} a ${endHour}</strong><small>${duration}h · ${escapeHtml(displayText(venue.sport))}</small></div>
             <b>${money(total)}</b>
           </div>
@@ -993,7 +1063,7 @@ async function renderConfirmation(root, route) {
           <p class="sub">Seu horário está garantido. Agora é só reunir a turma e jogar.</p>
           <div class="ticket">
             <div class="tk-top">
-              <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
+              <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" decoding="async" loading="lazy">
               <div><span>Partida confirmada</span><h3>${escapeHtml(venue.name)}</h3><div class="m">${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</div></div>
             </div>
             <div class="tk-body">
@@ -1145,11 +1215,11 @@ async function renderReservations(root) {
     const conversation = conversations.find((item) => String(item.venueId) === String(venue.id));
     return `
       <article class="ritem" data-status="${escapeHtml(reservation.group)}" ${reservation.group === 'proxima' ? '' : 'style="display:none"'}>
-        <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
+        <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" decoding="async" loading="lazy">
         <div class="info">
           <h3>${escapeHtml(venue.name)}</h3>
           <div class="meta">
-            <span>${icon(SPORT_ICONS[venue.sport] || 'trophy')}${escapeHtml(venue.sport)}</span>
+            <span>${sportIcon(venue.sport)}${escapeHtml(venue.sport)}</span>
             <span>${icon('map-pin')}${escapeHtml(venue.neighborhood)}</span>
             <span>${icon('calendar-days')}${escapeHtml(reservation.date)}</span>
             <span>${icon('clock-3')}${reservation.hour}</span>
@@ -1255,7 +1325,7 @@ async function renderProfile(root) {
   const next = reservations.find((item) => item.group === 'proxima');
   const nextVenue = next ? venues.find((venue) => venue.id === next.venueId) : null;
   const avatar = profile.photo
-    ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}">`
+    ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}" decoding="async" loading="lazy">`
     : escapeHtml(profile.name.slice(0, 1));
   root.innerHTML = `
     <div class="desktop-profile-page">

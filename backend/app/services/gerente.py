@@ -12,7 +12,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..core.config import settings
-from ..core.timezone import TZ, now_local
+from ..core.timezone import TZ, now_local, utc_now
 from ..models import (
     ACTIVE_STATUSES,
     PLAN_AVULSO,
@@ -344,7 +344,7 @@ def create_manual_booking(db: Session, manager, body) -> Booking:
         method="pix",
         amount_cents=subtotal,
         status="confirmed",
-        paid_at=now_local(),
+        paid_at=utc_now(),
     ))
     db.commit()
     return booking
@@ -406,7 +406,7 @@ def create_manual_mensalista(db: Session, manager, body) -> list[Booking]:
         method="pix",
         amount_cents=subtotal,
         status="confirmed",
-        paid_at=now_local(),
+        paid_at=utc_now(),
     ))
     db.commit()
     return created

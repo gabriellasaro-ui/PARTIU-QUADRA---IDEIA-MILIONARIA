@@ -1091,7 +1091,7 @@ html[data-player-desktop] .composer input {
   border-radius: 999px;
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1280px) and (pointer: coarse) {
   html[data-player-desktop] .web-header__main {
     gap: 18px;
   }
@@ -1121,7 +1121,7 @@ html[data-player-desktop] .composer input {
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1100px) and (pointer: coarse) {
   html[data-player-desktop] .web-header__main,
   html[data-player-desktop] .web-context {
     padding-right: 22px;
@@ -1160,7 +1160,7 @@ html[data-player-desktop] .composer input {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 899px) and (pointer: coarse) {
   html[data-player-desktop] .web-header {
     position: static;
   }
@@ -1685,7 +1685,7 @@ html[data-player-desktop] .web-login-card__footer a {
   font-weight: 750;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1100px) and (pointer: coarse) {
   html[data-player-desktop] .web-app-cta {
     width: 42px;
     padding: 0;
@@ -1737,7 +1737,7 @@ html[data-player-desktop] .web-login-card__footer a {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 899px) and (pointer: coarse) {
   html[data-player-desktop] .web-login {
     margin-left: auto;
   }
@@ -2295,7 +2295,7 @@ html[data-player-desktop] .calendar-day.on {
   box-shadow: none !important;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1100px) and (pointer: coarse) {
   html[data-player-desktop] .desktop-request-progress {
     grid-template-columns: auto minmax(180px, 1fr);
   }
@@ -2315,7 +2315,7 @@ html[data-player-desktop] .calendar-day.on {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 899px) and (pointer: coarse) {
   html[data-player-desktop] .web-login {
     padding: 0 8px;
   }
@@ -2355,3 +2355,150 @@ html[data-player-desktop] .calendar-day.on {
   color: #c0392b;
   font-size: 13px;
 }
+
+
+/* ---------------------------------------------------------------
+   O wordmark ja escreve QADRAS — o circulo com icone generico ao lado
+   era redundante e comia a largura que o logo precisa.
+
+   Esta regra mora AQUI, e nao no desktop.css, de proposito: o bloco
+   .web-brand__mark acima declara display:grid com a mesma
+   especificidade, e player-web.css carrega depois de desktop.css. La
+   ela perdia em silencio.
+   --------------------------------------------------------------- */
+html[data-player-desktop] .web-brand__mark { display: none; }
+
+
+/* Placeholder das fotos de quadra: elas vem de fora (images.unsplash.com),
+   entao existe um intervalo real com a imagem ausente. Um fundo neutro no
+   contêiner evita o branco duro e o pulo de layout. */
+.qcard .thumb,
+.desktop-venue-gallery__main,
+.desktop-venue-gallery img {
+  background-color: #e9efea;
+}
+
+/* ---------------------------------------------------------------
+   Barra de busca do explorar — quebra de linha
+
+   O desenho (barra branca com campos internos) fica como esta. O que
+   quebrava era so o grid: minmax(280px,1fr) minmax(190px,.42fr) auto nao
+   encolhe abaixo de ~550px, entao em tela estreita o conteudo transbordava
+   e o placeholder cortava no meio da palavra ("Quadra, bairro ou espo").
+   Em flex com wrap, o que nao cabe desce em vez de espremer.
+   --------------------------------------------------------------- */
+html[data-player-desktop] .desktop-market-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+html[data-player-desktop] .desktop-market-search .field.grow {
+  flex: 1 1 min(100%, 260px);
+}
+
+html[data-player-desktop] .desktop-market-search .desktop-sport-picker {
+  /* nao cresce: o espaco que sobra e da busca, que e o campo principal */
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+html[data-player-desktop] .desktop-market-search .btn {
+  flex: 0 0 auto;
+}
+
+/* Muito estreito: campo e botao ocupam a linha inteira, para nao sobrar um
+   botao solto ao lado de um campo espremido. */
+@media (max-width: 620px) {
+  html[data-player-desktop] .desktop-market-search .field.grow,
+  html[data-player-desktop] .desktop-market-search .desktop-sport-picker,
+  html[data-player-desktop] .desktop-market-search .btn {
+    flex: 1 1 100%;
+  }
+  html[data-player-desktop] .desktop-market-search .btn {
+    justify-content: center;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Busca em tela estreita
+
+   A primeira tentativa jogou campo, seletor e botao cada um em 100%:
+   virou uma pilha de tres barras, com um botao verde gigante. Agora so o
+   campo ocupa a linha (e o que precisa de espaco para digitar); esporte e
+   Buscar dividem a linha de baixo.
+   --------------------------------------------------------------- */
+@media (max-width: 620px) {
+  html[data-player-desktop] .desktop-market-search .field.grow {
+    flex: 1 1 100%;
+  }
+  html[data-player-desktop] .desktop-market-search .desktop-sport-picker {
+    flex: 1 1 0;
+  }
+  html[data-player-desktop] .desktop-market-search .btn {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Tela estreita: galeria vira carrossel e o resumo sobe
+
+   `display: contents` desmonta os agrupadores (o painel lateral da galeria
+   e o <main>) para que as fotos e as secoes virem irmas diretas — assim da
+   para deslizar foto a foto e reordenar sem mexer no HTML.
+   --------------------------------------------------------------- */
+@media (max-width: 1100px) and (pointer: coarse) {
+  /* Galeria: mosaico -> carrossel com encaixe por foto */
+  html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 8px;
+  }
+  html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__grid::-webkit-scrollbar {
+    display: none;
+  }
+  html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__side {
+    display: contents;
+  }
+  html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__main,
+  html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__side button {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    border-radius: 14px;
+    aspect-ratio: 4 / 3;
+    height: auto;
+  }
+  html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__main {
+    object-fit: cover;
+  }
+
+  /* Resumo da reserva antes das avaliacoes: quem esta na quadra quer marcar,
+     nao ler resenha. As avaliacoes ficam logo abaixo, para quem hesita. */
+  html[data-player-desktop] .desktop-booking-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  html[data-player-desktop] .desktop-booking-main {
+    display: contents;
+  }
+  html[data-player-desktop] .booking-selector { order: 1; }
+  html[data-player-desktop] .desktop-booking-aside { order: 2; }
+  html[data-player-desktop] .desktop-venue-reviews { order: 3; }
+}
+
+/* Rotulo fixo do "voce esta aqui" no mapa. */
+.leaflet-tooltip.mapa-voce {
+  background: #0c8b52;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(8, 40, 24, .28);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+}
+.leaflet-tooltip.mapa-voce::before { border-top-color: #0c8b52; }

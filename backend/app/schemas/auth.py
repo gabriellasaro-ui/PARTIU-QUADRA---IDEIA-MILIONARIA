@@ -6,18 +6,21 @@ Respostas de sessao sao { token, user, isNew }; `user` usa chaves camelCase
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginRequest(BaseModel):
+    """`email` fica como str de proposito: validar aqui trancaria fora contas
+    ja criadas com e-mail malformado, antes de RegisterRequest validar."""
+
     email: str
     senha: str
 
 
 class RegisterRequest(BaseModel):
-    name: str
-    email: str
-    senha: str
+    name: str = Field(min_length=2, max_length=120)
+    email: EmailStr
+    senha: str = Field(min_length=8, max_length=128)
 
 
 class GoogleRequest(BaseModel):

@@ -15,7 +15,7 @@ import logging
 import threading
 import uuid
 
-from ..core.redis import redis_client
+from ..core.redis import redis_call, redis_client
 
 logger = logging.getLogger(__name__)
 
@@ -87,20 +87,17 @@ class ConnectionManager:
             conn.loop.call_soon_threadsafe(conn.queue.put_nowait, event)
 
     def _publish_redis(self, user_id, event: dict) -> None:
-        try:
-            redis_client.publish(
-                _WS_CHANNEL,
-                json.dumps(
-                    {
-                        "worker_id": self.worker_id,
-                        "user_id": str(user_id),
-                        "event": event,
-                    },
-                    ensure_ascii=False,
-                ),
-            )
-        except Exception:
-            logger.debug("redis pub/sub indisponivel (fail-open)", exc_info=True)
+        """Fanout para os outros workers. Passa pelo disjuntor: com o Redis
+        fora, a entrega local ja aconteceu e nao ha por que pagar timeout."""
+        payload = json.dumps(
+            {
+                "worker_id": self.worker_id,
+                "user_id": str(user_id),
+                "event": event,
+            },
+            ensure_ascii=False,
+        )
+        redis_call(lambda: redis_client.publish(_WS_CHANNEL, payload))
 
     # --- subscritor (outros workers) ----------------------------------------
 

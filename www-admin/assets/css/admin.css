@@ -411,3 +411,34 @@ body {
   .admin-toolbar { flex-wrap: wrap; }
   .admin-input { flex: 1 1 100%; min-width: 0; }
 }
+
+/* ---------------------------------------------------------------
+   Marca Qadras — wordmark (assets/images/qadras-logo.svg)
+
+   Embutido no HTML para o preto herdar o contexto via currentColor;
+   a barra do Q fica sempre #00b200.
+
+   `aspect-ratio` trava a proporcao real do desenho (2441x354). NAO usar
+   max-width aqui: com a largura limitada e a altura fixa, o
+   preserveAspectRatio encolhe o desenho inteiro para caber e o logo
+   vira uma tira de 6px.
+
+   O quadrado do icone fica escondido ao lado do wordmark (que ja diz
+   QADRAS) e reaparece na sidebar recolhida, onde e a unica marca que
+   cabe. E la que o icone proprio entra quando existir.
+   --------------------------------------------------------------- */
+.qadras-logo {
+  display: block;
+  height: var(--logo-h, 22px);
+  width: auto;
+  aspect-ratio: 2441 / 354;
+  fill: currentColor;
+  stroke: none;
+  flex: 0 0 auto;
+}
+
+html[data-player-desktop] .web-brand .qadras-logo { --logo-h: 27px; }
+
+.sb-logo .qadras-logo { --logo-h: 23px; }
+.sb-logo .mark { display: none; }
+.app.collapsed .sb-logo .mark { display: grid; }

@@ -13,10 +13,16 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
 os.environ["JWT_SECRET"] = "test-only-secret-0123456789abcdef-xyz"
 os.environ["PAYMENT_PROVIDER"] = "mock"
+# Com segredo definido, a suite exercita o webhook PROTEGIDO (o caminho que
+# vale em qualquer ambiente que rode o mock), nao o aberto.
+os.environ["PAYMENT_WEBHOOK_SECRET"] = WEBHOOK_SECRET = "segredo-de-teste-do-webhook"
 os.environ["PUSH_PROVIDER"] = "mock"
 os.environ["LOG_LEVEL"] = "WARNING"
 
 import pytest  # noqa: E402
+
+#: Header que o provider mock exige para aceitar um callback de pagamento.
+WEBHOOK_HEADERS = {"X-Qadras-Webhook-Secret": WEBHOOK_SECRET}
 
 
 @pytest.fixture(scope="session", autouse=True)

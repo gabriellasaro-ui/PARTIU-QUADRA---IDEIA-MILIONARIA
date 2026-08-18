@@ -2,6 +2,20 @@
 # Uso: docker-compose up --build
 # A API fica em http://localhost:8000
 
+# Ambiente compartilhado por api, worker e beat: os tres precisam enxergar o
+# mesmo banco, o mesmo Redis e as mesmas taxas/provedores.
+x-api-env: &api-env
+  DATABASE_URL: "postgresql+psycopg://qadras:qadras@postgres:5432/qadras"
+  REDIS_URL: "redis://redis:6379/0"
+  ENVIRONMENT: development
+  JWT_SECRET: "dev-local-jwt-secret-minimum-32-chars-ok"
+  CORS_ORIGINS: "*"
+  RATE_LIMIT_ENABLED: "false"
+  LOG_LEVEL: INFO
+  PAYMENT_PROVIDER: mock
+  PAYMENT_WEBHOOK_SECRET: "dev-local-webhook-secret"
+  PUSH_PROVIDER: mock
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -35,21 +49,43 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: "postgresql+psycopg://qadras:qadras@postgres:5432/qadras"
-      REDIS_URL: "redis://redis:6379/0"
-      ENVIRONMENT: development
-      JWT_SECRET: "dev-local-jwt-secret-minimum-32-chars-ok"
-      CORS_ORIGINS: "*"
-      RATE_LIMIT_ENABLED: "false"
-      LOG_LEVEL: INFO
-      PAYMENT_PROVIDER: mock
-      PUSH_PROVIDER: mock
+    environment: *api-env
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  # O worker executa as tarefas; o beat as agenda. Sem os dois, nada expira,
+  # nada conclui, o Pix mock nunca confirma e nenhum repasse e gerado — a
+  # reserva fica presa em "aguardando pagamento" e parece bug da API.
+  # `command` sobrescreve o CMD da imagem, entao eles nao rodam o
+  # docker-entrypoint.sh (migracao + seed), que segue exclusivo da api.
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: celery -A app.core.celery_app.celery_app worker -l info
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+  beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: celery -A app.core.celery_app.celery_app beat -l info
+    environment: *api-env
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
 
 volumes:
   pgdata:

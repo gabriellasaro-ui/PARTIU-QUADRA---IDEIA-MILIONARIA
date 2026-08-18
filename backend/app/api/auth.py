@@ -29,7 +29,7 @@ from ..auth.security import (
 from ..core.config import settings
 from ..core.database import get_db
 from ..core.ratelimit import LIMIT_AUTH_IP, LIMIT_AUTH_REFRESH_IP, limiter
-from ..core.redis import redis_client
+from ..core.redis import redis_call, redis_client
 from ..models import (
     PROVIDER_GOOGLE,
     PROVIDER_PASSWORD,
@@ -117,14 +117,13 @@ def _issue_session(db: Session, user: User, is_new: bool = False) -> dict:
 def _blacklist(jti: str | None) -> None:
     if not jti:
         return
-    try:
-        redis_client.setex(
+    redis_call(
+        lambda: redis_client.setex(
             f"auth:blacklist:{jti}",
             settings.access_token_expire_minutes * 60,
             "1",
         )
-    except Exception:
-        pass
+    )
 
 
 def _resolve_optional_user(authorization: str | None, db: Session) -> User | None:
@@ -276,7 +275,16 @@ def logout(
 ):
     if authorization and authorization.lower().startswith("bearer "):
         try:
-            _blacklist(decode_token(authorization.split(" ", 1)[1].strip()).get("jti"))
+            claims = decode_token(authorization.split(" ", 1)[1].strip())
+            _blacklist(claims.get("jti"))
+            # Revoga pelo `sid` do proprio access token: o cliente nem sempre
+            # manda o refreshToken no corpo, e sem isso a sessao continuava
+            # viva no banco — o logout so valia enquanto o Redis respondesse.
+            sid = claims.get("sid")
+            if sid:
+                sessao = db.get(UserSession, uuid.UUID(str(sid)))
+                if sessao is not None and sessao.user_id == user.id:
+                    sessao.revoked_at = utcnow()
         except Exception:
             pass
 

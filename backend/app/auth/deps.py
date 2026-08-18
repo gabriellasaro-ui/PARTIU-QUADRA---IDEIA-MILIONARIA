@@ -4,14 +4,16 @@ current_user       -> qualquer usuario autenticado (401 se invalido)
 current_manager    -> exige role=gerente (403 caso contrario)
 current_admin      -> exige role=admin
 """
+from datetime import timezone
+
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 import uuid
 
 from ..core.database import get_db
-from ..core.redis import redis_client
-from ..models import ROLE_ADMIN, ROLE_GERENTE, User
-from .security import TOKEN_TYPE_ACCESS, decode_token
+from ..core.redis import redis_call, redis_client
+from ..models import ROLE_ADMIN, ROLE_GERENTE, User, UserSession
+from .security import TOKEN_TYPE_ACCESS, decode_token, utcnow
 
 _credentials_error = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -21,13 +23,41 @@ _credentials_error = HTTPException(
 
 
 def _is_blacklisted(jti: str | None) -> bool:
-    """Redis fora do ar nao derruba autenticacao (fail-open)."""
+    """Redis fora do ar nao derruba autenticacao (fail-open, via disjuntor).
+
+    A revogacao de verdade nao depende disto: `_session_is_live` consulta o
+    banco. Aqui e so o caminho rapido.
+    """
     if not jti:
         return False
-    try:
-        return bool(redis_client.get(f"auth:blacklist:{jti}"))
-    except Exception:
+    return bool(redis_call(lambda: redis_client.get(f"auth:blacklist:{jti}")))
+
+
+def _session_is_live(db: Session, sid: str | None) -> bool:
+    """A sessao (claim `sid`) ainda vale? Consulta o banco, nao o Redis.
+
+    A blacklist do Redis e fail-open de proposito — Redis fora do ar nao pode
+    derrubar todo mundo. Mas isso significa que ela sozinha nao revoga nada de
+    verdade: sem Redis, o token de quem deslogou valeria ate expirar sozinho
+    (ate 60 min). `user_sessions.revoked_at` e a fonte da verdade; a blacklist
+    fica como caminho rapido.
+    """
+    if not sid:
         return False
+    try:
+        parsed = uuid.UUID(str(sid))
+    except (ValueError, TypeError):
+        return False
+    session = db.get(UserSession, parsed)
+    if session is None or session.revoked_at is not None:
+        return False
+    expires = session.expires_at
+    if expires is not None:
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires < utcnow():
+            return False
+    return True
 
 
 def get_current_user(
@@ -45,6 +75,8 @@ def get_current_user(
     if payload.get("type") != TOKEN_TYPE_ACCESS:
         raise _credentials_error
     if _is_blacklisted(payload.get("jti")):
+        raise _credentials_error
+    if not _session_is_live(db, payload.get("sid")):
         raise _credentials_error
 
     user_id = payload.get("sub")
@@ -91,6 +123,8 @@ def authenticate_ws(token: str | None, db: Session) -> User | None:
     if payload.get("type") != TOKEN_TYPE_ACCESS:
         return None
     if _is_blacklisted(payload.get("jti")):
+        return None
+    if not _session_is_live(db, payload.get("sid")):
         return None
     try:
         parsed_id = uuid.UUID(payload.get("sub", ""))

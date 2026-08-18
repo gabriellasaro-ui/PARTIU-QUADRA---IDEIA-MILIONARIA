@@ -32,6 +32,19 @@ def test_guard_rejects_wildcard_cors():
         )
 
 
+def test_guard_rejects_mock_payment_provider():
+    """O mock confirma cobranca sem dinheiro entrar — nao pode ir ao ar."""
+    from app.core.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(
+            environment="production",
+            jwt_secret="a-32-char-test-secret-0123456789abcdef-xyz",
+            cors_origins="https://app.qadras.com.br",
+            payment_provider="mock",
+        )
+
+
 def test_guard_allows_valid_production():
     from app.core.config import Settings
 
@@ -39,6 +52,7 @@ def test_guard_allows_valid_production():
         environment="production",
         jwt_secret="a-32-char-test-secret-0123456789abcdef-xyz",
         cors_origins="https://app.qadras.com.br,https://gerente.qadras.com.br",
+        payment_provider="asaas",
     )
     assert s.environment == "production"
     assert s.cors_origin_list == ["https://app.qadras.com.br", "https://gerente.qadras.com.br"]

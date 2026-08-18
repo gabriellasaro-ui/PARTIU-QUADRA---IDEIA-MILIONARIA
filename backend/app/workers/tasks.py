@@ -62,6 +62,9 @@ def confirmar_pagamentos_pendentes() -> dict:
                     webhook_id=result.webhook_id,
                     status=result.status,
                     provider_ref=result.provider_ref,
+                    # Obrigatorio desde a conferencia de valor em
+                    # confirm_payment; `auto_result` devolve o valor cobrado.
+                    amount_cents=result.amount_cents,
                     payload=result.payload,
                 )
                 confirmados += 1

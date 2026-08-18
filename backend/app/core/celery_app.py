@@ -23,6 +23,17 @@ celery_app.conf.update(
     timezone=settings.timezone,
     enable_utc=True,
     broker_connection_retry_on_startup=True,
+    # Quem PRODUZ tarefa aqui e a API, dentro do request do usuario. Com o
+    # broker fora do ar, o kombu reconecta com backoff e o `send_task` do
+    # dispatch de push segurava o request por ~4s — mesmo estando dentro de
+    # try/except. Zero retry na producao faz o fail-open acontecer de fato.
+    # O worker continua reconectando normalmente (retry_on_startup acima).
+    broker_connection_max_retries=0,
+    broker_transport_options={
+        "socket_connect_timeout": settings.redis_connect_timeout,
+        "socket_timeout": settings.redis_socket_timeout,
+        "max_retries": 0,
+    },
     beat_schedule={
         # Fase 4 (reservas): expirar cotacoes/slots nao pagos ou nao aprovados
         # e concluir reservas confirmadas apos o horario.

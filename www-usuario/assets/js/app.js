@@ -8,6 +8,7 @@ import { connectWS, disconnectWS } from '../../services/ws.js';
 import pushService from '../../services/push.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import { parseMobileRouteHash } from '../../config/routes.js';
+import { isWebLimited, rotaLiberada, rotaDoHref, marcarPlataforma } from '../../services/platform.js';
 import { initMobileActions, renderMobilePage } from './mobile.js';
 import { initPlayerDesktopActions, renderPlayerDesktopPage } from './player-desktop.js';
 import { loadGame, destroyGame } from './game-mode.js';
@@ -216,6 +217,28 @@ const PLAYER_DESKTOP_ROUTES = {
   }
 };
 
+/* Versao web limitada: no navegador o Qadras entrega so buscar, ver a quadra
+   e reservar. O resto e do app. Em vez de marcar item por item no HTML (sao
+   tres componentes de navegacao, em quatro frentes duplicadas), o corte sai
+   daqui: todo link de navegacao cuja rota nao esta liberada some do DOM.
+   Dentro do app nativo nada disso roda. */
+function aplicarLimiteWeb() {
+  if (!isWebLimited()) return;
+
+  qsa('[data-nav-page]').forEach((item) => {
+    if (!rotaLiberada(item.dataset.navPage)) item.remove();
+  });
+
+  /* O menu do mobile (mobile-market-sheets.html) usa href puro, sem
+     data-nav-page. Sem isto os itens continuariam na tela e virariam links
+     mortos: o usuario clica, a guarda de rota devolve para a home, e parece
+     bug. Some tambem quem aponta para rota fechada. */
+  qsa('a[href*="#"]').forEach((link) => {
+    const rota = rotaDoHref(link.getAttribute('href'));
+    if (rota && !rotaLiberada(rota)) link.remove();
+  });
+}
+
 function markActiveNav() {
   const current = document.documentElement.dataset.page;
   qsa('[data-nav-page]').forEach((item) => {
@@ -249,7 +272,10 @@ async function setFragment(container, path) {
 
 function mobileRouteFromHash() {
   const parsed = parseMobileRouteHash(location.hash);
-  const name = MOBILE_ROUTES[parsed.name] ? parsed.name : 'home';
+  const existe = MOBILE_ROUTES[parsed.name] ? parsed.name : 'home';
+  // Esconder o item do menu nao basta: a rota tambem tem que recusar URL digitada.
+  const name = rotaLiberada(existe) ? existe : 'home';
+  if (name !== existe) history.replaceState(null, '', `#${name}`);
   return {
     ...parsed,
     name,
@@ -301,10 +327,16 @@ async function renderMobileRoute() {
     setFragment(header, route.header),
     setFragment(view, route.page)
   ]);
-  await renderMobilePage(routeState, view);
-  refreshIcons(view);
-
-  markActiveNav();
+  try {
+    await renderMobilePage(routeState, view);
+  } catch (error) {
+    view.setAttribute('data-route-error', routeName);
+    view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p></div></div>';
+  } finally {
+    refreshIcons(view);
+    aplicarLimiteWeb();
+    markActiveNav();
+  }
   document.querySelector('.screen')?.scrollTo({ top: 0, behavior: 'auto' });
 }
 
@@ -317,7 +349,12 @@ function initMobileRouter() {
 function playerDesktopRouteFromHash() {
   const parsed = parseMobileRouteHash(location.hash);
   const requested = parsed.name === 'home' ? 'quadras' : parsed.name;
-  const name = PLAYER_DESKTOP_ROUTES[requested] ? requested : 'quadras';
+  const existe = PLAYER_DESKTOP_ROUTES[requested] ? requested : 'quadras';
+  // Esconder o item do menu nao basta: a rota tambem tem que recusar URL digitada.
+  const name = rotaLiberada(existe) ? existe : 'quadras';
+  // replaceState (e nao location.hash) para a URL parar de mentir sobre o que
+  // esta na tela sem disparar outro hashchange e entrar em laco.
+  if (name !== existe) history.replaceState(null, '', `#${name}`);
   return {
     ...parsed,
     name,
@@ -352,9 +389,16 @@ async function renderPlayerDesktopRoute() {
   view.dataset.currentRoute = routeState.signature;
   updatePlayerDesktopMeta(routeName, route);
   await setFragment(view, route.page);
-  await renderPlayerDesktopPage(routeState, view);
-  refreshIcons(view);
-  markActiveNav();
+  try {
+    await renderPlayerDesktopPage(routeState, view);
+  } catch (error) {
+    view.setAttribute('data-route-error', routeName);
+    view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p><a class="btn block" href="#quadras">Voltar para explorar</a></div></div>';
+  } finally {
+    refreshIcons(view);
+    aplicarLimiteWeb();
+    markActiveNav();
+  }
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
@@ -491,7 +535,10 @@ function initRealtime() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   window.pqRefreshIcons = refreshIcons;
+  marcarPlataforma();
   await loadComponents();
+  // Depois do loadComponents: e ele que injeta topbar, sidebar e tabbar.
+  aplicarLimiteWeb();
   window.pqSyncAuthControls?.();
   initMobileActions();
   initPlayerDesktopActions();

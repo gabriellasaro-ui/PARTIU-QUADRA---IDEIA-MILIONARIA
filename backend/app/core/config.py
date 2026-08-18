@@ -24,6 +24,17 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://qadras:qadras@localhost:5432/qadras"
     redis_url: str = "redis://localhost:6379/0"
 
+    # Redis e opcional por design (cache, blacklist, pub/sub, rate limit todos
+    # tem fallback). Para o fallback valer, a falha precisa ser RAPIDA: sem
+    # estes limites, cada operacao com o Redis fora custa ~4s de retry.
+    redis_connect_timeout: float = 0.5
+    redis_socket_timeout: float = 1.0
+    # Depois de uma falha, quanto tempo parar de tentar antes de sondar o
+    # Redis de novo (disjuntor em core/redis.py). Quem paga a sondagem e
+    # um request de usuario, entao vale espacar: com o Redis fora, 30s
+    # significa um request lento a cada 30s em vez de todos.
+    redis_circuit_seconds: float = 30.0
+
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
@@ -60,6 +71,13 @@ class Settings(BaseSettings):
     payment_provider: str = "mock"
     payment_mock_confirm_seconds: int = 15
 
+    # Segredo compartilhado do webhook de pagamento. O callback do provedor e
+    # publico (quem chama e o provedor, nao o app), entao ele precisa provar
+    # quem e: sem isso, qualquer um que conheca o providerRef — e o proprio
+    # jogador conhece, ele vem na resposta de /pagar — confirma a reserva sem
+    # pagar. Vazio = sem exigencia (so dev; producao nao aceita o mock).
+    payment_webhook_secret: str = ""
+
     # Push (Fase 7): "mock" por padrao (grava em push_logs, sem rede). O
     # provider FCM entra quando FCM_CREDENTIALS_PATH apontar para o service
     # account JSON do Firebase — como o login Google, vazio => não configurado.
@@ -88,6 +106,12 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "CORS_ORIGINS='*' nao pode em producao. Liste as origens: "
                     "https://app.qadras.com.br,https://gerente.qadras.com.br,..."
+                )
+            if self.payment_provider.strip().lower() == "mock":
+                raise ValueError(
+                    "PAYMENT_PROVIDER=mock nao pode em producao: o provedor "
+                    "mock confirma cobranca sem dinheiro nenhum entrar. "
+                    "Configure o provedor de Pix real antes de subir."
                 )
         return self
 
