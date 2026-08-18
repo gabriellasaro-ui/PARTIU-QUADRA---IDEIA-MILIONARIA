@@ -225,6 +225,15 @@ const PLAYER_DESKTOP_ROUTES = {
 function aplicarLimiteWeb() {
   if (!isWebLimited()) return;
 
+  /* O corte e a politica do JOGADOR, nao uma regra global. O gerente e
+     COMPLETO na web e no app: nao ha funil curto para proteger, e a arena
+     precisa fechar o dia pelo navegador. Como dashboard.html divide este
+     mesmo app.js, sem esta saida o ROTAS_WEB — escrito para rotas de
+     jogador — apagaria agenda, avaliacoes, config, dashboard, financeiro,
+     mensagens e reservas da sidebar do gerente: 7 dos 8 itens, sobrando so
+     quadras. */
+  if (document.documentElement.hasAttribute('data-manager-app')) return;
+
   qsa('[data-nav-page]').forEach((item) => {
     if (!rotaLiberada(item.dataset.navPage)) item.remove();
   });
