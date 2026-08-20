@@ -125,7 +125,14 @@ export const venueService = {
   },
 
   async featured() {
-    const data = await fromApiOrLocal('/api/quadras/destaques', {
+    /* Manda a coordenada do local escolhido, igual list(). Sem ela o servidor
+       media a distancia a partir do centro de Goiania, e a Home mostrava
+       "3,8 km" para uma arena a 600 km de quem estava olhando. */
+    const local = localEscolhido();
+    const busca = local?.lat != null
+      ? `/api/quadras/destaques?lat=${local.lat}&lng=${local.lng}`
+      : '/api/quadras/destaques';
+    const data = await fromApiOrLocal(busca, {
       destaques: clone(VENUES).sort((a, b) => b.rating - a.rating).slice(0, 4)
     });
     return (data?.destaques || []).map(applyOverrides);

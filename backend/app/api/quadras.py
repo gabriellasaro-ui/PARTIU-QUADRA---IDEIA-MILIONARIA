@@ -132,8 +132,14 @@ def listar_esportes(
 
 
 @router.get("/destaques")
-def destaques(db: Session = Depends(get_db)):
-    return catalog.get_featured(db)
+def destaques(
+    lat: float | None = Query(None),
+    lng: float | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    # lat/lng opcionais: sem elas a distancia sai do centro de Goiania, e a
+    # Home mostrava "3,8 km" para quem estava a 600 km da arena.
+    return catalog.get_featured(db, lat=lat, lng=lng)
 
 
 @router.get("/{quadra_id}/horarios")

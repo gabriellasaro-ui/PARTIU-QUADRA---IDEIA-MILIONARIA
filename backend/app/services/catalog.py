@@ -286,14 +286,24 @@ def get_sports(db: Session, destaque: bool = False) -> list[str]:
     return sports
 
 
-def get_featured(db: Session) -> dict:
-    key = f"{catalog_version()}:q:featured"
+def get_featured(db: Session, lat: float | None = None, lng: float | None = None) -> dict:
+    """Destaques da Home.
+
+    Recebe lat/lng porque a distancia vai no payload. Sem elas, `to_venue`
+    media tudo a partir do centro de Goiania (DEFAULT_LOC): uma arena a 600 km
+    de quem estava olhando aparecia como "3,8 km" na Home.
+
+    A coordenada entra na CHAVE do cache pelo mesmo motivo — senao o primeiro
+    visitante fixaria a distancia dele para todo mundo pelo tempo do TTL.
+    """
+    origem = f"{lat:.3f},{lng:.3f}" if lat is not None and lng is not None else "padrao"
+    key = f"{catalog_version()}:q:featured:{origem}"
     cached = cache_get(key)
     if cached is not None:
         return cached
     rows = repo.list_visible_courts(db)
     stats = repo.review_stats(db, [r[1].id for r in rows]) if rows else {}
-    venues = [to_venue(arena, court, stats=stats) for court, arena in rows]
+    venues = [to_venue(arena, court, stats=stats, lat=lat, lng=lng) for court, arena in rows]
     venues.sort(key=lambda v: (v["rating"] or 0), reverse=True)
     payload = {
         "destaques": venues[:4],
