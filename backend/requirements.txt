@@ -17,6 +17,11 @@ celery==5.4.0
 bcrypt==4.2.0
 pyjwt==2.9.0
 google-auth==2.34.0
+# Transporte HTTP do google-auth. Sem ele, o import de
+# google.auth.transport.requests estoura ImportError e o login Google
+# falha com a mesma mensagem de "token invalido" — dependencia ausente
+# disfarcada de token ruim.
+requests==2.32.3
 
 # Push (Fase 7) — FCM real; import lazy apenas quando FCM_CREDENTIALS_PATH
 # estiver configurado. O provider mock nao importa firebase-admin.

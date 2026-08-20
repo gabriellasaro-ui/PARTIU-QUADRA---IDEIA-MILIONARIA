@@ -1,5 +1,9 @@
 {
   "appId": "br.com.qadras.app",
   "appName": "Qadras",
-  "webDir": "www-usuario"
+  "webDir": "www-usuario",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  }
 }

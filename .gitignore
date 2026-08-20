@@ -28,3 +28,15 @@ Thumbs.db
 *.sqlite3
 qadras-dev.db
 backend/qadras-dev.db
+# Backups do banco de dev (feitos antes de limpezas destrutivas).
+*.db.bak-*
+
+# Material de referencia solto na raiz: prints e video que serviram de modelo
+# para o layout. Os assets que o app realmente usa vivem em
+# www*/assets/images (login-hero*.webp). Sao ~8 MB que nao pertencem ao repo.
+/image.png
+/image copy.png
+/image copy 2.png
+/banner.png
+/banner pc.png
+/8617206.mp4
