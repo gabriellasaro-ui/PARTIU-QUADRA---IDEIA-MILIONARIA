@@ -115,7 +115,13 @@
       <form class="profile-edit-form" data-player-card-form>
         <div class="field"><label>Posição</label><select name="position" data-profile-positions></select></div>
         <div class="field"><label>Nível</label><select name="level" data-profile-levels></select></div>
-        <div class="field"><label>Nascimento</label><input type="date" name="birthDate"></div>
+        <div class="field"><label for="perfil-nascimento">Nascimento</label>
+          <!-- max = hoje: sem isso o seletor nativo aceita data futura, e o
+               campo abria em 2026 por padrao. min = 1920 para a roleta do
+               Android nao comecar em 1900 e exigir dezenas de giros. -->
+          <input id="perfil-nascimento" type="date" name="birthDate" class="field-date"
+                 min="1920-01-01" data-max-hoje autocomplete="bday">
+        </div>
         <div class="field"><label>Pé dominante</label><select name="foot" data-profile-feet></select></div>
         <div class="profile-edit-actions">
           <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
