@@ -52,6 +52,10 @@ export const ROTAS_WEB = new Set([
   'favoritos',
   // sem conta nao ha reserva: POST /api/reservas responde 401
   'entrar', 'cadastro', 'onboarding', 'login',
+  // conta liberada a pedido do dono: quem cria conta pela web precisa poder
+  // arrumar nome, foto e preferencias sem instalar o app. Carteira, mensagens,
+  // clube e game day seguem exclusivos do app.
+  'perfil', 'config',
   // valores de `nav` que a navegacao usa e nao sao rotas
   ''
 ]);

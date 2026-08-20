@@ -30,8 +30,14 @@
       raiz.dataset.device = toque ? 'touch' : 'pointer';
       raiz.dataset.runtime = nativo ? 'app' : 'web';
 
-      if (forcado === 'web') return;
-      if (!toque) return;            // mouse/trackpad: fica no desktop, em qualquer zoom
+      /* No NAVEGADOR nunca sai daqui, nem em celular: app.html E a versao
+         web, e ela e responsiva ate a largura de telefone. index.html e o
+         layout do app instalado — mandar o navegador para la entregava a
+         experiencia do aplicativo (aba Inicio, notificacoes, menu) para quem
+         nunca instalou nada, e sem caminho de volta para conta e perfil.
+
+         So o app nativo, ou ?layout=mobile explicito, atravessa. */
+      if (!nativo && forcado !== 'mobile') return;
 
       var url = new URL('./index.html', window.location.href);
       url.search = window.location.search;
@@ -66,6 +72,7 @@
   <script src="./config/app.config.js"></script>
   <script src="./assets/vendor/lucide/lucide.min.js" defer></script>
   <script src="./assets/vendor/leaflet/leaflet.js" defer></script>
+  <script src="./assets/js/map-credits.js" defer></script>
   <script src="./assets/js/ui.js" defer></script>
   <script type="module" src="./assets/js/app.js"></script>
 </body>

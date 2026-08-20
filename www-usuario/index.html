@@ -30,10 +30,12 @@
       raiz.dataset.device = toque ? 'touch' : 'pointer';
       raiz.dataset.runtime = nativo ? 'app' : 'web';
 
+      /* Contrapartida do desvio em app.html: no navegador, index.html sempre
+         devolve para a versao web, inclusive em celular. Fica aqui so quem e
+         app instalado ou pediu o layout mobile de proposito. */
       if (nativo || forcado === 'mobile' || params.get('modo') === 'app') return;
-      if (toque && forcado !== 'web') return;             // celular fica no mobile
 
-      var url = new URL('./pc.html', window.location.href);
+      var url = new URL('./app.html', window.location.href);
       url.search = window.location.search;
       url.hash = window.location.hash || '#quadras';
       window.location.replace(url.href);
@@ -72,6 +74,7 @@
   <script src="./config/app.config.js"></script>
   <script src="./assets/vendor/lucide/lucide.min.js" defer></script>
   <script src="./assets/vendor/leaflet/leaflet.js" defer></script>
+  <script src="./assets/js/map-credits.js" defer></script>
   <script src="./assets/js/ui.js" defer></script>
   <script type="module" src="./assets/js/app.js"></script>
 </body>

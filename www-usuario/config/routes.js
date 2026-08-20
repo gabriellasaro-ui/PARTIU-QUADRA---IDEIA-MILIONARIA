@@ -1,6 +1,6 @@
 export const ROUTES = {
   home: './index.html',
-  desktop: './pc.html#quadras',
+  desktop: './app.html#quadras',
   login: './index.html#entrar',
   entrar: './index.html#entrar',
   cadastro: './index.html#cadastro',

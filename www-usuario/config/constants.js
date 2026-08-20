@@ -18,6 +18,12 @@ export const APP_PUBLIC_URL = runtimeConfig.APP_PUBLIC_URL || '';
    reservar de verdade. Para forcar livre mesmo com API, defina
    REQUIRE_LOGIN: false no app.config.js. */
 export const REQUIRE_LOGIN = runtimeConfig.REQUIRE_LOGIN ?? Boolean(runtimeConfig.API_BASE_URL);
+/* Client ID web do OAuth 2.0 (Google Cloud Console). Vazio => o login do
+   Google fica desligado e nenhum script do Google e carregado. O mesmo valor
+   precisa estar em GOOGLE_CLIENT_ID no backend, que e quem valida a
+   assinatura do idToken. Client ID e publico, nao e segredo. */
+export const GOOGLE_CLIENT_ID = runtimeConfig.GOOGLE_CLIENT_ID || '';
+
 export const STORAGE_PREFIX = runtimeConfig.STORAGE_PREFIX || 'pq';
 export const DEFAULT_LOCALE = 'pt-BR';
 export const DEFAULT_CURRENCY = 'BRL';
