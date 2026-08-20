@@ -106,7 +106,15 @@ DEMO_USERS = [
     {"email": "camila@email.com", "name": "Camila Rocha", "role": ROLE_JOGADOR},
 ]
 
-# Espelha www-usuario/config/mock-data.js VENUES (uma arena + uma court demo).
+# UMA arena de demonstracao, e nao seis.
+#
+# As outras cinco (beach tennis, futsal, volei, tenis, basquete) sairam a
+# pedido: existiam so para encher o mapa, e quadra falsa em tela de teste
+# esconde o que o fluxo real faz. Sobra a Bola na Rede porque e a unica com
+# gerente dono (dono@arenabolanarede.com.br) — sem dono nao ha quem aprove
+# a reserva, e o pagamento morreria parado em "requested".
+#
+# Para voltar a ter varias, o historico deste arquivo guarda as cinco.
 ARENAS = [
     {"key": "bolanarede", "name": "Arena Bola na Rede", "owner": "dono@arenabolanarede.com.br",
      "address": "Jardim Goiás", "city": "Goiania", "state": "GO",
@@ -117,51 +125,6 @@ ARENAS = [
                  "photo-1459865264687-595d652de67e"],
      "amenities": ["Grama sintética", "Iluminada", "Vestiário"],
      "rating": 4.8},
-    {"key": "beachpoint", "name": "Beach Point Arena", "owner": None,
-     "address": "Setor Bueno", "city": "Goiania", "state": "GO",
-     "lat": -16.7050, "lng": -49.2770,
-     "sport": "Beach Tennis", "price_cents": 9000, "price_monthly_cents": 30600,
-     "photo": "photo-1626224583764-f87db24ac4ea",
-     "gallery": ["photo-1626224583764-f87db24ac4ea", "photo-1612872087720-bb876e2e67d1",
-                 "photo-1592656094267-764a45160876"],
-     "amenities": ["Areia", "Coberta", "Bar"],
-     "rating": 4.9},
-    {"key": "zedoquadra", "name": "Quadra do Ze", "owner": None,
-     "address": "Setor Sul", "city": "Goiania", "state": "GO",
-     "lat": -16.6870, "lng": -49.2620,
-     "sport": "Futsal", "price_cents": 8000, "price_monthly_cents": 27200,
-     "photo": "photo-1577223625816-7546f13df25d",
-     "gallery": ["photo-1577223625816-7546f13df25d", "photo-1556056504-5c7696c4c28d",
-                 "photo-1546519638-68e109498ffc"],
-     "amenities": ["Piso oficial", "Coberta", "Vestiário"],
-     "rating": 4.5},
-    {"key": "voleisand", "name": "Volei Sand Club", "owner": None,
-     "address": "Setor Oeste", "city": "Goiania", "state": "GO",
-     "lat": -16.6780, "lng": -49.2720,
-     "sport": "Volei", "price_cents": 7000, "price_monthly_cents": 23800,
-     "photo": "photo-1612872087720-bb876e2e67d1",
-     "gallery": ["photo-1612872087720-bb876e2e67d1", "photo-1626224583764-f87db24ac4ea",
-                 "photo-1592656094267-764a45160876"],
-     "amenities": ["Areia", "Estacionamento", "Bar"],
-     "rating": 4.7},
-    {"key": "topspin", "name": "Top Spin Tenis", "owner": None,
-     "address": "Alto da Glória", "city": "Goiania", "state": "GO",
-     "lat": -16.7150, "lng": -49.2470,
-     "sport": "Tenis", "price_cents": 11000, "price_monthly_cents": 37400,
-     "photo": "photo-1595435934249-5df7ed86e1c0",
-     "gallery": ["photo-1595435934249-5df7ed86e1c0", "photo-1592656094267-764a45160876",
-                 "photo-1626224583764-f87db24ac4ea"],
-     "amenities": ["Saibro", "Iluminada", "Aulas"],
-     "rating": 4.6},
-    {"key": "cestacheia", "name": "Cesta Cheia Basquete", "owner": None,
-     "address": "Setor Marista", "city": "Goiania", "state": "GO",
-     "lat": -16.6950, "lng": -49.2650,
-     "sport": "Basquete", "price_cents": 7500, "price_monthly_cents": 25500,
-     "photo": "photo-1546519638-68e109498ffc",
-     "gallery": ["photo-1546519638-68e109498ffc", "photo-1577223625816-7546f13df25d",
-                 "photo-1556056504-5c7696c4c28d"],
-     "amenities": ["Coberta", "Arquibancada", "Vestiário"],
-     "rating": 4.4},
 ]
 
 REVIEW_COMMENTS = [
