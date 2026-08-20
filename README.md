@@ -24,7 +24,7 @@ Documentação funcional e técnica completa: [docs/QADRAS-DOCUMENTACAO-COMPLETA
 │   ├── services/     → API client, auth, storage
 │   ├── config/       → Rotas, constantes
 │   ├── index.html    → Mobile app (PWA)
-│   ├── pc.html       → Desktop app (jogador)
+│   ├── app.html       → Desktop app (jogador)
 │   └── dashboard.html→ Desktop app (gerente)
 │
 ├── www-usuario/      → Frontend do jogador (webDir do Capacitor)
@@ -48,7 +48,7 @@ python -m http.server 8095 --bind 127.0.0.1 --directory www
 ```
 
 - **Mobile**: http://localhost:8000 (ou http://localhost:8095 sem backend)
-- **Desktop (jogador)**: http://localhost:8000/pc.html
+- **Desktop (jogador)**: http://localhost:8000/app.html
 - **Dashboard (gerente)**: http://localhost:8000/dashboard.html
 
 ## Funcionalidades

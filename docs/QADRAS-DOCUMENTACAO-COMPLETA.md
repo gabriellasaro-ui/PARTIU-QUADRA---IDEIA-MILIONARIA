@@ -42,7 +42,7 @@ Legenda usada nesta documentação:
 | Entrada | Uso | Arquivo |
 |---|---|---|
 | `/` ou `index.html` | App mobile/PWA do jogador | `www/index.html` |
-| `/pc.html` | Jogador em tela grande | `www/pc.html` |
+| `/app.html` | Jogador em tela grande | `www/app.html` |
 | `/dashboard.html` | Gestão da arena | `www/dashboard.html` |
 | `/www-admin/index.html` | Administração da plataforma | `www-admin/index.html` |
 | Android/iOS | App Capacitor | `www-usuario` como `webDir` |
@@ -80,7 +80,7 @@ Aliases aceitos: `#buscar` e `#explorar` apontam para `#quadras`; `#chat` para `
 
 ### 2.3 Rotas do jogador desktop
 
-`pc.html` compartilha serviços e regras com o mobile, mas possui renderizadores próprios em `assets/js/player-desktop.js`:
+`app.html` compartilha serviços e regras com o mobile, mas possui renderizadores próprios em `assets/js/player-desktop.js`:
 
 `#quadras`, `#quadra/:id`, `#pagamento/:id`, `#confirmado/:id`, `#reservas`, `#favoritos`, `#carteira`, `#carteira/adicionar`, `#carteira/cartao`, `#carteira/cupom`, `#perfil`, `#config`, `#mensagens/:id` e `#game`.
 
@@ -121,7 +121,7 @@ O desktop acrescenta o fluxo explícito de reserva em três etapas: **data → d
 
 ### 3.1 Fluxo do jogador
 
-1. O usuário entra por `#entrar`, `login.html` ou `login-pc.html`.
+1. O usuário entra por `#entrar`, `login.html` ou `login-web.html`.
 2. Login envia e-mail e senha para `POST /api/auth/login`.
 3. Cadastro envia nome, e-mail e senha para `POST /api/auth/register`.
 4. Login Google envia o `idToken` para `POST /api/auth/google`.
@@ -677,7 +677,7 @@ Cada evento deve conter `event_id`, `occurred_at`, `actor_id`, `actor_role`, `te
 
 ## 15. Arquivos de referência do levantamento
 
-- Entradas e roteamento: `www/index.html`, `www/pc.html`, `www/dashboard.html`, `www/assets/js/app.js`, `www/config/routes.js`.
+- Entradas e roteamento: `www/index.html`, `www/app.html`, `www/dashboard.html`, `www/assets/js/app.js`, `www/config/routes.js`.
 - Experiência do jogador: `www/pages/`, `www/pages/player-desktop/`, `www/assets/js/mobile.js`, `www/assets/js/player-desktop.js`.
 - Experiência do gerente: `www/pages/desktop/`, `www/assets/js/manager-*.js`.
 - Admin: `www-admin/index.html`, `www-admin/assets/js/admin.js`.

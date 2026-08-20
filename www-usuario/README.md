@@ -21,8 +21,8 @@ Para a fase Capacitor, o `webDir` pode apontar para `frontend`. Os HTMLs usam ca
 - A navegacao mobile fixa usa Inicio, Explorar, Mapa, Reservas e Perfil, sempre fora da area util do mapa.
 - O site para PC usa o mesmo servico de dados e a mesma linguagem visual, com layout proprio para telas grandes.
 - A camada mobile foi espelhada em `static/css/` para o Flask manter a mesma experiencia no celular sem alterar backend.
-- `pc.html` usa o shell desktop original com sidebar, topbar e rotas desacopladas.
-- Em navegadores com largura a partir de 900px, `index.html` encaminha para `pc.html`; dentro do Capacitor, permanece no app mobile.
+- `app.html` usa o shell desktop original com sidebar, topbar e rotas desacopladas.
+- Em navegadores com largura a partir de 900px, `index.html` encaminha para `app.html`; dentro do Capacitor, permanece no app mobile.
 
 ## FastAPI
 
@@ -54,8 +54,8 @@ acessam os dados mockados diretamente.
 
 O site para PC usa as mesmas rotas e servicos do aplicativo:
 
-- `pc.html#quadras` e `pc.html#quadra/:id`
-- `pc.html#pagamento/:id` e `pc.html#confirmado/:id`
-- `pc.html#reservas`, `#favoritos`, `#mensagens` e `#mensagens/:id`
-- `pc.html#carteira`, `#carteira/adicionar`, `#carteira/cartao` e `#carteira/cupom`
-- `pc.html#perfil` e `pc.html#config`
+- `app.html#quadras` e `app.html#quadra/:id`
+- `app.html#pagamento/:id` e `app.html#confirmado/:id`
+- `app.html#reservas`, `#favoritos`, `#mensagens` e `#mensagens/:id`
+- `app.html#carteira`, `#carteira/adicionar`, `#carteira/cartao` e `#carteira/cupom`
+- `app.html#perfil` e `app.html#config`
