@@ -31,6 +31,9 @@ class GoogleRequest(BaseModel):
 
 
 class OnboardingRequest(BaseModel):
+    # A modalidade vem antes da posicao: "Pivo" so quer dizer algo sabendo se
+    # e futsal ou basquete. E e ela que vai separar ranking la na frente.
+    favoriteSport: Optional[str] = ""
     position: Optional[str] = ""
     level: Optional[str] = ""
     onboardedAt: Optional[str] = None
@@ -62,6 +65,7 @@ class SessionUser(BaseModel):
     birthDate: str = ""
     foot: str = ""
     favoriteSport: str = ""
+    state: str = ""
     rating: Optional[float] = None
     memberSince: str = ""
     provider: str = "password"

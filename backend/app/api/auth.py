@@ -9,6 +9,7 @@ POST /google so valida o idToken de verdade se settings.google_client_id
 estiver preenchido; senao responde 503 para o app nao quebrar na tela.
 """
 from datetime import datetime, timedelta, timezone
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -30,6 +31,8 @@ from ..core.config import settings
 from ..core.database import get_db
 from ..core.ratelimit import LIMIT_AUTH_IP, LIMIT_AUTH_REFRESH_IP, limiter
 from ..core.redis import redis_call, redis_client
+
+logger = logging.getLogger(__name__)
 from ..models import (
     PROVIDER_GOOGLE,
     PROVIDER_PASSWORD,
@@ -68,6 +71,22 @@ def _auth_error(detail: str = "Sessão inválida") -> HTTPException:
     )
 
 
+def _foto_google(url: str | None) -> str:
+    """Pede ao Google uma foto grande o bastante.
+
+    O `picture` do token vem com sufixo de tamanho (`=s96-c`), e 96px fica
+    mole na moldura de 72px do perfil em tela retina. Trocar o sufixo e o
+    jeito documentado de pedir outro tamanho; sem sufixo, acrescenta.
+    """
+    url = (url or "").strip()
+    if not url:
+        return ""
+    base, sep, _ = url.rpartition("=s")
+    if sep and base:
+        return f"{base}=s256-c"
+    return url
+
+
 def _to_session_user(user: User) -> SessionUser:
     return SessionUser(
         id=str(user.id),
@@ -76,6 +95,7 @@ def _to_session_user(user: User) -> SessionUser:
         role=user.role,
         phone=user.phone or "",
         city=user.city or "",
+        state=user.state or "",
         photo=user.photo or "",
         position=user.position or "",
         level=user.level or "",
@@ -192,7 +212,12 @@ def google(request: Request, payload: GoogleRequest, db: Session = Depends(get_d
         info = id_token.verify_oauth2_token(
             payload.idToken, google_requests.Request(), settings.google_client_id
         )
-    except Exception:
+    except Exception as erro:
+        # A resposta ao cliente continua generica de proposito — dizer "audience
+        # errada" ou "token expirado" entrega detalhe de configuracao para quem
+        # estiver sondando. Mas engolir a causa TAMBEM do nosso lado deixava o
+        # problema impossivel de diagnosticar: toda falha virava a mesma frase.
+        logger.warning("Falha ao validar idToken do Google: %s: %s", type(erro).__name__, erro)
         raise _auth_error("Token do Google inválido ou expirado")
 
     email = (info.get("email") or "").lower().strip()
@@ -206,13 +231,27 @@ def google(request: Request, payload: GoogleRequest, db: Session = Depends(get_d
             name=(info.get("name") or "").strip() or email.split("@")[0],
             provider=PROVIDER_GOOGLE,
             role=ROLE_JOGADOR,
-            photo=info.get("picture"),
+            photo=_foto_google(info.get("picture")),
         )
         db.add(user)
         db.flush()
         return _issue_session(db, user, is_new=True)
     if user.deleted_at:
         raise _auth_error("Conta desativada")
+
+    # A foto do Google e um link que muda: a pessoa troca o avatar la e o
+    # nosso vira 404. Antes so gravavamos na criacao, entao quem ja tinha
+    # conta nunca ganhava foto — inclusive quem se cadastrou por senha e
+    # depois passou a entrar pelo Google. Atualizar a cada login mantem
+    # foto e nome vivos, sem custo (o dado ja veio dentro do token).
+    foto = _foto_google(info.get("picture"))
+    if foto and foto != (user.photo or ""):
+        user.photo = foto
+    nome = (info.get("name") or "").strip()
+    if nome and not (user.name or "").strip():
+        user.name = nome
+    db.commit()
+
     return _issue_session(db, user)
 
 
@@ -222,6 +261,7 @@ def onboarding(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    user.favorite_sport = payload.favoriteSport or user.favorite_sport
     user.position = payload.position or user.position
     user.level = payload.level or user.level
     user.onboarded_at = user.onboarded_at or utcnow()
