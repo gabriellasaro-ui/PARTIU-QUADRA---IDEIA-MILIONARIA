@@ -5,9 +5,11 @@ Distancia calculada por haversine a partir de lat/lng (ou centro de Goiania).
 Cache Redis por versao de catalogo; sem Redis cai direto no banco.
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..core.database import get_db
+from ..models import Arena
 from ..services import catalog
 
 router = APIRouter(prefix="/api/quadras", tags=["quadras"])
@@ -40,6 +42,85 @@ def listar_quadras(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/proximo")
+def local_mais_proximo(
+    lat: float = Query(...),
+    lng: float = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Traduz uma coordenada no bairro/cidade conhecidos mais proximos.
+
+    Geocodificacao reversa com dado proprio, e nao com servico de terceiro:
+    as arenas ja tem bairro, cidade e coordenada. A resposta e "o lugar
+    conhecido mais perto de voce", que e exatamente o que a busca precisa
+    dizer — e nao exige chave, cota nem request externo do aparelho.
+
+    A contrapartida e honesta: onde nao ha arena cadastrada, o nome devolvido
+    e o da area conhecida mais proxima, que pode estar longe. Por isso a
+    distancia volta junto, para a interface decidir se vale mostrar.
+    """
+    arenas = db.execute(
+        select(Arena).where(Arena.lat.isnot(None), Arena.lng.isnot(None))
+    ).scalars().all()
+    if not arenas:
+        return {"local": None}
+
+    from ..core.geo import haversine_km
+
+    # haversine_km recebe DUAS tuplas (lat, lng), nao quatro floats.
+    origem = (lat, lng)
+    perto = min(arenas, key=lambda a: haversine_km(origem, (a.lat, a.lng)))
+    dist = haversine_km(origem, (perto.lat, perto.lng))
+    return {
+        "local": {
+            # O "bairro" do contrato publico e o address da arena — e o que
+            # catalog.to_venue ja expoe como neighborhood. Nao ha coluna
+            # neighborhood em Arena.
+            "neighborhood": perto.address or "",
+            "city": perto.city or "",
+            "state": perto.state or "",
+            "label": ", ".join(x for x in (perto.address, perto.city) if x),
+            "distanceKm": round(dist, 1),
+        }
+    }
+
+
+@router.get("/cidades")
+def cidades_com_quadra(db: Session = Depends(get_db)):
+    """Cidades onde existe quadra cadastrada — e nao o Brasil inteiro.
+
+    O seletor de local do app sai daqui, e nao da lista do IBGE: oferecer
+    5.571 municipios sendo que 5.570 nao tem uma quadra sequer transforma a
+    escolha num beco sem saida. As coordenadas sao o centro das arenas
+    daquela cidade, e e o que alimenta a ordenacao por distancia.
+    """
+    linhas = db.execute(
+        select(
+            Arena.city,
+            Arena.state,
+            func.avg(Arena.lat),
+            func.avg(Arena.lng),
+            func.count(Arena.id),
+        )
+        .where(Arena.city.isnot(None), Arena.lat.isnot(None), Arena.lng.isnot(None))
+        .group_by(Arena.city, Arena.state)
+        .order_by(func.count(Arena.id).desc(), Arena.city)
+    ).all()
+    return {
+        "cidades": [
+            {
+                "city": c,
+                "state": uf or "",
+                "label": f"{c}, {uf}" if uf else c,
+                "lat": round(lat, 6),
+                "lng": round(lng, 6),
+                "arenas": total,
+            }
+            for c, uf, lat, lng, total in linhas
+        ]
+    }
 
 
 @router.get("/esportes")
