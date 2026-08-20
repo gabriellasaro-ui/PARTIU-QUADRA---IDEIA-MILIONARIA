@@ -195,11 +195,6 @@ function calendarMonthDate(value) {
   return new Date(year, month - 1, 1, 12, 0, 0);
 }
 
-function bookingDayOffset(value) {
-  const today = parseLocalDate(localDateValue());
-  return Math.round((parseLocalDate(value) - today) / 86400000);
-}
-
 function renderDesktopBookingCalendar(root) {
   const booking = root.querySelector('[data-player-booking]');
   const calendar = root.querySelector('[data-player-booking-calendar]');
@@ -278,12 +273,32 @@ function setDesktopBookingStage(root, nextStage, focusPanel = false) {
   });
 }
 
-function availabilityForDay(base, dayIndex) {
-  if (!dayIndex) return base;
-  return base.map((slot, index) => ({
-    ...slot,
-    status: base[(index + dayIndex) % base.length].status
-  }));
+/* CORRECAO GRAVE. Aqui morava availabilityForDay(base, dayIndex), que nao
+   consultava nada: pegava a agenda de um dia e ROTACIONAVA o vetor de status
+   conforme o deslocamento do dia. O horario dizia "livre" porque OUTRO
+   horario estava livre. Com 2h ou 3h de duracao dava para pedir um bloco por
+   cima de uma reserva existente.
+
+   O mobile ja tinha sido corrigido; este arquivo ficou para tras — por isso o
+   problema continuou aparecendo no layout de desktop.
+
+   Nao ha como derivar a agenda de um dia a partir de outro: so perguntando. */
+async function carregarDisponibilidade(booking) {
+  const venueId = booking.dataset.venueId;
+  const date = booking.dataset.date;
+  if (!venueId || !date) return;
+  booking.dataset.carregando = '1';
+  try {
+    const slots = await venueService.availability(venueId, date);
+    booking.dataset.availability = JSON.stringify(slots);
+  } catch (error) {
+    /* Melhor nao mostrar horario nenhum do que mostrar o de outro dia como se
+       fosse deste. */
+    booking.dataset.availability = '[]';
+    window.pqToast?.('Não foi possível carregar os horários deste dia');
+  } finally {
+    delete booking.dataset.carregando;
+  }
 }
 
 function routeQuery(route) {
@@ -552,8 +567,10 @@ async function renderVenue(root, route) {
     location.hash = 'quadras';
     return;
   }
+  /* Com a data: sem ela, a primeira pintura usava a agenda de "hoje" mesmo
+     quando a tela abria em outro dia. */
   const [availability, favoriteIds] = await Promise.all([
-    venueService.availability(venue.id),
+    venueService.availability(venue.id, localDateValue()),
     venueService.favoriteIds()
   ]);
   const gallery = Array.isArray(venue.gallery) && venue.gallery.length ? venue.gallery : [venue.image];
@@ -618,7 +635,7 @@ async function renderVenue(root, route) {
     </section>
 
     <div class="desktop-booking-layout" data-player-booking
-         data-venue-id="${venue.id}" data-price="${venue.price}" data-day-index="0"
+         data-venue-id="${venue.id}" data-price="${venue.price}"
          data-date="${today}" data-calendar-month="${calendarMonthValue(parseLocalDate(today))}" data-duration="1"
          data-hour="" data-booking-stage="date">
       <main class="desktop-booking-main">
@@ -763,8 +780,7 @@ function isPastSlot(hour, dateValue) {
 function renderBooking(root) {
   const booking = root.querySelector('[data-player-booking]');
   if (!booking) return;
-  const baseAvailability = JSON.parse(booking.dataset.availability || '[]');
-  const availability = availabilityForDay(baseAvailability, Number(booking.dataset.dayIndex || 0));
+  const availability = JSON.parse(booking.dataset.availability || '[]');
   let selectedHour = booking.dataset.hour || '';
   const duration = Math.max(1, Math.min(3, Number(booking.dataset.duration || 1)));
   booking.dataset.duration = String(duration);
@@ -799,11 +815,18 @@ function renderBooking(root) {
         const hour = Number(slot.hour.slice(0, 2));
         const inBlock = selectedHour && hour >= start && hour < start + duration;
         const selected = inBlock && isFreeAt(hour);
-        const availableStart = canStartAt(hour) && !isPast(slot.hour);
-        const reason = isPast(slot.hour)
+        const ocupado = slot.status !== 'free';
+        const passou = isPast(slot.hour);
+        const cabe = canStartAt(hour);
+        const availableStart = cabe && !passou;
+        /* Mesmos tres estados do mobile: "livre mas nao cabem Nh a partir
+           daqui" nao pode ter a cara de "reservado". */
+        const estado = ocupado ? 'busy' : passou ? 'past' : cabe ? 'free' : 'nofit';
+        const reason = passou
           ? 'Horário já passou'
-          : slot.status === 'busy' ? 'Horário ocupado' : `Não há ${duration}h consecutivas a partir daqui`;
-        return `<button type="button" class="slot ${availableStart ? 'free' : 'busy'} ${selected ? 'sel' : ''}" data-player-slot="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
+          : ocupado ? 'Horário ocupado'
+          : `Livre, mas não cabem ${duration}h seguidas a partir daqui`;
+        return `<button type="button" class="slot ${estado} ${selected ? 'sel' : ''}" data-player-slot="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
       }).join('')}</div>
     </div>`).join('');
 
@@ -2268,10 +2291,12 @@ export function initPlayerDesktopActions() {
     if (calendarDate && !calendarDate.disabled) {
       const root = calendarDate.closest('[data-player-desktop-page]');
       const booking = root.querySelector('[data-player-booking]');
-      booking.dataset.dayIndex = String(bookingDayOffset(calendarDate.dataset.playerCalendarDate));
       booking.dataset.date = calendarDate.dataset.playerCalendarDate;
       booking.dataset.hour = '';
       renderDesktopBookingCalendar(root);
+      renderBooking(root);
+      // Busca a agenda REAL da data escolhida e redesenha com ela.
+      await carregarDisponibilidade(booking);
       renderBooking(root);
       return;
     }
