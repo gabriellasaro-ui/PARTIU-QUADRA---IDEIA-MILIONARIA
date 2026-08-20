@@ -225,11 +225,19 @@ h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; letter-spacing: 
 .slot { display: flex; align-items: center; justify-content: center; padding: 13px 4px; border-radius: 11px; font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; background: #fff; border: 1px solid var(--line); color: var(--ink); transition: all .12s; }
 .slot.free:hover { border-color: var(--green); color: var(--green-700); background: var(--mint); }
 .slot.busy { background: var(--bg); color: #b6bfb8; text-decoration: line-through; pointer-events: none; }
+/* Ja passou: apagado, sem o risco que significa "reservado". */
+.slot.past { background: #f6f7f6; color: #b9c0ba; text-decoration: none; pointer-events: none; }
+/* Livre, mas nao cabe a duracao escolhida a partir daqui. Borda
+   tracejada em fundo branco: disponivel, so nao como inicio. */
+.slot.nofit { background: #fff; border: 1px dashed #cfd8d2; color: #9aa39d; text-decoration: none; pointer-events: none; }
 .legend { display: flex; gap: 20px; margin: 14px 0 18px; font-size: 13px; color: var(--muted); }
 .legend span { display: flex; align-items: center; gap: 8px; }
 .dot { width: 9px; height: 9px; border-radius: 50%; }
 .dot.free { background: var(--green); }
 .dot.busy { background: #cbd2cd; }
+/* Livre porem sem espaco para a duracao: contorno, e nao preenchido —
+   a mesma leitura do slot tracejado. */
+.dot.nofit { background: #fff; border: 1.5px dashed #b9c4bd; }
 
 /* booking card */
 .booking-card { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px; position: sticky; top: 96px; }

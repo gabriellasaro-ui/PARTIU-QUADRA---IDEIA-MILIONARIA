@@ -4,7 +4,9 @@
 html[data-player-desktop] {
   --web-max: 1440px;
   --web-header: #ffffff;
-  --web-canvas: #f7faf8;
+  /* Era #f7faf8 — branco puxado para o verde. Na tela do aparelho isso
+     nao passa de "branco sujo": pedido explicito de fundo branco. */
+  --web-canvas: #ffffff;
   --web-soft: #eff6f1;
   --web-line: #dce7df;
   --web-ink: #102b1c;

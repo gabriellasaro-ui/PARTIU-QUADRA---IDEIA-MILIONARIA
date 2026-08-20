@@ -4229,6 +4229,27 @@ html[data-route="mapa"] .phone {
   color: #a8b0aa;
 }
 
+/* Horario que ja passou: apagado, mas sem o risco de "reservado" — nao ha
+   nada ocupando ali, so o relogio andou. */
+.slot.past {
+  border-color: #eceeec;
+  background: #f6f7f6;
+  color: #b9c0ba;
+  text-decoration: none;
+}
+
+/* Horario LIVRE que so nao serve de INICIO para a duracao escolhida.
+   Precisa parecer disponivel-porem-indisponivel-agora, e nunca reservado:
+   fundo branco, borda tracejada, sem risco. Com 3h selecionadas e a quadra
+   fechando as 23h, 21h e 22h caem aqui — antes ficavam com a cara de
+   ocupadas e davam a impressao de que o bloco 20-22 atropelava reserva. */
+.slot.nofit {
+  border: 1px dashed #cfd8d2;
+  background: #ffffff;
+  color: #9aa39d;
+  text-decoration: none;
+}
+
 .dur-seg {
   gap: 8px;
 }
@@ -4500,6 +4521,11 @@ html[data-route="mapa"] .phone {
   border-radius: 18px;
   flex-direction: column;
   gap: 2px;
+  /* min-height de 62px sem alinhamento deixava "1h / Jogo rapido" grudado no
+     topo, com um vao morto embaixo. */
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .booking-step .dur strong {
