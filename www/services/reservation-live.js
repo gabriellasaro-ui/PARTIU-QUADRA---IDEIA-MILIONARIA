@@ -46,21 +46,20 @@ export async function submitPlayerReservation(context, idempotencyKey) {
   return { reserva: (data?.reservas || [])[0] || null, key, replay: Boolean(data?.replay) };
 }
 
+/* Cria a cobranca e para por ai. Quem confirma e o servidor.
+
+   Antes daqui, quando o provider era o mock, esta funcao postava
+   /api/payments/webhook/mock do proprio navegador para destravar a reserva.
+   Isso e um callback de pagamento forjado pelo cliente — e parou de funcionar
+   sem avisar no dia em que PAYMENT_WEBHOOK_SECRET entrou no .env: o endpoint
+   responde 200 com {ok:false, ignored:true}, o front achava que tinha dado
+   certo e a reserva ficava presa em "Aguardando pagamento" para sempre.
+
+   A confirmacao do mock agora acontece no backend (services/mock_autoconfirm),
+   e o watchReservation abaixo ve a mudanca pelo polling de /events. */
 export async function payPlayerReservation(reservaId) {
   if (!API_BASE_URL || !reservaId) return null;
-  const data = await api.post(`/api/reservas/${reservaId}/pagar`);
-  const payment = data?.payment;
-  // Dev/demo: o provider real confirma por webhook; o mock usa o mesmo
-  // caminho senao a reserva nao sai de pending_payment.
-  if (payment?.provider === 'mock') {
-    await api.post('/api/payments/webhook/mock', {
-      webhookId: `mock-auto-${payment.providerRef}`,
-      status: 'confirmed',
-      paymentRef: payment.providerRef,
-      amountCents: Math.round((payment.amount || 0) * 100)
-    });
-  }
-  return data;
+  return api.post(`/api/reservas/${reservaId}/pagar`);
 }
 
 export function watchReservation(reservaId, { onStatus, onDone, interval = 2000 }) {

@@ -3,6 +3,8 @@ Substitui completamente o Flask.
 Nao utiliza Jinja2, render_template ou qualquer template server-side.
 Responde apenas com JSON e arquivos estaticos.
 """
+import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -13,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 
 from .api import (
+    localidades,
     quadras,
     reservas,
     mensagens,
@@ -41,10 +44,67 @@ from .middleware.request_log import RequestLogMiddleware
 setup_logging(settings.log_level)
 
 
+logger = logging.getLogger(__name__)
+
+#: De quanto em quanto tempo o servidor procura pagamento mock para confirmar.
+#: Nao e o tempo de espera — quem manda nisso e payment_mock_confirm_seconds.
+INTERVALO_CONFIRMADOR_S = 5.0
+
+
+def _confirmar_mock_pendentes() -> int:
+    from .core.database import SessionLocal
+    from .services import mock_autoconfirm
+
+    with SessionLocal() as db:
+        return mock_autoconfirm.confirmar_pendentes(db)
+
+
+async def _laco_confirmador_mock() -> None:
+    """Faz o papel do adquirente quando se roda com o provedor mock.
+
+    Pix real e confirmado por webhook do banco. Com o mock nao ha banco, e a
+    tarefa Celery que cobria isso so roda com Redis e um worker de pe — que em
+    desenvolvimento quase nunca estao. Sem ninguem confirmando, a reserva
+    ficava presa em "Aguardando pagamento" e o gerente nunca via o pedido.
+
+    Fica no servidor, e nao no navegador: confirmar pagamento a partir do
+    cliente e callback forjado. O front fazia isso e quebrou em silencio
+    quando PAYMENT_WEBHOOK_SECRET entrou no .env.
+
+    A sessao do banco e sincrona, entao roda em thread para nao travar o loop.
+    """
+    while True:
+        await asyncio.sleep(INTERVALO_CONFIRMADOR_S)
+        try:
+            confirmados = await asyncio.to_thread(_confirmar_mock_pendentes)
+            if confirmados:
+                logger.info("Pagamentos mock confirmados: %s", confirmados)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            # Uma falha aqui nao pode derrubar o servidor: o proximo ciclo
+            # tenta de novo daqui a pouco.
+            logger.warning("Falha ao confirmar pagamentos mock", exc_info=True)
+
+
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     manager.start_subscriber()
+
+    # So com o provedor mock. Producao nem chega aqui: Settings recusa o boot
+    # com PAYMENT_PROVIDER=mock.
+    confirmador = None
+    if settings.payment_provider.strip().lower() == "mock":
+        confirmador = asyncio.create_task(_laco_confirmador_mock())
+
     yield
+
+    if confirmador:
+        confirmador.cancel()
+        try:
+            await confirmador
+        except asyncio.CancelledError:
+            pass
     manager.stop_subscriber()
 
 
@@ -66,6 +126,7 @@ app.add_middleware(
 )
 app.add_middleware(RequestLogMiddleware)
 
+app.include_router(localidades.router)
 app.include_router(quadras.router)
 app.include_router(reservas.router)
 app.include_router(mensagens.router)
@@ -133,6 +194,27 @@ async def _rate_limit_exceeded(request: Request, exc: RateLimitExceeded):
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FRONTEND_DIR = os.path.join(ROOT, "www")
+
+
+# Config de runtime e paginas nunca podem ficar presas no cache do navegador.
+# StaticFiles so manda ETag/Last-Modified; sem Cache-Control o navegador aplica
+# cache heuristico e serve a copia velha SEM revalidar. Foi assim que uma
+# GOOGLE_CLIENT_ID recem-preenchida continuou chegando vazia no front, e o
+# botao do Google seguiu dizendo "em breve" com tudo ja configurado.
+#
+# no-cache nao quer dizer "nao guarde": guarda, mas revalida antes de usar.
+# Com o ETag que ja existe, a revalidacao devolve 304 e nao custa banda.
+_SEM_CACHE = ("/config/", "/sw.js")
+
+
+@app.middleware("http")
+async def _no_cache_config(request: Request, call_next):
+    response = await call_next(request)
+    caminho = request.url.path
+    if caminho.startswith(_SEM_CACHE) or caminho.endswith(".html") or caminho == "/":
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
 
 if os.path.isdir(FRONTEND_DIR) and os.listdir(FRONTEND_DIR):
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

@@ -3,7 +3,12 @@
      Era "Carteira", com saldo pré-pago, extrato e cupons. Saiu tudo: guardar
      dinheiro de gente é atividade de instituição de pagamento, e o app não é
      isso. O que fica é o meio de pagamento — cartão salvo e Pix —, que é o
-     que a reserva precisa para acontecer. -->
+     que a reserva precisa para acontecer.
+
+     O "Visa final 4321" que morava aqui era markup fixo: não vinha de dado
+     nenhum, não era de ninguém, e o "Adicionar cartão" ao lado abria um
+     formulário que pedia número e CVV, jogava fora e dizia que tinha dado
+     certo. Saiu tudo. -->
 <div class="route-page">
   <div class="navbar">
     <a class="icon-btn" href="#home" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
@@ -12,11 +17,13 @@
 
   <div class="container">
     <div class="mobile-section-head"><h2>Formas de pagamento</h2></div>
-    <div class="payment-list">
+    <!-- A linha do cartao e preenchida por renderWallet a partir de
+         /api/carteira. Aqui so fica o Pix, que e o meio que realmente
+         funciona hoje. -->
+    <div class="payment-list" data-payment-list>
       <div class="payment-row"><span class="badge-ic"><i class="ic" data-lucide="zap"></i></span><span><strong>Pix</strong><small>Aprovação na hora</small></span><i class="ic row-check" data-lucide="check"></i></div>
-      <div class="payment-row"><span class="badge-ic"><i class="ic" data-lucide="credit-card"></i></span><span><strong>Visa final 4321</strong><small>Cartão principal</small></span><a href="#carteira/cartão" aria-label="Editar cartão"><i class="ic" data-lucide="chevron-right"></i></a></div>
     </div>
-    <a href="#carteira/cartão" class="btn outline block"><i class="ic" data-lucide="plus"></i>Adicionar cartão</a>
+    <p class="payment-note" data-card-status hidden></p>
 
     <p class="payment-note">
       <i class="ic" data-lucide="shield-check"></i>

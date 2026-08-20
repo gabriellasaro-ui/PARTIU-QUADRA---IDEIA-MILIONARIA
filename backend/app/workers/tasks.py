@@ -7,15 +7,11 @@ e webhooks entram nas fases seguintes.
 from ..core.celery_app import celery_app
 from ..core.config import settings
 from ..core.database import SessionLocal
-from ..core.timezone import utc_now
 from ..models import PUSH_STATUS_ERRORED, PUSH_STATUS_OK
 from ..repositories import notifications as notif_repo
-from ..repositories import payments as pay_repo
 from ..services import bookings as bookings_svc
-from ..services.payments import get_provider
+from ..services import mock_autoconfirm
 from ..services.push import get_push_provider
-from datetime import timedelta
-from fastapi import HTTPException
 
 
 @celery_app.task(name="app.workers.tasks.ping")
@@ -46,31 +42,13 @@ def confirmar_pagamentos_pendentes() -> dict:
     Depois de `payment_mock_confirm_seconds`, o pagamento mock e confirmado
     (como se o Pix tivesse sido pago) — assim o fluxo de ponta a ponta
     funciona sem um provedor real.
+
+    A logica vive em services/mock_autoconfirm porque o servidor tambem
+    precisa dela: em desenvolvimento nao ha worker de pe, e sem ninguem
+    confirmando a reserva ficava presa em "Aguardando pagamento".
     """
-    cutoff = (utc_now() - timedelta(seconds=settings.payment_mock_confirm_seconds)).replace(
-        tzinfo=None
-    )
     with SessionLocal() as db:
-        pending = pay_repo.list_pending_mock(db, cutoff)
-        confirmados = 0
-        for payment in pending:
-            provider = get_provider(payment.provider)
-            result = provider.auto_result(payment)
-            try:
-                bookings_svc.confirm_payment(
-                    db,
-                    webhook_id=result.webhook_id,
-                    status=result.status,
-                    provider_ref=result.provider_ref,
-                    # Obrigatorio desde a conferencia de valor em
-                    # confirm_payment; `auto_result` devolve o valor cobrado.
-                    amount_cents=result.amount_cents,
-                    payload=result.payload,
-                )
-                confirmados += 1
-            except HTTPException:
-                continue
-    return {"confirmados": confirmados}
+        return {"confirmados": mock_autoconfirm.confirmar_pendentes(db)}
 
 
 @celery_app.task(name="app.workers.tasks.enviar_notificacao_push")

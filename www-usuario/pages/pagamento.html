@@ -1,4 +1,3 @@
-<!-- TODO: substituir dados locais e solicitação simulada por POST /reservas na API FastAPI -->
 <div class="route-page" data-payment-page>
   <div class="navbar checkout-navbar">
     <a class="icon-btn" data-back-venue href="#quadras" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
@@ -50,9 +49,13 @@
           <span><strong>Pix</strong><small data-payment-method-note>Validação imediata</small></span>
           <span class="check"><i class="ic" data-lucide="check"></i></span>
         </button>
-        <button type="button" class="method" data-payment-method="card">
+        <!-- Nasce desabilitado de proposito. Antes dizia "Final 4321" — um
+             cartao que nunca existiu — e deixava escolher uma forma de
+             pagamento que nao tinha como cobrar. Quem libera e o servidor,
+             em /api/carteira; ate la a pessoa ve "Em breve" e usa Pix. -->
+        <button type="button" class="method" data-payment-method="card" disabled>
           <span class="badge-ic"><i class="ic" data-lucide="credit-card"></i></span>
-          <span><strong>Cartão de crédito</strong><small data-payment-method-note>Final 4321</small></span>
+          <span><strong>Cartão de crédito</strong><small data-payment-method-note>Em breve</small></span>
           <span class="check"><i class="ic" data-lucide="check"></i></span>
         </button>
       </div>

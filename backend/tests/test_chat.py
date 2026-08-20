@@ -6,6 +6,8 @@ lista conversas, marca como lida, verifica badges.
 import uuid
 from datetime import date, timedelta
 
+from conftest import WEBHOOK_HEADERS
+
 _SLOT_COUNTER = 50
 
 
@@ -53,7 +55,11 @@ def _setup_conversation(client, login_gerente):
     r = client.post(f"/api/reservas/{rid}/pagar", headers=hdrs_jog)
     payment = r.json()["payment"]
 
-    client.post("/api/payments/webhook/mock", json={
+    # Sem WEBHOOK_HEADERS o mock recusa o callback (conftest define
+    # PAYMENT_WEBHOOK_SECRET), o pagamento nunca confirma e a conversa — que
+    # so nasce na confirmacao — nao existe. Era o motivo dos tres testes
+    # deste arquivo falharem com "assert 0 >= 1".
+    client.post("/api/payments/webhook/mock", headers=WEBHOOK_HEADERS, json={
         "webhookId": f"chat-{uuid.uuid4().hex[:8]}",
         "status": "confirmed",
         "paymentRef": payment["providerRef"],
