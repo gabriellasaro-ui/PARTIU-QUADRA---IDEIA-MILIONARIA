@@ -2,7 +2,7 @@
    Qadras — paleta compartilhada
 
    Estes tokens nasceram dentro de mobile-v2.css, que so o index.html
-   carrega. Quando o modo jogo passou a usa-los, o pc.html (que carrega
+   carrega. Quando o modo jogo passou a usa-los, o app.html (que carrega
    desktop.css + player-web.css) ficou sem nenhum deles e a tela do jogo
    renderizou sem fundo nem borda.
 

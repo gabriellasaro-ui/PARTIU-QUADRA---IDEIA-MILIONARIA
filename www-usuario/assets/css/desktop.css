@@ -630,7 +630,7 @@ h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; letter-spacing: 
 .pq-pin { background: none !important; border: none !important; }
 .pq-pin-in { display: inline-block; background: #fff; color: var(--ink); font-family: var(--display); font-weight: 700; font-size: 12.5px; padding: 5px 10px; border-radius: 20px; box-shadow: 0 3px 10px rgba(0,0,0,.22); border: 1.5px solid var(--green); white-space: nowrap; position: relative; }
 .pq-pin-in::after { content: ""; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%) rotate(45deg); width: 9px; height: 9px; background: #fff; border-right: 1.5px solid var(--green); border-bottom: 1.5px solid var(--green); }
-.pq-you span { display: block; width: 18px; height: 18px; border-radius: 50%; background: var(--blue); border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.25); }
+.pq-you span { display: block; width: 18px; height: 18px; border-radius: 50%; background: var(--pq-brand-strong, #0c8b52); border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(22,167,101,.25); }
 .pq-pop { display: flex; gap: 11px; width: 220px; color: var(--ink); }
 .pq-pop img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; flex: 0 0 auto; }
 .pq-pop-bd { display: flex; flex-direction: column; gap: 3px; min-width: 0; }

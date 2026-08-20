@@ -255,7 +255,10 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
   position: relative; height: 280px; overflow: hidden; background: var(--mint);
 }
 .hero img { width: 100%; height: 100%; object-fit: cover; }
-.hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.35)); }
+/* pointer-events: none e o que faz o carrossel funcionar. O gradiente cobre
+   o hero inteiro (inset: 0) e, sem isto, engolia todo toque sobre as fotos:
+   dava para trocar pelos pontinhos (que ficam acima dele), nunca arrastando. */
+.hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.35)); }
 .hero .back {
   position: absolute; top: 50px; left: 16px; z-index: 3;
   width: 40px; height: 40px; border-radius: 13px;
@@ -491,7 +494,7 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
 .pq-pin { background: none !important; border: none !important; }
 .pq-pin-in { display: inline-block; background: #fff; color: var(--ink); font-weight: 800; font-size: 12.5px; padding: 5px 9px; border-radius: 20px; box-shadow: 0 3px 10px rgba(0,0,0,.22); border: 1.5px solid var(--green); white-space: nowrap; position: relative; }
 .pq-pin-in::after { content: ""; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%) rotate(45deg); width: 9px; height: 9px; background: #fff; border-right: 1.5px solid var(--green); border-bottom: 1.5px solid var(--green); }
-.pq-you span { display: block; width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.25); }
+.pq-you span { display: block; width: 18px; height: 18px; border-radius: 50%; background: #0c8b52; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(22,167,101,.25); }
 .pq-pop { display: flex; gap: 10px; width: 212px; color: var(--ink); }
 .pq-pop img { width: 62px; height: 62px; border-radius: 10px; object-fit: cover; flex: 0 0 auto; }
 .pq-pop-bd { display: flex; flex-direction: column; gap: 3px; min-width: 0; }

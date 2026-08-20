@@ -13,7 +13,10 @@
   --pq-gold: #e4a11b;
   --pq-blue: #2563eb;
   --pq-rose: #e85d75;
-  --pq-paper: #f7f8f5;
+  /* Fundo do app: branco. Era #f7f8f5, um verde-acinzentado que deixava a
+     tela com um veu esverdeado — cartao branco por cima ficava sem
+     contraste e nada parecia limpo. */
+  --pq-paper: #ffffff;
   --pq-surface: #ffffff;
   --pq-surface-2: #f3f5f1;
   --pq-line: #e4e7df;
@@ -31,7 +34,10 @@
 }
 
 html {
-  background: #e6f1e9;
+  /* Acompanha --pq-paper: e o fundo que aparece no overscroll (o
+     "elastico") e atras da safe area. Verde ali devolvia a cor antiga
+     toda vez que alguem puxava a tela. */
+  background: #ffffff;
 }
 
 body {
@@ -778,8 +784,55 @@ button .ic,
   color: var(--pq-ink) !important;
 }
 
+/* Creditos do mapa: botao "i" fechado, caixa de texto aberto.
+
+   A licenca do OSM/CARTO pede o credito visivel, entao ele nunca sai do
+   DOM — some da vista, e volta ao toque. O alternar de classe vive em
+   assets/js/map-credits.js. */
 .leaflet-control-attribution {
-  font-size: 8px !important;
+  width: 22px;
+  height: 22px;
+  padding: 0 !important;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .88) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .16);
+  overflow: hidden;
+  cursor: pointer;
+  /* Encolher a fonte a zero esconde o texto sem tirar do DOM: display:none
+     ou visibility levariam o credito junto, que e o que a licenca cobra. */
+  font-size: 0 !important;
+  color: transparent;
+  transition: width .18s ease, border-radius .18s ease;
+}
+
+.leaflet-control-attribution::before {
+  content: 'i';
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font: 600 12px/1 Georgia, 'Times New Roman', serif;
+  color: #5b6470;
+}
+
+.leaflet-control-attribution.pq-credits-open {
+  width: auto;
+  max-width: min(78vw, 260px);
+  height: auto;
+  padding: 4px 8px !important;
+  border-radius: 11px;
+  font-size: 10px !important;
+  line-height: 1.35;
+  color: #5b6470;
+  cursor: default;
+}
+
+.leaflet-control-attribution.pq-credits-open::before {
+  display: none;
+}
+
+.leaflet-control-attribution.pq-credits-open a {
+  color: #3d7bd6;
 }
 
 .map-user-marker {
@@ -793,8 +846,8 @@ button .ic,
   height: 20px;
   border: 4px solid #fff;
   border-radius: 50%;
-  background: var(--pq-blue);
-  box-shadow: 0 0 0 6px rgba(37, 99, 235, .2), 0 4px 12px rgba(5, 13, 9, .22);
+  background: var(--pq-brand-strong, #0c8b52);
+  box-shadow: 0 0 0 6px rgba(22, 167, 101, .2), 0 4px 12px rgba(5, 13, 9, .22);
 }
 
 .map-price-marker {
@@ -916,8 +969,8 @@ button .ic,
   height: 9px;
   border: 2px solid #fff;
   border-radius: 50%;
-  background: var(--pq-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, .2);
+  background: var(--pq-brand-strong, #0c8b52);
+  box-shadow: 0 0 0 3px rgba(22, 167, 101, .2);
 }
 
 .map-unavailable {
@@ -3008,7 +3061,10 @@ button .ic,
 }
 
 html {
-  background: #e6f1e9;
+  /* Acompanha --pq-paper: e o fundo que aparece no overscroll (o
+     "elastico") e atras da safe area. Verde ali devolvia a cor antiga
+     toda vez que alguem puxava a tela. */
+  background: #ffffff;
 }
 
 body {
@@ -4137,8 +4193,19 @@ html[data-route="mapa"] .phone {
   font-size: 10px;
 }
 
+/* Flex em vez de grid de 3 colunas: no grid, a ultima fileira incompleta
+   encosta na esquerda e sobra buraco na direita. Flex com wrap centra o
+   que sobrou — era esse o "nao esta centralizado". */
 .avail-slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
+}
+
+.avail-slots .slot {
+  /* calc reproduz as 3 colunas de antes, descontando os dois gaps. */
+  flex: 0 0 calc((100% - 16px) / 3);
 }
 
 .slot {
@@ -5821,7 +5888,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
 }
 
 /* Na partida as abas moram no rodape. A fileira de pilulas do topo passa a
-   ser so do desktop — o pc.html nao carrega este arquivo. */
+   ser so do desktop — o app.html nao carrega este arquivo. */
 html[data-bottombar="game"] .game-tabs { display: none; }
 
 /* ---------- plano da reserva: avulso x mensalista ----------
@@ -6110,11 +6177,46 @@ html[data-bottombar="none"] .screen {
   padding-bottom: var(--pq-safe-bottom);
 }
 
+/* Mesma composicao do login da web em tela estreita: a ilustracao em retrato
+   e o FUNDO da tela inteira e o formulario flutua sobre o ceu, que e a metade
+   de cima vazia da imagem. Antes ela era uma figurinha no topo, e a tela do
+   app nao parecia com a da web. */
 .auth-page {
   display: flex;
   min-height: calc(100dvh - var(--pq-safe-bottom));
   flex-direction: column;
+  /* O bloco fica no alto: a metade de baixo da ilustracao e onde estao o
+     jogador e a bola, e cobrir isso com o formulario perde a imagem. */
+  justify-content: flex-start;
   padding: 12px 20px calc(24px + var(--pq-safe-bottom));
+  background: #fff;
+}
+
+/* O fundo vive num ::before fixo, e nao em background-attachment: fixed.
+
+   Com attachment fixed, abrir o teclado encolhe a viewport visual e o
+   navegador REDIMENSIONA a imagem — era o "a imagem sobe" ao tocar no campo.
+
+   height: 100vh (e nao 100dvh) trava a altura na viewport GRANDE: o teclado
+   nao mexe em vh, entao a cena fica parada enquanto se digita. */
+.auth-page::before {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  height: 100vh;
+  background: #fff url('../images/login-hero-mobile.webp') no-repeat bottom center;
+  background-size: cover;
+}
+
+/* O card do formulario ganha fundo proprio: sobre a ilustracao, texto solto
+   fica ilegivel assim que encosta no verde. */
+.auth-page .auth-body {
+  padding: 18px 16px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 12px 34px rgba(11, 61, 38, .1);
+  backdrop-filter: blur(2px);
 }
 
 .auth-back {
@@ -6122,7 +6224,7 @@ html[data-bottombar="none"] .screen {
 }
 
 .auth-hero {
-  padding: 26px 0 22px;
+  padding: 14px 0 16px;
   text-align: center;
 }
 
@@ -6153,7 +6255,10 @@ html[data-bottombar="none"] .screen {
   font-size: 14px;
 }
 
-.auth-body { flex: 1; }
+/* flex: none, e nao 1: com o fundo ilustrado, esticar o card ate o rodape
+   apagava a cena inteira atras dele. Agora ele tem a altura do conteudo e a
+   ilustracao respira embaixo, como no login da web. */
+.auth-body { flex: none; }
 
 .auth-google {
   display: flex;
@@ -6315,8 +6420,30 @@ html[data-bottombar="none"] .screen {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* Onboarding: modalidade em duas colunas (nomes longos como "Futebol de
+   Campo" nao cabem em tres) e o aviso do esporte individual. */
+.onb-esportes {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onb-vazio {
+  margin: 4px 0 0;
+  color: var(--pq-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
 .onb-levels {
   grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+/* Cartao de nivel tem duas linhas de texto; com a altura dos chips de
+   posicao ficava apertado e o subtitulo colava no titulo. */
+.onb-levels label > span {
+  min-height: 62px;
+  padding: 12px 16px;
+  border-radius: 16px;
 }
 
 .onb-levels label span {
@@ -6324,6 +6451,14 @@ html[data-bottombar="none"] .screen {
   align-items: flex-start;
   gap: 2px;
   text-align: left;
+}
+
+/* O <small> tinha cor propria (--pq-muted) e nao herdava o branco do estado
+   selecionado: no cartao verde, "Jogo de vez em quando" ficava cinza sobre
+   verde e sumia. currentColor faz a descricao seguir o titulo nos dois
+   estados. */
+.onb-levels input:checked + span small {
+  color: rgba(255, 255, 255, .88);
 }
 
 .onb-levels label small {
@@ -6551,3 +6686,127 @@ html[data-bottombar="none"] .screen {
 }
 
 .payment-note .ic { flex: 0 0 auto; width: 17px; height: 17px; }
+
+/* Overlay de carregamento: cobre a tela inteira, cabecalho incluido. */
+.pq-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  background: #f7faf8;
+}
+
+/* Loading: pin de localizacao com bola de futebol, balancando.
+   Verde da marca via currentColor — trocar o token muda a animacao junto. */
+.pq-loading {
+  display: grid;
+  place-items: center;
+  color: #16a765;
+}
+
+.pq-loading__pin {
+  width: 88px;
+  height: 104px;
+  overflow: visible;
+}
+
+/* Pivota na ponta do pin (32,66 no viewBox), e nao no centro da caixa: girar
+   pelo meio faria o desenho deslizar de lado em vez de balancar apoiado. */
+.pq-loading__balanco {
+  transform-origin: 32px 66px;
+  animation: pq-balanca 1.5s ease-in-out infinite;
+}
+
+/* A bola gira no proprio eixo, independente do balanco do pin. */
+.pq-loading__bola {
+  transform-origin: 32px 28px;
+  animation: pq-gira 1.5s linear infinite;
+}
+
+@keyframes pq-balanca {
+  0%, 100% { transform: rotate(-13deg); }
+  50%      { transform: rotate(13deg); }
+}
+
+@keyframes pq-gira {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Quem pediu menos movimento nao ganha pin balancando: fica parado e so
+   pulsa de leve, o suficiente para dizer "carregando". */
+@media (prefers-reduced-motion: reduce) {
+  .pq-loading__balanco,
+  .pq-loading__bola {
+    animation: pq-pulsa 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes pq-pulsa {
+    from { opacity: .4; }
+    to   { opacity: 1; }
+  }
+}
+
+/* Logo no topo do app. */
+.market-brand {
+  display: flex;
+  align-items: center;
+  padding: 4px 0 10px;
+}
+
+.market-brand .qadras-logo {
+  width: 118px;
+  height: auto;
+  color: var(--pq-ink, #0b1f16);
+}
+
+
+/* Logo do Google de verdade, colorida, no lugar do "G" em texto. */
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.auth-google__mark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+/* Campo de data: o controle nativo do Android vem com fonte e altura
+   proprias e destoa dos outros campos do formulario. */
+.field-date {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-surface);
+  color: var(--pq-ink);
+  font: inherit;
+  /* Sem isto o iOS encolhe o texto e desalinha em relacao aos vizinhos. */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Enquanto vazio, o texto "dd/mm/aaaa" tem o mesmo peso do valor preenchido
+   e parece que ja ha data escolhida. */
+.field-date:not(:valid),
+.field-date:not(:focus):in-range:placeholder-shown {
+  color: var(--pq-muted);
+}
+
+.field-date:focus {
+  border-color: var(--pq-brand);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--pq-green-soft);
+}
+
+/* O icone de calendario nativo fica na cor do sistema (azul no Android). */
+.field-date::-webkit-calendar-picker-indicator {
+  filter: grayscale(1) opacity(.55);
+  cursor: pointer;
+}
+
