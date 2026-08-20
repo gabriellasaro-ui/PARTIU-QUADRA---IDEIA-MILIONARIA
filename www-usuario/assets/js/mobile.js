@@ -1,4 +1,4 @@
-import venueService from '../../services/venues.js';
+import venueService, { definirLocal } from '../../services/venues.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/formatters.js';
 import { SERVICE_FEE_RATE } from '../../config/constants.js';
@@ -84,11 +84,15 @@ function currentLocation() {
 
 function currentCoordinates() {
   const saved = storage.get('current_coordinates');
-  const location = currentLocation();
-  if ((location === 'Localizacao atual' || location === 'Localização atual') && Array.isArray(saved) && saved.length === 2) {
+  /* Isto comparava o rotulo com a string "Localização atual". No momento em
+     que o rotulo passou a ser o NOME do lugar ("Setor Marista, Goiania"), a
+     comparacao falhava e a coordenada real do aparelho era descartada em
+     favor do centro de Goiania. Quem decide agora e uma marca explicita, e
+     nao o texto que aparece na tela. */
+  if (storage.get('current_location_auto') && Array.isArray(saved) && saved.length === 2) {
     return saved.map(Number);
   }
-  return LOCATION_COORDINATES[location] || DEFAULT_LOCATION;
+  return LOCATION_COORDINATES[currentLocation()] || DEFAULT_LOCATION;
 }
 
 function syncMarketplaceState(root = document) {
@@ -390,6 +394,23 @@ function routeQuery(route) {
   return route?.query instanceof URLSearchParams ? route.query : new URLSearchParams();
 }
 
+/* Rotulo curto da modalidade, sem apagar a diferenca entre elas.
+
+   Antes era sport.replace(' Society', ''), o que fazia "Futebol Society"
+   virar "Futebol" na tela — amplo demais, porque society, salao e campo sao
+   quadras, precos e times diferentes. Encurtar o prefixo repetido mantem o
+   chip legivel E distinto. */
+const ROTULO_MODALIDADE = {
+  'Futebol Society': 'Society',
+  'Futebol de Campo': 'Campo',
+  'Futsal': 'Futsal',
+  'Futvolei': 'Futevôlei'
+};
+
+function rotuloModalidade(nome) {
+  return ROTULO_MODALIDADE[nome] || nome;
+}
+
 async function renderHome(root) {
   const [sports, venues] = await Promise.all([venueService.featuredSports(), venueService.featured()]);
   const greeting = root.querySelector('[data-home-greeting]');
@@ -400,12 +421,23 @@ async function renderHome(root) {
     const hour = new Date().getHours();
     greeting.textContent = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
   }
+  /* O nome vinha escrito no HTML ("Olá, Gabriel"), entao qualquer conta era
+     cumprimentada como o usuario de demonstracao. Vem da sessao, e so o
+     primeiro nome: "Boa noite, Gabriel Henrique Lisboa" nao cabe na linha. */
+  const nomeEl = root.querySelector('[data-home-name]');
+  if (nomeEl) {
+    // currentUser() e sincrono (le do storage) — um .catch() aqui daria
+    // TypeError, porque nao ha promessa nenhuma para encadear.
+    const usuario = authService.currentUser();
+    const primeiro = String(usuario?.name || '').trim().split(/\s+/)[0] || '';
+    nomeEl.textContent = primeiro ? `, ${primeiro}` : '';
+  }
   if (chips) {
     chips.innerHTML = sports
       .map((sport) => `
         <a class="sport-item" href="#quadras?esporte=${encodeURIComponent(sport)}">
           <span>${icon(SPORT_ICONS[sport] || 'trophy')}</span>
-          <strong>${escapeHtml(sport.replace(' Society', ''))}</strong>
+          <strong>${escapeHtml(rotuloModalidade(sport))}</strong>
         </a>`)
       .concat(`
         <a class="sport-item" href="#quadras?esporte=outros">
@@ -786,11 +818,21 @@ function renderBooking(root) {
         const hour = Number(slot.hour.slice(0, 2));
         const inBlock = selectedHour && hour >= start && hour < start + duration;
         const selected = inBlock && isFreeAt(hour);
-        const availableStart = canStartAt(hour) && !isPast(slot.hour);
-        const reason = isPast(slot.hour)
+        const ocupado = slot.status !== 'free';
+        const passou = isPast(slot.hour);
+        const cabe = canStartAt(hour);
+        const availableStart = cabe && !passou;
+        /* Tres estados, e nao dois. Antes, "livre mas nao cabem 3h a partir
+           daqui" era pintado igual a "reservado" — num dia inteiramente vazio,
+           escolher 3h fazia 21h e 22h parecerem ocupadas so porque a quadra
+           fecha as 23h. Ai o bloco 20-22 parecia estar passando por cima de
+           reserva. A regra sempre esteve certa; quem mentia era a cor. */
+        const estado = ocupado ? 'busy' : passou ? 'past' : cabe ? 'free' : 'nofit';
+        const reason = passou
           ? 'Horário já passou'
-          : slot.status === 'busy' ? 'Horário ocupado' : `Não há ${duration}h consecutivas a partir daqui`;
-        return `<button type="button" class="slot ${availableStart ? 'free' : 'busy'} ${selected ? 'sel' : ''}" data-slot-hour="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
+          : ocupado ? 'Horário ocupado'
+          : `Livre, mas não cabem ${duration}h seguidas a partir daqui`;
+        return `<button type="button" class="slot ${estado} ${selected ? 'sel' : ''}" data-slot-hour="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
       }).join('')}</div>
     </div>`).join('');
 
@@ -2305,6 +2347,15 @@ export function initMobileActions() {
       const value = locationOption.dataset.locationValue;
       storage.set('current_location', value);
       storage.remove('current_coordinates');
+      storage.remove('current_location_auto');
+      /* player_local e a chave que venues.js le para mandar lat/lng a API.
+         O app nunca escrevia nela, entao a listagem ia sem coordenada e o
+         servidor media tudo do centro de Goiania — por isso uma arena a
+         600 km aparecia como "3,8 km". */
+      const coordCidade = LOCATION_COORDINATES[value];
+      definirLocal(coordCidade
+        ? { label: value, lat: coordCidade[0], lng: coordCidade[1] }
+        : { label: value });
       syncMarketplaceState(document);
       closeMarketSheet(locationOption.closest('[data-market-sheet]'));
       window.pqToast?.(`Localização alterada para ${value}`);
@@ -2319,12 +2370,32 @@ export function initMobileActions() {
       }
       useCurrentLocation.disabled = true;
       geoService.getCurrentPosition()
-        .then(({ latitude, longitude }) => {
+        .then(async ({ latitude, longitude }) => {
           storage.set('current_coordinates', [latitude, longitude]);
-          storage.set('current_location', 'Localização atual');
+
+          /* Resolve o NOME do lugar. Antes gravava a string "Localização
+             atual" e era isso que a pessoa via no topo da tela para sempre —
+             o app tinha a coordenada e mesmo assim nao dizia onde era.
+             A resolucao ja existia no layout de desktop; o app ficou de fora.
+
+             Acima de 60 km o servidor devolve rotulo generico (nomear um
+             bairro a 600 km confunde mais do que ajuda), e ai "Localização
+             atual" continua sendo a legenda honesta. */
+          let rotulo = 'Localização atual';
+          try {
+            const lugar = await venueService.localDeCoordenada(latitude, longitude);
+            if (lugar?.label && lugar.distanceKm <= 60) rotulo = lugar.label;
+          } catch (error) {
+            /* Sem nome, segue com a coordenada: a busca por proximidade
+               funciona do mesmo jeito. */
+          }
+
+          storage.set('current_location', rotulo);
+          storage.set('current_location_auto', true);
+          definirLocal({ label: rotulo, lat: latitude, lng: longitude, auto: true });
           syncMarketplaceState(document);
           closeMarketSheet(useCurrentLocation.closest('[data-market-sheet]'));
-          window.pqToast?.('Localização atualizada');
+          window.pqToast?.(`Localização: ${rotulo}`);
         })
         .catch(() => {
           window.pqToast?.('Não foi possível acessar sua localização');

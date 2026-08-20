@@ -134,9 +134,13 @@
         <div><small>Por último</small><h2>Escolha o horário</h2></div>
         <span class="booking-step__status" data-availability-copy></span>
       </div>
+      <!-- Tres estados, porque sao tres coisas diferentes. A legenda antiga
+           usava o mesmo ponto de "ocupado" para "nao comporta a duracao", e
+           dava para ler um horario vago como reservado. -->
       <div class="legend">
         <span><i class="dot free"></i> Disponível</span>
-        <span><i class="dot busy"></i> Não comporta a duração</span>
+        <span><i class="dot nofit"></i> Livre, mas não comporta a duração</span>
+        <span><i class="dot busy"></i> Reservado</span>
       </div>
       <div class="avail" data-slots></div>
     </section>
