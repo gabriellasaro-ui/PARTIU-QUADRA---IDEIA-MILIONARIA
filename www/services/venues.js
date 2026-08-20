@@ -38,6 +38,19 @@ function applyOverrides(venue) {
   return patch ? { ...venue, ...patch } : venue;
 }
 
+/* Local escolhido pela pessoa. Fica no aparelho: e "de onde estou buscando
+   agora", nao um dado de cadastro — quem viaja muda a busca sem mexer no
+   perfil. */
+const CHAVE_LOCAL = 'player_local';
+
+export function localEscolhido() {
+  return storage.get(CHAVE_LOCAL, null);
+}
+
+export function definirLocal(local) {
+  storage.set(CHAVE_LOCAL, local || null);
+}
+
 export const venueService = {
   /* ═══════════ Precos definidos pela arena ═══════════
      O gerente edita preco/hora e mensalidade; o resultado precisa aparecer
@@ -62,8 +75,31 @@ export const venueService = {
     return clone(all[venue.id]);
   },
 
+  /* Cidades onde ha quadra cadastrada. E o que alimenta o seletor de local:
+     a lista do IBGE tem 5.571 municipios e quase nenhum tem quadra. */
+  /* Traduz coordenada em bairro/cidade usando as arenas cadastradas. Se o
+     lugar conhecido mais proximo estiver longe demais, quem chama decide
+     nao usar — por isso a distancia volta junto. */
+  async localDeCoordenada(lat, lng) {
+    if (!API_BASE_URL) return null;
+    const data = await api.get(`/api/quadras/proximo?lat=${lat}&lng=${lng}`, { auth: false });
+    return data?.local || null;
+  },
+
+  async cidadesComQuadra() {
+    if (!API_BASE_URL) return [];
+    const data = await api.get('/api/quadras/cidades', { auth: false });
+    return data?.cidades || [];
+  },
+
   async list(filters = {}) {
-    const data = await fromApiOrLocal('/api/quadras', { quadras: VENUES });
+    /* Sem lat/lng a API mede distancia a partir do centro de Goiania, entao
+       trocar de cidade nao mudava a ordem nem os quilometros. */
+    const local = filters.local || localEscolhido();
+    const busca = local?.lat != null
+      ? `/api/quadras?lat=${local.lat}&lng=${local.lng}`
+      : '/api/quadras';
+    const data = await fromApiOrLocal(busca, { quadras: VENUES });
     const venues = Array.isArray(data) ? data : (data?.quadras || []);
     const sport = String(filters.sport || '').trim();
     // "outros" e um filtro por exclusao: tudo que nao esta em destaque.
@@ -119,9 +155,12 @@ export const venueService = {
     return SPORTS;
   },
 
-  async availability(id) {
+  /* A data e obrigatoria no uso real: sem ela a API responde sempre HOJE, e
+     era isso que fazia a tela de outro dia mostrar disponibilidade errada. */
+  async availability(id, date) {
     if (API_BASE_URL) {
-      const data = await api.get(`/api/quadras/${id}/horarios`);
+      const query = date ? `?data=${encodeURIComponent(date)}` : '';
+      const data = await api.get(`/api/quadras/${id}/horarios${query}`);
       return data?.horarios || DEFAULT_AVAILABILITY;
     }
     return clone(DEFAULT_AVAILABILITY);
@@ -176,15 +215,22 @@ export const venueService = {
     return VENUES.filter((venue) => ids.includes(venue.id)).map(clone);
   },
 
-  async toggleFavorite(id) {
+  /* Favorito e da ARENA, nao da quadra: e assim que o banco guarda
+     (user_favorites.arena_id) e e o que /api/favoritos/{id} espera. O front
+     mandava o id da quadra e levava 404 "Arena nao encontrada" em todo
+     clique — o coracao piscava e nada era salvo.
+
+     A marcacao visual continua por quadra porque o GET devolve todas as
+     quadras das arenas favoritadas; so o toggle precisa da arena. */
+  async toggleFavorite(arenaId) {
     if (API_BASE_URL) {
       const data = await api.get('/api/favoritos');
-      const active = (data?.quadras || []).some((q) => String(q.id) === String(id));
+      const active = (data?.quadras || []).some((q) => String(q.arenaId) === String(arenaId));
       if (active) {
-        await api.delete(`/api/favoritos/${id}`);
+        await api.delete(`/api/favoritos/${arenaId}`);
         return false;
       }
-      await api.post(`/api/favoritos/${id}`);
+      await api.post(`/api/favoritos/${arenaId}`);
       return true;
     }
     const venueId = Number(id);
@@ -255,6 +301,28 @@ export const venueService = {
       ...(authService.currentUser() || {}),
       ...override
     };
+  },
+
+  /* Estados e municipios (dados do IBGE embarcados no backend). Passa pelo
+     mesmo `api` do resto: um fetch('/api/...') cru ignora API_BASE_URL e
+     quebra no dia em que a API estiver em outro dominio. */
+  async estados() {
+    if (!API_BASE_URL) return [];
+    const data = await api.get('/api/localidades/estados', { auth: false });
+    return data?.estados || [];
+  },
+
+  async cidadesDe(uf) {
+    if (!API_BASE_URL || !uf) return [];
+    const data = await api.get(`/api/localidades/estados/${encodeURIComponent(uf)}/cidades`, { auth: false });
+    return data?.cidades || [];
+  },
+
+  /* Exclusao de conta. Sem fallback local de proposito: sem API nao ha o que
+     excluir, e fingir que excluiu seria pior que recusar. */
+  async deleteAccount() {
+    if (!API_BASE_URL) throw new Error('Exclusão de conta indisponível sem a API');
+    return api.delete('/api/perfil');
   },
 
   async saveProfile(patch) {

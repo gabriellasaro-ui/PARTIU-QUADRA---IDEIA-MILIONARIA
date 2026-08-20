@@ -60,7 +60,13 @@ export const authService = {
      uma sessao nossa. E esse corte que permite trocar so a primeira quando
      os client IDs existirem. */
   async loginWithGoogle() {
-    const credential = await requestGoogleCredential();
+    return this.exchangeGoogleCredential(await requestGoogleCredential());
+  },
+
+  /* Na web a credencial ja chega pronta: quem a pegou foi o botao que o
+     proprio Google desenha, e nao uma chamada nossa. Falta so a segunda
+     etapa — trocar por sessao daqui. */
+  async exchangeGoogleCredential(credential) {
     const session = API_BASE_URL
       ? await api.post('/api/auth/google', { idToken: credential.idToken }, { auth: false })
       : await authMock.google(credential);
@@ -82,8 +88,8 @@ export const authService = {
     return Boolean(user) && !user.onboardedAt;
   },
 
-  async completeOnboarding({ position, level }) {
-    const patch = { position, level, onboardedAt: new Date().toISOString() };
+  async completeOnboarding({ favoriteSport, position, level }) {
+    const patch = { favoriteSport, position, level, onboardedAt: new Date().toISOString() };
     if (API_BASE_URL) {
       const user = await api.patch('/api/auth/onboarding', patch);
       storage.setAuthUser(user);

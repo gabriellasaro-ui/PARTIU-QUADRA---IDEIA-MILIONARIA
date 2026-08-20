@@ -40,6 +40,45 @@
     document.querySelectorAll('[data-auth-user]').forEach(function (element) {
       element.hidden = !authenticated;
     });
+    preencherIdentidade(authenticated);
+  }
+
+  /* Nome e avatar do topo saem da sessao gravada, nunca do HTML. Cravados no
+     template, mostravam a mesma pessoa para todo mundo que logasse. */
+  function preencherIdentidade(authenticated) {
+    var usuario = null;
+    if (authenticated) {
+      try { usuario = JSON.parse(localStorage.getItem(authKey('auth_user')) || 'null'); } catch (error) {}
+    }
+    var nome = (usuario && usuario.name) ? String(usuario.name).trim() : '';
+    var foto = (usuario && usuario.photo) ? String(usuario.photo) : '';
+
+    document.querySelectorAll('[data-auth-name]').forEach(function (element) {
+      element.textContent = nome || 'Minha conta';
+    });
+    document.querySelectorAll('[data-auth-avatar]').forEach(function (element) {
+      if (foto) {
+        /* textContent antes de montar a imagem: sem isso a inicial anterior
+           fica embaixo da foto quando a pessoa troca de conta na mesma aba. */
+        element.textContent = '';
+        var img = document.createElement('img');
+        img.src = foto;
+        img.alt = '';
+        img.decoding = 'async';
+        img.loading = 'lazy';
+        /* Sem isto a foto do Google nao carrega: com Referer do nosso dominio
+           o lh3.googleusercontent.com responde 200 com uma pagina HTML de erro
+           em vez do JPEG, e a <img> falha em silencio. Comprovado comparando a
+           mesma URL com e sem o cabecalho. */
+        img.referrerPolicy = 'no-referrer';
+        /* Foto do Google pode 404 depois (link expira, conta muda). Caindo
+           fora, volta a inicial em vez de deixar um quadrado quebrado. */
+        img.onerror = function () { element.textContent = nome.slice(0, 1).toUpperCase() || '?'; };
+        element.appendChild(img);
+        return;
+      }
+      element.textContent = nome.slice(0, 1).toUpperCase() || '?';
+    });
   }
   window.pqSyncAuthControls = syncAuthControls;
   syncAuthControls();

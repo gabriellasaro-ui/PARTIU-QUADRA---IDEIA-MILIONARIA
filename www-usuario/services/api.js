@@ -39,7 +39,13 @@ async function tryRefreshToken() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken })
     });
-    if (!session.ok) return false;
+    /* So 401/403 querem dizer "esta sessao morreu". Qualquer outro status e
+       problema do servidor (502 de proxy reiniciando, 500, 503 em deploy) —
+       tratar isso como sessao invalida deslogava todo mundo a cada tropeco
+       de infraestrutura. Lancar mantem a sessao no aparelho e deixa a
+       chamada original falhar como erro de rede, que e o que ela e. */
+    if (session.status === 401 || session.status === 403) return false;
+    if (!session.ok) throw new Error('Servidor indisponível');
     const data = await session.json();
     if (!data?.token) return false;
     storage.setAuthToken(data.token);

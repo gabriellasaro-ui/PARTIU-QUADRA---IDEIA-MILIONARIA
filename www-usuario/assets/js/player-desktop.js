@@ -1,14 +1,41 @@
-import venueService from '../../services/venues.js';
+import venueService, { localEscolhido, definirLocal } from '../../services/venues.js';
 import { API_BASE_URL, SERVICE_FEE_RATE } from '../../config/constants.js';
 import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame } from './game-mode.js';
+import { rotaLiberada } from '../../services/platform.js';
+import authService from '../../services/auth.js';
+import { LEVELS } from '../../config/mock-data.js';
+import { posicoesDe, MODALIDADES } from '../../config/esportes.js';
+import { refreshIcons } from './component-loader.js';
 
 let currentRoute = null;
 let desktopMap = null;
 let activeDesktopApprovalTimer = null;
-const USER_LOCATION = [-16.6950, -49.2550];
+/* Fallback, nao a verdade: e o centro de Goiania, usado so enquanto a pessoa
+   nao escolheu local nenhum. Quem manda e localEscolhido(). */
+const LOCAL_PADRAO = [-16.6950, -49.2550];
+
+/* O mapa tem que seguir o mesmo local da lista. Antes lia a constante direto:
+   trocar para "usar minha localizacao" reordenava os resultados mas o mapa
+   continuava centrado em Goiania, com o "Voce esta aqui" no lugar errado. */
+function coordenadaAtual() {
+  const local = localEscolhido();
+  return (local && local.lat != null) ? [local.lat, local.lng] : LOCAL_PADRAO;
+}
+
+/* Raio de busca escolhido em Ajustes. O mapa enquadra por ele: antes o zoom
+   era fixo em 13, entao mudar "ate 25 km" nao mudava nada na tela. */
+function raioKm() {
+  return Number(lerPreferencias().distancia) || 5;
+}
+
+/* Zoom que faz o raio caber na tela. Cada nivel dobra a escala; 13 mostra
+   ~5 km de raio num viewport tipico, e cada duplicacao do raio tira um. */
+function zoomParaRaio(km) {
+  return Math.max(9, Math.min(15, Math.round(13 - Math.log2(km / 5))));
+}
 const APPROVAL_WINDOW_MS = 15 * 60 * 1000;
 const MOCK_APPROVAL_DELAY_MS = 5000;
 const SPORT_ICON_SHAPES = {
@@ -265,7 +292,7 @@ function routeQuery(route) {
 
 function venueCard(venue, favorite = false) {
   const favoriteButton = favorite
-    ? `<button type="button" class="fav-heart on" data-player-favorite="${venue.id}" aria-label="Remover dos favoritos">
+    ? `<button type="button" class="fav-heart on" data-player-favorite="${venue.arenaId}" aria-label="Remover dos favoritos">
         ${icon('heart', 'ic fill')}
       </button>`
     : '';
@@ -308,7 +335,13 @@ async function renderExplore(root, route) {
   const query = routeQuery(route);
   const sport = query.get('esporte') || '';
   const term = query.get('q') || '';
-  const local = query.get('local') || 'Goiânia, GO';
+  const escolhido = localEscolhido();
+  const cidades = await venueService.cidadesComQuadra();
+  /* Padrao vem da propria lista, e nao de uma string escrita aqui: o banco
+     grava "Goiania" sem acento e o rotulo fixo era "Goiânia, GO" — nenhuma
+     opcao casava, o <select> caia na primeira (que e "Usar minha
+     localizacao") e parecia ativo sem nunca ter obtido posicao alguma. */
+  const local = escolhido?.label || query.get('local') || cidades[0]?.label || 'Goiânia, GO';
   const radius = query.get('raio') || '5';
   const now = query.get('agora') === '1';
   const [sports, listedVenues] = await Promise.all([
@@ -338,7 +371,33 @@ async function renderExplore(root, route) {
     <section class="desktop-market-hero">
       <div class="desktop-market-hero__top">
         <div class="desktop-market-hero__copy">
-          <span>${icon('map-pin', 'ic sm')}${escapeHtml(local)}</span>
+          <!-- Trocar de cidade muda a coordenada da busca, e nao so o rotulo. -->
+          <!-- <details> e nao <select>: o menu nativo nao aceita icone por
+               opcao nem a contagem de arenas, e o realce azul do sistema
+               destoava de tudo. Fecha com Esc e com clique fora, como o menu
+               da conta. -->
+          <details class="desktop-local" data-player-local>
+            <summary aria-label="Trocar o local da busca">
+              ${icon(escolhido?.auto ? 'locate-fixed' : 'map-pin', 'ic sm')}
+              <span data-local-rotulo>${escapeHtml(escolhido?.auto ? 'Perto de você' : local)}</span>
+              ${icon('chevron-down', 'ic sm')}
+            </summary>
+            <div class="desktop-local__menu" role="listbox">
+              <!-- Primeira opcao e a localizacao real, como no iFood/Uber: o
+                   padrao util e "onde eu estou", nao uma cidade fixa. -->
+              <button type="button" role="option" aria-selected="${escolhido?.auto ? 'true' : 'false'}"
+                      class="desktop-local__op ${escolhido?.auto ? 'on' : ''}" data-local-op="__auto__">
+                ${icon('locate-fixed', 'ic sm')}
+                <span><strong>Usar minha localização</strong><small>Ordena pelas quadras mais perto de onde você está</small></span>
+              </button>
+              ${(cidades.length ? cidades : [{ label: local }]).map((c) => `
+              <button type="button" role="option" aria-selected="${!escolhido?.auto && c.label === local ? 'true' : 'false'}"
+                      class="desktop-local__op ${!escolhido?.auto && c.label === local ? 'on' : ''}" data-local-op="${escapeHtml(c.label)}">
+                ${icon('map-pin', 'ic sm')}
+                <span><strong>${escapeHtml(c.label)}</strong>${c.arenas ? `<small>${c.arenas} ${c.arenas === 1 ? 'arena' : 'arenas'}</small>` : ''}</span>
+              </button>`).join('')}
+            </div>
+          </details>
           <h2>${now ? 'Horários livres agora' : 'Quadras perto de você'}</h2>
           <p>Escolha o esporte e encontre o melhor horário.</p>
         </div>
@@ -396,21 +455,44 @@ async function renderExplore(root, route) {
   root.dataset.mapVenues = JSON.stringify(venues);
 }
 
+/* Alfinete das quadras. Sem `icon` o Leaflet cai no marcador embutido dele,
+   que e azul — o unico azul da tela, brigando com a marca em todo lugar.
+   SVG inline em vez de PNG: escala sem borrar e a cor sai do mesmo verde
+   do resto. */
+const PIN_QUADRA = `
+  <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 0C6.27 0 0 6.27 0 14c0 9.8 12.36 22.94 12.89 23.5a1.53 1.53 0 0 0 2.22 0C15.64 36.94 28 23.8 28 14 28 6.27 21.73 0 14 0Z" fill="#0c8b52"/>
+    <path d="M14 1.6C7.15 1.6 1.6 7.15 1.6 14c0 8.7 11.1 20.9 12.4 22.3 1.3-1.4 12.4-13.6 12.4-22.3 0-6.85-5.55-12.4-12.4-12.4Z" fill="#16a765"/>
+    <circle cx="14" cy="13.6" r="5.2" fill="#fff"/>
+  </svg>`;
+
+function iconeQuadra() {
+  return window.L.divIcon({
+    className: 'mapa-pin-quadra',
+    html: PIN_QUADRA,
+    iconSize: [28, 38],
+    /* Ancora na ponta de baixo: o alfinete aponta o endereco, nao paira
+       centrado sobre ele. */
+    iconAnchor: [14, 38],
+    popupAnchor: [0, -34]
+  });
+}
+
 function initExploreMap(root) {
   const mapElement = root.querySelector('[data-player-map]');
   if (!mapElement || !window.L) return;
   desktopMap?.remove();
   const venues = JSON.parse(root.dataset.mapVenues || '[]');
-  desktopMap = window.L.map(mapElement).setView(USER_LOCATION, 13);
+  desktopMap = window.L.map(mapElement).setView(coordenadaAtual(), zoomParaRaio(raioKm()));
   window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: 'abcd',
     maxZoom: 19
   }).addTo(desktopMap);
-  const bounds = [USER_LOCATION];
+  const bounds = [coordenadaAtual()];
   venues.forEach((venue) => {
     const position = [venue.map.lat, venue.map.lng];
-    window.L.marker(position).addTo(desktopMap).bindPopup(mapPopup(venue));
+    window.L.marker(position, { icon: iconeQuadra() }).addTo(desktopMap).bindPopup(mapPopup(venue));
     bounds.push(position);
   });
   /* "Voce esta aqui". Antes o mapa CENTRAVA na posicao do usuario e a usava
@@ -421,14 +503,14 @@ function initExploreMap(root) {
      dava para saber que aquilo era voce. Agora sao tres camadas — halo,
      anel branco e nucleo — mais um rotulo fixo, para o ponto se declarar
      sem depender de clique. */
-  const haloUsuario = window.L.circleMarker(USER_LOCATION, {
+  const haloUsuario = window.L.circleMarker(coordenadaAtual(), {
     radius: 20,
     stroke: false,
     fillColor: '#16a765',
     fillOpacity: 0.18,
     interactive: false
   }).addTo(desktopMap);
-  const marcadorUsuario = window.L.circleMarker(USER_LOCATION, {
+  const marcadorUsuario = window.L.circleMarker(coordenadaAtual(), {
     radius: 10,
     color: '#ffffff',
     weight: 4,
@@ -500,7 +582,7 @@ async function renderVenue(root, route) {
         <span>${icon('images', 'ic sm')}${gallery.length} fotos</span>
         <span>${icon('navigation', 'ic sm')}${venue.distance.toLocaleString('pt-BR')} km</span>
       </div>
-      <button type="button" class="fav-heart ${favoriteIds.includes(venue.id) ? 'on' : ''}" data-player-favorite="${venue.id}" aria-label="Salvar nos favoritos">
+      <button type="button" class="fav-heart ${favoriteIds.includes(venue.id) ? 'on' : ''}" data-player-favorite="${venue.arenaId}" aria-label="Salvar nos favoritos">
         ${icon('heart', 'ic fill')}
       </button>
     </section>
@@ -848,7 +930,7 @@ async function renderPayment(root, route) {
   const requestedResult = routeQuery(route).get('resultado');
   if (requestedResult) confirmation.set('resultado', requestedResult);
   const avatar = profile.photo
-    ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}" decoding="async" loading="lazy">`
+    ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}" decoding="async" loading="lazy" referrerpolicy="no-referrer">`
     : escapeHtml(profile.name.slice(0, 1));
   root.innerHTML = `
     <div class="desktop-checkout-page" data-player-payment-page>
@@ -890,9 +972,9 @@ async function renderPayment(root, route) {
                 <span><strong>Pix</strong><small>Validação imediata</small></span>
                 <span class="ck">${icon('check')}</span>
               </button>
-              <button type="button" class="method" data-player-payment-method="card">
+              <button type="button" class="method" data-player-payment-method="card" disabled>
                 <span class="badge-ic">${icon('credit-card')}</span>
-                <span><strong>Cartão de crédito</strong><small>Final 4321</small></span>
+                <span><strong>Cartão de crédito</strong><small data-player-card-note>Em breve</small></span>
                 <span class="ck">${icon('check')}</span>
               </button>
             </div>
@@ -933,6 +1015,22 @@ async function renderPayment(root, route) {
   const cta = root.querySelector('[data-player-payment-cta]');
   cta.dataset.paymentRoute = `#confirmado/${venue.id}`;
   cta.dataset.paymentQuery = confirmation.toString();
+  // Cartao so vale com adquirente. syncDesktopPaymentChoice ja ignora botao
+  // desabilitado, entao ?metodo=card cai no Pix em vez de gerar uma reserva
+  // sem forma de cobranca.
+  const botaoCartao = root.querySelector('[data-player-payment-method="card"]');
+  if (botaoCartao) {
+    const { liberado, salvos, motivo } = await estadoDoCartao();
+    botaoCartao.disabled = !liberado;
+    botaoCartao.title = liberado ? '' : motivo;
+    const nota = botaoCartao.querySelector('[data-player-card-note]');
+    if (nota) {
+      nota.textContent = !liberado
+        ? 'Em breve'
+        : (salvos.length ? rotuloDoCartao(salvos[0]) : 'Cadastre um cartão');
+    }
+  }
+
   syncDesktopPaymentChoice(root, method === 'wallet' ? 'pix' : method);
 }
 
@@ -1265,9 +1363,41 @@ async function renderFavorites(root) {
       </div>`;
 }
 
+/* Estado real do cartao, direto de /api/carteira. Uma unica fonte para o
+   checkout e para a tela de Pagamento — quando o adquirente entrar, so o
+   backend muda. */
+async function estadoDoCartao() {
+  const carteira = await venueService.wallet().catch(() => null);
+  const salvos = carteira?.cartoes || carteira?.cards || [];
+  return {
+    liberado: Boolean(carteira?.cartaoDisponivel),
+    salvos,
+    motivo: carteira?.cartaoMotivo || 'Por enquanto, só Pix.'
+  };
+}
+
+function rotuloDoCartao(cartao) {
+  const bandeira = cartao.bandeira || cartao.brand || 'Cartão';
+  const fim = cartao.ultimos || cartao.last4 || '';
+  return fim ? `${bandeira} final ${fim}` : bandeira;
+}
+
 /* Pagamento no desktop. Saldo, extrato e cupom sairam: guardar dinheiro de
-   usuario e atividade de instituicao de pagamento. */
+   usuario e atividade de instituicao de pagamento.
+
+   O "Visa final 4321" listado aqui era markup fixo — nao vinha de dado
+   nenhum. Agora a lista mostra o que /api/carteira devolver, e o botao de
+   adicionar so aparece quando ha onde guardar o cartao. */
 async function renderWallet(root) {
+  const { liberado, salvos, motivo } = await estadoDoCartao();
+
+  const linhasCartao = salvos.map((cartao) => `
+    <div class="payment-row"><span class="badge-ic">${icon('credit-card')}</span><span><strong>${escapeHtml(rotuloDoCartao(cartao))}</strong><small>Cartão salvo</small></span></div>`).join('');
+
+  const rodape = liberado
+    ? `<a href="#carteira/cartão" class="btn btn-outline" style="margin-top:14px;">${icon('plus', 'ic sm')} Adicionar cartão</a>`
+    : `<p class="muted" style="margin-top:14px;">${icon('credit-card', 'ic sm')} ${escapeHtml(motivo)}</p>`;
+
   root.innerHTML = `
     <div class="split-2">
       <div>
@@ -1275,9 +1405,9 @@ async function renderWallet(root) {
           <h2>Formas de pagamento</h2>
           <div class="rlist">
             <div class="payment-row"><span class="badge-ic">${icon('zap')}</span><span><strong>Pix</strong><small>Aprovação na hora</small></span></div>
-            <div class="payment-row"><span class="badge-ic">${icon('credit-card')}</span><span><strong>Visa final 4321</strong><small>Cartão principal</small></span></div>
+            ${linhasCartao}
           </div>
-          <a href="#carteira/cartão" class="btn btn-outline" style="margin-top:14px;">${icon('plus', 'ic sm')} Adicionar cartão</a>
+          ${rodape}
         </div>
       </div>
       <aside class="card">
@@ -1287,44 +1417,56 @@ async function renderWallet(root) {
     </div>`;
 }
 
+/* O formulario que morava aqui pedia numero, validade e CVV, prometia que
+   "seus dados sao protegidos e criptografados", jogava tudo fora e respondia
+   "Cartao salvo com sucesso". Nao ha adquirente: pedir cartao de verdade sem
+   ter onde guardar nao e demonstracao, e coleta de dado que nao devia sair
+   do bolso da pessoa. */
 async function renderWalletAction(root, route) {
-  const wallet = await venueService.wallet();
+  const { liberado, motivo } = await estadoDoCartao();
   const action = route.params.action || 'adicionar';
   const pageTitle = document.querySelector('[data-page-title]');
   const pageSub = document.querySelector('[data-page-sub]');
-  if (action === 'cartão') {
-    if (pageTitle) pageTitle.textContent = 'Adicionar cartão';
-    if (pageSub) pageSub.textContent = 'Cadastre um cartão para pagar mais rápido';
+
+  if (action === 'cartão' && !liberado) {
+    if (pageTitle) pageTitle.textContent = 'Cartão de crédito';
+    if (pageSub) pageSub.textContent = 'Ainda não disponível';
     root.innerHTML = `
-      <a href="#carteira" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para a carteira</a>
-      <form class="split-2" data-player-demo-form data-success="Cartão salvo com sucesso">
-        <div class="card">
-          <h2>Dados do cartão</h2>
-          <div class="inp"><label>Número do cartão</label><input type="text" placeholder="0000 0000 0000 0000" required></div>
-          <div class="inp"><label>Nome impresso no cartão</label><input type="text" placeholder="GABRIEL LISBOA" required></div>
-          <div class="input-row">
-            <div class="inp"><label>Validade</label><input type="text" placeholder="MM/AA" required></div>
-            <div class="inp"><label>CVV</label><input type="text" placeholder="123" required></div>
-          </div>
-        </div>
-        <aside><div class="order-card"><h3>Cartão de crédito</h3><p class="muted" style="margin:12px 0;line-height:1.6;">Seus dados são protegidos e criptografados.</p><button type="submit" class="btn btn-primary btn-lg btn-block">Salvar cartão</button><div class="bc-note"><svg class="ic"><use href="#i-shield"/></svg> Pagamento seguro</div></div></aside>
-      </form>`;
+      <a href="#carteira" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para Pagamento</a>
+      <div class="card" style="margin-top:16px;">
+        <h2>Ainda não dá para salvar cartão</h2>
+        <p class="muted" style="margin:12px 0;line-height:1.6;">${escapeHtml(motivo)}</p>
+        <a href="#carteira" class="btn btn-primary">Entendi</a>
+      </div>`;
     return;
   }
-  // Cartão e a unica acao que sobrou; qualquer outra volta para Pagamento.
+  // Sem tela de captura enquanto nao houver adquirente.
   location.hash = 'carteira';
 }
 
+/* O backend manda o icone como 'i-flame'; o front desenha com lucide. */
+const ICONE_CONQUISTA = { 'i-check': 'circle-check', 'i-flame': 'flame', 'i-map': 'map', 'i-star': 'star' };
+
+/* Campo em branco nao diz se falta preencher ou se o dado sumiu. O vazio
+   vira convite, e nao um espaco morto ao lado do rotulo. */
+function campoPerfil(rotulo, valor) {
+  const preenchido = String(valor || '').trim();
+  return `<div><span>${escapeHtml(rotulo)}</span>${preenchido
+    ? `<strong>${escapeHtml(preenchido)}</strong>`
+    : '<em class="desktop-profile-vazio">Não informado</em>'}</div>`;
+}
+
 async function renderProfile(root) {
-  const [profile, reservations, venues] = await Promise.all([
+  const [profile, reservations, venues, estados] = await Promise.all([
     venueService.profile(),
     venueService.reservations(),
-    venueService.list()
+    venueService.list(),
+    carregarEstados()
   ]);
   const next = reservations.find((item) => item.group === 'proxima');
   const nextVenue = next ? venues.find((venue) => venue.id === next.venueId) : null;
   const avatar = profile.photo
-    ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}" decoding="async" loading="lazy">`
+    ? `<img src="${escapeHtml(profile.photo)}" alt="Foto de ${escapeHtml(profile.name)}" decoding="async" loading="lazy" referrerpolicy="no-referrer">`
     : escapeHtml(profile.name.slice(0, 1));
   root.innerHTML = `
     <div class="desktop-profile-page">
@@ -1338,11 +1480,10 @@ async function renderProfile(root) {
             </label>
           </div>
           <div class="desktop-profile-copy">
-            <span class="desktop-profile-role">${icon('user-round-check', 'ic sm')}Jogador</span>
             <h2>${escapeHtml(profile.name)}</h2>
             <p>Jogador desde ${escapeHtml(profile.memberSince)}</p>
             <div class="desktop-profile-meta">
-              <span>${icon('map-pin', 'ic sm')}${escapeHtml(profile.city)}</span>
+              ${profile.city ? `<span>${icon('map-pin', 'ic sm')}${escapeHtml(profile.city)}</span>` : ''}
               <span>${icon('mail', 'ic sm')}${escapeHtml(profile.email)}</span>
             </div>
           </div>
@@ -1363,7 +1504,7 @@ async function renderProfile(root) {
         <section class="card desktop-profile-activity">
           <div class="desktop-profile-section-head">
             <div><h2>Sua atividade</h2><p>Acompanhe sua próxima partida e seu progresso.</p></div>
-            <a class="desktop-profile-link" href="#reservas">Ver reservas${icon('chevron-right', 'ic sm')}</a>
+            ${rotaLiberada('reservas') ? `<a class="desktop-profile-link" href="#reservas">Ver reservas${icon('chevron-right', 'ic sm')}</a>` : ''}
           </div>
           ${next && nextVenue ? `
           <div class="desktop-profile-next">
@@ -1373,13 +1514,13 @@ async function renderProfile(root) {
               <div class="ng-info"><strong>${escapeHtml(nextVenue.name)}</strong><div class="ng-meta"><span>${icon('calendar-days', 'ic sm')}${escapeHtml(next.date)}</span><span>${icon('clock-3', 'ic sm')}${next.hour}</span></div><span class="status ${escapeHtml(next.statusClass)}">${escapeHtml(next.status)}</span></div>
               ${icon('chevron-right', 'desktop-profile-next__arrow')}
             </a>
-          </div>` : ''}
+          </div>` : `
+          <p class="desktop-profile-empty">Nenhum jogo marcado ainda. <a href="#quadras">Encontre uma quadra</a> e faça a primeira reserva.</p>`}
           <div class="desktop-profile-achievements">
             <h3>Conquistas</h3>
             <div class="achv-grid">
-              <div class="achv"><span class="ic-wrap">${icon('flame')}</span><div><strong>Veterano</strong><small>10+ jogos</small></div></div>
-              <div class="achv"><span class="ic-wrap">${icon('map')}</span><div><strong>Explorador</strong><small>5 quadras diferentes</small></div></div>
-              <div class="achv locked"><span class="ic-wrap">${icon('star')}</span><div><strong>Avaliador</strong><small>Faça 3 avaliações</small></div></div>
+              ${(profile.conquistas || []).map((c) => `
+              <div class="achv ${c.on ? '' : 'locked'}"><span class="ic-wrap">${icon(ICONE_CONQUISTA[c.icon] || 'star')}</span><div><strong>${escapeHtml(c.title)}</strong><small>${escapeHtml(c.desc)}</small></div></div>`).join('')}
             </div>
           </div>
         </section>
@@ -1387,33 +1528,47 @@ async function renderProfile(root) {
         <section class="card desktop-profile-about">
           <div class="desktop-profile-section-head">
             <div><h2>Sobre você</h2><p>Informações usadas nas suas reservas.</p></div>
-            <button class="icon-btn" type="button" data-player-profile-edit aria-label="Editar dados pessoais" title="Editar dados pessoais">${icon('pencil')}</button>
           </div>
           <div class="desktop-profile-details">
             <div><span>E-mail</span><strong>${escapeHtml(profile.email)}</strong></div>
-            <div><span>Celular</span><strong>${escapeHtml(profile.phone)}</strong></div>
-            <div><span>Cidade</span><strong>${escapeHtml(profile.city)}</strong></div>
-            <div><span>Esporte favorito</span><strong>${escapeHtml(profile.favoriteSport)}</strong></div>
+            ${campoPerfil('Celular', profile.phone)}
+            ${campoPerfil('Cidade', profile.city)}
+            ${campoPerfil('Esporte favorito', profile.favoriteSport)}
           </div>
         </section>
       </div>
 
-      <form id="player-profile-form" class="card desktop-profile-editor" data-player-profile-form hidden>
+      <form id="player-profile-form" class="card desktop-profile-editor" data-player-profile-form data-cidade-atual="${escapeHtml(profile.city || '')}" hidden>
         <div class="desktop-profile-section-head">
           <div><h2>Editar perfil</h2><p>Atualize como suas informações aparecem no aplicativo.</p></div>
           <button class="icon-btn" type="button" data-player-profile-cancel aria-label="Fechar edição">${icon('x')}</button>
         </div>
-        <div class="inp"><label>Nome completo</label><input type="text" name="name" value="${escapeHtml(profile.name)}" autocomplete="name" required></div>
+        <!-- Só identidade aqui. Esporte e distância moram em Ajustes: tê-los
+             nos dois lugares deixava duas telas fazendo a mesma coisa. -->
         <div class="input-row">
-          <div class="inp"><label>E-mail</label><input type="email" name="email" value="${escapeHtml(profile.email)}" autocomplete="email" required></div>
-          <div class="inp"><label>Celular</label><input type="tel" name="phone" value="${escapeHtml(profile.phone)}" autocomplete="tel" required></div>
+          <div class="inp"><label for="pf-name">Nome completo</label>
+            <input id="pf-name" type="text" name="name" value="${escapeHtml(profile.name)}" autocomplete="name" required></div>
+          <div class="inp"><label for="pf-phone">Celular</label>
+            <input id="pf-phone" type="tel" name="phone" inputmode="numeric" autocomplete="tel" maxlength="16"
+                   placeholder="(62) 99999-0000" value="${escapeHtml(mascaraTelefone(profile.phone || ''))}" data-mascara="telefone"></div>
         </div>
         <div class="input-row">
-          <div class="inp"><label>Cidade</label><input type="text" name="city" value="${escapeHtml(profile.city)}" autocomplete="address-level2" required></div>
-          <div class="inp"><label>CPF</label><input type="text" value="000.000.000-00" disabled></div>
+          <div class="inp"><label for="pf-uf">Estado</label>
+            <select id="pf-uf" name="state" data-cfg-uf>
+              <option value="">Selecione</option>
+              ${estados.map((e) => `<option value="${escapeHtml(e.sigla)}" ${e.sigla === (profile.state || '') ? 'selected' : ''}>${escapeHtml(e.nome)}</option>`).join('')}
+            </select></div>
+          <div class="inp"><label for="pf-city">Cidade</label>
+            <select id="pf-city" name="city" data-cfg-cidade ${profile.state ? '' : 'disabled'}>
+              <option value="">${profile.state ? 'Carregando…' : 'Escolha o estado primeiro'}</option>
+            </select></div>
         </div>
-        <label class="field-lbl">Esportes que você curte</label>
-        <div class="chips" data-player-profile-sports>${['Futebol Society', 'Beach Tennis', 'Volei', 'Basquete', 'Tenis'].map((item, index) => `<button type="button" class="chip ${index < 2 ? 'on' : ''}" data-chip-toggle>${item}</button>`).join('')}</div>
+        <div class="inp"><label for="pf-email">E-mail</label>
+          <input id="pf-email" type="email" value="${escapeHtml(profile.email)}" readonly>
+          <small class="set-nota">${profile.provider === 'google'
+            ? 'Sua conta entra pelo Google, então o e-mail vem de lá.'
+            : 'O e-mail identifica seu login e não pode ser alterado.'}</small>
+        </div>
         <div class="desktop-profile-editor__actions">
           <button class="btn btn-outline" type="button" data-player-profile-cancel>Cancelar</button>
           <button class="btn btn-primary" type="submit">${icon('check', 'ic sm')}Salvar alterações</button>
@@ -1423,40 +1578,267 @@ async function renderProfile(root) {
 }
 
 async function renderConfig(root) {
-  const sports = await venueService.sports();
+  const profile = await venueService.profile();
+  const prefs = lerPreferencias();
+
+  /* Notificacoes ficaram de fora na web por decisao de produto: aviso de
+     reserva e lembrete de jogo sao push, e push so existe no app instalado.
+     Mostrar os interruptores aqui prometia um canal que o navegador nao tem.
+
+     Privacidade tambem saiu: os interruptores nao tinham backend nenhum por
+     tras — mexer neles nao mudava nada, em nenhum lugar. */
   root.innerHTML = `
-    <form id="player-config-form" class="settings" data-player-demo-form data-success="Configurações salvas">
-      <section class="set-card">
-        <div class="set-aside"><h2>Notificações</h2><p>Como você quer ser avisado.</p></div>
-        <div class="set-fields">
-          <label class="switch-row"><span>Reserva confirmada</span><span class="switch on"></span></label>
-          <label class="switch-row"><span>Lembrete 1h antes do jogo</span><span class="switch on"></span></label>
-          <label class="switch-row"><span>Quadras novas perto de você</span><span class="switch"></span></label>
-          <label class="switch-row"><span>Promoções e cupons</span><span class="switch on"></span></label>
-        </div>
-      </section>
+    <div class="settings-topo">
+      <a class="btn btn-soft desktop-voltar" href="#quadras">${icon('arrow-left', 'ic sm')}Voltar</a>
+    </div>
+    <form id="player-config-form" class="settings" data-player-config-form novalidate>
       <section class="set-card">
         <div class="set-aside"><h2>Preferências de jogo</h2><p>Deixamos a busca do seu jeito.</p></div>
         <div class="set-fields">
           <div class="input-row">
-            <div class="inp"><label>Esporte padrão</label><select>${sports.map((sport) => `<option ${sport === 'Futebol Society' ? 'selected' : ''}>${escapeHtml(sport)}</option>`).join('')}</select></div>
-            <div class="inp"><label>Distância padrão</label><select><option>Até 2 km</option><option selected>Até 5 km</option><option>Até 10 km</option></select></div>
+            <div class="inp"><label for="cfg-sport">Esporte padrão</label>
+              <select id="cfg-sport" name="favoriteSport">
+                <option value="">Sem preferência</option>
+                ${MODALIDADES.map((e) => `<option ${e === profile.favoriteSport ? 'selected' : ''}>${escapeHtml(e)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="inp"><label for="cfg-dist">Distância padrão</label>
+              <select id="cfg-dist" name="distancia">
+                ${[2, 5, 10, 25].map((km) => `<option value="${km}" ${String(prefs.distancia) === String(km) ? 'selected' : ''}>Até ${km} km</option>`).join('')}
+              </select>
+            </div>
           </div>
-          <div class="inp"><label>Cidade</label><input type="text" value="Goiânia"></div>
         </div>
       </section>
+
       <section class="set-card">
-        <div class="set-aside"><h2>Privacidade</h2><p>Controle quem ve seus dados.</p></div>
+        <div class="set-aside"><h2>Sessão</h2><p>Encerrar o acesso neste navegador.</p></div>
         <div class="set-fields">
-          <label class="switch-row"><span>Mostrar meu nome para a arena<small>Ela vê quem reservou ao confirmar o horário</small></span><span class="switch on"></span></label>
-          <label class="switch-row"><span>Compartilhar minhas estatísticas<small>Jogos e reservas aparecem no perfil público</small></span><span class="switch"></span></label>
+          <a href="./login-web.html" class="btn btn-soft" data-auth-logout>Sair da conta</a>
         </div>
       </section>
-      <section class="set-card danger">
-        <div class="set-aside"><h2>Conta</h2><p>Encerrar a sessão ou excluir sua conta.</p></div>
-        <div class="set-fields"><div style="display:flex;gap:10px"><a href="./login.html" class="btn btn-soft">Sair da conta</a><button type="button" class="btn btn-danger" disabled title="Disponivel quando a API de conta for conectada">Excluir conta</button></div></div>
-      </section>
+
+      <div class="settings-acoes">
+        <button class="btn btn-primary" type="submit">Salvar alterações</button>
+      </div>
+    </form>
+
+    <!-- Nome, celular, estado e cidade vivem em Perfil > Editar perfil. Tê-los
+         aqui também deixava duas telas com o mesmo formulário. -->
+    <p class="settings-atalho">Nome, telefone e cidade ficam em <a href="#perfil">Editar perfil</a>.</p>
+
+    <section class="set-card danger" data-cfg-perigo>
+      <div class="set-aside">
+        <h2>Excluir conta</h2>
+        <p>Não dá para desfazer.</p>
+      </div>
+      <div class="set-fields">
+        <ul class="set-lista">
+          <li>${icon('x', 'ic sm')}Seu perfil, favoritos e preferências somem.</li>
+          <li>${icon('x', 'ic sm')}Seu nome e sua foto são apagados.</li>
+          <li>${icon('check', 'ic sm')}Reservas já feitas continuam registradas na arena, por obrigação fiscal dela.</li>
+        </ul>
+        <button type="button" class="btn btn-danger" data-cfg-excluir>${icon('trash-2', 'ic sm')}Excluir minha conta</button>
+      </div>
+    </section>`;
+}
+
+/* Estados e cidades vem do nosso backend (dados do IBGE embarcados), e nao do
+   IBGE em tempo real: o navegador nao faz request para fora e a lista nao
+   depende de servico de terceiro estar de pe. */
+let _estadosCache = null;
+
+async function carregarEstados() {
+  /* `_estadosCache && length` e nao so `_estadosCache`: array vazio e truthy,
+     entao a versao anterior gravava a FALHA no cache e nunca mais tentava —
+     bastava um tropeco de rede no primeiro carregamento para o campo Estado
+     ficar vazio pelo resto da sessao. */
+  if (_estadosCache && _estadosCache.length) return _estadosCache;
+  try {
+    _estadosCache = await venueService.estados();
+  } catch (error) {
+    _estadosCache = null;
+    return [];
+  }
+  return _estadosCache;
+}
+
+async function pintarCidades(root, uf, selecionada) {
+  const select = root.querySelector('[data-cfg-cidade]');
+  if (!select) return;
+  select.disabled = true;
+  select.innerHTML = '<option value="">Carregando…</option>';
+  try {
+    const cidades = await venueService.cidadesDe(uf);
+    /* Cidade gravada antes dos dropdowns era texto livre e pode nao bater com
+       a grafia do IBGE ("Goiania" x "Goiânia"). Sem isto o select cairia em
+       "Selecione" e o proximo salvar apagaria a cidade da pessoa em silencio.
+       Entra como opcao propria, marcada, ate ela escolher outra. */
+    const foraDaLista = selecionada && !cidades.includes(selecionada);
+    select.innerHTML = '<option value="">Selecione</option>' +
+      (foraDaLista ? `<option selected>${escapeHtml(selecionada)}</option>` : '') +
+      cidades.map((c) => `<option ${c === selecionada ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+    select.disabled = false;
+  } catch (error) {
+    select.innerHTML = '<option value="">Não foi possível carregar</option>';
+  }
+}
+
+/* (62) 99999-0000 — aceita 10 e 11 digitos. Formata so o que existe, para o
+   campo nao brigar com quem esta digitando o comeco do numero. */
+function mascaraTelefone(valor) {
+  const d = String(valor || '').replace(/\D/g, '').slice(0, 11);
+  if (!d) return '';
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+/* Distancia e preferencia de busca, nao dado de conta: vive no aparelho.
+   Guardar no servidor obrigaria migration e endpoint para algo que muda
+   conforme onde a pessoa esta. */
+function lerPreferencias() {
+  try {
+    return { distancia: 5, ...(JSON.parse(localStorage.getItem('pq:player_prefs') || '{}')) };
+  } catch (error) {
+    return { distancia: 5 };
+  }
+}
+
+function gravarPreferencias(patch) {
+  try {
+    localStorage.setItem('pq:player_prefs', JSON.stringify({ ...lerPreferencias(), ...patch }));
+  } catch (error) { /* modo privado sem storage: a busca so perde o padrao */ }
+}
+
+/* Onboarding da web.
+
+   A ordem importa: modalidade primeiro, posicao depois. "Pivo" existe no
+   futsal e no basquete e quer dizer coisas diferentes; "Zagueiro" nao existe
+   em nenhum dos dois. Perguntar a posicao antes produzia lista de futebol de
+   campo para quem so joga volei.
+
+   Nao ha "pular": o passo e obrigatorio, e um atalho so devolveria a pessoa
+   para ca no proximo clique, via guard de rota. */
+/* Localizacao do aparelho.
+
+   O navegador so entrega a posicao a partir de um gesto da pessoa e em
+   HTTPS (localhost conta como origem segura). Recusa e resposta valida, nao
+   erro do app: cada motivo vira uma frase que diz o que fazer. */
+/* Aviso fixo ao lado do seletor de local. Mensagem vazia remove. */
+function avisoLocal(selectLocal, texto) {
+  const caixa = selectLocal.closest('[data-player-local]');
+  if (!caixa) return;
+  let aviso = caixa.parentElement.querySelector('[data-local-aviso]');
+  if (!texto) {
+    aviso?.remove();
+    return;
+  }
+  if (!aviso) {
+    aviso = document.createElement('p');
+    aviso.className = 'desktop-local-aviso';
+    aviso.setAttribute('data-local-aviso', '');
+    aviso.setAttribute('role', 'alert');
+    caixa.insertAdjacentElement('afterend', aviso);
+  }
+  aviso.textContent = texto;
+}
+
+function posicaoAtual() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Seu navegador não oferece localização'));
+      return;
+    }
+    /* Origem insegura nao pede permissao nenhuma: o navegador recusa antes.
+       Acontece ao abrir pelo IP da rede local (http://192.168.x.x) em vez de
+       localhost — e a falha e silenciosa se ninguem avisar. */
+    if (!window.isSecureContext) {
+      reject(new Error('A localização exige HTTPS. Abra por localhost ou por um endereço https.'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (erro) => {
+        const frases = {
+          1: 'Permissão negada. Libere a localização nas configurações do site.',
+          2: 'Não foi possível obter sua localização agora.',
+          3: 'A localização demorou demais para responder.'
+        };
+        reject(new Error(frases[erro.code] || 'Não foi possível obter sua localização'));
+      },
+      /* 10s e cache de 5min: pedir precisao alta aqui gastaria bateria para
+         ordenar uma lista por quilometro. */
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  });
+}
+
+async function renderOnboarding(root, route) {
+  const sports = MODALIDADES;
+  const user = authService.currentUser() || {};
+  const escolha = {
+    favoriteSport: user.favoriteSport || '',
+    position: user.position || '',
+    level: user.level || ''
+  };
+
+  root.innerHTML = `
+    <form class="card desktop-onb" data-player-onb-form novalidate>
+      <p class="desktop-onb__intro">Isso fica no seu perfil, ajuda a montar times equilibrados e vai separar o ranking por modalidade. Dá pra mudar depois em Ajustes.</p>
+
+      <fieldset class="desktop-onb__grupo">
+        <legend>Qual esporte você mais vai jogar?</legend>
+        <div class="desktop-onb__opcoes">
+          ${sports.map((esporte) => `<label class="desktop-onb__op">
+            <input type="radio" name="favoriteSport" value="${escapeHtml(esporte)}"${esporte === escolha.favoriteSport ? ' checked' : ''}>
+            <span>${escapeHtml(esporte)}</span>
+          </label>`).join('')}
+        </div>
+      </fieldset>
+
+      <!-- Preenchido por pintarPosicoes() conforme a modalidade escolhida. -->
+      <fieldset class="desktop-onb__grupo" data-onb-posicoes hidden></fieldset>
+
+      <fieldset class="desktop-onb__grupo">
+        <legend>Como você se descreve?</legend>
+        <div class="desktop-onb__opcoes desktop-onb__opcoes--largo">
+          ${LEVELS.map((l) => `<label class="desktop-onb__op">
+            <input type="radio" name="level" value="${escapeHtml(l.id)}"${l.id === escolha.level ? ' checked' : ''}>
+            <span><strong>${escapeHtml(l.label)}</strong><small>${escapeHtml(l.hint)}</small></span>
+          </label>`).join('')}
+        </div>
+      </fieldset>
+
+      <p class="desktop-onb__erro" data-onb-erro hidden role="alert"></p>
+      <button class="btn btn-primary btn-lg" type="submit">Concluir e explorar quadras</button>
     </form>`;
+
+  pintarPosicoes(root, escolha.favoriteSport, escolha.position);
+}
+
+/* Desenha as posicoes da modalidade escolhida. Tenis nao entra: e individual
+   e nao tem posicao — nesse caso o bloco some em vez de mostrar lista vazia. */
+function pintarPosicoes(root, esporte, selecionada) {
+  const bloco = root.querySelector('[data-onb-posicoes]');
+  if (!bloco) return;
+  const posicoes = posicoesDe(esporte);
+  if (!posicoes.length) {
+    bloco.hidden = true;
+    bloco.innerHTML = '';
+    return;
+  }
+  bloco.hidden = false;
+  bloco.innerHTML = `
+    <legend>Onde você joga no ${escapeHtml(esporte)}?</legend>
+    <div class="desktop-onb__opcoes">
+      ${posicoes.map((p) => `<label class="desktop-onb__op">
+        <input type="radio" name="position" value="${escapeHtml(p.id)}"${p.id === selecionada ? ' checked' : ''}>
+        <span>${icon(p.icon, 'ic')}${escapeHtml(p.id)}</span>
+      </label>`).join('')}
+    </div>`;
+  refreshIcons(bloco);
 }
 
 async function renderMessages(root, route) {
@@ -1538,6 +1920,7 @@ export async function renderPlayerDesktopPage(route, root) {
     carteiraAcao: renderWalletAction,
     perfil: renderProfile,
     config: renderConfig,
+    onboarding: renderOnboarding,
     mensagens: renderMessages,
     game: renderGame
   };
@@ -1568,18 +1951,94 @@ export function initPlayerDesktopActions() {
       event.preventDefault();
       if (!profileForm.reportValidity()) return;
       const data = new FormData(profileForm);
-      const favoriteSport = profileForm.querySelector('[data-chip-toggle].on')?.textContent.trim();
-      const changes = {
-        name: String(data.get('name') || '').trim(),
-        email: String(data.get('email') || '').trim(),
-        phone: String(data.get('phone') || '').trim(),
-        city: String(data.get('city') || '').trim()
-      };
-      if (favoriteSport) changes.favoriteSport = favoriteSport;
-      await venueService.saveProfile(changes);
-      const view = document.querySelector('[data-player-desktop-route-view]');
-      await renderPlayerDesktopPage(currentRoute, view);
-      window.pqToast?.('Perfil atualizado');
+      const botao = profileForm.querySelector('[type="submit"]');
+      botao?.setAttribute('disabled', 'disabled');
+      try {
+        await venueService.saveProfile({
+          name: String(data.get('name') || '').trim(),
+          // So digitos: a mascara e enfeite de tela, e gravar "(62) 9..."
+          // impediria busca ou discagem depois.
+          phone: String(data.get('phone') || '').replace(/\D/g, ''),
+          state: String(data.get('state') || '').trim(),
+          city: String(data.get('city') || '').trim()
+        });
+        const view = document.querySelector('[data-player-desktop-route-view]');
+        await renderPlayerDesktopPage(currentRoute, view);
+        window.pqToast?.('Perfil atualizado');
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível salvar');
+      } finally {
+        botao?.removeAttribute('disabled');
+      }
+      return;
+    }
+
+    const onbForm = event.target.closest('[data-player-onb-form]');
+    if (onbForm) {
+      event.preventDefault();
+      const erro = onbForm.querySelector('[data-onb-erro]');
+      const botao = onbForm.querySelector('[type="submit"]');
+      const dados = new FormData(onbForm);
+      const esporte = String(dados.get('favoriteSport') || '');
+      const posicao = String(dados.get('position') || '');
+      const nivel = String(dados.get('level') || '');
+
+      /* Validacao na mao, e nao reportValidity(): os radios sao invisiveis
+         (opacity 0) para o cartao desenhar a selecao, e o Chrome nao
+         consegue ancorar o balao nativo num campo que nao da foco — ele
+         desiste em silencio. Era isso o "clico em Concluir e nao acontece
+         nada". */
+      const faltando = !esporte ? 'Escolha o esporte que você mais joga.'
+        : (posicoesDe(esporte).length && !posicao) ? 'Escolha em que posição você joga.'
+        : !nivel ? 'Escolha como você se descreve.'
+        : '';
+      if (faltando) {
+        erro.textContent = faltando;
+        erro.hidden = false;
+        erro.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        return;
+      }
+
+      erro.hidden = true;
+      botao?.setAttribute('disabled', 'disabled');
+      try {
+        await authService.completeOnboarding({
+          favoriteSport: esporte,
+          position: posicao,
+          level: nivel
+        });
+        window.pqSyncAuthControls?.();
+        const destino = new URLSearchParams(location.hash.split('?')[1] || '').get('next') || 'quadras';
+        location.hash = `#${destino}`;
+      } catch (falha) {
+        erro.textContent = falha.message || 'Não foi possível salvar. Tente de novo.';
+        erro.hidden = false;
+      } finally {
+        botao?.removeAttribute('disabled');
+      }
+      return;
+    }
+
+    const configForm = event.target.closest('[data-player-config-form]');
+    if (configForm) {
+      event.preventDefault();
+      if (!configForm.reportValidity()) return;
+      const botao = configForm.querySelector('[type="submit"]');
+      botao?.setAttribute('disabled', 'disabled');
+      try {
+        const dados = new FormData(configForm);
+        /* Distancia e local, o resto e do perfil: uma chamada so para o que
+           o servidor guarda. */
+        gravarPreferencias({ distancia: Number(dados.get('distancia')) || 5 });
+        await venueService.saveProfile({
+          favoriteSport: String(dados.get('favoriteSport') || '').trim()
+        });
+        window.pqToast?.('Configurações salvas');
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível salvar');
+      } finally {
+        botao?.removeAttribute('disabled');
+      }
       return;
     }
 
@@ -1601,6 +2060,126 @@ export function initPlayerDesktopActions() {
       const view = document.querySelector('[data-player-desktop-route-view]');
       await renderPlayerDesktopPage(currentRoute, view);
       window.pqRefreshIcons?.(view);
+    }
+  });
+
+  /* Escolher o local: click, e nao change — as opcoes agora sao <button>
+     dentro do menu proprio, nao <option> de um <select>. */
+  document.addEventListener('click', async (event) => {
+    const opLocal = event.target.closest('[data-local-op]');
+    if (opLocal) {
+      const selectLocal = opLocal;
+      const valor = opLocal.dataset.localOp;
+      opLocal.closest('[data-player-local]')?.removeAttribute('open');
+      const redesenhar = async () => {
+        const view = document.querySelector('[data-player-desktop-route-view]');
+        await renderPlayerDesktopPage(currentRoute, view);
+      };
+
+      if (valor === '__auto__') {
+        selectLocal.disabled = true;
+        try {
+          /* Se a permissao ja foi negada, o Chrome NAO pergunta de novo — a
+             chamada falha na hora e, sem este aviso, parece que o botao nao
+             faz nada. E o caso mais comum de "nao aparece a permissao". */
+          const estado = await navigator.permissions?.query({ name: 'geolocation' })
+            .then((p) => p.state).catch(() => null);
+          if (estado === 'denied') {
+            throw new Error('Você bloqueou a localização para este site. Clique no cadeado da barra de endereço, permita a localização e tente de novo.');
+          }
+          const pos = await posicaoAtual();
+          /* Nomeia o lugar em vez de exibir "Perto de você": saber o bairro
+             confirma para a pessoa que o app achou onde ela esta. Se o lugar
+             conhecido mais proximo estiver a mais de 60 km, o nome so
+             confundiria — ai fica o rotulo generico. */
+          let rotulo = 'Perto de você';
+          try {
+            const lugar = await venueService.localDeCoordenada(pos.lat, pos.lng);
+            if (lugar && lugar.distanceKm <= 60 && lugar.label) rotulo = lugar.label;
+          } catch (erro) { /* nome e enfeite: a busca funciona sem ele */ }
+          definirLocal({ label: rotulo, lat: pos.lat, lng: pos.lng, auto: true });
+          avisoLocal(selectLocal, '');
+          window.pqToast?.('Usando sua localização');
+        } catch (erro) {
+          /* Negar a permissao nao pode deixar o seletor mentindo que esta em
+             "minha localizacao": volta para o que estava e diz o porque.
+
+             O aviso fica FIXO ao lado do seletor, e nao so no toast: o toast
+             some em 2,6s e esta e justamente a mensagem que a pessoa precisa
+             ler com calma para destravar a permissao. */
+          avisoLocal(selectLocal, erro.message);
+          window.pqToast?.(erro.message);
+          selectLocal.disabled = false;
+          await redesenhar();
+          return;
+        } finally {
+          selectLocal.disabled = false;
+        }
+        await redesenhar();
+        return;
+      }
+      avisoLocal(selectLocal, '');
+
+      const cidades = await venueService.cidadesComQuadra();
+      definirLocal(cidades.find((c) => c.label === valor) || null);
+      await redesenhar();
+      window.pqToast?.(`Buscando em ${valor}`);
+    }
+  });
+
+  document.addEventListener('change', (event) => {
+    const selectUf = event.target.closest('[data-cfg-uf]');
+    if (selectUf) {
+      const form = selectUf.closest('form');
+      if (selectUf.value) {
+        pintarCidades(form, selectUf.value, '');
+      } else {
+        const cidade = form.querySelector('[data-cfg-cidade]');
+        cidade.innerHTML = '<option value="">Escolha o estado primeiro</option>';
+        cidade.disabled = true;
+      }
+    }
+  });
+
+  /* Mascara enquanto digita. `input` e nao `keyup`: pega colar e autofill. */
+  document.addEventListener('input', (event) => {
+    const campo = event.target.closest('[data-mascara="telefone"]');
+    if (!campo) return;
+    const antes = campo.value;
+    const formatado = mascaraTelefone(antes);
+    if (formatado !== antes) {
+      campo.value = formatado;
+      /* Cursor no fim: reescrever o value joga o caret para o inicio e a
+         pessoa digita de tras para frente. */
+      campo.setSelectionRange(formatado.length, formatado.length);
+    }
+  });
+
+  /* Excluir conta. Duas confirmacoes de proposito: e irreversivel, e um
+     clique acidental num botao vermelho nao pode custar a conta de alguem. */
+  document.addEventListener('click', async (event) => {
+    const botao = event.target.closest('[data-cfg-excluir]');
+    if (!botao) return;
+    event.preventDefault();
+    if (!window.confirm('Excluir sua conta? Perfil, favoritos e preferências somem e não dá para desfazer.')) return;
+    if (!window.confirm('Confirma? Esta é a última pergunta.')) return;
+    botao.setAttribute('disabled', 'disabled');
+    try {
+      await venueService.deleteAccount();
+      await authService.logout();
+      window.pqSyncAuthControls?.();
+      location.replace('./login-web.html');
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível excluir a conta');
+      botao.removeAttribute('disabled');
+    }
+  });
+
+  document.addEventListener('change', (event) => {
+    const esporteRadio = event.target.closest('[data-player-onb-form] [name="favoriteSport"]');
+    if (esporteRadio) {
+      const form = esporteRadio.closest('[data-player-onb-form]');
+      pintarPosicoes(form, esporteRadio.value, '');
     }
   });
 
@@ -1632,6 +2211,13 @@ export function initPlayerDesktopActions() {
 
   document.addEventListener('click', async (event) => {
     const profileEdit = event.target.closest('[data-player-profile-edit]');
+    if (profileEdit) {
+      /* O <select> de cidade nasce vazio porque a lista depende da UF; ao
+         abrir o editor, preenche com o estado que ja esta salvo. */
+      const form = document.querySelector('[data-player-profile-form]');
+      const uf = form?.querySelector('[data-cfg-uf]')?.value;
+      if (uf) pintarCidades(form, uf, form.dataset.cidadeAtual || '');
+    }
     if (profileEdit) {
       const form = document.querySelector('[data-player-profile-form]');
       if (!form) return;

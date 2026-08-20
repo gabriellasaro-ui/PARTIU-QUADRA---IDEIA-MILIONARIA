@@ -8,10 +8,11 @@ import { connectWS, disconnectWS } from '../../services/ws.js';
 import pushService from '../../services/push.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import { parseMobileRouteHash } from '../../config/routes.js';
-import { isWebLimited, rotaLiberada, rotaDoHref, marcarPlataforma } from '../../services/platform.js';
+import { isWebLimited, isNative, rotaLiberada, rotaDoHref, marcarPlataforma } from '../../services/platform.js';
 import { initMobileActions, renderMobilePage } from './mobile.js';
 import { initPlayerDesktopActions, renderPlayerDesktopPage } from './player-desktop.js';
 import { loadGame, destroyGame } from './game-mode.js';
+import { mostrarLoading, esconderLoading } from './loading.js';
 
 const MOBILE_ROUTES = {
   home: {
@@ -131,6 +132,16 @@ const MOBILE_ROUTES = {
 };
 
 const PLAYER_DESKTOP_ROUTES = {
+  /* Onboarding tambem na web: e obrigatorio no primeiro acesso, e sem esta
+     entrada o desvio do guard caia num nome que o roteador desktop nao
+     conhece — updatePlayerDesktopMeta lia .nav de undefined e a tela morria. */
+  onboarding: {
+    page: './pages/player-desktop/onboarding.html',
+    title: 'Seu perfil - Qadras',
+    heading: 'Quase lá',
+    sub: 'Três respostas e a busca já fica com a sua cara',
+    nav: ''
+  },
   quadras: {
     page: './pages/player-desktop/explorar.html',
     title: 'Explorar quadras - Qadras',
@@ -198,7 +209,8 @@ const PLAYER_DESKTOP_ROUTES = {
     page: './pages/player-desktop/config.html',
     title: 'Configurações - Qadras',
     heading: 'Configurações',
-    sub: 'Notificações, preferências e conta',
+    // Notificacoes saíram da web: são push, e push só existe no app.
+    sub: 'Preferências de busca, sessão e conta',
     nav: 'config'
   },
   mensagens: {
@@ -228,6 +240,14 @@ function aplicarLimiteWeb() {
   qsa('[data-nav-page]').forEach((item) => {
     if (!rotaLiberada(item.dataset.navPage)) item.remove();
   });
+
+  /* Notificacao nao existe na web, por decisao de produto: aviso de reserva e
+     lembrete de jogo sao push, e push so existe no app instalado.
+
+     Precisa de regra propria porque o sino nao tem data-nav-page — nao e uma
+     rota, e uma folha (data-sheet-open) — entao a poda acima nunca o
+     alcancava e ele seguia na tela abrindo uma lista sempre vazia. */
+  qsa('[data-sheet-open="notifications-sheet"], #notifications-sheet').forEach((item) => item.remove());
 
   /* O menu do mobile (mobile-market-sheets.html) usa href puro, sem
      data-nav-page. Sem isto os itens continuariam na tela e virariam links
@@ -270,11 +290,41 @@ async function setFragment(container, path) {
   }
 }
 
+/* Onboarding obrigatorio no primeiro acesso, em qualquer plataforma.
+
+   Posicao e nivel alimentam busca e montagem de time; sem eles a pessoa
+   circula como jogador sem perfil. Antes o desvio existia so no goAfterAuth
+   do mobile.js: quem entrava pela web nunca via o passo, e mesmo no app
+   bastava trocar o hash para escapar.
+
+   O guard mora nos dois resolvedores de rota porque URL digitada tem que
+   cair aqui tambem — esconder o passo nao prende ninguem. */
+const ROTAS_SEM_ONBOARDING = new Set(['onboarding', 'entrar', 'cadastro', 'login']);
+
+/* No APP, sem sessao a primeira tela e o login — nao a home.
+
+   Na web o contrario e proposital: a pessoa precisa poder ver quadras e
+   precos antes de decidir criar conta. No app ela ja baixou e instalou; a
+   home vazia so adia o unico passo que interessa.
+
+   Vale para URL digitada tambem: esconder o menu nao prende ninguem. */
+function comLogin(nome) {
+  if (!isNative()) return nome;
+  if (ROTAS_SEM_ONBOARDING.has(nome)) return nome;
+  return authService.hasSession() ? nome : 'entrar';
+}
+
+function comOnboarding(nome) {
+  if (ROTAS_SEM_ONBOARDING.has(nome)) return nome;
+  if (!authService.hasSession()) return nome;
+  return authService.needsOnboarding() ? 'onboarding' : nome;
+}
+
 function mobileRouteFromHash() {
   const parsed = parseMobileRouteHash(location.hash);
   const existe = MOBILE_ROUTES[parsed.name] ? parsed.name : 'home';
   // Esconder o item do menu nao basta: a rota tambem tem que recusar URL digitada.
-  const name = rotaLiberada(existe) ? existe : 'home';
+  const name = comLogin(comOnboarding(rotaLiberada(existe) ? existe : 'home'));
   if (name !== existe) history.replaceState(null, '', `#${name}`);
   return {
     ...parsed,
@@ -323,6 +373,8 @@ async function renderMobileRoute() {
     destroyGame();
   }
 
+  // Loading antes dos fragmentos: a espera inteira e carregar HTML + dados.
+  mostrarLoading();
   await Promise.all([
     setFragment(header, route.header),
     setFragment(view, route.page)
@@ -333,6 +385,7 @@ async function renderMobileRoute() {
     view.setAttribute('data-route-error', routeName);
     view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p></div></div>';
   } finally {
+    esconderLoading();
     refreshIcons(view);
     aplicarLimiteWeb();
     markActiveNav();
@@ -351,7 +404,7 @@ function playerDesktopRouteFromHash() {
   const requested = parsed.name === 'home' ? 'quadras' : parsed.name;
   const existe = PLAYER_DESKTOP_ROUTES[requested] ? requested : 'quadras';
   // Esconder o item do menu nao basta: a rota tambem tem que recusar URL digitada.
-  const name = rotaLiberada(existe) ? existe : 'quadras';
+  const name = comLogin(comOnboarding(rotaLiberada(existe) ? existe : 'quadras'));
   // replaceState (e nao location.hash) para a URL parar de mentir sobre o que
   // esta na tela sem disparar outro hashchange e entrar em laco.
   if (name !== existe) history.replaceState(null, '', `#${name}`);
@@ -388,6 +441,7 @@ async function renderPlayerDesktopRoute() {
 
   view.dataset.currentRoute = routeState.signature;
   updatePlayerDesktopMeta(routeName, route);
+  mostrarLoading();
   await setFragment(view, route.page);
   try {
     await renderPlayerDesktopPage(routeState, view);
@@ -395,6 +449,7 @@ async function renderPlayerDesktopRoute() {
     view.setAttribute('data-route-error', routeName);
     view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p><a class="btn block" href="#quadras">Voltar para explorar</a></div></div>';
   } finally {
+    esconderLoading();
     refreshIcons(view);
     aplicarLimiteWeb();
     markActiveNav();
@@ -520,8 +575,14 @@ function initRealtime() {
   if (!storage.getAuthToken()) return;
   connectWS();
   notificationService.refreshNavBadges().catch(() => {});
-  pushService.initPush();
-  window.addEventListener('pq:auth-logout', () => pushService.disposePush());
+
+  /* Push so no app instalado. Na web isto pedia permissao de notificacao do
+     navegador para um canal que nao vamos usar — e o prompt do Chrome e caro:
+     quem nega uma vez, nega para sempre no dominio. */
+  if (!isWebLimited()) {
+    pushService.initPush();
+    window.addEventListener('pq:auth-logout', () => pushService.disposePush());
+  }
 
   window.addEventListener('pq:ws:event', () => {
     window.clearTimeout(window.__pqBadgeTimer);
@@ -532,6 +593,30 @@ function initRealtime() {
   window.addEventListener('pq:auth-expired', disconnectWS);
   window.addEventListener('pq:auth-logout', disconnectWS);
 }
+
+/* Sair da conta vale em qualquer plataforma.
+
+   Antes o handler existia so dentro de initMobileActions(), que desiste cedo
+   quando nao acha [data-route-view] — o container do MOBILE. No desktop ele
+   nem se registrava: o clique navegava para a tela de login, a sessao ficava
+   viva no storage e a pessoa voltava logada.
+
+   O destino sai do href do proprio link, entao cada lugar manda para a tela
+   de entrada certa (a web para login-web.html, o app para index.html). */
+document.addEventListener('click', async (event) => {
+  const sair = event.target.closest('[data-auth-logout]');
+  if (!sair) return;
+  event.preventDefault();
+  const destino = sair.getAttribute('href') || './index.html';
+  try {
+    await authService.logout();
+  } finally {
+    // Mesmo se o POST /logout falhar, a sessao local tem que morrer: o
+    // contrario deixa a pessoa "deslogada" que continua logada.
+    window.pqSyncAuthControls?.();
+    location.replace(destino);
+  }
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
   window.pqRefreshIcons = refreshIcons;

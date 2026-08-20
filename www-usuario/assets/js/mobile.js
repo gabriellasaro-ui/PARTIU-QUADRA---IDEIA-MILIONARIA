@@ -4,6 +4,7 @@ import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/fo
 import { SERVICE_FEE_RATE } from '../../config/constants.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import { SPORTS, POSITIONS, LEVELS, FEET } from '../../config/mock-data.js';
+import { MODALIDADES, posicoesDe } from '../../config/esportes.js';
 import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
 import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
@@ -313,7 +314,7 @@ function renderBookingCalendar(root) {
 function venueCard(venue, options = {}) {
   const action = options.action || 'Ver horários';
   const removable = options.removable
-    ? `<button class="favorite-float on" type="button" data-favorite-toggle="${venue.id}" aria-label="Remover dos favoritos">${icon('heart', 'ic fill')}</button>`
+    ? `<button class="favorite-float on" type="button" data-favorite-toggle="${venue.arenaId}" aria-label="Remover dos favoritos">${icon('heart', 'ic fill')}</button>`
     : '';
   const availability = venue.id % 3 === 0 ? 'Hoje a noite' : 'Livre agora';
   return `
@@ -360,12 +361,29 @@ function reservationCard(reservation, venue) {
     </a>`;
 }
 
-function availabilityForDay(base, dayIndex) {
-  if (!dayIndex) return base;
-  return base.map((slot, index) => ({
-    ...slot,
-    status: base[(index + dayIndex) % base.length].status
-  }));
+/* A disponibilidade de cada dia vem da API, uma chamada por data.
+
+   Havia aqui uma funcao que ROTACIONAVA os status de hoje para simular os
+   outros dias — heranca do mock. Com a API ligada isso virava mentira: o
+   horario exibido como livre podia estar reservado, e dava para pedir 3h
+   por cima de uma reserva existente. Nao ha como derivar a agenda de um dia
+   a partir de outro; so perguntando. */
+async function carregarDisponibilidade(booking) {
+  const venueId = booking.dataset.venueId;
+  const date = booking.dataset.date;
+  if (!venueId || !date) return;
+  booking.dataset.carregando = '1';
+  try {
+    const slots = await venueService.availability(venueId, date);
+    booking.dataset.availability = JSON.stringify(slots);
+  } catch (error) {
+    /* Falhou a consulta: melhor nao mostrar horario nenhum do que mostrar o
+       do dia anterior como se fosse deste. */
+    booking.dataset.availability = '[]';
+    window.pqToast?.('Não foi possível carregar os horários deste dia');
+  } finally {
+    delete booking.dataset.carregando;
+  }
 }
 
 function routeQuery(route) {
@@ -614,8 +632,11 @@ async function renderVenue(root, route) {
     location.hash = 'quadras';
     return;
   }
+  /* localDateValue() e a mesma data que o dataset recebe logo abaixo: sem
+     passar a data aqui, a primeira pintura usava a agenda de "hoje" mesmo
+     quando a tela abria em outro dia. */
   const [availability, favoriteIds] = await Promise.all([
-    venueService.availability(venue.id),
+    venueService.availability(venue.id, localDateValue()),
     venueService.favoriteIds()
   ]);
 
@@ -658,7 +679,9 @@ async function renderVenue(root, route) {
     </article>`).join('');
 
   const favoriteButton = root.querySelector('[data-favorite-toggle]');
-  favoriteButton.dataset.favoriteToggle = venue.id;
+  /* arenaId no atributo, venue.id na marcacao: o toggle e da arena (e assim
+     que o banco guarda), mas o coracao aceso e desta quadra. */
+  favoriteButton.dataset.favoriteToggle = venue.arenaId;
   favoriteButton.classList.toggle('on', favoriteIds.includes(venue.id));
 
   const booking = root.querySelector('[data-booking]');
@@ -668,7 +691,6 @@ async function renderVenue(root, route) {
   booking.dataset.planKind = 'avulso';
   booking.dataset.planWeekday = '3';
   booking.dataset.availability = JSON.stringify(availability);
-  booking.dataset.dayIndex = '0';
   booking.dataset.duration = '1';
   booking.dataset.hour = '';
   booking.dataset.date = localDateValue();
@@ -722,9 +744,7 @@ function renderBooking(root) {
   const booking = root.querySelector('[data-booking]');
   if (!booking) return;
 
-  const baseAvailability = JSON.parse(booking.dataset.availability || '[]');
-  const dayIndex = Number(booking.dataset.dayIndex || 0);
-  const availability = availabilityForDay(baseAvailability, dayIndex);
+  const availability = JSON.parse(booking.dataset.availability || '[]');
   let selectedHour = booking.dataset.hour;
   const duration = Math.max(1, Math.min(3, Number(booking.dataset.duration || 1)));
   booking.dataset.duration = String(duration);
@@ -968,6 +988,24 @@ async function renderPayment(root, route) {
   cta.dataset.paymentRoute = `#confirmado/${venue.id}`;
   cta.dataset.paymentQuery = confirmationQuery.toString();
   cta.querySelector('[data-payment-cta-label]').textContent = `Enviar solicitação - ${formatCurrency(total)}`;
+
+  // Antes de escolher a forma: o cartao so vale se houver adquirente. Como
+  // syncMobilePaymentChoice ja pula botao desabilitado, quem chegar aqui com
+  // ?metodo=card cai no Pix sozinho, em vez de mandar uma reserva que
+  // ninguem consegue cobrar.
+  const botaoCartao = root.querySelector('[data-payment-method="card"]');
+  if (botaoCartao) {
+    const { liberado, salvos, motivo } = await estadoDoCartao();
+    botaoCartao.disabled = !liberado;
+    botaoCartao.title = liberado ? '' : motivo;
+    const nota = botaoCartao.querySelector('[data-payment-method-note]');
+    if (nota) {
+      nota.textContent = !liberado
+        ? 'Em breve'
+        : (salvos.length ? rotuloDoCartao(salvos[0]) : 'Cadastre um cartão');
+    }
+  }
+
   syncMobilePaymentChoice(root, method === 'wallet' ? 'pix' : method);
 }
 
@@ -1368,27 +1406,73 @@ async function renderFavorites(root) {
       </div>`;
 }
 
-/* A tela de Pagamento nao tem nada dinamico hoje: cartão e Pix sao markup
-   fixo ate existir adquirente. Fica como funcao para a rota nao precisar de
-   caso especial. */
-async function renderWallet() {}
+/* Formas de pagamento — o que existe de verdade, e nada alem disso.
 
+   Antes esta funcao era vazia e a tela era markup fixo com um "Visa final
+   4321". Agora a lista vem de /api/carteira: enquanto nao houver adquirente,
+   o servidor responde cartaoDisponivel:false e a tela explica isso em vez de
+   fingir um cartao salvo. */
+async function estadoDoCartao() {
+  const carteira = await venueService.wallet().catch(() => null);
+  const salvos = carteira?.cartoes || carteira?.cards || [];
+  return {
+    liberado: Boolean(carteira?.cartaoDisponivel),
+    salvos,
+    motivo: carteira?.cartaoMotivo || 'Por enquanto, só Pix.'
+  };
+}
+
+function rotuloDoCartao(cartao) {
+  const bandeira = cartao.bandeira || cartao.brand || 'Cartão';
+  const fim = cartao.ultimos || cartao.last4 || '';
+  return fim ? `${bandeira} final ${fim}` : bandeira;
+}
+
+async function renderWallet(root) {
+  const lista = root.querySelector('[data-payment-list]');
+  const aviso = root.querySelector('[data-card-status]');
+  if (!lista) return;
+
+  const { liberado, salvos, motivo } = await estadoDoCartao();
+
+  lista.querySelectorAll('[data-card-row]').forEach((linha) => linha.remove());
+  salvos.forEach((cartao) => {
+    lista.insertAdjacentHTML('beforeend', `
+      <div class="payment-row" data-card-row>
+        <span class="badge-ic"><i class="ic" data-lucide="credit-card"></i></span>
+        <span><strong>${escapeHtml(rotuloDoCartao(cartao))}</strong><small>Cartão salvo</small></span>
+      </div>`);
+  });
+
+  if (aviso) {
+    aviso.hidden = liberado && salvos.length > 0;
+    aviso.innerHTML = `<i class="ic" data-lucide="credit-card"></i><span>${escapeHtml(
+      liberado ? 'Nenhum cartão cadastrado ainda.' : motivo
+    )}</span>`;
+  }
+  window.lucide?.createIcons?.({ nameAttr: 'data-lucide' });
+}
+
+/* Sobrou so como destino honesto de um link antigo. O formulario que existia
+   aqui pedia numero e CVV, descartava e respondia "Cartao adicionado com
+   sucesso" — pedir cartao de verdade sem ter onde guardar e o tipo de coisa
+   que nao volta atras depois que alguem digita. */
 async function renderWalletAction(root, route) {
   const title = root.querySelector('[data-wallet-action-title]');
   const content = root.querySelector('[data-wallet-action-content]');
+  const { motivo } = await estadoDoCartao();
 
-  // So cartão. "Adicionar saldo" e "Cupons" sairam junto com a carteira.
-  title.textContent = 'Adicionar cartão';
-  content.innerHTML = `
-    <form data-demo-form data-success="Cartão adicionado com sucesso">
-      <div class="field"><label>Número do cartão</label><input type="text" inputmode="numeric" placeholder="0000 0000 0000 0000" required></div>
-      <div class="field"><label>Nome impresso</label><input type="text" placeholder="GABRIEL LISBOA" required></div>
-      <div class="input-row mobile-two">
-        <div class="field"><label>Validade</label><input type="text" inputmode="numeric" placeholder="MM/AA" required></div>
-        <div class="field"><label>CVV</label><input type="text" inputmode="numeric" placeholder="000" required></div>
-      </div>
-      <button class="btn block" type="submit">Salvar cartão</button>
-    </form>`;
+  if (title) title.textContent = 'Cartão de crédito';
+  if (content) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <i class="ic" data-lucide="credit-card"></i>
+        <h3>Ainda não dá para salvar cartão</h3>
+        <p>${escapeHtml(motivo)}</p>
+        <a class="btn block" href="#carteira">Voltar</a>
+      </div>`;
+    window.lucide?.createIcons?.({ nameAttr: 'data-lucide' });
+  }
   void route;
 }
 
@@ -1398,7 +1482,7 @@ function syncMobileProfile(root, user) {
   if (avatar) {
     avatar.classList.toggle('has-photo', Boolean(user.photo));
     avatar.innerHTML = user.photo
-      ? `<img src="${escapeHtml(user.photo)}" alt="Foto de ${escapeHtml(user.name)}">`
+      ? `<img src="${escapeHtml(user.photo)}" alt="Foto de ${escapeHtml(user.name)}" referrerpolicy="no-referrer">`
       : escapeHtml(user.name.slice(0, 1));
   }
   root.querySelector('[data-profile-name]').textContent = user.name;
@@ -1458,7 +1542,13 @@ function syncMobileProfile(root, user) {
   opcoes('[data-profile-feet]', FEET, user.foot || '', 'Não informado');
 
   const cardForm = root.querySelector('[data-player-card-form]');
-  if (cardForm?.elements.birthDate) cardForm.elements.birthDate.value = user.birthDate || '';
+  if (cardForm?.elements.birthDate) {
+    const campo = cardForm.elements.birthDate;
+    campo.value = user.birthDate || '';
+    /* Teto no dia de hoje: ninguem nasceu amanha, e sem isso o seletor
+       nativo deixava rolar para o futuro. */
+    if (campo.dataset.maxHoje !== undefined) campo.max = localDateValue();
+  }
 }
 
 /* '1994-03-27' -> '27/03/1994'. Guardamos ISO porque <input type="date">
@@ -1572,7 +1662,7 @@ function onbPaint(root) {
   });
 
   const barra = root.querySelector('[data-onb-bar]');
-  if (barra) barra.style.width = `${(onbStep / 3) * 100}%`;
+  if (barra) barra.style.width = `${(onbStep / 4) * 100}%`;
   root.querySelector('.onb-progress')?.setAttribute('aria-valuenow', String(onbStep));
 
   const voltar = root.querySelector('[data-onb-back]');
@@ -1580,15 +1670,44 @@ function onbPaint(root) {
 
   // O botao de cada passo so libera com a escolha feita.
   const passo1 = root.querySelector('[data-onb-step="1"] [data-onb-next]');
-  if (passo1) passo1.disabled = !onbEscolha.position;
+  if (passo1) passo1.disabled = !onbEscolha.favoriteSport;
   const passo2 = root.querySelector('[data-onb-step="2"] [data-onb-next]');
-  if (passo2) passo2.disabled = !onbEscolha.level;
+  /* Tenis e individual: nao tem posicao, entao o passo libera sem escolha.
+     Exigir aqui prenderia a pessoa num passo sem opcao nenhuma. */
+  if (passo2) passo2.disabled = posicoesDe(onbEscolha.favoriteSport).length > 0 && !onbEscolha.position;
+  const passo3 = root.querySelector('[data-onb-step="3"] [data-onb-next]');
+  if (passo3) passo3.disabled = !onbEscolha.level;
 
   const resumo = root.querySelector('[data-onb-summary]');
-  if (resumo && onbStep === 3) {
+  if (resumo && onbStep === 4) {
     const nivel = LEVELS.find((l) => l.id === onbEscolha.level);
-    resumo.textContent = `${onbEscolha.position} · ${nivel ? nivel.label : ''}`;
+    resumo.textContent = [onbEscolha.favoriteSport, onbEscolha.position, nivel && nivel.label]
+      .filter(Boolean).join(' · ');
   }
+}
+
+/* As posicoes dependem da modalidade escolhida no passo anterior. Tenis nao
+   tem posicao (individual): nesse caso o passo mostra um aviso curto em vez
+   de uma lista vazia. */
+function pintarPosicoesOnb(root) {
+  const caixa = root.querySelector('[data-onb-positions]');
+  if (!caixa) return;
+  const lista = posicoesDe(onbEscolha.favoriteSport);
+  const titulo = root.querySelector('[data-onb-titulo-posicao]');
+  if (titulo) {
+    titulo.textContent = onbEscolha.favoriteSport
+      ? `Onde você joga no ${onbEscolha.favoriteSport}?`
+      : 'Onde você joga?';
+  }
+  if (!lista.length) {
+    caixa.innerHTML = '<p class="onb-vazio">Essa modalidade é individual — não tem posição.</p>';
+    return;
+  }
+  caixa.innerHTML = lista.map((p) => `<label>
+      <input type="radio" name="onb-position" value="${escapeHtml(p.id)}"${p.id === onbEscolha.position ? ' checked' : ''}>
+      <span><i class="ic" data-lucide="${escapeHtml(p.icon)}"></i>${escapeHtml(p.id)}</span>
+    </label>`).join('');
+  window.pqRefreshIcons?.(caixa);
 }
 
 function renderOnboarding(root, route) {
@@ -1601,15 +1720,21 @@ function renderOnboarding(root, route) {
 
   onbStep = 1;
   const user = authService.currentUser() || {};
-  onbEscolha = { position: user.position || '', level: user.level || '' };
+  onbEscolha = {
+    favoriteSport: user.favoriteSport || '',
+    position: user.position || '',
+    level: user.level || ''
+  };
 
-  const posicoes = root.querySelector('[data-onb-positions]');
-  if (posicoes) {
-    posicoes.innerHTML = POSITIONS.map((p) => `<label>
-      <input type="radio" name="onb-position" value="${escapeHtml(p.id)}"${p.id === onbEscolha.position ? ' checked' : ''}>
-      <span><i class="ic" data-lucide="${escapeHtml(p.icon)}"></i>${escapeHtml(p.id)}</span>
+  const esportes = root.querySelector('[data-onb-esportes]');
+  if (esportes) {
+    esportes.innerHTML = MODALIDADES.map((e) => `<label>
+      <input type="radio" name="onb-sport" value="${escapeHtml(e)}"${e === onbEscolha.favoriteSport ? ' checked' : ''}>
+      <span>${escapeHtml(e)}</span>
     </label>`).join('');
   }
+
+  pintarPosicoesOnb(root);
 
   const niveis = root.querySelector('[data-onb-levels]');
   if (niveis) {
@@ -1619,9 +1744,9 @@ function renderOnboarding(root, route) {
     </label>`).join('');
   }
 
-  // O "Depois eu preencho" leva ao mesmo lugar do fim do fluxo.
-  const pular = root.querySelector('[data-onb-skip]');
-  if (pular) pular.setAttribute('href', `#${safeNext(route)}`);
+  /* O "Depois" saiu: com o onboarding obrigatorio, ele virava armadilha —
+     levava para outra rota e o guard devolvia a pessoa para ca no mesmo
+     instante, parecendo tela travada. */
 
   onbPaint(root);
   window.pqRefreshIcons?.(root);
@@ -1770,7 +1895,7 @@ export function initMobileActions() {
 
     const onbNext = event.target.closest('[data-onb-next]');
     if (onbNext) {
-      onbStep = Math.min(3, onbStep + 1);
+      onbStep = Math.min(4, onbStep + 1);
       view?.querySelector('[data-onb-step]')?.closest('.onb-page')
         ?.classList.remove('onb-page--back');
       onbPaint(view);
@@ -1794,22 +1919,22 @@ export function initMobileActions() {
       return;
     }
 
-    const logout = event.target.closest('[data-auth-logout]');
-    if (logout) {
-      event.preventDefault();
-      await authService.logout();
-      window.pqSyncAuthControls?.();
-      location.replace('./index.html#home');
-    }
   });
 
   /* A escolha do onboarding acende o botao do passo. */
   document.addEventListener('change', (event) => {
-    const radio = event.target.closest('[data-onb-positions] input, [data-onb-levels] input');
+    const radio = event.target.closest('[data-onb-esportes] input, [data-onb-positions] input, [data-onb-levels] input');
     if (!radio) return;
-    const campo = radio.name === 'onb-position' ? 'position' : 'level';
+    const campo = { 'onb-sport': 'favoriteSport', 'onb-position': 'position' }[radio.name] || 'level';
     onbEscolha = { ...onbEscolha, [campo]: radio.value };
-    onbPaint(document.querySelector('[data-route-view]'));
+    const raiz = document.querySelector('[data-route-view]');
+    if (campo === 'favoriteSport') {
+      /* Trocar de modalidade invalida a posicao anterior: "Fixo" nao existe no
+         volei. Limpa e repinta com a lista certa. */
+      onbEscolha.position = '';
+      pintarPosicoesOnb(raiz);
+    }
+    onbPaint(raiz);
   });
 
   document.addEventListener('submit', async (event) => {
@@ -2259,10 +2384,12 @@ export function initMobileActions() {
     if (calendarDate && !calendarDate.disabled) {
       const root = calendarDate.closest('[data-venue-page]');
       const booking = root.querySelector('[data-booking]');
-      booking.dataset.dayIndex = String(bookingDayOffset(calendarDate.dataset.calendarDate));
       booking.dataset.date = calendarDate.dataset.calendarDate;
       booking.dataset.hour = '';
       renderBookingCalendar(root);
+      renderBooking(root);
+      // Busca a agenda REAL da data escolhida e redesenha com ela.
+      await carregarDisponibilidade(booking);
       renderBooking(root);
       return;
     }
