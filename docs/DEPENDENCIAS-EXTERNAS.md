@@ -118,34 +118,67 @@ endpoint responde 503. No cliente, `www-usuario/services/google-auth.js` tem
 
 ---
 
-## C. Provedor de pagamento Pix (hoje mock)
+## C. Provedor de pagamento (Asaas)
 
-**Status atual:** `MockProvider` gera um Pix "copia-e-cola" fake, expira em 15
-min e confirma sozinho (task Celery) — só para demonstração. O contrato está
-pronto para trocar por um real **sem reescrever o domínio**
-(`backend/app/services/payments/`).
+**Status:** implementado em `backend/app/services/payments/asaas.py`. Falta
+apenas a chave — o codigo esta pronto e testado na parte que da para testar
+sem conta (leitura de webhook, mapeamento de evento, validacao de token).
 
-### C.1 Escolha do provedor
+O `MockProvider` continua no repositorio para desenvolver sem chave. Ele nao
+chega a producao: `Settings` recusa o boot com `PAYMENT_PROVIDER=mock` fora de
+desenvolvimento.
 
-| Provedor | Ponto forte |
-|---|---|
-| **Asaas** | Pix recorrente, mensalistas (útil na Fase 8), webhook simples |
-| **Mercado Pago** | Pix + cartão, base grande no Brasil |
-| **Stripe** | Cartão internacional, mas Pix limitado |
+### C.1 Por que Asaas
 
-### C.2 O que você precisa obter
+O repasse deste projeto (`models/settlement.py`) e periodico: a Qadras recebe o
+valor cheio e acerta com a arena depois, com comissao e comprovante. Isso
+dispensa split no adquirente — basta **uma conta recebedora**, o que simplifica
+muito a integracao.
 
-- Conta aprovada na instituição escolhida.
-- **API key / access token** (produção).
-- **Webhook URL** — configure no painel do provedor para apontar para:
-  `POST https://api.qadras.com.br/api/payments/webhook/{provider}`
-  (ex.: `/api/payments/webhook/asaas`). O endpoint é idempotente por `webhook_id`.
+### C.2 O que voce precisa fazer
 
-### C.3 Implementação
+1. **Criar a conta** em asaas.com e aprovar o cadastro (pede CNPJ ou CPF,
+   documentos e conta bancaria para saque).
+2. **Pegar a chave de API**: painel > Integracoes > Chave de API.
+   Sandbox comeca com `$aact_hmlg_`; producao, com `$aact_prod_`.
+3. **Preencher no `.env`**:
+   ```
+   PAYMENT_PROVIDER=asaas
+   ASAAS_API_KEY=$aact_hmlg_sua_chave
+   ASAAS_AMBIENTE=sandbox
+   PAYMENT_WEBHOOK_SECRET=<openssl rand -hex 32>
+   ```
+4. **Cadastrar o webhook** no painel > Integracoes > Webhooks:
+   - URL: `https://SEU-DOMINIO/api/payments/webhook/asaas`
+   - Token de autenticacao: **o mesmo** `PAYMENT_WEBHOOK_SECRET`
+   - Eventos: os de cobranca (`PAYMENT_*`)
 
-- Criar `backend/app/services/payments/asaas.py` (ou `mercadopago.py`) seguindo
-  o ABC `PaymentProvider` (`base.py`) e registrar em `_REGISTRY` no
-  `__init__.py`. Trocar `PAYMENT_PROVIDER` no `.env` para o nome do provider.
+   A URL precisa ser publica e HTTPS. Em desenvolvimento, exponha com ngrok
+   ou cloudflared — `localhost` o Asaas nao alcanca.
+
+### C.3 Cuidados que ja estao tratados no codigo
+
+- **A fila do Asaas para depois de 15 respostas nao-2xx seguidas**, e os eventos
+  so ficam guardados por 14 dias. Por isso evento irrelevante (`PAYMENT_CREATED`,
+  eventos de split) devolve `None` e a rota responde **200 com `ignored: true`**,
+  em vez de erro. Recusar com 4xx um evento qualquer derrubaria a entrega dos
+  pagamentos seguintes.
+- **`PAYMENT_CONFIRMED` e `PAYMENT_RECEIVED` contam os dois como pago.** No Pix
+  chegam juntos; no cartao, CONFIRMED (capturado) vem antes de RECEIVED
+  (liquidado). Tratar so um deixaria metade dos pagamentos pendurados.
+- **Idempotencia pelo `id` do evento**, e nao pelo id da cobranca: o Asaas
+  reenvia o mesmo evento quando nao recebe 2xx, e uma mesma cobranca gera mais
+  de um evento legitimo.
+- **O QR do Pix vem em chamada separada** (`GET /v3/payments/{id}/pixQrCode`).
+  Se ela falhar, a cobranca ja existe — o codigo segue sem o QR em vez de
+  deixar uma cobranca orfa no Asaas e a reserva sem pagamento.
+
+### C.4 O que NAO foi testado
+
+A criacao de cobranca contra a API real, porque exige conta e chave. Ao ligar o
+sandbox pela primeira vez, faca uma reserva de ponta a ponta e confira: cobranca
+criada no painel, QR exibido, webhook chegando e reserva saindo de "Aguardando
+pagamento".
 
 ---
 

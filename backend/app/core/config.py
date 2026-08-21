@@ -71,6 +71,12 @@ class Settings(BaseSettings):
     payment_provider: str = "mock"
     payment_mock_confirm_seconds: int = 15
 
+    # Adquirente (Asaas). A chave da acesso total a conta: vive so no .env,
+    # que e gitignored, e nunca aparece em log.
+    asaas_api_key: str = ""
+    #: "sandbox" (padrao) ou "producao" — decide a URL base da API.
+    asaas_ambiente: str = "sandbox"
+
     # Segredo compartilhado do webhook de pagamento. O callback do provedor e
     # publico (quem chama e o provedor, nao o app), entao ele precisa provar
     # quem e: sem isso, qualquer um que conheca o providerRef — e o proprio
@@ -107,11 +113,31 @@ class Settings(BaseSettings):
                     "CORS_ORIGINS='*' nao pode em producao. Liste as origens: "
                     "https://app.qadras.com.br,https://gerente.qadras.com.br,..."
                 )
-            if self.payment_provider.strip().lower() == "mock":
+            provedor = self.payment_provider.strip().lower()
+            if provedor == "mock":
                 raise ValueError(
                     "PAYMENT_PROVIDER=mock nao pode em producao: o provedor "
                     "mock confirma cobranca sem dinheiro nenhum entrar. "
                     "Configure o provedor de Pix real antes de subir."
+                )
+            if provedor == "asaas":
+                if not self.asaas_api_key.strip():
+                    raise ValueError(
+                        "ASAAS_API_KEY vazia com PAYMENT_PROVIDER=asaas. "
+                        "Sem ela nenhuma cobranca e criada e toda reserva "
+                        "morre no pagamento."
+                    )
+                if self.asaas_ambiente.strip().lower() != "producao":
+                    raise ValueError(
+                        "ASAAS_AMBIENTE=sandbox em producao: as cobrancas "
+                        "iriam para o ambiente de testes e o dinheiro nunca "
+                        "entraria. Use ASAAS_AMBIENTE=producao."
+                    )
+            if not self.payment_webhook_secret.strip():
+                raise ValueError(
+                    "PAYMENT_WEBHOOK_SECRET vazio em producao: sem ele "
+                    "qualquer um pode POSTar um callback e confirmar uma "
+                    "reserva sem pagar."
                 )
         return self
 
