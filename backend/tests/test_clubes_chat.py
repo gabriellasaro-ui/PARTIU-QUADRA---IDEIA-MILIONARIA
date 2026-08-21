@@ -15,7 +15,7 @@ import uuid
 def _conta(client, nome="Membro") -> tuple[dict, str]:
     email = f"chat-{uuid.uuid4().hex[:10]}@teste.com"
     r = client.post("/api/auth/register", json={
-        "email": email, "name": nome, "senha": "senha123",
+        "email": email, "name": nome, "senha": "Senha123!",
     })
     assert r.status_code == 200, r.text
     d = r.json()

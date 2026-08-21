@@ -990,7 +990,7 @@ async function renderPayment(root, route) {
             </div>
             <div class="desktop-payment-methods">
               <button type="button" class="method on" data-player-payment-method="pix">
-                <span class="badge-ic">${icon('zap')}</span>
+                <span class="badge-ic"><i class="ic-pix" aria-hidden="true"></i></span>
                 <span><strong>Pix</strong><small>Validação imediata</small></span>
                 <span class="ck">${icon('check')}</span>
               </button>
@@ -1426,7 +1426,7 @@ async function renderWallet(root) {
         <div class="card">
           <h2>Formas de pagamento</h2>
           <div class="rlist">
-            <div class="payment-row"><span class="badge-ic">${icon('zap')}</span><span><strong>Pix</strong><small>Aprovação na hora</small></span></div>
+            <div class="payment-row"><span class="badge-ic"><i class="ic-pix" aria-hidden="true"></i></span><span><strong>Pix</strong><small>Aprovação na hora</small></span></div>
             ${linhasCartao}
           </div>
           ${rodape}

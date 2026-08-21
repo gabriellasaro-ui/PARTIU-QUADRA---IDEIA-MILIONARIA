@@ -6,7 +6,7 @@ Respostas de sessao sao { token, user, isNew }; `user` usa chaves camelCase
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class LoginRequest(BaseModel):
@@ -17,10 +17,41 @@ class LoginRequest(BaseModel):
     senha: str
 
 
+#: Exigencias da senha, num lugar so — o texto de erro e a validacao saem
+#: daqui, entao a tela nunca pode divergir da regra.
+SENHA_MINIMA = 8
+SENHA_REGRAS = (
+    (lambda s: len(s) >= SENHA_MINIMA, f"pelo menos {SENHA_MINIMA} caracteres"),
+    (lambda s: any(c.isupper() for c in s), "uma letra maiúscula"),
+    (lambda s: any(c.islower() for c in s), "uma letra minúscula"),
+    (lambda s: any(c.isdigit() for c in s), "um número"),
+    (lambda s: any(not c.isalnum() for c in s), "um caractere especial"),
+)
+
+
+def validar_senha(senha: str) -> str:
+    """Valida e devolve a senha, ou levanta com TODAS as faltas de uma vez.
+
+    Listar tudo junto, e nao a primeira falha: corrigir uma exigencia por
+    tentativa e o jeito mais rapido de fazer alguem desistir do cadastro.
+    """
+    faltas = [texto for regra, texto in SENHA_REGRAS if not regra(senha or "")]
+    if faltas:
+        raise ValueError("A senha precisa ter " + ", ".join(faltas) + ".")
+    return senha
+
+
 class RegisterRequest(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     email: EmailStr
-    senha: str = Field(min_length=8, max_length=128)
+    #: max_length continua no Field; o resto vem do validador, para o erro
+    #: sair em portugues e completo em vez de "String should match pattern".
+    senha: str = Field(max_length=128)
+
+    @field_validator("senha")
+    @classmethod
+    def _senha_forte(cls, v: str) -> str:
+        return validar_senha(v)
 
 
 class GoogleRequest(BaseModel):

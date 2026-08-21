@@ -16,14 +16,13 @@
       <span><strong>Usar minha localização</strong><small>Encontrar quadras ao seu redor</small></span>
       <i class="ic" data-lucide="chevron-right"></i>
     </button>
-    <div class="location-options">
-      <span class="market-sheet__label">Regiões recentes</span>
-      <button type="button" data-location-value="Goiânia, GO">
-        <i class="ic" data-lucide="map-pin"></i><span><strong>Goiânia</strong><small>Goiás</small></span>
-      </button>
-      <button type="button" data-location-value="Aparecida de Goiânia, GO">
-        <i class="ic" data-lucide="map-pin"></i><span><strong>Aparecida de Goiânia</strong><small>Goiás</small></span>
-      </button>
+    <!-- Goiania e Aparecida estavam escritas aqui como "regioes recentes" de
+         quem nunca abriu o app. A lista agora vem de /api/quadras/cidades —
+         so cidades que TEM quadra cadastrada, porque oferecer uma cidade onde
+         nao ha nada para reservar e um beco sem saida. -->
+    <div class="location-options" data-location-options>
+      <span class="market-sheet__label">Cidades com quadra</span>
+      <div data-location-list></div>
     </div>
   </section>
 </div>
@@ -203,6 +202,35 @@
         <div class="field"><label>Cidade</label><select name="city" data-club-cidade required disabled></select></div>
       </div>
       <div class="field"><label>Combinado do grupo</label><input type="text" name="description" placeholder="Toda quinta às 20h" maxlength="120"></div>
+
+      <!-- Quem entra e quantos cabem, ja na CRIACAO. Estas duas decisoes
+           existiam so nos Ajustes, depois de o clube pronto — e ate abrir
+           aquela folha o grupo ficava aberto a qualquer um, que e o padrao
+           errado para quem queria um clube fechado. -->
+      <div class="field">
+        <label>Quem pode entrar</label>
+        <div class="filter-choice-grid" data-club-modes>
+          <label class="filter-choice">
+            <input type="radio" name="joinMode" value="aberto" checked>
+            <span><strong>Aberto</strong><small>Qualquer pessoa entra na hora</small></span>
+          </label>
+          <label class="filter-choice">
+            <input type="radio" name="joinMode" value="solicitacao">
+            <span><strong>Por solicitação</strong><small>A pessoa pede e vocês aprovam</small></span>
+          </label>
+          <label class="filter-choice">
+            <input type="radio" name="joinMode" value="privado">
+            <span><strong>Privado</strong><small>Só com o código. Não aparece na busca</small></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Limite de membros</label>
+        <input type="number" name="maxMembers" min="1" max="100" value="30" required>
+        <small class="field-hint">Dá para mudar depois nos ajustes do clube.</small>
+      </div>
+
       <div class="profile-edit-actions">
         <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
         <button class="btn" type="submit"><i class="ic" data-lucide="check"></i>Salvar</button>

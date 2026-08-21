@@ -1824,6 +1824,121 @@ button .ic,
   height: 20px;
 }
 
+/* "Pular" no onboarding: discreto ao lado da barra de progresso. Um botao
+   cheio competiria com o Continuar, que e o caminho que a gente quer. */
+.onb-pular {
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Esporte favorito: cartao, nao pilula de texto corrido. */
+.esporte-favorito {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-panel);
+}
+
+.esporte-favorito__ic {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: var(--pq-green-soft);
+  color: var(--pq-brand-strong);
+}
+
+.esporte-favorito__ic .ic { width: 18px; height: 18px; }
+
+.esporte-favorito small {
+  display: block;
+  color: var(--pq-muted);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.esporte-favorito strong {
+  font-size: 15px;
+  color: var(--pq-ink);
+}
+
+/* Raio no mapa: segmento unico, e nao pilulas soltas. As quatro opcoes sao
+   graus da MESMA coisa (distancia), e um segmento diz isso; pilulas separadas
+   pareciam quatro filtros independentes, iguais aos de esporte logo acima. */
+.map-radius {
+  margin: 0 14px 10px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--pq-green-soft);
+  gap: 0;
+}
+
+.map-radius__rotulo {
+  padding: 0 10px 0 8px;
+}
+
+.map-radius .chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  flex: 1;
+  gap: 2px;
+  overflow: visible;
+}
+
+.map-radius .chip {
+  min-width: 0;
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.map-radius .chip.on {
+  background: #fff;
+  color: var(--pq-brand-strong);
+  box-shadow: 0 2px 6px rgba(16, 43, 28, .10);
+}
+
+.market-sheet__vazio {
+  margin: 8px 0;
+  color: var(--pq-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* Logo do Pix.
+
+   Como MASCARA, e nao <img>: o arquivo e preto sobre transparente, e colado
+   direto ficaria um quadrado preto no meio de uma fileira de icones verdes.
+   Mascarado, ele assume `currentColor` e acompanha o contexto — verde na
+   lista de pagamento, branco se um dia estiver sobre fundo escuro.
+
+   Nao ha icone de Pix no lucide; este e o simbolo oficial, que e o que a
+   pessoa reconhece na hora de escolher como pagar. */
+.ic-pix {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  background-color: currentColor;
+  -webkit-mask: url('../images/pix.png') no-repeat center / contain;
+  mask: url('../images/pix.png') no-repeat center / contain;
+}
+
 /* ---------- mensagens ---------- */
 .messages-page {
   min-height: 100%;
@@ -6436,7 +6551,11 @@ html[data-bottombar="none"] .screen {
      jogador e a bola, e cobrir isso com o formulario perde a imagem. */
   justify-content: flex-start;
   padding: 12px 20px calc(24px + var(--pq-safe-bottom));
-  background: #fff;
+  /* TRANSPARENTE. Este `#fff` era a ultima camada solida cobrindo a
+     ilustracao — a imagem estava carregada e o html::before pintado, mas
+     havia body opaco e esta pagina opaca por cima. Tres camadas, e cada uma
+     sozinha bastava para o banner nunca aparecer. */
+  background: transparent;
 }
 
 /* O fundo vive num ::before fixo, e nao em background-attachment: fixed.
@@ -6456,6 +6575,15 @@ html[data-bottombar="none"] .screen {
    <html> nunca e recriado, entao a imagem e pintada uma vez e fica. O seletor
    por data-route casa as duas telas de acesso; o atributo ja e escrito pelo
    roteador a cada rota. */
+/* O <body> tem fundo OPACO, e ele pinta por cima do html::before — que fica
+   em z-index: -1, atras de tudo. Era exatamente por isso que a imagem nunca
+   aparecia: o CSS estava certo, so estava embaixo de uma camada solida.
+   Nestas duas rotas o body precisa deixar passar. */
+html[data-route="entrar"] body,
+html[data-route="cadastro"] body {
+  background: transparent;
+}
+
 html[data-route="entrar"]::before,
 html[data-route="cadastro"]::before {
   content: '';
@@ -6593,6 +6721,10 @@ html[data-route="cadastro"]::before {
   display: flex;
   min-height: calc(100dvh - var(--pq-safe-bottom));
   flex-direction: column;
+  /* Centraliza o CARD na tela. Antes o passo tinha flex: 1 e esticava de
+     ponta a ponta — eu havia centralizado o conteudo DENTRO de um card de
+     tela cheia, que e outra coisa e continuava com a pergunta la em cima. */
+  justify-content: center;
   padding: 12px 20px calc(24px + var(--pq-safe-bottom));
 }
 
@@ -6638,7 +6770,9 @@ html[data-route="cadastro"]::before {
    centro. */
 .onb-step {
   display: flex;
-  flex: 1;
+  /* Sem flex: 1. O card tem a altura do proprio conteudo e fica no meio;
+     esticar ate embaixo era o que deixava a pergunta colada no topo. */
+  flex: 0 0 auto;
   flex-direction: column;
   /* safe center, e nao center: com o teclado aberto ou tela baixa, `center`
      puro corta o topo do card e o titulo some para fora da area rolavel. */
@@ -6666,7 +6800,7 @@ html[data-route="cadastro"]::before {
 }
 
 .onb-step > .btn {
-  margin-top: auto;
+  margin-top: 16px;
 }
 
 .onb-page--back .onb-step {

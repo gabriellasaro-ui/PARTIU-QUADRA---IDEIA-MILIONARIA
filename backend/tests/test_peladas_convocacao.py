@@ -18,7 +18,7 @@ from sqlalchemy import select
 def _conta(client, nome="Jogador") -> tuple[dict, str]:
     email = f"conv-{uuid.uuid4().hex[:10]}@teste.com"
     r = client.post("/api/auth/register", json={
-        "email": email, "name": nome, "senha": "senha123",
+        "email": email, "name": nome, "senha": "Senha123!",
     })
     assert r.status_code == 200, r.text
     d = r.json()

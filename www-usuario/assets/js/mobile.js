@@ -60,7 +60,11 @@ const LOCATION_COORDINATES = {
    identifica melhor.) */
 const SPORT_ICONS = {
   'Futebol de Campo': 'goal',
-  'Futebol Society': 'fence',
+  // Society: rede de gol menor. 'fence' (alambrado) era abstrato demais —
+  // ninguem olha um cercado e pensa "society". Os tres futebois se separam
+  // pelo TAMANHO do simbolo do gol: campo (goal), society (rede), futsal
+  // (quadra coberta).
+  'Futebol Society': 'grid3x3',
   Futsal: 'warehouse',
   Futvolei: 'waves',
   Volei: 'volleyball',
@@ -188,6 +192,28 @@ function openMarketSheet(sheetId) {
      por prefillClubForm — e ai os dois selects apareceriam vazios. Monta as
      listas com o que ja estiver no formulario (vazio na criacao, preenchido
      quando o prefill rodou antes). */
+  /* Cidades com quadra, buscadas na abertura. Sem await: o sheet abre agora
+     e a lista chega em seguida — esperar a rede para so entao mostrar a folha
+     daria a impressao de toque perdido. */
+  if (sheetId === 'location-sheet') {
+    const lista = sheet.querySelector('[data-location-list]');
+    if (lista && !lista.children.length) {
+      lista.innerHTML = '<p class="market-sheet__vazio">Carregando…</p>';
+      venueService.cidadesComQuadra().then((cidades) => {
+        lista.innerHTML = cidades.length
+          ? cidades.map((c) => `
+              <button type="button" data-location-value="${escapeHtml(c.label || c)}">
+                <i class="ic" data-lucide="map-pin"></i>
+                <span><strong>${escapeHtml(c.city || c.label || c)}</strong><small>${escapeHtml(c.state || '')}</small></span>
+              </button>`).join('')
+          : '<p class="market-sheet__vazio">Nenhuma cidade com quadra ainda.</p>';
+        window.lucide?.createIcons?.({ nameAttr: 'data-lucide' });
+      }).catch(() => {
+        lista.innerHTML = '<p class="market-sheet__vazio">Não foi possível carregar as cidades.</p>';
+      });
+    }
+  }
+
   if (sheetId === 'club-edit-sheet') {
     const form = sheet.querySelector('[data-club-form]');
     const uf = form?.querySelector('[data-club-uf]');
@@ -1675,7 +1701,18 @@ function syncMobileProfile(root, user) {
   root.querySelector('[data-profile-games]').textContent = user.stats.games;
   root.querySelector('[data-profile-reservations]').textContent = user.stats.reservations;
   root.querySelector('[data-profile-favorites]').textContent = user.stats.favorites;
-  root.querySelector('[data-profile-sport]').textContent = user.favoriteSport || '';
+  /* O icone acompanha a modalidade — e o mesmo simbolo dos chips da home,
+     entao o cartao "conversa" com o resto do app em vez de trazer um trofeu
+     generico. Sem esporte definido, o cartao inteiro sai da tela: um cartao
+     vazio dizendo "Joga mais de —" nao informa nada. */
+  const esporteFav = user.favoriteSport || '';
+  const cartaoEsporte = root.querySelector('.esporte-favorito');
+  if (cartaoEsporte) cartaoEsporte.hidden = !esporteFav;
+  root.querySelector('[data-profile-sport]').textContent = esporteFav || '—';
+  const iconeEsporte = root.querySelector('[data-profile-sport-icon]');
+  if (iconeEsporte) {
+    iconeEsporte.innerHTML = `<i class="ic" data-lucide="${SPORT_ICONS[esporteFav] || 'trophy'}"></i>`;
+  }
   // Conta nova ainda nao tem esporte favorito; o rotulo sozinho parece bug.
   const linhaEsporte = root.querySelector('.favorite-sport');
   if (linhaEsporte) linhaEsporte.hidden = !user.favoriteSport;
@@ -1875,9 +1912,6 @@ function onbPaint(root) {
   const barra = root.querySelector('[data-onb-bar]');
   if (barra) barra.style.width = `${(onbStep / 4) * 100}%`;
   root.querySelector('.onb-progress')?.setAttribute('aria-valuenow', String(onbStep));
-
-  const voltar = root.querySelector('[data-onb-back]');
-  if (voltar) voltar.hidden = onbStep === 1;
 
   // O botao de cada passo so libera com a escolha feita.
   const passo1 = root.querySelector('[data-onb-step="1"] [data-onb-next]');
@@ -2126,12 +2160,21 @@ export function initMobileActions() {
       return;
     }
 
-    const onbBack = event.target.closest('[data-onb-back]');
-    if (onbBack) {
-      onbStep = Math.max(1, onbStep - 1);
-      // A classe inverte o sentido da animacao: voltar entra pela esquerda.
-      view?.querySelector('.onb-page')?.classList.add('onb-page--back');
-      onbPaint(view);
+    /* Pular. O onboarding e obrigatorio para a ficha nao nascer vazia, mas
+       travar alguem na porta e o jeito mais rapido de perder o cadastro.
+
+       Marca como concluido SEM salvar preferencia nenhuma: gravar um palpite
+       ("Futsal", "Jogo de tudo") seria pior que o vazio, porque a pessoa
+       nunca mais reveria — o app ja teria uma resposta. Quem pula termina
+       depois no Perfil, onde o card de pendencia cobra pelo nome do campo. */
+    const onbSkip = event.target.closest('[data-onb-skip]');
+    if (onbSkip) {
+      onbSkip.setAttribute('disabled', 'disabled');
+      try {
+        await authService.completeOnboarding({});
+      } finally {
+        location.replace(`#${safeNext(currentRoute)}`);
+      }
       return;
     }
 
@@ -2275,6 +2318,11 @@ export function initMobileActions() {
            `|| null` porque ClubCreate.state exige exatamente 2 caracteres:
            string vazia seria recusada com 422. */
         state: String(data.get('state') || '').trim() || null,
+        // Decididos na propria criacao. O servico prende maxMembers entre o
+        // total atual e o teto do sistema — o cliente nao manda um numero que
+        // valha sozinho.
+        joinMode: String(data.get('joinMode') || 'aberto'),
+        maxMembers: Number(data.get('maxMembers')) || undefined,
         description: String(data.get('description') || '').trim(),
         createdBy: user.id,
         // Quem cria entra como dono; edição preserva os membros existentes.
@@ -2580,10 +2628,26 @@ export function initMobileActions() {
   if (excluirConta) {
     event.preventDefault();
     if (!window.confirm('Excluir sua conta? Perfil, favoritos e preferências somem e não dá para desfazer.')) return;
-    if (!window.confirm('Confirma? Esta é a última pergunta.')) return;
+
+    /* A senha substitui a segunda pergunta de "tem certeza?". Confirmar duas
+       vezes vira reflexo — digitar a senha nao. E prova que quem esta
+       apagando e o dono, e nao quem pegou o celular destravado.
+
+       Conta Google nao tem senha local: mandamos vazio e o servidor dispensa,
+       porque exigir uma trancaria essa pessoa fora da propria exclusao. */
+    const usuario = authService.currentUser();
+    let senha = null;
+    if (usuario?.provider !== 'google') {
+      senha = window.prompt('Digite sua senha para confirmar a exclusão:');
+      if (senha === null) return;
+      if (!senha.trim()) {
+        window.pqToast?.('Senha obrigatória para excluir a conta');
+        return;
+      }
+    }
     excluirConta.setAttribute('disabled', 'disabled');
     try {
-      await venueService.deleteAccount();
+      await venueService.deleteAccount(senha);
       await authService.logout();
       window.pqSyncAuthControls?.();
       location.replace('./index.html');
@@ -3515,6 +3579,15 @@ async function prefillClubForm(club) {
   form.elements.name.value = club?.name || '';
   form.elements.description.value = club?.description || '';
   if (club?.sport) form.elements.sport.value = club.sport;
+  const modo = form.querySelector(`[name="joinMode"][value="${club?.joinMode || 'aberto'}"]`);
+  if (modo) modo.checked = true;
+  if (form.elements.maxMembers) {
+    form.elements.maxMembers.value = club?.maxMembers || 30;
+    // Piso = total atual: baixar o limite nao expulsa ninguem, entao pedir
+    // menos do que ja existe so criaria um clube que recusa gente sem dizer
+    // por que. O servidor prende igual; aqui a pessoa descobre antes.
+    if (club?.members?.length) form.elements.maxMembers.min = club.members.length;
+  }
   // Cidade agora e <select> e depende da UF: precisa das duas listas antes de
   // conseguir marcar a cidade gravada.
   await montarLocalClube(club?.state || '', club?.city || '');

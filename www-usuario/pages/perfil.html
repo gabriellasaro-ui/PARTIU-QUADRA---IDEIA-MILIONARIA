@@ -35,7 +35,18 @@
       <div><strong data-profile-reservations></strong><span>reservas</span></div>
       <div><strong data-profile-favorites></strong><span>favoritas</span></div>
     </div>
-    <div class="favorite-sport"><i class="ic" data-lucide="trophy"></i>Esporte favorito: <strong data-profile-sport></strong></div>
+    <!-- Era uma pilula com trofeu e o texto "Esporte favorito: Futsal" numa
+         linha so. O trofeu falava de premiacao, nao de esporte, e o rotulo
+         gastava mais espaco que o dado. Vira cartao: rotulo pequeno em cima,
+         a modalidade em destaque, e o icone DELA (preenchido por JS, porque
+         depende de qual esporte e). -->
+    <div class="esporte-favorito">
+      <span class="esporte-favorito__ic" data-profile-sport-icon></span>
+      <span>
+        <small>Joga mais de</small>
+        <strong data-profile-sport>—</strong>
+      </span>
+    </div>
 
     <!-- Ficha de jogador. O onboarding pergunta posicao e nivel; nascimento
          e pe dominante ficam aqui, com o empurrao explicando para que

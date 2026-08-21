@@ -11,7 +11,7 @@ def test_register_login_user_flow(client):
     r = client.post("/api/auth/register", json={
         "email": email,
         "name": "Teste",
-        "senha": "senha123",
+        "senha": "Senha123!",
     })
     assert r.status_code == 200, r.text
     data = r.json()
@@ -65,11 +65,11 @@ def test_register_duplicate_email(client):
     client.post("/api/auth/register", json={
         "email": email,
         "name": "Dup",
-        "senha": "senha123",
+        "senha": "Senha123!",
     })
     r2 = client.post("/api/auth/register", json={
         "email": email,
         "name": "Dup2",
-        "senha": "senha123",
+        "senha": "Senha123!",
     })
     assert r2.status_code == 409

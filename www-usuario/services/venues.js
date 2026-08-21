@@ -333,9 +333,11 @@ export const venueService = {
 
   /* Exclusao de conta. Sem fallback local de proposito: sem API nao ha o que
      excluir, e fingir que excluiu seria pior que recusar. */
-  async deleteAccount() {
+  /* `senha` obrigatoria para conta com senha local. Conta Google nao tem
+     senha aqui, e o backend dispensa nesse caso. */
+  async deleteAccount(senha = null) {
     if (!API_BASE_URL) throw new Error('Exclusão de conta indisponível sem a API');
-    return api.delete('/api/perfil');
+    return api.delete('/api/perfil', senha ? { body: { senha } } : undefined);
   },
 
   async saveProfile(patch) {

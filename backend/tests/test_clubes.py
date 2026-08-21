@@ -18,7 +18,7 @@ def _conta(client, nome="Teste Clube") -> tuple[dict, str]:
     """Usuario novo (sem clube nenhum) + o id dele."""
     email = f"clube-{uuid.uuid4().hex[:10]}@teste.com"
     r = client.post("/api/auth/register", json={
-        "email": email, "name": nome, "senha": "senha123",
+        "email": email, "name": nome, "senha": "Senha123!",
     })
     assert r.status_code == 200, r.text
     dados = r.json()

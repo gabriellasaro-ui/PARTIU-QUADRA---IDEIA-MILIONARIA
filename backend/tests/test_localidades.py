@@ -12,7 +12,7 @@ def _conta_nova(client) -> dict:
     """Cria e loga um usuario sem clube nenhum."""
     email = f"loc-{uuid.uuid4().hex[:10]}@teste.com"
     r = client.post("/api/auth/register", json={
-        "email": email, "name": "Teste Localidade", "senha": "senha123",
+        "email": email, "name": "Teste Localidade", "senha": "Senha123!",
     })
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}"}

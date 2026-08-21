@@ -14,12 +14,16 @@
      ja conhece o gesto. -->
 <div class="route-page onb-page">
   <header class="onb-head">
-    <button class="icon-btn onb-back" type="button" data-onb-back aria-label="Voltar um passo" hidden>
-      <i class="ic" data-lucide="chevron-left"></i>
-    </button>
+    <!-- Sem "voltar um passo": nada aqui se perde, cada passo tem uma
+         escolha so, e o botao competia com o Continuar sem resolver nada. -->
     <div class="onb-progress" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1">
       <span data-onb-bar></span>
     </div>
+    <!-- Pular: o onboarding e obrigatorio para NAO deixar a ficha vazia, mas
+         travar alguem na porta e o jeito mais rapido de perder o cadastro.
+         Quem pula termina depois no Perfil, onde o card "falta preencher"
+         cobra pelo nome do campo. -->
+    <button class="onb-pular" type="button" data-onb-skip>Pular</button>
   </header>
 
   <section class="onb-step" data-onb-step="1">

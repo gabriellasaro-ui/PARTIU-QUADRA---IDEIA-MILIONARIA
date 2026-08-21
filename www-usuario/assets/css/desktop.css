@@ -233,6 +233,17 @@ h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; letter-spacing: 
 .legend { display: flex; gap: 20px; margin: 14px 0 18px; font-size: 13px; color: var(--muted); }
 .legend span { display: flex; align-items: center; gap: 8px; }
 .dot { width: 9px; height: 9px; border-radius: 50%; }
+/* Logo do Pix como mascara — mesma tecnica do app. Ver o comentario longo
+   em mobile-v2.css. */
+.ic-pix {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  background-color: currentColor;
+  -webkit-mask: url('../images/pix.png') no-repeat center / contain;
+  mask: url('../images/pix.png') no-repeat center / contain;
+}
+
 .dot.free { background: var(--green); }
 .dot.busy { background: #cbd2cd; }
 /* Livre porem sem espaco para a duracao: contorno, e nao preenchido —

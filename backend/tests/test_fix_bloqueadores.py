@@ -319,7 +319,9 @@ def test_register_aceita_dados_validos(client):
         json={
             "name": "Fulano Teste",
             "email": f"valido{uuid.uuid4().hex[:8]}@qadras.com.br",
-            "senha": "senha-forte-123",
+            # Maiuscula incluida: "senha-forte-123" passava antes, mas a regra
+            # agora exige maiuscula, minuscula, numero E caractere especial.
+            "senha": "Senha-Forte-123",
         },
     )
     assert r.status_code == 200, r.text

@@ -7,7 +7,9 @@ o cabecalho quebrava com TypeError em profile.name antes de desenhar a pagina.
 
 Agora a identidade sai da sessao e os numeros sao contados no banco.
 """
-from fastapi import APIRouter, Depends, status
+from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
@@ -16,21 +18,27 @@ from ..auth.deps import get_current_user
 from ..core import data
 from ..core.database import get_db
 from ..models import Court
-from ..models.booking import STATUS_COMPLETED, Booking
+from ..models.booking import ACTIVE_STATUSES, STATUS_COMPLETED, Booking
 from ..models.favorite import UserFavorite
 from ..models.user import User
 from ..models.user_session import UserSession
-from ..auth.security import utcnow
+from ..auth.security import utcnow, verify_password
 
 router = APIRouter(prefix="/api/perfil", tags=["perfil"])
 
 
 class PerfilPatch(BaseModel):
-    """So o que a pessoa realmente edita no formulario.
+    """O que a pessoa realmente edita — a conta E a ficha de jogador.
 
     `email` fica de fora de proposito: e a chave de login e, em conta Google,
     pertence ao provedor — deixar editar aqui quebraria o proximo acesso sem
     aviso nenhum.
+
+    Os quatro campos da FICHA (position, level, birthDate, foot) faltavam
+    aqui. As colunas existem em `users` desde a Fase 2 e a leitura ja os
+    devolvia, mas o PATCH os descartava em silencio: a tela mandava, recebia
+    200, mostrava "Perfil atualizado" e nada era gravado. O pior tipo de
+    falha, a que parece sucesso.
     """
 
     name: str | None = None
@@ -38,6 +46,11 @@ class PerfilPatch(BaseModel):
     city: str | None = None
     state: str | None = None
     favoriteSport: str | None = None
+    position: str | None = None
+    level: str | None = None
+    #: ISO (YYYY-MM-DD). String vazia limpa o campo.
+    birthDate: str | None = None
+    foot: str | None = None
 
 
 def _estatisticas(db: Session, user: User) -> dict:
@@ -116,6 +129,9 @@ def salvar_perfil(
         "city": "city",
         "state": "state",
         "favoriteSport": "favorite_sport",
+        "position": "position",
+        "level": "level",
+        "foot": "foot",
     }
     for entrada, coluna in campos.items():
         valor = getattr(patch, entrada)
@@ -127,6 +143,22 @@ def salvar_perfil(
         if entrada == "name" and not valor:
             continue
         setattr(user, coluna, valor)
+
+    # Nascimento e Date no banco, texto no contrato. String vazia LIMPA o
+    # campo (a pessoa pode ter errado e querer apagar); data invalida e
+    # recusada em vez de virar None calado, que pareceria "salvou".
+    if patch.birthDate is not None:
+        bruto = patch.birthDate.strip()
+        if not bruto:
+            user.birth_date = None
+        else:
+            try:
+                user.birth_date = date.fromisoformat(bruto)
+            except ValueError:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Data de nascimento inválida. Use o formato AAAA-MM-DD.",
+                )
 
     # commit, nao flush: get_db() so fecha a sessao, entao um flush sozinho
     # some no fim do request. A resposta saia com os dados novos e o banco
@@ -142,8 +174,21 @@ def salvar_perfil(
     }
 
 
+class ExclusaoBody(BaseModel):
+    """Confirmacao da exclusao.
+
+    A senha e exigida porque o resto do app confia num token que sobrevive
+    dias: celular destravado na mao de outra pessoa, ou aparelho emprestado,
+    bastavam dois toques para apagar a conta. Pedir a senha prova que quem
+    esta apagando e o dono, e nao quem pegou o telefone.
+    """
+
+    senha: str | None = None
+
+
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 def excluir_conta(
+    body: ExclusaoBody | None = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -160,6 +205,39 @@ def excluir_conta(
     Os dados pessoais saem na mesma transacao: o que sustenta o historico e o
     id, nao o nome nem a foto.
     """
+    # ── Quem esta apagando e mesmo o dono? ──────────────────────────────
+    #
+    # Conta de Google nao tem senha local: exigir uma trancaria essa pessoa
+    # fora da propria exclusao. Para ela, o token ja e a prova que o provedor
+    # deu.
+    if user.password_hash:
+        if not body or not (body.senha or "").strip():
+            raise HTTPException(
+                status_code=422,
+                detail="Digite sua senha para confirmar a exclusão.",
+            )
+        if not verify_password(body.senha, user.password_hash):
+            raise HTTPException(status_code=403, detail="Senha incorreta.")
+
+    # ── Ha reserva viva? ────────────────────────────────────────────────
+    #
+    # Apagar a conta com jogo marcado deixa a arena com um horario ocupado e
+    # ninguem para cobrar ou avisar — e a pessoa perde o dinheiro ja pago sem
+    # ser avisada de que estava perdendo.
+    pendentes = db.execute(
+        select(func.count())
+        .select_from(Booking)
+        .where(Booking.user_id == user.id, Booking.status.in_(ACTIVE_STATUSES))
+    ).scalar_one()
+    if pendentes:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Você tem {pendentes} reserva(s) em andamento. "
+                "Cancele ou conclua antes de excluir a conta."
+            ),
+        )
+
     agora = utcnow()
     user.deleted_at = agora
     user.email = f"excluido+{user.id}@qadras.invalid"
