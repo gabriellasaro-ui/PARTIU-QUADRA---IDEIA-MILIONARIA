@@ -420,6 +420,15 @@ html[data-route="mapa"] .mobile-map-route {
   background: rgba(247, 248, 244, .90);
   border-bottom: 1px solid rgba(228, 231, 223, .78);
   backdrop-filter: blur(16px) saturate(140%);
+  /* FIXA no topo. O backdrop-filter acima ja tinha sido escrito para isso —
+     desfocar o que passa por tras so faz sentido se algo passar por tras —,
+     mas a barra rolava junto com a pagina. Numa lista longa (a aba Membros do
+     clube, por exemplo) o botao de voltar saia da tela, e a leitura era "esta
+     tela nao tem como voltar". Mesmo z-index da tabbar, que fica na borda
+     oposta e nunca disputa espaco com esta. */
+  position: sticky;
+  top: 0;
+  z-index: 25;
 }
 
 .route-navbar {
@@ -4218,6 +4227,11 @@ html[data-route="mapa"] .phone {
 .avail-slots .slot.sel {
   border-color: var(--pq-brand-strong) !important;
   background: var(--pq-brand-strong) !important;
+  /* Estas duas faltavam so nesta arvore (a do app ja tinha): sem elas o
+     horario escolhido ficava com texto escuro sobre o verde forte, e
+     herdava o risco de .slot.busy quando vinha de um estado riscado. */
+  color: #fff !important;
+  text-decoration: none !important;
   box-shadow: 0 5px 12px rgba(0, 168, 90, .18) !important;
 }
 
@@ -4657,7 +4671,14 @@ html[data-route="mapa"] .phone {
   min-height: 76px;
   padding: calc(16px + var(--pq-safe-top)) 16px 14px;
   border-bottom: 1px solid var(--pq-line);
-  background: #f5fbf7;
+  /* Era #f5fbf7, um branco puxado para o verde. Esta e a regra que vence
+     (vem depois da de cima no arquivo), entao e aqui que a cor tem de mudar —
+     trocar so la em cima nao surtia efeito nenhum.
+
+     Opaco, e nao translucido: com backdrop-filter: none logo abaixo, um fundo
+     transparente deixaria o conteudo passar por tras sem desfoque, e agora a
+     barra e fixa, entao passaria conteudo por baixo dela o tempo todo. */
+  background: #ffffff;
   backdrop-filter: none;
 }
 

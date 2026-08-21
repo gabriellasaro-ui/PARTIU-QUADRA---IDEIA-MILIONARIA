@@ -9,6 +9,7 @@ import pushService from '../../services/push.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import { parseMobileRouteHash } from '../../config/routes.js';
 import { isWebLimited, isNative, rotaLiberada, rotaDoHref, marcarPlataforma } from '../../services/platform.js';
+import navegacao from '../../services/navegacao.js';
 import { initMobileActions, renderMobilePage } from './mobile.js';
 import { initPlayerDesktopActions, renderPlayerDesktopPage } from './player-desktop.js';
 import { loadGame, destroyGame } from './game-mode.js';
@@ -334,7 +335,9 @@ function mobileRouteFromHash() {
   const existe = MOBILE_ROUTES[parsed.name] ? parsed.name : 'home';
   // Esconder o item do menu nao basta: a rota tambem tem que recusar URL digitada.
   const name = comLogin(comOnboarding(rotaLiberada(existe) ? existe : 'home'));
-  if (name !== existe) history.replaceState(null, '', `#${name}`);
+  // history.state preservado: e nele que mora o degrau de navegacao. Passar
+  // null aqui zerava a profundidade e todo "voltar" virava fallback.
+  if (name !== existe) history.replaceState(history.state, '', `#${name}`);
   return {
     ...parsed,
     name,
@@ -350,6 +353,11 @@ async function renderMobileRoute() {
 
   const routeState = mobileRouteFromHash();
   const { name: routeName, route } = routeState;
+
+  /* Depois de mobileRouteFromHash de proposito: e la que o desvio de rota
+     chama replaceState, e marcar antes faria o degrau ser apagado logo em
+     seguida. */
+  navegacao.marcarProfundidade();
 
   /* A guarda roda ANTES de qualquer escrita no DOM, inclusive antes do
      curto-circuito abaixo. Marcar currentRoute e so entao redirecionar faria
@@ -419,7 +427,9 @@ function playerDesktopRouteFromHash() {
   const name = comLogin(comOnboarding(rotaLiberada(existe) ? existe : 'quadras'));
   // replaceState (e nao location.hash) para a URL parar de mentir sobre o que
   // esta na tela sem disparar outro hashchange e entrar em laco.
-  if (name !== existe) history.replaceState(null, '', `#${name}`);
+  // history.state preservado: e nele que mora o degrau de navegacao. Passar
+  // null aqui zerava a profundidade e todo "voltar" virava fallback.
+  if (name !== existe) history.replaceState(history.state, '', `#${name}`);
   return {
     ...parsed,
     name,
@@ -633,6 +643,15 @@ document.addEventListener('click', async (event) => {
   }
 });
 
+/* Voltar de qualquer tela. O href continua no HTML e vira o destino de
+   emergencia para quem abriu o app direto naquela rota. */
+document.addEventListener('click', (event) => {
+  const alvo = event.target.closest('[data-voltar]');
+  if (!alvo) return;
+  event.preventDefault();
+  navegacao.voltar(alvo.getAttribute('href') || '#home');
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   window.pqRefreshIcons = refreshIcons;
   marcarPlataforma();
@@ -650,4 +669,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initRedirectToast();
   initLoginForms();
   initRealtime();
+
+  /* Botao fisico do Android. Na raiz, minimiza em vez de fechar: fechar
+     descarta a pilha inteira e a pessoa volta do zero. */
+  navegacao.registrarVoltarNativo();
 });

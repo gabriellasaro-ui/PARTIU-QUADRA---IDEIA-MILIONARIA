@@ -1,4 +1,5 @@
 import venueService, { definirLocal } from '../../services/venues.js';
+import { registrarFecharSobreposicao } from '../../services/navegacao.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/formatters.js';
 import { SERVICE_FEE_RATE } from '../../config/constants.js';
@@ -118,6 +119,17 @@ function closeMarketSheet(sheet = document.querySelector('[data-market-sheet]:no
     trigger.setAttribute('aria-expanded', 'false');
   });
 }
+
+/* O voltar (botao da tela e botao fisico) precisa fechar o sheet antes de
+   navegar: com o formulario de clube aberto, "voltar" quer dizer fechar o
+   formulario, nao sair da tela. Registrado por injecao porque navegacao.js
+   nao pode importar daqui — este arquivo ja importa de la. */
+registrarFecharSobreposicao(() => {
+  const aberto = document.querySelector('[data-market-sheet]:not([hidden])');
+  if (!aberto) return false;
+  closeMarketSheet(aberto);
+  return true;
+});
 
 function openMarketSheet(sheetId) {
   const sheet = document.getElementById(sheetId);
