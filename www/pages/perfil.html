@@ -35,19 +35,6 @@
       <div><strong data-profile-reservations></strong><span>reservas</span></div>
       <div><strong data-profile-favorites></strong><span>favoritas</span></div>
     </div>
-    <!-- Era uma pilula com trofeu e o texto "Esporte favorito: Futsal" numa
-         linha so. O trofeu falava de premiacao, nao de esporte, e o rotulo
-         gastava mais espaco que o dado. Vira cartao: rotulo pequeno em cima,
-         a modalidade em destaque, e o icone DELA (preenchido por JS, porque
-         depende de qual esporte e). -->
-    <div class="esporte-favorito">
-      <span class="esporte-favorito__ic" data-profile-sport-icon></span>
-      <span>
-        <small>Joga mais de</small>
-        <strong data-profile-sport>—</strong>
-      </span>
-    </div>
-
     <!-- Ficha de jogador. O onboarding pergunta posicao e nivel; nascimento
          e pe dominante ficam aqui, com o empurrao explicando para que
          servem. -->
@@ -56,7 +43,12 @@
         <h2>Ficha de jogador</h2>
         <button class="player-card__edit" type="button" data-sheet-open="player-card-sheet">Editar</button>
       </div>
+      <!-- Esporte entra na grade da ficha, e nao num cartao solto acima.
+           "Joga mais de Futsal" boiando sozinho no meio da tela nao dizia a
+           que se referia; ao lado de Posicao e Nivel, dizem juntos como a
+           pessoa joga — que e o que a ficha e. -->
       <div class="player-card__grid">
+        <div><span>Esporte</span><strong data-profile-sport>—</strong></div>
         <div><span>Posição</span><strong data-profile-position-value>—</strong></div>
         <div><span>Nível</span><strong data-profile-level>—</strong></div>
         <div><span>Nascimento</span><strong data-profile-birth>—</strong></div>

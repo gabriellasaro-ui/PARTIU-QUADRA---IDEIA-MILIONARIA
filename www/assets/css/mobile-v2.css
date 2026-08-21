@@ -1735,10 +1735,14 @@ button .ic,
 }
 
 /* Vermelho so na exclusao. Pintar as duas de vermelho faria "sair" parecer
-   tao grave quanto apagar a conta. */
+   tao grave quanto apagar a conta.
+
+   CHEIO, e nao apenas contornado: apagar a conta e a unica acao irreversivel
+   do app, e a cor tem de dizer isso antes do toque, nao depois. */
 .conta-acoes__excluir {
-  border-color: #e6c3cc;
-  color: #c8324d;
+  border-color: #c8324d;
+  background: #c8324d;
+  color: #fff;
 }
 
 .conta-acoes__aviso {
@@ -1937,6 +1941,116 @@ button .ic,
   background-color: currentColor;
   -webkit-mask: url('../images/pix.png') no-repeat center / contain;
   mask: url('../images/pix.png') no-repeat center / contain;
+}
+
+/* Escolha entre opcoes EXPLICADAS — uma lista, nao uma grade de pilulas.
+
+   A .filter-choice-grid e de tres colunas e formato de pilula: serve para
+   rotulos curtos ("Goleiro", "Ala"). Com titulo mais descricao, ela espremia
+   "Por solicitacao / A pessoa pede e voces aprovam" em uma coluna de 100px e
+   quebrava o texto em cinco linhas. Quem escolhe entre tres modos precisa
+   LER os tres. */
+.escolha-lista {
+  display: grid;
+  gap: 8px;
+}
+
+.escolha-lista__item {
+  min-width: 0;
+}
+
+.escolha-lista input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.escolha-lista input + span {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-panel);
+}
+
+.escolha-lista strong {
+  display: block;
+  font-size: 13.5px;
+  color: var(--pq-ink);
+}
+
+.escolha-lista small {
+  display: block;
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.escolha-lista input:checked + span {
+  border-color: var(--pq-brand-strong);
+  background: var(--pq-green-soft);
+}
+
+.escolha-lista input:checked + span strong { color: var(--pq-brand-strong); }
+
+/* Adicionar cartao: o lugar do cartao existe na tela ANTES de existir o
+   adquirente. Um aviso dizendo "por enquanto so Pix" fala do que falta; um
+   botao com bandeiras fala do que vai ter. */
+.add-cartao {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px dashed var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-panel);
+  text-align: left;
+}
+
+.add-cartao:disabled { opacity: .75; }
+
+.add-cartao__mais {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--pq-green-soft);
+  color: var(--pq-brand-strong);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.add-cartao__txt strong { display: block; font-size: 14px; color: var(--pq-ink); }
+.add-cartao__txt small { display: block; margin-top: 1px; color: var(--pq-muted); font-size: 11.5px; }
+
+/* Bandeiras em texto, e nao imagem: sao marcas registradas, e embarcar os
+   logotipos exige licenca de uso de cada uma. O texto comunica o mesmo sem
+   colocar o app em cima de direito de terceiro. */
+.add-cartao__bandeiras {
+  display: flex;
+  gap: 4px;
+}
+
+.add-cartao__bandeiras i {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 20px;
+  padding: 0 4px;
+  border: 1px solid var(--pq-line);
+  border-radius: 4px;
+  color: var(--pq-muted);
+  font-size: 8.5px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .02em;
 }
 
 /* ---------- mensagens ---------- */
@@ -5463,7 +5577,9 @@ html[data-route="mapa"] .phone {
   justify-content: space-between;
   gap: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--pq-line);
+  /* Sem risco sob o titulo: a folha ja se separa do fundo pela sombra e pelo
+     canto arredondado, e a linha cortava o menu em dois blocos sem que
+     houvesse dois assuntos ali. */
 }
 
 .market-sheet__head h2 {
@@ -5479,8 +5595,12 @@ html[data-route="mapa"] .phone {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #e7f4eb;
-  color: var(--pq-brand-deep);
+  /* Sem o circulo verde: fechar e a acao mais obvia de uma folha e nao
+     precisa de destaque nenhum. Com fundo, competia com o botao de salvar
+     logo abaixo, que e o caminho que a gente quer. A area de toque de 38px
+     continua — some a cor, nao o alvo. */
+  background: transparent;
+  color: var(--pq-muted);
 }
 
 .current-location-action {

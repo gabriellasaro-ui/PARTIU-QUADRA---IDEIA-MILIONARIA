@@ -23,6 +23,23 @@
     <div class="payment-list" data-payment-list>
       <div class="payment-row"><span class="badge-ic"><i class="ic-pix" aria-hidden="true"></i></span><span><strong>Pix</strong><small>Aprovação na hora</small></span><i class="ic row-check" data-lucide="check"></i></div>
     </div>
+    <!-- Card com "+" no lugar do aviso "por enquanto so Pix". O aviso dizia
+         o que NAO da para fazer; o botao mostra o que vai dar, e a lista de
+         bandeiras deixa claro o que sera aceito. Enquanto nao houver
+         adquirente ele fica desabilitado e explica o motivo ao ser tocado —
+         mas o lugar do cartao ja existe na tela. -->
+    <button class="add-cartao" type="button" data-add-cartao>
+      <span class="add-cartao__mais">+</span>
+      <span class="add-cartao__txt">
+        <strong>Adicionar cartão</strong>
+        <small data-add-cartao-nota>Crédito ou débito</small>
+      </span>
+      <span class="add-cartao__bandeiras" aria-hidden="true">
+        <i data-bandeira="visa">VISA</i>
+        <i data-bandeira="master">●●</i>
+        <i data-bandeira="elo">elo</i>
+      </span>
+    </button>
     <p class="payment-note" data-card-status hidden></p>
 
     <p class="payment-note">

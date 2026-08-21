@@ -14,13 +14,10 @@
     <div class="chips" data-map-filters></div>
   </div>
 
-  <!-- Raio aqui, e nao so nos Ajustes: no mapa a distancia e o que a pessoa
-       esta olhando, e mandar ela sair da tela para mudar o alcance da busca
-       quebra o raciocinio no meio. -->
-  <div class="map-radius" role="group" aria-label="Distância máxima">
-    <span class="map-radius__rotulo">Até</span>
-    <div class="chips" data-map-raio></div>
-  </div>
+  <!-- A fileira de raio saiu daqui. Duas faixas de filtro empilhadas
+       (esporte e distancia) davam a tela do mapa mais controle do que mapa, e
+       o padrao de 10 km cobre a busca de quase todo mundo. Quem quiser outro
+       alcance muda pelo seletor de local, no topo — e o mapa reenquadra. -->
 
   <div class="leaflet-map-shell">
     <div class="leaflet-mobile-map" data-live-map aria-label="Mapa interativo das quadras"></div>

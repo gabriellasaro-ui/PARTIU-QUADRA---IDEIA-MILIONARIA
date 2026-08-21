@@ -35,6 +35,12 @@
          Excluir conta nao existia no app (so na web), e e exigencia das lojas:
          quem cria conta pelo aplicativo precisa conseguir apaga-la por ele. -->
     <div class="conta-acoes">
+      <!-- Trocar senha vive aqui, junto de sair e excluir: sao as tres acoes
+           de CONTA, e nao de preferencia. Some para quem entra pelo Google,
+           que nao tem senha local para trocar. -->
+      <button class="btn outline block" type="button" data-cfg-senha hidden>
+        <i class="ic" data-lucide="key-round"></i>Alterar senha
+      </button>
       <button class="btn outline block" type="button" data-auth-logout>
         <i class="ic" data-lucide="log-out"></i>Sair da conta
       </button>

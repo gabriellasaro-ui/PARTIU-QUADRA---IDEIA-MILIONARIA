@@ -7,7 +7,6 @@ import {
   ACTIVE_MATCH,
   CONVERSATIONS,
   CURRENT_USER,
-  DEFAULT_AVAILABILITY,
   INITIAL_RESERVATIONS,
   SPORTS,
   FEATURED_SPORTS,
@@ -170,13 +169,22 @@ export const venueService = {
 
   /* A data e obrigatoria no uso real: sem ela a API responde sempre HOJE, e
      era isso que fazia a tela de outro dia mostrar disponibilidade errada. */
+  /* Agenda da quadra. SEM fallback de mock, em nenhum caminho.
+
+     Havia dois: `|| DEFAULT_AVAILABILITY` quando a resposta vinha vazia, e o
+     mock inteiro quando nao ha API. Os dois enchiam a tela com uma agenda
+     INVENTADA — horarios livres que nao existem, ocupados que nao existem —
+     e a pessoa escolhia um deles achando que estava reservando. O erro so
+     apareceria no POST, depois de ela ter escolhido dia, hora e duracao.
+
+     Agenda e o unico dado desta tela que nao admite palpite: ou e a agenda
+     real da quadra naquela data, ou nao ha horario para mostrar. Lista vazia
+     e honesta; agenda falsa nao. */
   async availability(id, date) {
-    if (API_BASE_URL) {
-      const query = date ? `?data=${encodeURIComponent(date)}` : '';
-      const data = await api.get(`/api/quadras/${id}/horarios${query}`);
-      return data?.horarios || DEFAULT_AVAILABILITY;
-    }
-    return clone(DEFAULT_AVAILABILITY);
+    if (!API_BASE_URL) return [];
+    const query = date ? `?data=${encodeURIComponent(date)}` : '';
+    const data = await api.get(`/api/quadras/${id}/horarios${query}`);
+    return Array.isArray(data?.horarios) ? data.horarios : [];
   },
 
   async reservations() {
@@ -335,6 +343,14 @@ export const venueService = {
      excluir, e fingir que excluiu seria pior que recusar. */
   /* `senha` obrigatoria para conta com senha local. Conta Google nao tem
      senha aqui, e o backend dispensa nesse caso. */
+  /* Troca de senha. Exige a ATUAL mesmo com sessao valida: o token sobrevive
+     dias, e celular destravado na mao de outra pessoa nao pode virar troca de
+     senha — que e o jeito de tomar a conta de alguem para sempre. */
+  async trocarSenha(senhaAtual, senhaNova) {
+    if (!API_BASE_URL) throw new Error('Indisponível sem a API');
+    return api.post('/api/auth/senha', { senhaAtual, senhaNova });
+  },
+
   async deleteAccount(senha = null) {
     if (!API_BASE_URL) throw new Error('Exclusão de conta indisponível sem a API');
     return api.delete('/api/perfil', senha ? { body: { senha } } : undefined);

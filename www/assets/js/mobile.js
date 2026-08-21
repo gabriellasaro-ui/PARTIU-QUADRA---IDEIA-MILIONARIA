@@ -682,7 +682,10 @@ function zoomDoRaio(km) {
 async function renderMap(root, route) {
   const query = routeQuery(route);
   const sport = query.get('esporte') || '';
-  const raio = RAIOS_MAPA.includes(Number(query.get('raio'))) ? Number(query.get('raio')) : 5;
+  /* 10 km por padrao: cobre a cidade inteira na maioria dos casos, sem
+     trazer quadra de outro municipio. `?raio=` na URL ainda manda, para quem
+     chega por um link com alcance definido. */
+  const raio = RAIOS_MAPA.includes(Number(query.get('raio'))) ? Number(query.get('raio')) : 10;
   const [sports, venues] = await Promise.all([
     venueService.sports(),
     venueService.list({ sport })
@@ -703,14 +706,7 @@ async function renderMap(root, route) {
     ...sports.map((item) => `<a class="chip chip-esporte ${item === sport ? 'on' : ''}" href="#mapa?esporte=${encodeURIComponent(item)}&raio=${raio}">${icon(SPORT_ICONS[item] || 'trophy')}${escapeHtml(rotuloModalidade(item))}</a>`)
   ].join('');
 
-  /* Raio na propria tela do mapa: aqui a distancia e o assunto, e mandar a
-     pessoa aos Ajustes para mudar o alcance quebra o raciocinio no meio. */
-  const faixaRaio = root.querySelector('[data-map-raio]');
-  if (faixaRaio) {
-    const esporteQs = sport ? `esporte=${encodeURIComponent(sport)}&` : '';
-    faixaRaio.innerHTML = RAIOS_MAPA.map((km) => `
-      <a class="chip ${String(km) === String(raio) ? 'on' : ''}" href="#mapa?${esporteQs}raio=${km}">${km} km</a>`).join('');
-  }
+
 
   if (!window.L) {
     mapElement.innerHTML = `
@@ -1654,11 +1650,17 @@ async function renderWallet(root) {
       </div>`);
   });
 
-  if (aviso) {
-    aviso.hidden = liberado && salvos.length > 0;
-    aviso.innerHTML = `<i class="ic" data-lucide="credit-card"></i><span>${escapeHtml(
-      liberado ? 'Nenhum cartão cadastrado ainda.' : motivo
-    )}</span>`;
+  /* O aviso de texto sai de cena: quem carrega a informacao agora e o proprio
+     card de adicionar. Sem adquirente ele fica desabilitado e diz por que na
+     propria linha, em vez de um paragrafo separado repetindo o assunto. */
+  if (aviso) aviso.hidden = true;
+
+  const botaoAdd = root.querySelector('[data-add-cartao]');
+  if (botaoAdd) {
+    botaoAdd.disabled = !liberado;
+    botaoAdd.title = liberado ? '' : motivo;
+    const nota = botaoAdd.querySelector('[data-add-cartao-nota]');
+    if (nota) nota.textContent = liberado ? 'Crédito ou débito' : 'Em breve — por enquanto, Pix';
   }
   window.lucide?.createIcons?.({ nameAttr: 'data-lucide' });
 }
@@ -1701,22 +1703,6 @@ function syncMobileProfile(root, user) {
   root.querySelector('[data-profile-games]').textContent = user.stats.games;
   root.querySelector('[data-profile-reservations]').textContent = user.stats.reservations;
   root.querySelector('[data-profile-favorites]').textContent = user.stats.favorites;
-  /* O icone acompanha a modalidade — e o mesmo simbolo dos chips da home,
-     entao o cartao "conversa" com o resto do app em vez de trazer um trofeu
-     generico. Sem esporte definido, o cartao inteiro sai da tela: um cartao
-     vazio dizendo "Joga mais de —" nao informa nada. */
-  const esporteFav = user.favoriteSport || '';
-  const cartaoEsporte = root.querySelector('.esporte-favorito');
-  if (cartaoEsporte) cartaoEsporte.hidden = !esporteFav;
-  root.querySelector('[data-profile-sport]').textContent = esporteFav || '—';
-  const iconeEsporte = root.querySelector('[data-profile-sport-icon]');
-  if (iconeEsporte) {
-    iconeEsporte.innerHTML = `<i class="ic" data-lucide="${SPORT_ICONS[esporteFav] || 'trophy'}"></i>`;
-  }
-  // Conta nova ainda nao tem esporte favorito; o rotulo sozinho parece bug.
-  const linhaEsporte = root.querySelector('.favorite-sport');
-  if (linhaEsporte) linhaEsporte.hidden = !user.favoriteSport;
-
   // Ficha de jogador. O cracha do topo mostra a posicao; antes era a palavra
   // "Jogador" escrita na mao no HTML.
   const nivel = LEVELS.find((l) => l.id === user.level);
@@ -1724,6 +1710,10 @@ function syncMobileProfile(root, user) {
     const el = root.querySelector(sel);
     if (el) el.textContent = valor;
   };
+  // O esporte agora e mais uma celula da ficha, ao lado de posicao e nivel.
+  // DEPOIS da declaracao de `set`: chamado antes, caia na zona morta do const
+  // e derrubava a tela de perfil inteira com ReferenceError.
+  set('[data-profile-sport]', user.favoriteSport || '—');
   set('[data-profile-position]', user.position || 'Jogador');
   set('[data-profile-position-value]', user.position || '—');
   set('[data-profile-level]', nivel ? nivel.label : '—');
@@ -2084,6 +2074,12 @@ export async function renderMobilePage(route, root) {
   // pessoa de Membros no meio do uso.
   if (route.name !== 'clube') clubSection = 'peladas';
   currentRoute = route;
+  /* Alterar senha so existe para conta com senha local. Conta Google nao tem
+     uma, e oferecer a troca criaria um segundo caminho de acesso que a pessoa
+     nunca pediu e nao entenderia de onde veio. */
+  const botaoSenha = document.querySelector('[data-cfg-senha]');
+  if (botaoSenha) botaoSenha.hidden = authService.currentUser()?.provider === 'google';
+
   const renderers = {
     home: renderHome,
     quadras: renderExplore,
@@ -2624,6 +2620,29 @@ export function initMobileActions() {
      toque acidental num botao vermelho nao pode custar a conta de alguem.
      A tela do app nao tinha esta acao — so a web —, e as lojas exigem que
      quem cria conta pelo aplicativo consiga apaga-la por ele. */
+  const trocarSenha = event.target.closest('[data-cfg-senha]');
+  if (trocarSenha) {
+    event.preventDefault();
+    const atual = window.prompt('Sua senha atual:');
+    if (atual === null) return;
+    const nova = window.prompt('Nova senha (maiúscula, minúscula, número e caractere especial):');
+    if (nova === null) return;
+    try {
+      await venueService.trocarSenha(atual, nova);
+      /* Trocar a senha revoga TODAS as sessoes, inclusive esta: e o que se
+         faz quando se desconfia que alguem entrou, e manter tokens antigos
+         vivos deixaria o invasor dentro depois da acao que deveria expulsa-lo.
+         Entao a pessoa volta para o login — com a senha nova. */
+      window.pqToast?.('Senha alterada. Entre de novo.');
+      await authService.logout();
+      window.pqSyncAuthControls?.();
+      location.replace('./index.html#entrar');
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível alterar a senha');
+    }
+    return;
+  }
+
   const excluirConta = event.target.closest('[data-cfg-excluir]');
   if (excluirConta) {
     event.preventDefault();

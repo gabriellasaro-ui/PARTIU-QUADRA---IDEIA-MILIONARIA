@@ -13,7 +13,7 @@ import logging
 import uuid
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from starlette.responses import Response
 
@@ -49,6 +49,7 @@ from ..schemas.auth import (
     RefreshRequest,
     RegisterRequest,
     SessionUser,
+    TrocaSenhaRequest,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -268,6 +269,51 @@ def onboarding(
     db.commit()
     db.refresh(user)
     return _to_session_user(user)
+
+
+@router.post("/senha")
+def trocar_senha(
+    body: TrocaSenhaRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Troca a senha de quem esta logado.
+
+    Conta Google nao tem senha local — devolve 409 em vez de deixar criar uma
+    do nada, que produziria dois caminhos de acesso para a mesma conta sem a
+    pessoa entender de onde veio o segundo.
+
+    As sessoes ANTIGAS sao revogadas: trocar senha e o que se faz quando se
+    desconfia que alguem entrou, e manter os tokens antigos vivos deixaria o
+    invasor dentro justamente depois da acao que deveria expulsa-lo. A sessao
+    atual continua, senao a pessoa se desloga ao se proteger.
+    """
+    if not user.password_hash:
+        raise HTTPException(
+            status_code=409,
+            detail="Esta conta entra pelo Google e não tem senha para trocar.",
+        )
+    if not verify_password(body.senhaAtual, user.password_hash):
+        raise HTTPException(status_code=403, detail="Senha atual incorreta.")
+    if verify_password(body.senhaNova, user.password_hash):
+        raise HTTPException(status_code=422, detail="A senha nova é igual à atual.")
+
+    user.password_hash = hash_password(body.senhaNova)
+    agora = utcnow()
+    db.execute(
+        update(UserSession)
+        .where(
+            UserSession.user_id == user.id,
+            UserSession.revoked_at.is_(None),
+            # Sem excecao pela sessao atual: `user` nao carrega o jti do token
+            # em uso, e inventar um atributo para isso seria pior que o
+            # efeito. Trocar a senha desloga de TUDO, inclusive daqui — que e
+            # o comportamento mais previsivel e o que a maioria dos apps faz.
+        )
+        .values(revoked_at=agora)
+    )
+    db.commit()
+    return {"ok": True}
 
 
 @router.post("/refresh")

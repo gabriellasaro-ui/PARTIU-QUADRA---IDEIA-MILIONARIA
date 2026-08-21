@@ -54,6 +54,23 @@ class RegisterRequest(BaseModel):
         return validar_senha(v)
 
 
+class TrocaSenhaRequest(BaseModel):
+    """Troca de senha por quem ja esta dentro.
+
+    A senha ATUAL e exigida mesmo havendo token valido: o token sobrevive
+    dias, e celular destravado na mao de outra pessoa nao pode virar troca de
+    senha — que e o jeito de tomar a conta de alguem para sempre.
+    """
+
+    senhaAtual: str
+    senhaNova: str = Field(max_length=128)
+
+    @field_validator("senhaNova")
+    @classmethod
+    def _forte(cls, v: str) -> str:
+        return validar_senha(v)
+
+
 class GoogleRequest(BaseModel):
     """O cliente manda o idToken cru; quem valida a assinatura junto ao Google
     e o servidor. O cliente nunca decide quem a pessoa e."""
