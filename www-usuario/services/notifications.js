@@ -56,6 +56,13 @@ export const notificationService = {
     const msgEls = document.querySelectorAll(
       '[data-nav-page="mensagens"] .web-action-dot, [data-nav-page="mensagens"] .badge'
     );
+    /* Chave nova do backend. `|| 0` porque um app novo pode estar falando com
+       um servidor que ainda nao manda o campo — e ai o certo e nao mostrar
+       nada, em vez de "undefined" dentro do balao. */
+    const clubeCount = badges.msg_clube || 0;
+    const clubeEls = document.querySelectorAll(
+      '[data-nav-page="clube"] .web-action-dot, [data-nav-page="clube"] .badge, [data-club-unread]'
+    );
 
     reservasEls.forEach((el) => {
       el.hidden = !reservasCount;
@@ -65,7 +72,11 @@ export const notificationService = {
       el.hidden = !msgCount;
       el.textContent = String(msgCount);
     });
-    return { ...badges, reservas: reservasCount };
+    clubeEls.forEach((el) => {
+      el.hidden = !clubeCount;
+      el.textContent = String(clubeCount);
+    });
+    return { ...badges, reservas: reservasCount, clube: clubeCount };
   }
 };
 

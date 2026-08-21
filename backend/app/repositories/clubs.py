@@ -11,6 +11,7 @@ from ..models import (
     ClubJoinRequest,
     ClubMember,
     ClubMessage,
+    ClubMessageRead,
     User,
 )
 from .venues import _uuid
@@ -230,6 +231,95 @@ def remove_member(db: Session, club_id, user_id) -> None:
             ClubMember.club_id == club_id, ClubMember.user_id == user_id
         )
     )
+
+
+# ────────────────────────── leitura do mural ───────────────────────────────
+
+def unread_by_club(db: Session, user_id) -> dict[str, int]:
+    """Quantas mensagens novas em cada clube da pessoa.
+
+    Tres detalhes que decidem se o numero faz sentido:
+
+    1. QUEM NUNCA ABRIU conta a partir de quando entrou, e nao do zero. Sem
+       isso, entrar num clube de tres anos daria um badge de 400 mensagens que
+       nunca foram para essa pessoa.
+
+    2. A PROPRIA MENSAGEM NAO CONTA. Mandar no mural e sair da tela nao pode
+       criar um "nao lido" de si mesmo.
+
+    3. O CORTE E O MAIOR entre a ultima leitura e a data de entrada. Quem leu
+       tudo, saiu e voltou nao recebe o historico de novo.
+    """
+    user_id = _uuid(user_id)
+    if user_id is None:
+        return {}
+
+    leituras = {
+        str(r.club_id): r.last_read_at
+        for r in db.execute(
+            select(ClubMessageRead).where(ClubMessageRead.user_id == user_id)
+        ).scalars()
+    }
+
+    resultado: dict[str, int] = {}
+    for membro in db.execute(
+        select(ClubMember).where(ClubMember.user_id == user_id)
+    ).scalars():
+        clube = str(membro.club_id)
+        corte = membro.joined_at
+        lido = leituras.get(clube)
+        if lido is not None and (corte is None or lido > corte):
+            corte = lido
+
+        consulta = select(func.count()).select_from(ClubMessage).where(
+            ClubMessage.club_id == membro.club_id,
+            ClubMessage.member_id != user_id,
+        )
+        if corte is not None:
+            consulta = consulta.where(ClubMessage.created_at > corte)
+        resultado[clube] = db.execute(consulta).scalar() or 0
+    return resultado
+
+
+def unread_total(db: Session, user_id) -> int:
+    return sum(unread_by_club(db, user_id).values())
+
+
+def marcar_lido(db: Session, club_id, user_id) -> None:
+    """Anota a leitura em `agora`, e nao na data da ultima mensagem.
+
+    Usar a ultima mensagem abriria uma janela: uma mensagem que chegasse entre
+    a consulta e a gravacao ficaria marcada como lida sem ninguem ter visto.
+    """
+    from ..core.timezone import utc_now
+
+    club_id = _uuid(club_id)
+    user_id = _uuid(user_id)
+    if club_id is None or user_id is None:
+        return
+    registro = db.get(ClubMessageRead, (club_id, user_id))
+    ultima = db.execute(
+        select(ClubMessage.id)
+        .where(ClubMessage.club_id == club_id)
+        .order_by(ClubMessage.created_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    # UTC-NAIVE, e nao hora local.
+    #
+    # `club_messages.created_at` vem de func.now() e e guardado como parede
+    # UTC sem fuso. Gravar a leitura em horario de Brasilia punha o marco TRES
+    # HORAS ATRAS da mensagem que acabou de ser lida, e a comparacao
+    # created_at > last_read_at continuava verdadeira: o badge nao zerava, e
+    # nada no codigo parecia errado.
+    agora = utc_now().replace(tzinfo=None)
+    if registro is None:
+        db.add(ClubMessageRead(
+            club_id=club_id, user_id=user_id,
+            last_read_at=agora, last_read_message_id=ultima,
+        ))
+    else:
+        registro.last_read_at = agora
+        registro.last_read_message_id = ultima
 
 
 def list_messages(db: Session, club_id) -> list[ClubMessage]:

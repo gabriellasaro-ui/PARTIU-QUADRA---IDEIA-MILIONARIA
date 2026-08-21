@@ -525,9 +525,42 @@ def send_message(db: Session, user, club_id, text: str) -> dict:
     )
     db.commit()
     payload = _msg_dict(db, msg)
+    """Aviso para o resto do clube.
+
+    O AUTOR E PULADO. Ele acabou de escrever: receber o proprio texto de volta
+    como "mensagem nova" faria o badge subir sozinho e o aviso aparecer para
+    quem menos precisa dele.
+
+    O payload leva clube e autor porque o aviso e mostrado FORA da tela do
+    clube — quem esta no mapa precisa saber de qual grupo veio.
+    """
+    evento = {
+        "type": "club.message.new",
+        "mensagem": payload,
+        "clubId": str(club.id),
+        "clubName": club.name,
+        "autorId": str(user.id),
+        "autorNome": user.name,
+    }
     for uid in _member_ids(db, club):
-        publish_user_event(uid, {"type": "club.message.new", "mensagem": payload})
+        if str(uid) == str(user.id):
+            continue
+        publish_user_event(uid, evento)
     return payload
+
+
+def marcar_chat_lido(db: Session, user, club_id) -> dict:
+    """Marca o mural como lido ATE AGORA.
+
+    Rota propria, e nao um efeito do GET das mensagens: o aviso persistente
+    precisa sobreviver ao carregamento da tela e so sumir quando a pessoa
+    realmente abre a aba de conversa. Marcar no GET apagaria o aviso de quem
+    so passou pela tela do clube para ver a proxima pelada.
+    """
+    club = _require_member(db, user, club_id)
+    repo.marcar_lido(db, club.id, user.id)
+    db.commit()
+    return {"ok": True, "naoLidas": repo.unread_by_club(db, user.id).get(str(club.id), 0)}
 
 
 def _notify(db: Session, user_id, type_: str, title: str, body: str, data: dict) -> None:

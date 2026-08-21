@@ -140,6 +140,32 @@ class ClubMember(Base):
     )
 
 
+class ClubMessageRead(Base):
+    """Ate onde cada pessoa leu o mural do clube.
+
+    `club_messages` nasceu como mural chapado: sem participantes e sem
+    controle de leitura. Sem saber o que ja foi lido, nao ha badge nem aviso —
+    "mensagem nova" e uma comparacao, e faltava o outro lado dela.
+
+    Tabela separada, e nao uma coluna em `club_members`: leitura muda a cada
+    vez que a tela abre, e cargo/entrada quase nunca mudam. Misturar as duas
+    faria toda leitura reescrever a linha de membro.
+    """
+
+    __tablename__ = "club_message_reads"
+
+    club_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clubs.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True
+    )
+    last_read_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_read_message_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+
+
 class ClubMessage(Base):
     __tablename__ = "club_messages"
 

@@ -553,6 +553,14 @@ export const venueService = {
   },
 
   /* Fila de quem pediu para entrar. So a gestao enxerga. */
+  /* Marca o mural como lido. Rota propria: o GET das mensagens NAO marca,
+     porque o aviso persistente precisa sobreviver ao carregamento da tela e
+     sumir so quando a pessoa abre a aba de conversa. */
+  async markClubChatRead(clubId) {
+    if (!API_BASE_URL || !clubId) return null;
+    return api.post(`/api/clubes/${clubId}/mensagens/read`, {});
+  },
+
   async clubRequests(clubId) {
     if (!API_BASE_URL) return [];
     const data = await api.get(`/api/clubes/${clubId}/solicitacoes`);

@@ -1,6 +1,7 @@
 import venueService, { definirLocal } from '../../services/venues.js';
 import { registrarFecharSobreposicao } from '../../services/navegacao.js';
 import { ligarParEstadoCidade } from '../../services/localidades.js';
+import notificationService from '../../services/notifications.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/formatters.js';
 import { SERVICE_FEE_RATE } from '../../config/constants.js';
@@ -3052,6 +3053,29 @@ function selectClubSection(name) {
   document.querySelectorAll('[data-club-panel]').forEach((panel) => {
     panel.hidden = panel.dataset.clubPanel !== name;
   });
+
+  /* Abrir a aba de conversa e o que marca como lido — nao carregar a tela do
+     clube. Quem entra para ver a proxima pelada passa pela tela inteira e nao
+     leu mensagem nenhuma; zerar o badge ali apagaria o aviso antes de ele ter
+     servido para alguma coisa.
+
+     Sem await de proposito: e efeito colateral, e a aba nao pode esperar a
+     rede para trocar. */
+  if (name === 'chat') marcarChatDoClubeLido();
+}
+
+async function marcarChatDoClubeLido() {
+  try {
+    const club = await venueService.myClub();
+    if (!club) return;
+    await venueService.markClubChatRead(club.id);
+    // Repinta o contador na hora: esperar o proximo ciclo deixaria o balao
+    // acesso com a conversa ja aberta na frente da pessoa.
+    notificationService.refreshNavBadges?.().catch(() => {});
+  } catch (error) {
+    /* Falhar aqui nao pode atrapalhar a leitura: a pessoa esta vendo as
+       mensagens de qualquer jeito, e o badge se corrige no proximo ciclo. */
+  }
 }
 
 /* Reusa .mobile-bubbles / .bubble / .mobile-composer — o mesmo chat das

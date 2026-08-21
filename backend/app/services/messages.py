@@ -215,18 +215,26 @@ def mark_read(db: Session, user, conversation_id) -> dict:
 
 def badges(db: Session, user) -> dict:
     unread = repo.unread_conversation_count(db, user.id)
+    # Chave ADITIVA: o app ja instalado ignora o que nao conhece, e
+    # EMPTY_BADGES no front tolera a ausencia. Vale para os tres papeis —
+    # gerente e admin tambem podem estar num clube como jogadores.
+    from ..repositories import clubs as clubs_repo
+
+    clube = clubs_repo.unread_total(db, user.id)
     if user.role == ROLE_JOGADOR:
-        return {"solicitacoes": 0, "msg_jog": unread, "msg_ger": 0}
+        return {"solicitacoes": 0, "msg_jog": unread, "msg_ger": 0, "msg_clube": clube}
     if user.role == ROLE_GERENTE:
         arena_ids = _manager_arena_ids(db, user)
         return {
             "solicitacoes": repo.requested_count(db, arena_ids),
             "msg_jog": 0,
             "msg_ger": unread,
+            "msg_clube": clube,
         }
     total_arenas = db.execute(select(Arena.id)).scalars().all()
     return {
         "solicitacoes": repo.requested_count(db, total_arenas),
         "msg_jog": 0,
         "msg_ger": unread,
+        "msg_clube": clube,
     }

@@ -5883,6 +5883,30 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
   cursor: pointer;
 }
 
+/* Contador de mensagem nova na aba Conversa. Absoluto sobre a aba, que e
+   flex em coluna — no fluxo normal ele empurraria o rotulo e mudaria a altura
+   da barra inteira quando aparecesse. */
+.contextbar__tab {
+  position: relative;
+}
+
+.contextbar__count {
+  position: absolute;
+  top: 4px;
+  right: 50%;
+  transform: translateX(20px);
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--pq-brand-strong);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 17px;
+  text-align: center;
+}
+
 .contextbar__tab .ic {
   width: 21px;
   height: 21px;

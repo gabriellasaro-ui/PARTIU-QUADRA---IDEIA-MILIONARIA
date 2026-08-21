@@ -44,6 +44,7 @@ from .club import (
     ClubJoinRequest,
     ClubMember,
     ClubMessage,
+    ClubMessageRead,
 )
 from .coupon import Coupon
 from .court import Court, CourtBlock, CourtRecurringAvailability
@@ -204,6 +205,7 @@ __all__ = [
     "Club",
     "ClubMember",
     "ClubMessage",
+    "ClubMessageRead",
     "CLUB_ROLE_DONO",
     "CLUB_ROLE_ADMIN",
     "CLUB_ROLE_MEMBRO",

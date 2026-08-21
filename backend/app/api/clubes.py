@@ -12,7 +12,8 @@ Contrato do app (venues.js / mobile.js):
   POST   /api/clubes/{id}/membros/{mid}/cargo -> {clube}  (so dono)
   GET    /api/clubes/{id}/solicitacoes -> {solicitacoes:[...]}  (gestao)
   POST   /api/clubes/{id}/solicitacoes/{sid}/aprovar|recusar -> {ok}
-  GET    /api/clubes/{id}/mensagens -> {mensagens:[...]}  (so membro)
+  GET    /api/clubes/{id}/mensagens -> {mensagens:[...]}  (so membro, NAO marca lido)
+  POST   /api/clubes/{id}/mensagens/read -> {ok, naoLidas}
   POST   /api/clubes/{id}/mensagens -> {mensagem}  ({text})
 """
 from fastapi import APIRouter, Depends, Query
@@ -102,6 +103,21 @@ def remover_membro(
     db: Session = Depends(get_db),
 ):
     return svc.remove_member(db, user, club_id, member_id)
+
+
+@router.post("/{club_id}/mensagens/read")
+def marcar_chat_lido(
+    club_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Marca o mural como lido.
+
+    Rota separada de proposito: o GET das mensagens NAO marca. O aviso
+    persistente tem de sobreviver ao carregamento da tela e sumir so quando a
+    pessoa abre a aba de conversa.
+    """
+    return svc.marcar_chat_lido(db, user, club_id)
 
 
 @router.get("/{club_id}/solicitacoes")
