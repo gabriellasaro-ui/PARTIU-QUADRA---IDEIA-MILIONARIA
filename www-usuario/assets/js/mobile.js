@@ -840,23 +840,31 @@ function renderBooking(root) {
       <div class="avail-lbl">${label}</div>
       <div class="avail-slots">${slots.map((slot) => {
         const hour = Number(slot.hour.slice(0, 2));
-        const inBlock = selectedHour && hour >= start && hour < start + duration;
-        const selected = inBlock && isFreeAt(hour);
         const ocupado = slot.status !== 'free';
         const passou = isPast(slot.hour);
         const cabe = canStartAt(hour);
-        const availableStart = cabe && !passou;
-        /* Tres estados, e nao dois. Antes, "livre mas nao cabem 3h a partir
-           daqui" era pintado igual a "reservado" — num dia inteiramente vazio,
-           escolher 3h fazia 21h e 22h parecerem ocupadas so porque a quadra
-           fecha as 23h. Ai o bloco 20-22 parecia estar passando por cima de
-           reserva. A regra sempre esteve certa; quem mentia era a cor. */
-        const estado = ocupado ? 'busy' : passou ? 'past' : cabe ? 'free' : 'nofit';
+        const disponivel = cabe && !passou;
+
+        /* DOIS estados, e so o INICIO marcado.
+
+           Estes quadradinhos nao sao "horas": sao HORARIOS DE INICIO. A
+           versao anterior tratava como horas e criava uma contradicao — com
+           3h escolhidas, 18h e 19h apareciam como "nao pode" (nao cabe um
+           bloco de 3h comecando ali) e, ao clicar nas 17h, acendiam em verde
+           por fazerem parte do bloco. Pintar de proibido e depois marcar e
+           pior do que nao explicar nada, e nenhuma legenda conserta isso.
+
+           Agora: ou o horario serve de inicio, ou nao serve. O motivo (esta
+           reservado / ja passou / nao cabe a duracao) vai no title, que
+           explica sem inventar um terceiro estado visual. E o intervalo
+           inteiro aparece por extenso em [data-bk-range] — "17:00 a 20:00" —,
+           que e onde a pessoa realmente confere o que vai reservar. */
         const reason = passou
           ? 'Horário já passou'
-          : ocupado ? 'Horário ocupado'
-          : `Livre, mas não cabem ${duration}h seguidas a partir daqui`;
-        return `<button type="button" class="slot ${estado} ${selected ? 'sel' : ''}" data-slot-hour="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
+          : ocupado ? 'Reservado'
+          : `Não cabem ${duration}h seguidas a partir daqui`;
+        const selected = Boolean(selectedHour) && hour === start;
+        return `<button type="button" class="slot ${disponivel ? 'free' : 'busy'} ${selected ? 'sel' : ''}" data-slot-hour="${slot.hour}" aria-pressed="${selected}" ${disponivel ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
       }).join('')}</div>
     </div>`).join('');
 

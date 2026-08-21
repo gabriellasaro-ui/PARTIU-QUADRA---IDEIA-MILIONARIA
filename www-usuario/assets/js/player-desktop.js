@@ -813,20 +813,18 @@ function renderBooking(root) {
       <div class="avail-lbl">${label}</div>
       <div class="avail-slots">${slots.map((slot) => {
         const hour = Number(slot.hour.slice(0, 2));
-        const inBlock = selectedHour && hour >= start && hour < start + duration;
-        const selected = inBlock && isFreeAt(hour);
+        const selected = Boolean(selectedHour) && hour === start;
         const ocupado = slot.status !== 'free';
         const passou = isPast(slot.hour);
         const cabe = canStartAt(hour);
         const availableStart = cabe && !passou;
-        /* Mesmos tres estados do mobile: "livre mas nao cabem Nh a partir
-           daqui" nao pode ter a cara de "reservado". */
-        const estado = ocupado ? 'busy' : passou ? 'past' : cabe ? 'free' : 'nofit';
+        /* Dois estados, como no mobile: ou o horario serve de INICIO, ou nao
+           serve. O motivo vai no title. Ver o comentario longo em mobile.js. */
         const reason = passou
           ? 'Horário já passou'
-          : ocupado ? 'Horário ocupado'
-          : `Livre, mas não cabem ${duration}h seguidas a partir daqui`;
-        return `<button type="button" class="slot ${estado} ${selected ? 'sel' : ''}" data-player-slot="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
+          : ocupado ? 'Reservado'
+          : `Não cabem ${duration}h seguidas a partir daqui`;
+        return `<button type="button" class="slot ${availableStart ? 'free' : 'busy'} ${selected ? 'sel' : ''}" data-player-slot="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
       }).join('')}</div>
     </div>`).join('');
 
