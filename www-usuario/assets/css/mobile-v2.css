@@ -4415,15 +4415,27 @@ html[data-route="mapa"] .phone {
 }
 
 /* Horario LIVRE que so nao serve de INICIO para a duracao escolhida.
-   Precisa parecer disponivel-porem-indisponivel-agora, e nunca reservado:
-   fundo branco, borda tracejada, sem risco. Com 3h selecionadas e a quadra
-   fechando as 23h, 21h e 22h caem aqui — antes ficavam com a cara de
-   ocupadas e davam a impressao de que o bloco 20-22 atropelava reserva. */
+
+   Apagado, e nao tracejado: o tracejado tinha cara de "proibido" e, quando a
+   hora entrava num bloco valido, parecia que a reserva atravessava algo
+   bloqueado. Apagado nao promete nem proibe — e o que ele e. */
 .slot.nofit {
-  border: 1px dashed #cfd8d2;
-  background: #ffffff;
-  color: #9aa39d;
+  border-color: #eceeec;
+  background: #fbfcfb;
+  color: #aeb6b0;
   text-decoration: none;
+}
+
+/* As horas seguintes do bloco. Verde CLARO, para se lerem como "parte do que
+   voce esta reservando" sem disputar com o inicio, que e onde a escolha
+   realmente esta. */
+.slot.bloco,
+.avail-slots .slot.bloco {
+  border-color: var(--pq-brand-strong) !important;
+  background: #dcf3e5 !important;
+  color: var(--pq-brand-strong) !important;
+  text-decoration: none !important;
+  opacity: 1;
 }
 
 .dur-seg {
@@ -6986,20 +6998,49 @@ html[data-route="cadastro"]::before {
 /* baseline, e nao flex-start: com o texto como no solto, o half-leading da
    linha empurrava as letras ~4px para baixo e o icone ficava boiando acima
    delas. O <span> em volta do texto e o que da uma baseline para alinhar. */
-.player-card__hint {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
+/* Convite para completar a ficha: icone, texto e SAIDA na mesma linha. */
+.ficha-convite {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
   margin: 16px 0 0;
+  padding: 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
   background: var(--pq-signal-soft);
-  color: var(--pq-brand-strong);
-  font-size: 12.5px;
-  line-height: 1.45;
 }
 
-.player-card__hint .ic { position: relative; top: 2px; flex: 0 0 auto; width: 16px; height: 16px; }
+.ficha-convite__ic {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--pq-brand-strong);
+}
+
+.ficha-convite__ic .ic { width: 17px; height: 17px; }
+
+.ficha-convite__txt strong {
+  display: block;
+  font-size: 13px;
+  color: var(--pq-ink);
+}
+
+.ficha-convite__txt p {
+  margin: 1px 0 0;
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* Busca de clube: o campo estava colado no cartao de resultado, e os dois
+   liam-se como um bloco so. */
+.route-page .explore-search + .payment-list {
+  margin-top: 14px;
+}
 
 .auth-error {
   padding: 10px 12px;

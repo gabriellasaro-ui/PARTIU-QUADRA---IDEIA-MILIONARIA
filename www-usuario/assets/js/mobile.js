@@ -41,17 +41,30 @@ const LOCATION_COORDINATES = {
 
    As modalidades de futebol dividem a mesma bola de proposito: sao o mesmo
    jogo em quadras diferentes, e o que as separa e o nome ao lado. */
+/* Icone por modalidade — cada um mostra a QUADRA, nao a bola.
+
+   Dar a mesma bola para society, futsal e campo foi erro meu: sao tres jogos
+   diferentes, com preco, numero de jogadores e piso diferentes, e quem procura
+   sabe muito bem qual quer. O que os separa nao e a bola — e onde se joga.
+
+   'goal'      campo: o gol grande, o futebol classico
+   'fence'     society: o alambrado em volta, marca registrada da modalidade
+   'warehouse' futsal: quadra coberta, ginasio
+   'waves'     futevolei: areia
+   'umbrella'  beach tennis: praia, e distingue do tenis de quadra
+   'target'    basquete: o aro visto de cima
+   'circle-dashed' tenis: a bolinha
+
+   (Bola de futebol, raquete e bola de basquete NAO existem nesta versao do
+   lucide — conferido no bundle. Daí a escolha por quadra, que alias
+   identifica melhor.) */
 const SPORT_ICONS = {
-  // Futebol em todas as quadras: mesma bola, o nome ao lado e que separa.
-  'Futebol Society': 'volleyball',
-  'Futebol de Campo': 'volleyball',
-  Futsal: 'volleyball',
-  Futvolei: 'waves',        // areia: e o que distingue futevolei de futsal
+  'Futebol de Campo': 'goal',
+  'Futebol Society': 'fence',
+  Futsal: 'warehouse',
+  Futvolei: 'waves',
   Volei: 'volleyball',
-  // Raquete e bola de basquete nao existem nesta versao do lucide (conferido
-  // no bundle): circulo tracejado para a bolinha leve do beach/tenis, alvo
-  // para a cesta.
-  'Beach Tennis': 'circle-dashed',
+  'Beach Tennis': 'umbrella',
   Tenis: 'circle-dashed',
   Basquete: 'target'
 };
@@ -934,8 +947,29 @@ function renderBooking(root) {
           ? 'Horário já passou'
           : ocupado ? 'Reservado'
           : `Não cabem ${duration}h seguidas a partir daqui`;
-        const selected = Boolean(selectedHour) && hour === start;
-        return `<button type="button" class="slot ${disponivel ? 'free' : 'busy'} ${selected ? 'sel' : ''}" data-slot-hour="${slot.hour}" aria-pressed="${selected}" ${disponivel ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
+
+        /* O BLOCO volta a aparecer. Quem reserva 3h quer VER as 3 horas — sem
+           isso, so o inicio acendia e a leitura era "nao marcou".
+
+           A contradicao anterior nao estava em mostrar o bloco: estava em
+           pintar de CINZA-RISCADO (a cara de "reservado") uma hora que so nao
+           servia de inicio, e depois acende-la. Agora sao coisas distintas:
+
+             busy   reservado ou ja passou — cinza riscado, NUNCA entra num
+                    bloco, porque a regra de fato o proibe;
+             nofit  livre, so nao serve de INICIO para esta duracao — apagado,
+                    sem risco. Nao promete nem proibe;
+             bloco  faz parte do que voce esta reservando — verde claro;
+             sel    o inicio — verde cheio.
+
+           Assim 21h e 22h (livres, mas sem 3h a partir dali) sao `nofit`, e
+           entrar num bloco que comeca as 20h nao contradiz nada: elas nunca
+           disseram "proibido". */
+        const noBloco = Boolean(selectedHour) && hour >= start && hour < start + duration && !ocupado && !passou;
+        const inicio = Boolean(selectedHour) && hour === start;
+        const estado = (ocupado || passou) ? 'busy' : disponivel ? 'free' : 'nofit';
+        const marca = inicio ? ' sel' : noBloco ? ' bloco' : '';
+        return `<button type="button" class="slot ${estado}${marca}" data-slot-hour="${slot.hour}" aria-pressed="${inicio}" ${disponivel ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
       }).join('')}</div>
     </div>`).join('');
 
@@ -1659,11 +1693,27 @@ function syncMobileProfile(root, user) {
   set('[data-profile-birth]', formatBirthDate(user.birthDate));
   set('[data-profile-foot]', user.foot || '—');
 
-  // O empurrao so aparece enquanto falta alguma coisa: aviso permanente vira
-  // decoração e para de ser lido.
-  const faltando = !user.position || !user.level || !user.birthDate || !user.foot;
+  /* O empurrao so aparece enquanto falta alguma coisa: aviso permanente vira
+     decoracao e para de ser lido.
+
+     E diz O QUE falta, por nome. "Complete sua ficha" obriga a pessoa a abrir
+     o formulario e conferir campo por campo o que ja preencheu — dizer
+     "faltam nascimento e pe dominante" resolve isso na propria frase. */
+  const pendencias = [
+    !user.position && 'posição',
+    !user.level && 'nível',
+    !user.birthDate && 'nascimento',
+    !user.foot && 'pé dominante'
+  ].filter(Boolean);
   const dica = root.querySelector('[data-profile-card-hint]');
-  if (dica) dica.hidden = !faltando;
+  if (dica) dica.hidden = !pendencias.length;
+  const oQueFalta = root.querySelector('[data-profile-card-missing]');
+  if (oQueFalta && pendencias.length) {
+    const lista = pendencias.length === 1
+      ? pendencias[0]
+      : `${pendencias.slice(0, -1).join(', ')} e ${pendencias.at(-1)}`;
+    oQueFalta.textContent = `Falta ${pendencias.length === 1 ? '' : 'preencher '}${lista}.`;
+  }
 
   // Folha da CONTA: quem a pessoa e no cadastro.
   const form = root.querySelector('[data-profile-edit-form]');

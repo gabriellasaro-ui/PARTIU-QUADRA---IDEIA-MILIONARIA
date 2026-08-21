@@ -51,10 +51,17 @@
         <div><span>Nascimento</span><strong data-profile-birth>—</strong></div>
         <div><span>Pé dominante</span><strong data-profile-foot>—</strong></div>
       </div>
-      <p class="player-card__hint" data-profile-card-hint hidden>
-        <i class="ic" data-lucide="trophy"></i>
-        <span>Complete sua ficha para entrar no ranking quando ele chegar.</span>
-      </p>
+      <!-- Era um paragrafo verde solto, sem saida: dizia o que falta e
+           deixava a pessoa procurar onde preencher. Vira convite com acao —
+           o botao leva direto a folha da ficha. -->
+      <div class="ficha-convite" data-profile-card-hint hidden>
+        <span class="ficha-convite__ic"><i class="ic" data-lucide="trophy"></i></span>
+        <div class="ficha-convite__txt">
+          <strong>Falta pouco para o ranking</strong>
+          <p data-profile-card-missing>Complete sua ficha de jogador.</p>
+        </div>
+        <button class="btn btn-xs" type="button" data-sheet-open="player-card-sheet">Completar</button>
+      </div>
     </section>
 
     <nav class="account-menu" aria-label="Menu da conta">
