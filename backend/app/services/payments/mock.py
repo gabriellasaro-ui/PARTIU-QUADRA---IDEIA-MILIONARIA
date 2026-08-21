@@ -69,7 +69,7 @@ class MockProvider(PaymentProvider):
             expires_at=expires_at,
         )
 
-    def parse_webhook(self, headers, body: bytes) -> WebhookResult | None:
+    def parse_webhook(self, headers, body: bytes, query=None) -> WebhookResult | None:
         if not body:
             return None
         if not _segredo_confere(headers):

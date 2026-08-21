@@ -5,7 +5,7 @@ Rotas:
        idempotente via webhook_id). Usado pelo mock e pelo teste manual.
   GET  /api/payments/{id} — intent/status do pagamento (dono ou admin).
 
-O provedor real (Asaas/etc.) entra trocando o adapter em services/payments,
+O provedor real (Mercado Pago) entra trocando o adapter em services/payments,
 sem mudar o dominio aqui.
 """
 from fastapi import APIRouter, Depends, Request
@@ -28,7 +28,11 @@ async def webhook_pagamento(
 ):
     body = await request.body()
     prov = get_provider(provider)
-    result = prov.parse_webhook(dict(request.headers), body)
+    # A query vai junto: o Mercado Pago assina um manifesto montado com o
+    # data.id que chega NA URL, e sem ele nao da para conferir a assinatura.
+    result = prov.parse_webhook(
+        dict(request.headers), body, dict(request.query_params)
+    )
     if result is None:
         return {"ok": False, "ignored": True}
     payment, replay = svc.confirm_payment(

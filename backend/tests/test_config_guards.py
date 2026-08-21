@@ -46,18 +46,16 @@ def test_guard_rejects_mock_payment_provider():
 
 
 def _producao_valida(**extra):
-    """Producao completa. asaas sem chave, sem segredo de webhook ou apontando
-    para o sandbox nao e producao valida — cada um desses tem guarda propria
-    nos testes abaixo."""
+    """Producao completa. Sem token, com token de TESTE ou sem segredo de
+    webhook nao e producao valida — cada um tem guarda propria abaixo."""
     from app.core.config import Settings
 
     base = dict(
         environment="production",
         jwt_secret="a-32-char-test-secret-0123456789abcdef-xyz",
         cors_origins="https://app.qadras.com.br,https://gerente.qadras.com.br",
-        payment_provider="asaas",
-        asaas_api_key="$aact_chave_de_producao",
-        asaas_ambiente="producao",
+        payment_provider="mercadopago",
+        mercadopago_access_token="APP_USR-token-de-producao",
         payment_webhook_secret="segredo-do-webhook",
     )
     base.update(extra)
@@ -70,20 +68,22 @@ def test_guard_allows_valid_production():
     assert s.cors_origin_list == ["https://app.qadras.com.br", "https://gerente.qadras.com.br"]
 
 
-def test_asaas_sem_chave_nao_sobe():
-    """Sem chave nenhuma cobranca e criada e toda reserva morre no pagamento."""
+def test_mercadopago_sem_token_nao_sobe():
+    """Sem token nenhuma cobranca e criada e toda reserva morre no pagamento."""
     import pytest
 
-    with pytest.raises(ValueError, match="ASAAS_API_KEY"):
-        _producao_valida(asaas_api_key="")
+    with pytest.raises(ValueError, match="MERCADOPAGO_ACCESS_TOKEN"):
+        _producao_valida(mercadopago_access_token="")
 
 
-def test_asaas_apontando_para_sandbox_nao_sobe():
-    """As cobrancas iriam para o ambiente de testes e o dinheiro nunca entraria."""
+def test_token_de_teste_em_producao_nao_sobe():
+    """O Mercado Pago usa a MESMA API para teste e producao: quem separa e o
+    token. Um TEST- em producao simula as cobrancas e o dinheiro nunca entra —
+    e nada falha visivelmente, que e o pior jeito de descobrir."""
     import pytest
 
-    with pytest.raises(ValueError, match="ASAAS_AMBIENTE"):
-        _producao_valida(asaas_ambiente="sandbox")
+    with pytest.raises(ValueError, match="TESTE"):
+        _producao_valida(mercadopago_access_token="TEST-1234567890")
 
 
 def test_webhook_sem_segredo_nao_sobe():

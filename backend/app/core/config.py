@@ -71,11 +71,16 @@ class Settings(BaseSettings):
     payment_provider: str = "mock"
     payment_mock_confirm_seconds: int = 15
 
-    # Adquirente (Asaas). A chave da acesso total a conta: vive so no .env,
-    # que e gitignored, e nunca aparece em log.
-    asaas_api_key: str = ""
-    #: "sandbox" (padrao) ou "producao" — decide a URL base da API.
-    asaas_ambiente: str = "sandbox"
+    # Adquirente (Mercado Pago). O access token da acesso total a conta: vive
+    # so no .env, que e gitignored, e nunca aparece em log.
+    #
+    # Nao ha URL separada de sandbox: o Mercado Pago usa a MESMA API para
+    # teste e producao, e quem decide e o token (TEST-... versus APP_USR-...).
+    # Por isso a guarda de producao olha o prefixo do token, e nao um ambiente.
+    mercadopago_access_token: str = ""
+    #: URL publica do callback, mandada em cada cobranca (notification_url).
+    #: Vazia => vale so a URL cadastrada no painel.
+    mercadopago_notification_url: str = ""
 
     # Segredo compartilhado do webhook de pagamento. O callback do provedor e
     # publico (quem chama e o provedor, nao o app), entao ele precisa provar
@@ -120,18 +125,19 @@ class Settings(BaseSettings):
                     "mock confirma cobranca sem dinheiro nenhum entrar. "
                     "Configure o provedor de Pix real antes de subir."
                 )
-            if provedor == "asaas":
-                if not self.asaas_api_key.strip():
+            if provedor == "mercadopago":
+                token = self.mercadopago_access_token.strip()
+                if not token:
                     raise ValueError(
-                        "ASAAS_API_KEY vazia com PAYMENT_PROVIDER=asaas. "
-                        "Sem ela nenhuma cobranca e criada e toda reserva "
-                        "morre no pagamento."
+                        "MERCADOPAGO_ACCESS_TOKEN vazio com "
+                        "PAYMENT_PROVIDER=mercadopago. Sem ele nenhuma "
+                        "cobranca e criada e toda reserva morre no pagamento."
                     )
-                if self.asaas_ambiente.strip().lower() != "producao":
+                if token.startswith("TEST-"):
                     raise ValueError(
-                        "ASAAS_AMBIENTE=sandbox em producao: as cobrancas "
-                        "iriam para o ambiente de testes e o dinheiro nunca "
-                        "entraria. Use ASAAS_AMBIENTE=producao."
+                        "MERCADOPAGO_ACCESS_TOKEN de TESTE em producao: as "
+                        "cobrancas seriam simuladas e o dinheiro nunca "
+                        "entraria. Use o token de producao (APP_USR-...)."
                     )
             if not self.payment_webhook_secret.strip():
                 raise ValueError(

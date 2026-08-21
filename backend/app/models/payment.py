@@ -1,6 +1,6 @@
 """Pagamento de uma reserva — Fase 5.
 
-O provider (mock hoje; Asaas/MercadoPago/Stripe no futuro) cria um intent
+O provider (Mercado Pago em producao; mock em desenvolvimento) cria um intent
 (Pix/cartao) e o webhook confirma. O booking so sai de pending_payment via
 pagamento confirmado — nunca por clique no botao.
 

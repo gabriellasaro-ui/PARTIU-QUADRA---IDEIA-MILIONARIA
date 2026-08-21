@@ -29,7 +29,7 @@ class WebhookResult:
 
 
 class PaymentProvider(ABC):
-    """Interface para MockProvider (agora) e Asaas/etc. (futuro)."""
+    """Interface para MercadoPagoProvider (producao) e MockProvider (dev)."""
 
     name: str = "base"
 
@@ -38,11 +38,17 @@ class PaymentProvider(ABC):
         """Cria o intent de cobranca e devolve o que o cliente precisa exibir."""
 
     @abstractmethod
-    def parse_webhook(self, headers, body: bytes) -> WebhookResult | None:
+    def parse_webhook(self, headers, body: bytes, query=None) -> WebhookResult | None:
         """Valida assinatura/payload e devolve o resultado do pagamento.
 
         Devolve None quando o payload nao e reconhecido (nao e um evento
-        de pagamento deste provedor).
+        de pagamento deste provedor), e tambem quando a assinatura nao
+        confere: a rota responde 200/ignored e nada se move.
+
+        `query` sao os parametros da URL do callback. O Mercado Pago assina um
+        manifesto montado com o `data.id` que vem NA QUERY, entao sem ele a
+        assinatura nao pode ser conferida. Opcional porque nem todo provedor
+        precisa.
         """
 
     def refund(self, payment) -> bool:

@@ -118,67 +118,76 @@ endpoint responde 503. No cliente, `www-usuario/services/google-auth.js` tem
 
 ---
 
-## C. Provedor de pagamento (Asaas)
+## C. Provedor de pagamento (Mercado Pago)
 
-**Status:** implementado em `backend/app/services/payments/asaas.py`. Falta
-apenas a chave — o codigo esta pronto e testado na parte que da para testar
-sem conta (leitura de webhook, mapeamento de evento, validacao de token).
+**Status:** implementado em `backend/app/services/payments/mercadopago.py`.
+Falta apenas a credencial — o codigo esta pronto e testado na parte que da para
+testar sem conta (assinatura do webhook, leitura de status, idempotencia).
 
-O `MockProvider` continua no repositorio para desenvolver sem chave. Ele nao
-chega a producao: `Settings` recusa o boot com `PAYMENT_PROVIDER=mock` fora de
-desenvolvimento.
+O `MockProvider` continua no repositorio para desenvolver sem credencial. Ele
+nao chega a producao: `Settings` recusa o boot com `PAYMENT_PROVIDER=mock` fora
+de desenvolvimento.
 
-### C.1 Por que Asaas
+### C.1 O que voce precisa fazer
 
-O repasse deste projeto (`models/settlement.py`) e periodico: a Qadras recebe o
-valor cheio e acerta com a arena depois, com comissao e comprovante. Isso
-dispensa split no adquirente — basta **uma conta recebedora**, o que simplifica
-muito a integracao.
-
-### C.2 O que voce precisa fazer
-
-1. **Criar a conta** em asaas.com e aprovar o cadastro (pede CNPJ ou CPF,
-   documentos e conta bancaria para saque).
-2. **Pegar a chave de API**: painel > Integracoes > Chave de API.
-   Sandbox comeca com `$aact_hmlg_`; producao, com `$aact_prod_`.
-3. **Preencher no `.env`**:
+1. **Criar a aplicacao** em mercadopago.com.br/developers > Suas integracoes.
+2. **Pegar o access token**: aplicacao > Credenciais.
+   - `TEST-...` = teste (cobranca simulada)
+   - `APP_USR-...` = producao (dinheiro de verdade)
+3. **Pegar a assinatura secreta**: aplicacao > Webhooks > Configurar
+   notificacao. Ela e **gerada pelo painel** — nao invente um valor.
+4. **Preencher o `.env`**:
    ```
-   PAYMENT_PROVIDER=asaas
-   ASAAS_API_KEY=$aact_hmlg_sua_chave
-   ASAAS_AMBIENTE=sandbox
-   PAYMENT_WEBHOOK_SECRET=<openssl rand -hex 32>
+   PAYMENT_PROVIDER=mercadopago
+   MERCADOPAGO_ACCESS_TOKEN=TEST-...
+   PAYMENT_WEBHOOK_SECRET=<a assinatura secreta copiada do painel>
    ```
-4. **Cadastrar o webhook** no painel > Integracoes > Webhooks:
-   - URL: `https://SEU-DOMINIO/api/payments/webhook/asaas`
-   - Token de autenticacao: **o mesmo** `PAYMENT_WEBHOOK_SECRET`
-   - Eventos: os de cobranca (`PAYMENT_*`)
+5. **Cadastrar a URL do webhook** no mesmo lugar:
+   `https://SEU-DOMINIO/api/payments/webhook/mercadopago`, evento **Pagamentos**.
 
-   A URL precisa ser publica e HTTPS. Em desenvolvimento, exponha com ngrok
-   ou cloudflared — `localhost` o Asaas nao alcanca.
+   Precisa ser publica e HTTPS. Em desenvolvimento, exponha com ngrok ou
+   cloudflared — `localhost` o Mercado Pago nao alcanca.
 
-### C.3 Cuidados que ja estao tratados no codigo
+### C.2 Particularidades que ja estao tratadas no codigo
 
-- **A fila do Asaas para depois de 15 respostas nao-2xx seguidas**, e os eventos
-  so ficam guardados por 14 dias. Por isso evento irrelevante (`PAYMENT_CREATED`,
-  eventos de split) devolve `None` e a rota responde **200 com `ignored: true`**,
-  em vez de erro. Recusar com 4xx um evento qualquer derrubaria a entrega dos
-  pagamentos seguintes.
-- **`PAYMENT_CONFIRMED` e `PAYMENT_RECEIVED` contam os dois como pago.** No Pix
-  chegam juntos; no cartao, CONFIRMED (capturado) vem antes de RECEIVED
-  (liquidado). Tratar so um deixaria metade dos pagamentos pendurados.
-- **Idempotencia pelo `id` do evento**, e nao pelo id da cobranca: o Asaas
-  reenvia o mesmo evento quando nao recebe 2xx, e uma mesma cobranca gera mais
-  de um evento legitimo.
-- **O QR do Pix vem em chamada separada** (`GET /v3/payments/{id}/pixQrCode`).
-  Se ela falhar, a cobranca ja existe — o codigo segue sem o QR em vez de
-  deixar uma cobranca orfa no Asaas e a reserva sem pagamento.
+- **Nao existe URL de sandbox.** A API e a mesma; quem separa teste de producao
+  e o token. Por isso a guarda de producao recusa o boot com um token `TEST-`:
+  senao as cobrancas seriam simuladas, o dinheiro nunca entraria e **nada
+  falharia visivelmente** — o pior jeito de descobrir.
+
+- **O webhook nao diz o que aconteceu.** A notificacao traz so
+  `{"type": "payment", "data": {"id": ...}}` — avisa que algo mudou naquele
+  pagamento, nao o que mudou. O status vem de `GET /v1/payments/{id}`.
+  Confiar num status escrito no corpo seria confiar em quem POSTou.
+
+- **Assinatura `x-signature: ts=...,v1=...`**, HMAC-SHA256 sobre o manifesto
+  `id:{data.id};request-id:{x-request-id};ts:{ts};`. O `data.id` vai em
+  **minusculas**: o Mercado Pago as vezes entrega o id em maiusculas e assina a
+  versao minuscula. Sem normalizar, a assinatura falha **so em producao**, onde
+  os ids tem letras — bug classico dessa integracao.
+
+- **Idempotencia por pagamento + situacao.** O Mercado Pago reenvia a mesma
+  notificacao ate receber 2xx, e manda novas a cada mudanca. Chavear so pelo id
+  do pagamento descartaria a aprovacao como repeticao do "pendente", e a
+  reserva ficaria presa em "Aguardando pagamento".
+
+- **`X-Idempotency-Key` na criacao**, derivada do codigo da reserva: se a rede
+  cair depois do POST e o jogador tentar de novo, volta a MESMA cobranca em vez
+  de nascer uma segunda para o mesmo horario.
+
+### C.3 Cartao ainda nao funciona
+
+O Mercado Pago exige que o cartao seja tokenizado **no navegador**
+(MercadoPago.js) — o numero nunca pode chegar ao nosso servidor. Enquanto o
+front nao gerar esse token, `create_payment` recusa `card` com mensagem clara,
+e a tela ja mostra cartao como "Em breve". Pix funciona.
 
 ### C.4 O que NAO foi testado
 
-A criacao de cobranca contra a API real, porque exige conta e chave. Ao ligar o
-sandbox pela primeira vez, faca uma reserva de ponta a ponta e confira: cobranca
-criada no painel, QR exibido, webhook chegando e reserva saindo de "Aguardando
-pagamento".
+A criacao de cobranca contra a API real, porque exige conta e credencial. Ao
+ligar o token de teste pela primeira vez, faca uma reserva de ponta a ponta e
+confira: cobranca no painel, QR na tela, webhook chegando e reserva saindo de
+"Aguardando pagamento".
 
 ---
 

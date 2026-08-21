@@ -1,8 +1,8 @@
 """Adapter de provedor de pagamento (plugavel).
 
 `get_provider()` devolve o provedor configurado em settings.payment_provider
-("asaas" em producao; "mock" so em desenvolvimento, e Settings recusa o boot
-com ele fora de dev).
+("mercadopago" em producao; "mock" so em desenvolvimento, e Settings recusa
+o boot com ele fora de dev).
 """
 from functools import lru_cache
 
@@ -10,11 +10,11 @@ from fastapi import HTTPException, status
 
 from ...core.config import settings
 from .base import PaymentIntent, PaymentProvider, WebhookResult
-from .asaas import AsaasProvider
+from .mercadopago import MercadoPagoProvider
 from .mock import MockProvider
 
 _REGISTRY: dict[str, type[PaymentProvider]] = {
-    "asaas": AsaasProvider,
+    "mercadopago": MercadoPagoProvider,
     # Mantido para desenvolvimento sem chave de adquirente. Nao chega a
     # producao: a guarda em Settings recusa o boot com mock fora de dev.
     "mock": MockProvider,

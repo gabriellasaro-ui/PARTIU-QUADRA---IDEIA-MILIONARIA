@@ -9,7 +9,7 @@ Escopo: `backend/`, `www-usuario`, `www-gerente`, `www-admin`
 | Decisão | Valor |
 |---|---|
 | Regra de preço/comissão | 9% do jogador **por cima** do preço da quadra + 3% da arena **por dentro** do repasse (R$120 → jogador paga R$130,80; arena recebe R$116,40; Qadras fica R$14,40) |
-| Pagamento | Adapter plugável + mock primeiro; troca por provedor real (Asaas/MercadoPago/Stripe) sem reescrever o domínio |
+| Pagamento | Adapter plugável: Mercado Pago em produção, mock em desenvolvimento — a troca não reescreve o domínio |
 | Push notifications | Firebase FCM (Android/iOS/web) |
 | Tempo real | WebSocket + push FCM como fallback em background |
 | Mensagens | Conversas jogador↔arena, jogador↔jogador e de clube |
@@ -54,7 +54,7 @@ backend/app/
   auth/         dependências current_user / current_manager / current_admin
   workers/      tarefas Celery + schedule (beat)
   notifications/ push FCM + notificações in-app
-  payments/     provider adapter (base + MockProvider + futuro Asaas)
+  payments/     provider adapter (base + MercadoPagoProvider + MockProvider)
 ```
 
 ---
