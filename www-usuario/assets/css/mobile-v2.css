@@ -6637,6 +6637,70 @@ html[data-bottombar="none"] .screen {
 
 .member-remove .ic { width: 16px; height: 16px; }
 
+/* Duas acoes lado a lado (promover + remover, aceitar + recusar). */
+.member-actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Aceitar pedido: a unica acao verde desta tela. Recusar fica neutra — o
+   par verde/vermelho transformaria "nao agora" em punicao. */
+.member-remove--ok {
+  border-color: var(--pq-brand-strong);
+  color: var(--pq-brand-strong);
+}
+
+/* Seletor de clube no cabecalho. So aparece com mais de um. */
+.club-switch {
+  margin-bottom: 6px;
+}
+
+.club-switch select {
+  max-width: 100%;
+  padding: 6px 30px 6px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--pq-ink);
+}
+
+/* Fila de entrada, destacada do resto do painel: e a unica coisa da tela que
+   espera uma decisao de alguem. */
+.club-requests {
+  margin-bottom: 18px;
+  padding: 12px;
+  border: 1px solid var(--pq-brand-strong);
+  border-radius: 16px;
+  background: #f3fbf6;
+}
+
+.club-requests .mobile-section-head {
+  margin-top: 0;
+}
+
+/* Rotulo que so leitor de tela enxerga. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--pq-muted);
+  font-size: 11px;
+}
+
 /* ── Ficha de jogador no Perfil ── */
 
 .player-card {

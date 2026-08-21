@@ -1842,17 +1842,29 @@ async function renderClubSearch(root, route) {
     return;
   }
 
-  const [clubes, meu] = await Promise.all([venueService.clubs(), venueService.myClub()]);
+  const [clubes, meus] = await Promise.all([venueService.clubs(), venueService.myClubs()]);
+  const jaSou = new Set(meus.map((c) => String(c.id)));
   const alvo = normalizeSearch(termo);
   const alvoCodigo = alvo.replace(/[^a-z0-9]/g, '');
 
   const achados = clubes.filter((club) => {
-    if (meu && club.id === meu.id) return false;
+    if (jaSou.has(String(club.id))) return false;
     // Codigo casa EXATO, nunca por pedaco: codigo e identidade, nao palavra
     // chave. Busca parcial vazaria quais codigos existem.
     if (club.code && normalizeSearch(club.code) === alvoCodigo) return true;
     return normalizeSearch(club.name).includes(alvo);
   });
+
+  /* Clube PRIVADO nao vem em /api/clubes — ele nao aparece em busca nenhuma,
+     de proposito. A unica porta e o codigo, e e aqui que ela abre: com 6
+     caracteres, pergunta ao servidor por aquele codigo exato.
+
+     Sem isto, colar o codigo de um clube fechado devolveria "nenhum clube
+     encontrado", e o convite mandado no grupo nao levaria a lugar nenhum. */
+  if (!achados.length && alvoCodigo.length === 6) {
+    const porCodigo = await venueService.clubByCode(alvoCodigo).catch(() => null);
+    if (porCodigo && !jaSou.has(String(porCodigo.id))) achados.push(porCodigo);
+  }
 
   lista.innerHTML = achados.length
     ? achados.map((club) => `<article class="payment-row club-hit">
@@ -1863,7 +1875,8 @@ async function renderClubSearch(root, route) {
         </span>
         <button class="btn btn-xs" type="button"
                 data-club-join="${club.id}"
-                data-requires-auth="clubes?codigo=${escapeHtml(club.code || '')}">Entrar</button>
+                data-club-codigo="${escapeHtml(club.code || '')}"
+                data-requires-auth="clubes?codigo=${escapeHtml(club.code || '')}">${club.joinMode === 'solicitacao' ? 'Pedir para entrar' : 'Entrar'}</button>
       </article>`).join('')
     : `<div class="empty">
         <span class="empty-ic"><i class="ic" data-lucide="search-x"></i></span>
@@ -2081,6 +2094,27 @@ export function initMobileActions() {
       return;
     }
 
+    const configForm = event.target.closest('[data-club-config-form]');
+    if (configForm) {
+      event.preventDefault();
+      if (!configForm.reportValidity()) return;
+      const dados = new FormData(configForm);
+      try {
+        await venueService.clubConfig(String(dados.get('id')), {
+          joinMode: String(dados.get('joinMode') || ''),
+          maxMembers: Number(dados.get('maxMembers')) || undefined
+        });
+        closeMarketSheet(configForm.closest('[data-market-sheet]'));
+        window.pqToast?.('Ajustes salvos');
+        const view = document.querySelector('[data-route-view]');
+        await renderClub(view);
+        window.pqRefreshIcons?.(view);
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível salvar');
+      }
+      return;
+    }
+
     const clubForm = event.target.closest('[data-club-form]');
     if (clubForm) {
       event.preventDefault();
@@ -2197,6 +2231,18 @@ export function initMobileActions() {
   });
 
   // A barra de km so aparece quando "Personalizado" esta marcado.
+  /* Troca de clube pelo seletor do cabecalho. A escolha vira o clube ATIVO e
+     a tela inteira e redesenhada — peladas, membros e chat pertencem ao clube,
+     nao a pessoa. */
+  document.addEventListener('change', async (event) => {
+    const troca = event.target.closest('[data-club-switch-select]');
+    if (!troca) return;
+    venueService.definirClubeAtivo(troca.value);
+    const view = document.querySelector('[data-route-view]');
+    await renderClub(view);
+    window.pqRefreshIcons?.(view);
+  });
+
   document.addEventListener('change', (event) => {
     const radio = event.target.closest('[name="raio"]');
     if (radio) {
@@ -2239,8 +2285,20 @@ export function initMobileActions() {
   const joinBtn = event.target.closest('[data-club-join]');
   if (joinBtn) {
     try {
-      const club = await venueService.joinClub(joinBtn.dataset.clubJoin);
-      window.pqToast?.(`Bem-vindo ao ${club.name}!`);
+      /* O codigo vem no proprio botao quando a pessoa chegou pela busca por
+         codigo — e a prova de convite que o clube privado exige. */
+      const { pendente, clube } = await venueService.joinClub(
+        joinBtn.dataset.clubJoin, joinBtn.dataset.clubCodigo || null
+      );
+      if (pendente) {
+        // Dizer "bem-vindo" a quem so entrou na fila e mentira: a pessoa
+        // ficaria esperando um acesso que ainda nao existe.
+        window.pqToast?.('Pedido enviado. A administração do clube vai avaliar.');
+        return;
+      }
+      // Passa a ser o clube ATIVO: quem acabou de entrar quer ver este.
+      venueService.definirClubeAtivo(clube?.id);
+      window.pqToast?.(`Bem-vindo ao ${clube?.name || 'clube'}!`);
       location.hash = 'clube';
     } catch (error) {
       window.pqToast?.(error.message || 'Não foi possível entrar');
@@ -2305,6 +2363,69 @@ export function initMobileActions() {
     } catch (error) {
       window.pqToast?.(error.message || 'Não foi possível apagar');
     }
+    return;
+  }
+
+  /* Redesenha a tela do clube. Repetido em varios handlers abaixo; extrair
+     evita esquecer o refreshIcons, que deixa os icones novos invisiveis. */
+  const redesenharClube = async () => {
+    const view = document.querySelector('[data-route-view]');
+    await renderClub(view);
+    window.pqRefreshIcons?.(view);
+  };
+
+  const cargoBtn = event.target.closest('[data-member-role]');
+  if (cargoBtn) {
+    const club = await venueService.myClub();
+    if (!club) return;
+    try {
+      await venueService.setMemberRole(club.id, cargoBtn.dataset.memberRole, cargoBtn.dataset.role);
+      window.pqToast?.(cargoBtn.dataset.role === 'admin'
+        ? 'Agora é administrador do clube'
+        : 'Voltou a ser membro');
+      await redesenharClube();
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível mudar o cargo');
+    }
+    return;
+  }
+
+  const pedidoOk = event.target.closest('[data-request-ok]');
+  const pedidoNao = event.target.closest('[data-request-no]');
+  if (pedidoOk || pedidoNao) {
+    const club = await venueService.myClub();
+    if (!club) return;
+    const alvo = pedidoOk || pedidoNao;
+    const id = alvo.dataset.requestOk || alvo.dataset.requestNo;
+    try {
+      await venueService.decideRequest(club.id, id, Boolean(pedidoOk));
+      window.pqToast?.(pedidoOk ? 'Entrou no clube' : 'Pedido recusado');
+      await redesenharClube();
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível decidir agora');
+    }
+    return;
+  }
+
+  const abrirConfig = event.target.closest('[data-club-config]');
+  if (abrirConfig) {
+    const club = await venueService.myClub();
+    if (!club) return;
+    const form = document.querySelector('[data-club-config-form]');
+    if (form) {
+      form.elements.id.value = club.id;
+      const modo = form.querySelector(`[name="joinMode"][value="${club.joinMode || 'aberto'}"]`);
+      if (modo) modo.checked = true;
+      form.elements.maxMembers.value = club.maxMembers || 30;
+      /* O piso e o total ATUAL: baixar o limite nao expulsa ninguem, entao
+         pedir menos do que ja existe so criaria um clube que se recusa a
+         aceitar gente. O servidor prende do mesmo jeito; aqui a pessoa
+         descobre antes de tentar. */
+      form.elements.maxMembers.min = club.members.length;
+      const dica = form.querySelector('[data-club-limit-hint]');
+      if (dica) dica.textContent = `O clube tem ${club.members.length} ${club.members.length === 1 ? 'membro' : 'membros'} agora.`;
+    }
+    openMarketSheet('club-config-sheet');
     return;
   }
 
@@ -2856,23 +2977,65 @@ function formatClubCode(code) {
   return limpo.length === 6 ? `${limpo.slice(0, 3)}-${limpo.slice(3)}` : limpo;
 }
 
-function memberRow(member, user, souDono) {
+/* `meuCargo` decide o que a linha oferece — nao mais um booleano de dono.
+
+   As regras espelham o backend de proposito: esconder o botao nao e
+   seguranca (o servidor recusa de qualquer jeito), mas mostrar um botao que
+   sempre falha e pior do que nao mostrar nenhum. */
+function memberRow(member, user, meuCargo) {
   const initial = member.name.charAt(0).toUpperCase();
   // A linha da propria pessoa le do perfil vivo: editar posicao no Perfil
   // reflete aqui na hora, sem precisar reescrever o registro de membro.
   const eu = user && member.id === user.id;
   const position = eu ? (user.position || member.position) : member.position;
-  const role = member.role === 'dono' ? 'Dono do clube' : (position || 'Membro');
+  const cargoNome = member.role === 'dono'
+    ? 'Dono do clube'
+    : member.role === 'admin' ? 'Administrador' : (position || 'Membro');
   const rating = eu ? (user.rating ?? member.rating) : member.rating;
+
+  const souDono = meuCargo === 'dono';
+  const souGestao = souDono || meuCargo === 'admin';
+  // Admin nao mexe em dono nem em outro admin — mesma fronteira do servidor.
+  const podeRemover = souGestao && !eu && member.role !== 'dono'
+    && !(meuCargo === 'admin' && member.role === 'admin');
+
+  const acoes = [];
+  if (souDono && !eu && member.role !== 'dono') {
+    const proximo = member.role === 'admin' ? 'membro' : 'admin';
+    const rotulo = member.role === 'admin' ? 'Rebaixar a membro' : 'Promover a admin';
+    acoes.push(`<button class="member-remove" type="button" data-member-role="${escapeHtml(member.id)}" data-role="${proximo}" aria-label="${rotulo}" title="${rotulo}">${icon(member.role === 'admin' ? 'shield-off' : 'shield-plus')}</button>`);
+  }
+  if (podeRemover) {
+    acoes.push(`<button class="member-remove" type="button" data-member-remove="${escapeHtml(member.id)}" aria-label="Remover ${escapeHtml(member.name)}">${icon('user-minus')}</button>`);
+  }
+
   const tail = member.role === 'dono'
     ? '<span class="status pago">Dono</span>'
-    : souDono && !eu
-      ? `<button class="member-remove" type="button" data-member-remove="${escapeHtml(member.id)}" aria-label="Remover ${escapeHtml(member.name)}">${icon('user-minus')}</button>`
-      : `<span class="member-rating">${icon('star')}${rating ?? '-'}</span>`;
+    : acoes.length
+      ? `<span class="member-actions">${acoes.join('')}</span>`
+      : member.role === 'admin'
+        ? '<span class="status">Admin</span>'
+        : `<span class="member-rating">${icon('star')}${rating ?? '-'}</span>`;
+
   return `<div class="payment-row member-row">
     <span class="badge-ic member-row__avatar">${initial}</span>
-    <span><strong>${escapeHtml(member.name)}</strong><small>${escapeHtml(role)} &middot; desde ${escapeHtml(member.since || '')}</small></span>
+    <span><strong>${escapeHtml(member.name)}</strong><small>${escapeHtml(cargoNome)} &middot; desde ${escapeHtml(member.since || '')}</small></span>
     ${tail}
+  </div>`;
+}
+
+
+/* Linha de quem pediu para entrar. Duas acoes, nada mais: aceitar ou nao. */
+function requestRow(pedido) {
+  const inicial = (pedido.name || '?').charAt(0).toUpperCase();
+  const detalhe = [pedido.position, pedido.city].filter(Boolean).join(' · ');
+  return `<div class="payment-row member-row">
+    <span class="badge-ic member-row__avatar">${inicial}</span>
+    <span><strong>${escapeHtml(pedido.name || '')}</strong><small>${escapeHtml(detalhe || 'Quer entrar no clube')}</small></span>
+    <span class="member-actions">
+      <button class="member-remove member-remove--ok" type="button" data-request-ok="${escapeHtml(pedido.id)}" aria-label="Aceitar ${escapeHtml(pedido.name || '')}" title="Aceitar">${icon('check')}</button>
+      <button class="member-remove" type="button" data-request-no="${escapeHtml(pedido.id)}" aria-label="Recusar ${escapeHtml(pedido.name || '')}" title="Recusar">${icon('x')}</button>
+    </span>
   </div>`;
 }
 
@@ -2954,7 +3117,47 @@ async function renderClub(root) {
   root.querySelector('[data-club-avatar]').textContent = club.name.charAt(0).toUpperCase();
   root.querySelector('[data-member-label]').textContent = club.members.length === 1 ? '1 no time' : `${club.members.length} no time`;
   root.querySelector('[data-pelada-label]').textContent = upcoming.length === 1 ? '1 marcada' : `${upcoming.length} marcadas`;
-  const souDono = club.members.some((m) => m.id === user.id && m.role === 'dono');
+  /* O cargo vem do servidor (myRole) e nao e mais deduzido da lista de
+     membros: com admin no meio, deduzir daria a mesma resposta so para dono
+     e erraria em todo o resto. O fallback mantem o app velho funcionando
+     contra um backend que ainda nao mande o campo. */
+  const meuCargo = club.myRole
+    || (club.members.find((m) => m.id === user.id)?.role || 'membro');
+  const souDono = meuCargo === 'dono';
+  const souGestao = souDono || meuCargo === 'admin';
+
+  // Seletor de clube: so faz sentido com mais de um.
+  const meus = await venueService.myClubs();
+  const troca = root.querySelector('[data-club-switch]');
+  const seletor = root.querySelector('[data-club-switch-select]');
+  if (troca && seletor) {
+    troca.hidden = meus.length < 2;
+    seletor.innerHTML = '';
+    meus.forEach((c) => {
+      const item = document.createElement('option');
+      item.value = String(c.id);
+      item.textContent = c.name;
+      if (String(c.id) === String(club.id)) item.selected = true;
+      seletor.appendChild(item);
+    });
+  }
+
+  const btnConfig = root.querySelector('[data-club-config]');
+  if (btnConfig) btnConfig.hidden = !souGestao;
+
+  /* Fila de entrada. Buscada so para a gestao: para membro comum o servidor
+     responderia 403, e pedir para receber um erro previsto e desperdicio. */
+  const filaBox = root.querySelector('[data-club-requests]');
+  if (filaBox) {
+    const pedidos = souGestao ? await venueService.clubRequests(club.id).catch(() => []) : [];
+    filaBox.hidden = !pedidos.length;
+    if (pedidos.length) {
+      root.querySelector('[data-club-requests-label]').textContent =
+        pedidos.length === 1 ? '1 pedido' : `${pedidos.length} pedidos`;
+      root.querySelector('[data-club-requests-list]').innerHTML =
+        pedidos.map(requestRow).join('');
+    }
+  }
 
   const codigo = root.querySelector('[data-club-code]');
   if (codigo) {
@@ -2966,6 +3169,8 @@ async function renderClub(root) {
      a dica explica o que fazer antes em vez de deixar o botao morto sem
      motivo aparente. */
   const sozinho = club.members.length <= 1;
+  const btnEditar = root.querySelector('[data-club-edit]');
+  if (btnEditar) btnEditar.hidden = !souGestao;
   const btnSair = root.querySelector('[data-club-leave]');
   if (btnSair) btnSair.hidden = souDono;
   const btnApagar = root.querySelector('[data-club-delete]');
@@ -2976,7 +3181,7 @@ async function renderClub(root) {
   const dica = root.querySelector('[data-club-delete-hint]');
   if (dica) dica.hidden = !souDono || sozinho;
   root.querySelector('[data-member-list]').innerHTML = club.members
-    .map((m) => memberRow(m, user, souDono)).join('');
+    .map((m) => memberRow(m, user, meuCargo)).join('');
   root.querySelector('[data-pelada-list]').innerHTML = upcoming.length
     ? upcoming.map((p) => peladaCard(p, user.id, venueOf(p))).join('')
     : '<div class="empty"><h3>Nenhuma pelada marcada</h3><p>Agende a próxima e o time confirma presença por aqui.</p></div>';

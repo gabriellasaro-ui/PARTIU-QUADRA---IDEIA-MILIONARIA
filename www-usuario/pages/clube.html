@@ -41,7 +41,17 @@
         <button class="profile-edit-action" type="button" data-club-edit>
           <i class="ic" data-lucide="pencil"></i><span>Editar</span>
         </button>
+        <!-- Modo de entrada e limite de membros. So a gestao ve. -->
+        <button class="profile-edit-action club-config-action" type="button" data-club-config hidden>
+          <i class="ic" data-lucide="settings"></i><span>Ajustes</span>
+        </button>
         <div class="profile-identity-copy">
+          <!-- Seletor de clube. So aparece com mais de um: com um so, um
+               dropdown de item unico e ruido. -->
+          <div class="club-switch" data-club-switch hidden>
+            <label class="sr-only" for="club-switch-select">Trocar de clube</label>
+            <select id="club-switch-select" data-club-switch-select></select>
+          </div>
           <h1 data-club-name></h1>
           <p data-club-description></p>
           <span class="profile-location"><i class="ic" data-lucide="map-pin"></i><span data-club-city></span></span>
@@ -77,6 +87,16 @@
     </section>
 
     <section data-club-panel="membros" hidden>
+      <!-- Fila de entrada. Fica ANTES da lista de membros de proposito: e a
+           unica coisa nesta tela que espera uma acao de alguem. -->
+      <div class="club-requests" data-club-requests hidden>
+        <div class="mobile-section-head">
+          <h2>Pedidos para entrar</h2>
+          <span data-club-requests-label></span>
+        </div>
+        <div class="payment-list" data-club-requests-list></div>
+      </div>
+
       <div class="mobile-section-head">
         <h2>Membros</h2>
         <span data-member-label></span>

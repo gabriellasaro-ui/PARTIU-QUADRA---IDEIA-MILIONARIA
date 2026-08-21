@@ -126,6 +126,57 @@
 </div>
 
 <!-- Criar / editar clube -->
+<!-- Ajustes do clube: quem entra e quantos cabem. Separado do "Editar"
+     (nome, esporte, cidade) porque sao decisoes de natureza diferente — uma e
+     identidade do grupo, a outra e porta de entrada. -->
+<div class="market-sheet" id="club-config-sheet" data-market-sheet hidden>
+  <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar"></button>
+  <section class="market-sheet__panel profile-edit-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="club-config-title">
+    <header class="market-sheet__head">
+      <div>
+        <span>Quem pode entrar</span>
+        <h2 id="club-config-title">Ajustes do clube</h2>
+      </div>
+      <button class="market-sheet__close" type="button" data-sheet-close aria-label="Fechar">
+        <i class="ic" data-lucide="x"></i>
+      </button>
+    </header>
+
+    <form class="profile-edit-form" data-club-config-form>
+      <input type="hidden" name="id">
+
+      <div class="field">
+        <label>Forma de entrada</label>
+        <div class="filter-choice-grid onb-esportes" data-club-modes>
+          <label class="filter-choice">
+            <input type="radio" name="joinMode" value="aberto" checked>
+            <span><strong>Aberto</strong><small>Qualquer pessoa entra na hora</small></span>
+          </label>
+          <label class="filter-choice">
+            <input type="radio" name="joinMode" value="solicitacao">
+            <span><strong>Por solicitação</strong><small>A pessoa pede e vocês aprovam</small></span>
+          </label>
+          <label class="filter-choice">
+            <input type="radio" name="joinMode" value="privado">
+            <span><strong>Privado</strong><small>Só com o código. Não aparece na busca</small></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Limite de membros</label>
+        <input type="number" name="maxMembers" min="1" max="100" required>
+        <small class="field-hint" data-club-limit-hint></small>
+      </div>
+
+      <div class="profile-edit-actions">
+        <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
+        <button class="btn" type="submit"><i class="ic" data-lucide="check"></i>Salvar</button>
+      </div>
+    </form>
+  </section>
+</div>
+
 <div class="market-sheet" id="club-edit-sheet" data-market-sheet hidden>
   <button class="market-sheet__backdrop" type="button" data-sheet-close aria-label="Fechar"></button>
   <section class="market-sheet__panel profile-edit-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="club-edit-title">

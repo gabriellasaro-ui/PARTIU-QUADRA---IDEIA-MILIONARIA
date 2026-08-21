@@ -42,6 +42,7 @@ function applyOverrides(venue) {
    agora", nao um dado de cadastro — quem viaja muda a busca sem mexer no
    perfil. */
 const CHAVE_LOCAL = 'player_local';
+const CHAVE_CLUBE_ATIVO = 'clube_ativo';
 
 export function localEscolhido() {
   return storage.get(CHAVE_LOCAL, null);
@@ -497,14 +498,88 @@ export const venueService = {
     return storage.get('clubs', clone(CLUBS));
   },
 
-  async myClub() {
+  /* Todos os clubes da pessoa. */
+  async myClubs() {
+    if (API_BASE_URL) {
+      const data = await api.get('/api/clubes/meus');
+      return data?.clubes || [];
+    }
     const user = await this.profile();
     const clubs = await this.clubs();
-    return clubs.find((club) => club.members.some((m) => m.id === user.id)) || null;
+    return clubs.filter((club) => club.members.some((m) => m.id === user.id));
+  },
+
+  /* O clube ATIVO — o que a tela esta mostrando agora.
+
+     A assinatura nao mudou de proposito: renderClub, o formulario, o chat e a
+     pelada continuam chamando myClub() como antes. O que mudou e o
+     significado, agora que a pessoa participa de varios: em vez de "o unico
+     clube dela", e "aquele em que ela esta". A escolha vive no aparelho, e nao
+     no servidor — e preferencia de navegacao, nao dado de conta.
+
+     Se o clube guardado sumiu (a pessoa saiu, ou o dono apagou), cai no
+     primeiro da lista em vez de devolver nada: uma tela vazia com clubes
+     existentes seria pior do que mostrar outro. */
+  async myClub() {
+    const clubs = await this.myClubs();
+    if (!clubs.length) return null;
+    const escolhido = storage.get(CHAVE_CLUBE_ATIVO, null);
+    return clubs.find((c) => String(c.id) === String(escolhido)) || clubs[0];
+  },
+
+  definirClubeAtivo(clubId) {
+    storage.set(CHAVE_CLUBE_ATIVO, clubId ? String(clubId) : null);
+  },
+
+  /* Configuracao do clube: modo de entrada e limite de membros. */
+  async clubConfig(clubId, { joinMode, maxMembers } = {}) {
+    const atual = await this.clubByIdLocal(clubId);
+    if (!atual) throw new Error('Clube não encontrado.');
+    return this.saveClub({
+      id: clubId,
+      name: atual.name,
+      sport: atual.sport,
+      city: atual.city,
+      state: atual.state || null,
+      description: atual.description || '',
+      ...(joinMode ? { joinMode } : {}),
+      ...(maxMembers ? { maxMembers: Number(maxMembers) } : {})
+    });
+  },
+
+  async clubByIdLocal(clubId) {
+    const clubs = await this.myClubs();
+    return clubs.find((c) => String(c.id) === String(clubId)) || null;
+  },
+
+  /* Fila de quem pediu para entrar. So a gestao enxerga. */
+  async clubRequests(clubId) {
+    if (!API_BASE_URL) return [];
+    const data = await api.get(`/api/clubes/${clubId}/solicitacoes`);
+    return data?.solicitacoes || [];
+  },
+
+  async decideRequest(clubId, requestId, aprovar) {
+    if (!API_BASE_URL) return { ok: true };
+    const acao = aprovar ? 'aprovar' : 'recusar';
+    return api.post(`/api/clubes/${clubId}/solicitacoes/${requestId}/${acao}`, {});
+  },
+
+  async setMemberRole(clubId, memberId, role) {
+    if (!API_BASE_URL) return null;
+    const data = await api.post(`/api/clubes/${clubId}/membros/${memberId}/cargo`, { role });
+    return data?.clube || null;
   },
 
   async saveClub(club) {
-    if (API_BASE_URL) return api.post('/api/clubes', club);
+    if (API_BASE_URL) {
+      /* A rota responde {clube:{...}}, e nao o clube direto. Devolver o
+         envelope cru fazia `saved.name` chegar undefined em quem chamou — o
+         aviso de sucesso dizia "undefined criado!" e nenhum campo do clube
+         recem-criado era utilizavel. */
+      const data = await api.post('/api/clubes', club);
+      return data?.clube || data;
+    }
     const clubs = await this.clubs();
     const id = club.id || clubs.reduce((max, item) => Math.max(max, item.id), 0) + 1;
     const previous = clubs.find((c) => c.id === id);
@@ -556,13 +631,19 @@ export const venueService = {
 
   /* O membro nasce do PERFIL: posicao e nota vem de quem a pessoa e, nao de
      um valor escrito na mao na hora de entrar. */
-  async joinClub(clubId) {
-    if (API_BASE_URL) return api.post(`/api/clubes/${clubId}/entrar`, {});
-    const [clubs, user, atual] = await Promise.all([this.clubs(), this.profile(), this.myClub()]);
-    if (atual) throw new Error('Você já faz parte de um clube. Saia dele antes de entrar em outro.');
+  async joinClub(clubId, codigo = null) {
+    if (API_BASE_URL) {
+      /* A resposta tem duas formas: {clube} quando entrou, e
+         {status:"pendente", clube} quando o clube pede aprovacao. Quem chamou
+         precisa distinguir — dizer "voce entrou" para quem so entrou na fila
+         seria mentira, e a pessoa ficaria esperando um acesso que nao veio. */
+      const data = await api.post(`/api/clubes/${clubId}/entrar`, codigo ? { codigo } : {});
+      return { pendente: data?.status === 'pendente', clube: data?.clube || data || null };
+    }
+    const [clubs, user] = await Promise.all([this.clubs(), this.profile()]);
     const club = clubs.find((c) => c.id === Number(clubId));
     if (!club) throw new Error('Clube não encontrado.');
-    if (club.members.some((m) => m.id === user.id)) return clone(club);
+    if (club.members.some((m) => m.id === user.id)) return { pendente: false, clube: clone(club) };
 
     const membro = {
       id: user.id,
@@ -574,7 +655,7 @@ export const venueService = {
     };
     const next = clubs.map((c) => (c.id === club.id ? { ...c, members: [...c.members, membro] } : c));
     storage.set('clubs', next);
-    return clone(next.find((c) => c.id === club.id));
+    return { pendente: false, clube: clone(next.find((c) => c.id === club.id)) };
   },
 
   async leaveClub(clubId) {
