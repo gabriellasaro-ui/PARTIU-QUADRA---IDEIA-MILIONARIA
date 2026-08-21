@@ -42,6 +42,13 @@ NOTIF_MESSAGE_NEW = "message.new"
 
 # Fase 9 — clubes/peladas/partidas
 NOTIF_CLUBE_ENTROU = "clube.entrou"
+#: Alguem pediu para entrar num clube em modo solicitacao — vai para a gestao.
+NOTIF_CLUBE_SOLICITACAO = "clube.solicitacao"
+#: A gestao decidiu — vai para quem pediu.
+NOTIF_CLUBE_APROVADO = "clube.aprovado"
+NOTIF_CLUBE_RECUSADO = "clube.recusado"
+#: Promovido a admin ou rebaixado a membro.
+NOTIF_CLUBE_CARGO = "clube.cargo"
 NOTIF_PELADA_CRIADA = "pelada.criada"
 NOTIF_PELADA_PRESENCA = "pelada.presenca"
 NOTIF_PARTIDA_PRESENCA = "partida.presenca"

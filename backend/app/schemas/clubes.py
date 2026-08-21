@@ -15,6 +15,26 @@ class ClubCreate(BaseModel):
     city: str = Field(min_length=1, max_length=60)
     state: str | None = Field(default=None, min_length=2, max_length=2)
     description: str | None = Field(default=None, max_length=120)
+    #: aberto | solicitacao | privado. Ausente => aberto, que e como todo
+    #: clube criado antes da Fase 16 sempre se comportou.
+    joinMode: str | None = None
+    #: Limite de membros. O servico prende o valor entre o total atual e o
+    #: teto do sistema — o cliente nao manda um numero que valha sozinho.
+    maxMembers: int | None = Field(default=None, ge=1, le=1000)
+
+
+class ClubJoin(BaseModel):
+    """Corpo opcional de POST /{id}/entrar.
+
+    `codigo` so importa em clube privado: e a unica prova de que a pessoa foi
+    convidada.
+    """
+
+    codigo: str | None = Field(default=None, max_length=20)
+
+
+class ClubRoleBody(BaseModel):
+    role: str = Field(min_length=1, max_length=10)
 
 
 class ClubMessageCreate(BaseModel):

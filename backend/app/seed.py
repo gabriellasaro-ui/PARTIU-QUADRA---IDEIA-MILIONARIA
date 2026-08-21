@@ -30,6 +30,9 @@ from .models import (
     CONVERSATION_ACTIVE,
     CONVERSATION_KIND_ARENA,
     MESSAGE_TYPE_TEXT,
+    CLUB_JOIN_ABERTO,
+    CLUB_JOIN_SOLICITACAO,
+    CLUB_ROLE_ADMIN,
     CLUB_ROLE_DONO,
     CLUB_ROLE_MEMBRO,
     ATTENDANCE_SIM,
@@ -678,44 +681,77 @@ def _seed_settlements(db) -> int:
 
 
 def _seed_clubs(db) -> int:
-    """Um clube demo (Fase 9) espelhando CLUBS do mock-data.js.
+    """Dois clubes demo, um por modo de entrada relevante.
 
-    Gabriel e o dono; os demais jogadores demo entram como membros (cada um
-    nasce do perfil). O codigo de convite segue o alfabeto do app.
+    A guarda e por CODIGO, e nao "existe algum clube?" como antes. Com a guarda
+    antiga, nenhum clube novo entrava num banco ja semeado — e foi exatamente
+    por isso que o segundo clube desta fase nao apareceria em nenhum ambiente
+    que ja tivesse rodado o seed uma vez.
+
+    Cada membro nasce do perfil. O codigo de convite segue o alfabeto do app.
     """
-    if db.execute(select(Club.id).limit(1)).first():
-        return 0
     users = {u.email: u for u in db.execute(select(User)).scalars()}
     gabriel = users.get("gabriel@email.com")
     if not gabriel:
         return 0
-    club = Club(
-        id=uuid.uuid4(),
-        name="Bola na Rede F.C.",
-        code="BANRED",
-        sport="Futebol Society",
-        city="Goiania",
-        state="GO",
-        description="Turma das quartas na Arena Bola na Rede. Resenha garantida.",
-        owner_id=gabriel.id,
-    )
-    db.add(club)
-    db.flush()
-    ordem = [("gabriel@email.com", CLUB_ROLE_DONO),
-             ("mariana@email.com", CLUB_ROLE_MEMBRO),
-             ("joao@email.com", CLUB_ROLE_MEMBRO),
-             ("rafael@email.com", CLUB_ROLE_MEMBRO),
-             ("camila@email.com", CLUB_ROLE_MEMBRO)]
-    for email, role in ordem:
-        user = users.get(email)
-        if user:
-            db.add(ClubMember(club_id=club.id, user_id=user.id, role=role))
-    db.add(ClubMessage(
-        id=uuid.uuid4(), club_id=club.id, member_id=gabriel.id,
-        name=gabriel.name, text="Boa galera! Pelada da semana confirmada.",
-    ))
-    db.flush()
-    return 1
+
+    criados = 0
+
+    if not db.execute(select(Club.id).where(Club.code == "BANRED")).first():
+        club = Club(
+            id=uuid.uuid4(),
+            name="Bola na Rede F.C.",
+            code="BANRED",
+            sport="Futebol Society",
+            city="Goiania",
+            state="GO",
+            description="Turma das quartas na Arena Bola na Rede. Resenha garantida.",
+            owner_id=gabriel.id,
+            join_mode=CLUB_JOIN_ABERTO,
+            max_members=30,
+        )
+        db.add(club)
+        db.flush()
+        ordem = [("gabriel@email.com", CLUB_ROLE_DONO),
+                 ("mariana@email.com", CLUB_ROLE_ADMIN),
+                 ("joao@email.com", CLUB_ROLE_MEMBRO),
+                 ("rafael@email.com", CLUB_ROLE_MEMBRO),
+                 ("camila@email.com", CLUB_ROLE_MEMBRO)]
+        for email, role in ordem:
+            user = users.get(email)
+            if user:
+                db.add(ClubMember(club_id=club.id, user_id=user.id, role=role))
+        db.add(ClubMessage(
+            id=uuid.uuid4(), club_id=club.id, member_id=gabriel.id,
+            name=gabriel.name, text="Boa galera! Pelada da semana confirmada.",
+        ))
+        db.flush()
+        criados += 1
+
+    # Segundo clube: existe para as telas de solicitacao terem o que mostrar.
+    # Dono diferente de proposito — assim da para testar pedir entrada num
+    # clube que nao e o seu.
+    mariana = users.get("mariana@email.com")
+    if mariana and not db.execute(select(Club.id).where(Club.code == "QUINTA")).first():
+        outro = Club(
+            id=uuid.uuid4(),
+            name="Quinta Suada",
+            code="QUINTA",
+            sport="Futsal",
+            city="Goiania",
+            state="GO",
+            description="Pelada de quinta. Peça para entrar que a gente avalia.",
+            owner_id=mariana.id,
+            join_mode=CLUB_JOIN_SOLICITACAO,
+            max_members=12,
+        )
+        db.add(outro)
+        db.flush()
+        db.add(ClubMember(club_id=outro.id, user_id=mariana.id, role=CLUB_ROLE_DONO))
+        db.flush()
+        criados += 1
+
+    return criados
 
 
 def _local_date_of(dt) -> str:

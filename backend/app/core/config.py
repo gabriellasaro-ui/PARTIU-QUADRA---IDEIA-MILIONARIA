@@ -68,6 +68,16 @@ class Settings(BaseSettings):
     booking_payment_expire_minutes: int = 15
     booking_approval_expire_minutes: int = 15
     booking_code_prefix: str = "PQ-"
+
+    # --- Clubes (guilda) ---
+    #: De quantos clubes uma pessoa participa. Sem teto, aparece quem entra em
+    #: dezenas so para cacar vaga e nunca confirma presenca.
+    club_max_per_user: int = 5
+    #: Quantos ela pode CRIAR. Segura a enxurrada de clube vazio na busca.
+    club_max_owned: int = 2
+    #: Tamanho inicial de um clube novo, e o teto que a gestao pode pedir.
+    club_members_default: int = 30
+    club_members_max: int = 100
     payment_provider: str = "mock"
     payment_mock_confirm_seconds: int = 15
 
