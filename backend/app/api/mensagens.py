@@ -58,6 +58,20 @@ def enviar_mensagem(
     return {"conversa": svc.send_message(db, user, cid, texto)}
 
 
+@router.post("/{cid}/encerrar")
+def encerrar_conversa(
+    cid: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """A arena encerra o atendimento. Jogador recebe 403.
+
+    Depois disso ninguem escreve nesta conversa — o canal existia para
+    resolver AQUELA reserva.
+    """
+    return svc.encerrar_conversa(db, user, cid)
+
+
 @router.post("/{cid}/read")
 def marcar_lida(
     cid: str,

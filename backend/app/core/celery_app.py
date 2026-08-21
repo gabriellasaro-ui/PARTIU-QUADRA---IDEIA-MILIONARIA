@@ -56,6 +56,11 @@ celery_app.conf.update(
         # garante um aviso por pelada, entao rodar mais rapido so gastaria
         # consulta. E nao pode ser MUITO lento — uma pelada marcada de vespera
         # precisa ser convocada antes de acontecer.
+        # Fase 22 (chat): encerra o atendimento cuja reserva ja acabou.
+        "encerrar-chats-vencidos": {
+            "task": "app.workers.tasks.encerrar_chats_vencidos",
+            "schedule": 1800.0,
+        },
         "convocar-faltantes": {
             "task": "app.workers.tasks.convocar_faltantes",
             "schedule": 900.0,

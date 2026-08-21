@@ -1,4 +1,3 @@
-<!-- TODO: substituir dados locais por GET /quadras na API FastAPI -->
 <div class="route-page mobile-map-route" data-map-page>
   <div class="navbar map-navbar">
     <div>
@@ -6,13 +5,21 @@
       <div class="sub" data-map-summary>Quadras perto de você</div>
     </div>
     <span class="spacer"></span>
-    <button class="icon-btn" type="button" data-map-locate aria-label="Centralizar na minha localização">
+    <button class="icon-btn" type="button" data-map-locate aria-label="Usar minha localização">
       <i class="ic" data-lucide="locate-fixed"></i>
     </button>
   </div>
 
   <div class="map-filter-strip">
     <div class="chips" data-map-filters></div>
+  </div>
+
+  <!-- Raio aqui, e nao so nos Ajustes: no mapa a distancia e o que a pessoa
+       esta olhando, e mandar ela sair da tela para mudar o alcance da busca
+       quebra o raciocinio no meio. -->
+  <div class="map-radius" role="group" aria-label="Distância máxima">
+    <span class="map-radius__rotulo">Até</span>
+    <div class="chips" data-map-raio></div>
   </div>
 
   <div class="leaflet-map-shell">

@@ -1734,6 +1734,69 @@ button .ic,
   text-align: center;
 }
 
+/* Atendimento encerrado: ocupa o lugar do campo de escrever, em vez de um
+   campo desabilitado. Campo cinza convida a tentar; um aviso explica. */
+.chat-encerrado {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 10px 12px calc(12px + var(--pq-safe-bottom));
+  padding: 12px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-panel);
+}
+
+.chat-encerrado .ic {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  margin-top: 2px;
+  color: var(--pq-muted);
+}
+
+.chat-encerrado strong {
+  display: block;
+  font-size: 13px;
+}
+
+.chat-encerrado p {
+  margin: 2px 0 0;
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* Faixa de raio, logo abaixo dos esportes. */
+.map-radius {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 10px;
+}
+
+.map-radius__rotulo {
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* Chip de esporte com icone: o simbolo e reconhecido de relance, o texto
+   exige leitura. Numa fileira de oito, isso e a diferenca entre achar e
+   procurar. */
+.chip-esporte {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip-esporte .ic {
+  width: 15px;
+  height: 15px;
+}
+
 /* ---------- mensagens ---------- */
 .messages-page {
   min-height: 100%;
@@ -6525,13 +6588,43 @@ html[data-route="cadastro"]::before {
   text-decoration: none;
 }
 
+/* O passo vira um CARD centralizado na tela.
+
+   Antes era uma coluna colada no topo, com o conteudo escorrendo para baixo:
+   em aparelho alto sobrava um vazio enorme embaixo e a pergunta ficava
+   perdida la em cima. Onboarding e uma pergunta de cada vez — ela merece o
+   centro. */
 .onb-step {
   display: flex;
   flex: 1;
   flex-direction: column;
+  /* safe center, e nao center: com o teclado aberto ou tela baixa, `center`
+     puro corta o topo do card e o titulo some para fora da area rolavel. */
+  justify-content: safe center;
+  gap: 4px;
+  padding: 22px 18px 18px;
+  border: 1px solid var(--pq-line);
+  border-radius: 24px;
+  background: var(--pq-panel);
+  box-shadow: 0 10px 30px rgba(16, 43, 28, .06);
+  text-align: center;
   /* Horizontal de proposito: route-in e vertical, entao a direcao sozinha
      diz "mesmo lugar, outro passo" em vez de "outra tela". */
   animation: pq-step-in .18s cubic-bezier(.2, .8, .2, 1);
+}
+
+/* O texto do card fica centralizado; as grades de escolha voltam ao
+   alinhamento normal, senao os rotulos das opcoes dancam no meio. */
+.onb-step .filter-choice-grid {
+  text-align: left;
+}
+
+.onb-step h1 {
+  margin-bottom: 2px;
+}
+
+.onb-step > .btn {
+  margin-top: auto;
 }
 
 .onb-page--back .onb-step {

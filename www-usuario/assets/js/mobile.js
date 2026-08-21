@@ -611,9 +611,23 @@ function mapPopup(venue) {
     </a>`;
 }
 
+/* Degraus de distancia. Poucos e redondos de proposito: um controle
+   deslizante daria 37 km, um numero que ninguem quer escolher. */
+const RAIOS_MAPA = [2, 5, 10, 25];
+
+/* Raio -> zoom do Leaflet. Cada degrau dobra a area coberta, e o zoom anda ao
+   contrario: mais longe, numero menor. */
+function zoomDoRaio(km) {
+  if (km <= 2) return 14;
+  if (km <= 5) return 13;
+  if (km <= 10) return 12;
+  return 11;
+}
+
 async function renderMap(root, route) {
   const query = routeQuery(route);
   const sport = query.get('esporte') || '';
+  const raio = RAIOS_MAPA.includes(Number(query.get('raio'))) ? Number(query.get('raio')) : 5;
   const [sports, venues] = await Promise.all([
     venueService.sports(),
     venueService.list({ sport })
@@ -626,10 +640,22 @@ async function renderMap(root, route) {
   summary.textContent = sport
     ? `${venues.length} opções de ${displayText(sport)}`
     : `${venues.length} quadras perto de você`;
+  /* Filtro de esporte com ICONE, e nao so o nome. Uma fileira de pilulas de
+     texto todas iguais obriga a ler cada uma; o icone e reconhecido de
+     relance, e e o mesmo simbolo que a pessoa ja viu na home. */
   filters.innerHTML = [
-    `<a class="chip ${sport ? '' : 'on'}" href="#mapa">Todos</a>`,
-    ...sports.map((item) => `<a class="chip ${item === sport ? 'on' : ''}" href="#mapa?esporte=${encodeURIComponent(item)}">${escapeHtml(item)}</a>`)
+    `<a class="chip chip-esporte ${sport ? '' : 'on'}" href="#mapa?raio=${raio}">${icon('sparkles')}Todos</a>`,
+    ...sports.map((item) => `<a class="chip chip-esporte ${item === sport ? 'on' : ''}" href="#mapa?esporte=${encodeURIComponent(item)}&raio=${raio}">${icon(SPORT_ICONS[item] || 'trophy')}${escapeHtml(rotuloModalidade(item))}</a>`)
   ].join('');
+
+  /* Raio na propria tela do mapa: aqui a distancia e o assunto, e mandar a
+     pessoa aos Ajustes para mudar o alcance quebra o raciocinio no meio. */
+  const faixaRaio = root.querySelector('[data-map-raio]');
+  if (faixaRaio) {
+    const esporteQs = sport ? `esporte=${encodeURIComponent(sport)}&` : '';
+    faixaRaio.innerHTML = RAIOS_MAPA.map((km) => `
+      <a class="chip ${String(km) === String(raio) ? 'on' : ''}" href="#mapa?${esporteQs}raio=${km}">${km} km</a>`).join('');
+  }
 
   if (!window.L) {
     mapElement.innerHTML = `
@@ -644,7 +670,9 @@ async function renderMap(root, route) {
   activeMobileMap = window.L.map(mapElement, {
     zoomControl: false,
     attributionControl: true
-  }).setView(userLocation, 13);
+  /* Zoom amarrado ao raio: escolher "até 25 km" e continuar vendo dois
+     quarteiroes seria o filtro mentindo sobre o que mostra. */
+  }).setView(userLocation, zoomDoRaio(raio));
 
   window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
@@ -1710,10 +1738,18 @@ async function renderMessages(root, route) {
           <div class="bub-time">${escapeHtml(message.time)}</div>
         </div>`).join('')}
     </div>
-    <form class="mobile-composer" data-message-form data-conversation-id="${active.id}">
-      <input type="text" name="message" placeholder="Escreva uma mensagem..." autocomplete="off" required>
-      <button type="submit" aria-label="Enviar">${icon('send')}</button>
-    </form>`;
+    ${active.encerrada
+      ? `<div class="chat-encerrado">
+           ${icon('lock')}
+           <div>
+             <strong>Atendimento encerrado</strong>
+             <p>Este canal existia para esta reserva. Precisando de algo, abra uma nova reserva com a arena.</p>
+           </div>
+         </div>`
+      : `<form class="mobile-composer" data-message-form data-conversation-id="${active.id}">
+           <input type="text" name="message" placeholder="Escreva uma mensagem..." autocomplete="off" required>
+           <button type="submit" aria-label="Enviar">${icon('send')}</button>
+         </form>`}`;
   const bubbles = thread.querySelector('[data-mobile-bubbles]');
   bubbles.scrollTop = bubbles.scrollHeight;
 }
@@ -2635,14 +2671,29 @@ export function initMobileActions() {
       }
       window.pqToast?.('Buscando sua localização...');
       geoService.getCurrentPosition()
-        .then(({ latitude, longitude }) => {
+        .then(async ({ latitude, longitude }) => {
           const coordinates = [latitude, longitude];
           storage.set('current_coordinates', coordinates);
-          storage.set('current_location', 'Localização atual');
+          storage.set('current_location_auto', true);
+
+          /* Este botao so recentralizava o mapa e gravava "Localização atual"
+             como rotulo. Agora ele DEFINE o local do app inteiro: resolve o
+             nome do lugar e alimenta player_local, que e o que a busca usa
+             para medir distancia. Recentralizar sem definir deixava o mapa
+             certo e a lista de quadras ainda medindo a partir de outro ponto. */
+          let rotulo = 'Localização atual';
+          try {
+            const lugar = await venueService.localDeCoordenada(latitude, longitude);
+            if (lugar?.label && lugar.distanceKm <= 60) rotulo = lugar.label;
+          } catch (error) { /* nome e enfeite; a coordenada ja resolve a busca */ }
+          storage.set('current_location', rotulo);
+          definirLocal({ label: rotulo, lat: latitude, lng: longitude, auto: true });
+
           syncMarketplaceState(document);
           activeUserMarker?.setLatLng(coordinates);
           activeMobileMap?.setView(coordinates, 15, { animate: true });
           activeUserMarker?.openPopup();
+          window.pqToast?.(`Localização: ${rotulo}`);
         })
         .catch(() => {
           activeMobileMap?.setView(currentCoordinates(), 15, { animate: true });

@@ -11,7 +11,7 @@ venue, subject, messages:[{from:'player'|'venue', text, time}], unread}.
 legado nao existe mais no contrato.
 """
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -24,6 +24,7 @@ from ..models import (
     ROLE_GERENTE,
     ROLE_JOGADOR,
     CONVERSATION_ACTIVE,
+    CONVERSATION_ARCHIVED,
     CONVERSATION_KIND_ARENA,
     MESSAGE_TYPE_TEXT,
     Arena,
@@ -114,6 +115,8 @@ def _to_conv(db: Session, viewer_id, row, messages: list[Message]) -> dict:
         "subject": f"Reserva {booking_code}",
         "messages": [_to_msg(viewer_id, m) for m in messages],
         "unread": repo.count_newer_messages(db, conv.id, viewer_id) > 0,
+        # Aditivo: o app antigo ignora e continua funcionando.
+        "encerrada": conv.status != CONVERSATION_ACTIVE,
     }
 
 
@@ -156,6 +159,11 @@ def send_message(db: Session, user, conversation_id, text: str | None) -> dict:
         raise _conv_404()
     arena = db.get(Arena, conv.arena_id)
     _can_access(db, user, conv, arena)
+    if conv.status != CONVERSATION_ACTIVE:
+        raise HTTPException(
+            status_code=409,
+            detail="Este atendimento foi encerrado. Fale com a arena pela nova reserva.",
+        )
     text = (text or "").strip()[:MAX_TEXT]
     if not text:
         raise HTTPException(status_code=422, detail="Mensagem vazia")
@@ -211,6 +219,76 @@ def mark_read(db: Session, user, conversation_id) -> dict:
         participant.last_read_message_id = last.id if last else None
         db.commit()
     return _serialize_conversation(db, user, conv)
+
+
+def encerrar_conversa(db: Session, user, conversation_id) -> dict:
+    """A arena encerra o atendimento.
+
+    Regra de produto, no mesmo espirito de iFood e 99: o canal existe para
+    RESOLVER AQUELA reserva — combinar chegada, avisar de atraso, tirar duvida
+    de acesso. Depois disso ele fecha.
+
+    O motivo nao e economizar mensagem: e impedir que a conversa vire um canal
+    permanente entre jogador e arena, por onde a proxima reserva e combinada
+    por fora — sem horario travado, sem pagamento e sem a plataforma saber que
+    a quadra esta ocupada. Quem faz isso quebra a agenda dos dois lados.
+
+    So a arena encerra. Deixar o jogador encerrar nao resolveria nada (ele so
+    pararia de falar) e tiraria da arena a unica ferramenta de encerrar um
+    atendimento que virou conversa fiada.
+    """
+    conv = repo.get_conversation(db, conversation_id)
+    if conv is None:
+        raise _conv_404()
+    arena = db.get(Arena, conv.arena_id)
+    _can_access(db, user, conv, arena)
+    if user.role == ROLE_JOGADOR:
+        raise HTTPException(
+            status_code=403,
+            detail="Só a arena encerra o atendimento",
+        )
+    if conv.status != CONVERSATION_ACTIVE:
+        return {"ok": True, "encerrada": True}
+    conv.status = CONVERSATION_ARCHIVED
+    conv.updated_at = _utc_naive()
+    db.commit()
+    return {"ok": True, "encerrada": True}
+
+
+def encerrar_vencidas(db: Session, *, horas: int = 6) -> int:
+    """Fecha sozinha o atendimento cuja reserva ja acabou.
+
+    O fechamento manual sozinho nao basta: gerente ocupado nao fecha conversa
+    nenhuma, e o canal fica aberto para sempre — que e exatamente o que a
+    regra veio evitar.
+
+    A folga de `horas` depois do fim do jogo existe porque o assunto nao
+    termina junto com a partida: objeto esquecido, cobranca indevida e
+    reclamacao aparecem depois. Fechar no minuto seguinte ao apito seria
+    cortar a conversa no meio.
+    """
+    from ..models.booking import STATUS_CANCELLED, STATUS_EXPIRED
+
+    corte = _utc_naive() - timedelta(hours=horas)
+    linhas = db.execute(
+        select(Conversation, Booking)
+        .join(Booking, Booking.id == Conversation.booking_id)
+        .where(Conversation.status == CONVERSATION_ACTIVE)
+    ).all()
+
+    fechadas = 0
+    for conv, booking in linhas:
+        fim = booking.end_at
+        # Reserva que morreu antes de acontecer tambem encerra o canal: nao ha
+        # mais reserva sobre a qual conversar.
+        morreu = booking.status in (STATUS_CANCELLED, STATUS_EXPIRED)
+        if not morreu and (fim is None or fim > corte):
+            continue
+        conv.status = CONVERSATION_ARCHIVED
+        fechadas += 1
+    if fechadas:
+        db.commit()
+    return fechadas
 
 
 def badges(db: Session, user) -> dict:

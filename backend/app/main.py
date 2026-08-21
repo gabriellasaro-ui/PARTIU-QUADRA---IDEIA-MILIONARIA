@@ -63,7 +63,10 @@ def _rodar_manutencao() -> dict:
                    e nenhum outro jogador consegue aquele slot;
       concluir   — a partida jogada nunca vira "concluida";
       convocar   — ninguem e lembrado de confirmar presenca, e a pelada
-                   chega no dia com metade do time.
+                   chega no dia com metade do time;
+      encerrar   — o chat da reserva fica aberto para sempre e vira canal
+                   permanente entre jogador e arena, por onde a proxima
+                   reserva e combinada por fora da plataforma.
 
     A segunda e a mais cara: o indice unico de slot considera
     `pending_payment` ocupado (que e o certo — o horario tem de ficar preso
@@ -73,6 +76,7 @@ def _rodar_manutencao() -> dict:
     from .core.database import SessionLocal
     from .services import bookings as bookings_svc
     from .services import mock_autoconfirm
+    from .services import messages as messages_svc
     from .services import peladas as peladas_svc
 
     with SessionLocal() as db:
@@ -85,11 +89,14 @@ def _rodar_manutencao() -> dict:
         db.commit()
     with SessionLocal() as db:
         convocadas = peladas_svc.convocar_faltantes(db)
+    with SessionLocal() as db:
+        chats = messages_svc.encerrar_vencidas(db)
     return {
         "confirmados": confirmados,
         "expiradas": expiradas,
         "concluidas": concluidas,
         "convocadas": convocadas,
+        "chats_encerrados": chats,
     }
 
 

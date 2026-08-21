@@ -51,6 +51,19 @@ def confirmar_pagamentos_pendentes() -> dict:
         return {"confirmados": mock_autoconfirm.confirmar_pendentes(db)}
 
 
+@celery_app.task(name="app.workers.tasks.encerrar_chats_vencidos")
+def encerrar_chats_vencidos() -> dict:
+    """Fecha o atendimento cuja reserva ja acabou.
+
+    O fechamento manual sozinho nao basta: gerente ocupado nao fecha conversa
+    nenhuma, e o canal fica aberto para sempre.
+    """
+    from ..services import messages as messages_svc
+
+    with SessionLocal() as db:
+        return {"encerrados": messages_svc.encerrar_vencidas(db)}
+
+
 @celery_app.task(name="app.workers.tasks.convocar_faltantes")
 def convocar_faltantes() -> dict:
     """Fase 21: chama quem nao respondeu quando falta gente para a pelada.
