@@ -189,6 +189,11 @@ def _is_open_now(db: Session, court: Court) -> bool:
     )
 
 
+def court_exists(db: Session, court_id) -> bool:
+    """Existe e esta visivel — o que separa 404 de "sem horario nesse dia"."""
+    return repo.get_visible_court(db, court_id) is not None
+
+
 def get_availability(db: Session, court_id, date_str: str | None = None) -> list:
     """Slots de {hour, status} para a data (padrao: hoje).
 

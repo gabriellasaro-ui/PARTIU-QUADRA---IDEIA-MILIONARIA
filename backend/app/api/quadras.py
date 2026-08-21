@@ -148,9 +148,16 @@ def horarios(
     data: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    slots = catalog.get_availability(db, quadra_id, data)
-    if not slots:
+    # Agenda vazia e agenda inexistente sao coisas diferentes: a tela agora
+    # depende SO daqui (nao ha mais mock), entao "nao encontrada" precisa
+    # significar mesmo isso, e nao "fechado nesse dia".
+    if not catalog.court_exists(db, quadra_id):
         raise HTTPException(status_code=404, detail="Quadra nao encontrada")
+    try:
+        slots = catalog.get_availability(db, quadra_id, data)
+    except ValueError:
+        # strptime numa data torta derrubava com 500.
+        raise HTTPException(status_code=422, detail="Data invalida (use AAAA-MM-DD)")
     return {"horarios": slots, "data": data}
 
 
