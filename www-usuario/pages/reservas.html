@@ -1,4 +1,3 @@
-<!-- TODO: substituir dados locais por GET /reservas na API FastAPI -->
 <div class="route-page reservations-page">
   <div class="navbar">
     <div>
@@ -6,7 +5,11 @@
       <div class="sub">Seus jogos agendados</div>
     </div>
     <span class="spacer"></span>
-    <span class="icon-btn"><i class="ic" data-lucide="calendar-check"></i></span>
+    <!-- Sem .icon-btn: aquela classe desenha o circulo dos botoes de acao
+         (voltar, fechar), e aqui o icone e so enfeite do titulo. Com o
+         circulo, parecia clicavel e nao acontecia nada ao tocar — pior do
+         que nao ter icone nenhum. -->
+    <span class="navbar-emblema"><i class="ic" data-lucide="ticket"></i></span>
   </div>
 
   <div class="container">

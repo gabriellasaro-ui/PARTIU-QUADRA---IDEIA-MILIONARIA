@@ -31,13 +31,29 @@ const LOCATION_COORDINATES = {
   'Aparecida de Goiania, GO': [-16.8233, -49.2434],
   'Aparecida de Goiânia, GO': [-16.8233, -49.2434]
 };
+/* Icone por modalidade.
+
+   Os anteriores eram genericos e nao diziam do que se tratava: 'target' para
+   basquete (alvo?), 'activity' para tenis (o grafico de batimento cardiaco),
+   'trophy' para futsal (trofeu e premiacao, nao esporte) e 'circle-dot' para
+   beach tennis. Agora cada um mostra a BOLA ou o objeto do jogo, que e o que
+   a pessoa reconhece de relance numa fileira.
+
+   As modalidades de futebol dividem a mesma bola de proposito: sao o mesmo
+   jogo em quadras diferentes, e o que as separa e o nome ao lado. */
 const SPORT_ICONS = {
-  'Futebol Society': 'goal',
-  'Beach Tennis': 'circle-dot',
+  // Futebol em todas as quadras: mesma bola, o nome ao lado e que separa.
+  'Futebol Society': 'volleyball',
+  'Futebol de Campo': 'volleyball',
+  Futsal: 'volleyball',
+  Futvolei: 'waves',        // areia: e o que distingue futevolei de futsal
   Volei: 'volleyball',
-  Basquete: 'target',
-  Tenis: 'activity',
-  Futsal: 'trophy'
+  // Raquete e bola de basquete nao existem nesta versao do lucide (conferido
+  // no bundle): circulo tracejado para a bolinha leve do beach/tenis, alvo
+  // para a cesta.
+  'Beach Tennis': 'circle-dashed',
+  Tenis: 'circle-dashed',
+  Basquete: 'target'
 };
 const PAYMENT_METHOD_LABELS = {
   pix: 'Pix',
@@ -977,7 +993,12 @@ function renderBooking(root) {
       : 'Você reserva apenas esta partida. Pode virar mensalista depois.';
   }
   const freeCount = availability.filter((slot) => canStartAt(Number(slot.hour.slice(0, 2))) && !isPast(slot.hour)).length;
-  root.querySelector('[data-availability-copy]').textContent = freeCount === 1 ? '1 início livre' : `${freeCount} inícios livres`;
+  /* "0 inicios livres" numa grade inteira de quadradinhos apagados nao diz
+     por que. Com duracao > 1h, quase sempre o motivo e a duracao — e a saida
+     e diminuir, nao mudar de dia. */
+  root.querySelector('[data-availability-copy]').textContent = freeCount === 0
+    ? (duration > 1 ? `Nenhum horário comporta ${duration}h neste dia` : 'Nenhum horário livre neste dia')
+    : freeCount === 1 ? '1 início livre' : `${freeCount} inícios livres`;
   root.querySelector('[data-duration-help]').textContent = duration === 1
     ? 'Ideal para um treino rápido. Escolha abaixo o melhor início.'
     : `Os horários abaixo já garantem ${duration} horas consecutivas de quadra.`;
@@ -2770,8 +2791,23 @@ export function initMobileActions() {
     const duration = event.target.closest('[data-duration]');
     if (duration && !duration.disabled) {
       const root = duration.closest('[data-venue-page]');
-      root.querySelector('[data-booking]').dataset.duration = duration.dataset.duration;
+      const booking = root.querySelector('[data-booking]');
+      const horaAntes = booking.dataset.hour;
+      booking.dataset.duration = duration.dataset.duration;
       renderBooking(root);
+
+      /* Trocar a duracao pode invalidar o horario ja escolhido — 21h com 3h
+         nao cabe se a quadra fecha as 23h. renderBooking limpa a escolha, e
+         com razao, mas ate agora limpava EM SILENCIO: o quadradinho apagava,
+         o valor voltava para "-" e a leitura era "o app travou". Foi
+         exatamente a queixa "coloco 3 horas e nao seleciona nem altera o
+         valor".
+
+         Agora a pessoa ouve o motivo. O aviso so sai quando havia algo
+         escolhido antes: quem ainda nem tinha horario nao perdeu nada. */
+      if (horaAntes && !booking.dataset.hour) {
+        window.pqToast?.(`Não cabem ${duration.dataset.duration}h a partir das ${horaAntes}. Escolha outro horário.`);
+      }
       return;
     }
 

@@ -471,8 +471,11 @@ html[data-route="mapa"] .mobile-map-route {
   right: auto;
   bottom: 0;
   width: min(100vw, 430px);
-  min-height: calc(68px + var(--pq-safe-bottom));
-  padding: 6px 12px max(6px, var(--pq-safe-bottom));
+  /* 68px -> 60px. A barra ficou mais baixa para o botao do Mapa se destacar
+     por CONTRASTE de altura, em vez de so por cor — e sobra mais tela para o
+     conteudo, que e o que a pessoa veio ver. */
+  min-height: calc(60px + var(--pq-safe-bottom));
+  padding: 4px 12px max(4px, var(--pq-safe-bottom));
   transform: translateX(-50%);
   border-radius: 0;
   border: 0;
@@ -791,6 +794,18 @@ button .ic,
 
 .leaflet-map-shell {
   position: relative;
+  /* z-index EXPLICITO, e nao apenas position: relative.
+
+     O Leaflet numera as proprias camadas ate 1000 (panes, controles,
+     popups). Sem um z-index aqui, este elemento nao cria contexto de
+     empilhamento e aqueles 1000 competem direto com o resto da pagina — o
+     menu (120) e a barra de baixo (25) ficavam POR BAIXO do mapa. Abrir o
+     menu na aba Mapa mostrava o mapa por cima de tudo, com cara de tela
+     travada.
+
+     Com z-index: 0 o mapa continua no lugar visual de sempre, mas tudo que
+     ele desenha fica confinado aqui dentro. */
+  z-index: 0;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -1795,6 +1810,18 @@ button .ic,
 .chip-esporte .ic {
   width: 15px;
   height: 15px;
+}
+
+/* Icone decorativo do cabecalho: sem moldura, sem area de toque. */
+.navbar-emblema {
+  display: inline-grid;
+  place-items: center;
+  color: var(--pq-muted);
+}
+
+.navbar-emblema .ic {
+  width: 20px;
+  height: 20px;
 }
 
 /* ---------- mensagens ---------- */
@@ -4072,9 +4099,12 @@ html[data-route="mapa"] .phone {
   display: grid;
   overflow: visible;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  margin-top: -14px;
+  width: 54px;
+  height: 54px;
+  /* Sobe mais do que a metade da propria altura ficaria: o circulo rompe a
+     borda superior da barra e ganha relevo de verdade, sem virar um botao
+     solto boiando acima dela. */
+  margin-top: -22px;
   border: 3px solid var(--pq-paper);
   border-radius: 50%;
   background: var(--pq-brand-strong);
