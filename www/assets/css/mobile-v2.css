@@ -1156,7 +1156,9 @@ button .ic,
   width: 38px;
   height: 38px;
   border-radius: var(--pq-radius);
-  background: var(--pq-green-soft);
+  /* Sem o quadrado verde atras. Numa lista de oito itens, oito blocos de cor
+     competem entre si e com o texto — o icone sozinho ja separa as linhas. */
+  background: transparent;
   color: var(--pq-green);
 }
 
@@ -1698,6 +1700,38 @@ button .ic,
   text-align: center;
   font-size: 13px;
   font-weight: 800;
+}
+
+/* Sair e excluir: acoes de conta, no fim da tela e separadas do resto. */
+.conta-acoes {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--pq-line);
+  display: grid;
+  gap: 10px;
+}
+
+.conta-acoes .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+}
+
+/* Vermelho so na exclusao. Pintar as duas de vermelho faria "sair" parecer
+   tao grave quanto apagar a conta. */
+.conta-acoes__excluir {
+  border-color: #e6c3cc;
+  color: #c8324d;
+}
+
+.conta-acoes__aviso {
+  margin: 2px 0 0;
+  color: var(--pq-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 /* ---------- mensagens ---------- */
@@ -3213,14 +3247,19 @@ html[data-route="mapa"] .phone {
   text-align: left;
 }
 
+/* Era 38px de circulo cheio para um rotulo de duas linhas: o bloco do local
+   dominava o topo da tela. Menor e sem preenchimento, ele volta a ser o que e
+   — um botao de trocar cidade, nao o assunto da tela. */
 .location-switch__icon {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: var(--pq-brand);
-  color: #fff;
+  /* Fundo transparente: o alfinete verde sobre branco ja se le, e o circulo
+     cheio pesava mais que o proprio nome da cidade ao lado. */
+  background: transparent;
+  color: var(--pq-brand-strong);
 }
 
 .location-switch__icon .ic {
@@ -3962,22 +4001,27 @@ html[data-route="mapa"] .phone {
   color: #738079;
 }
 
+/* O Mapa e a acao principal da barra, e ate agora tinha o mesmo peso dos
+   outros quatro itens. Vira um circulo maior e elevado — o dedo acha sem
+   procurar, e a barra ganha um centro. Sobe 14px sobre a barra em vez de
+   flutuar solto: destacado, mas ainda parte dela. */
 .tabbar .tabbar-map > span {
   display: grid;
   overflow: visible;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 0;
+  width: 52px;
+  height: 52px;
+  margin-top: -14px;
+  border: 3px solid var(--pq-paper);
   border-radius: 50%;
-  background: #e4f4e9;
-  box-shadow: none;
-  color: var(--pq-brand-strong);
+  background: var(--pq-brand-strong);
+  box-shadow: 0 8px 18px rgba(0, 168, 90, .30);
+  color: #fff;
 }
 
 .tabbar .tabbar-map > span .ic {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 
 .tabbar .tabbar-map em {
@@ -6297,7 +6341,18 @@ html[data-bottombar="none"] .screen {
 
    height: 100vh (e nao 100dvh) trava a altura na viewport GRANDE: o teclado
    nao mexe em vh, entao a cena fica parada enquanto se digita. */
-.auth-page::before {
+/* O fundo mora na RAIZ do documento, e nao no .auth-page.
+
+   Antes ficava num ::before da propria pagina de login — e a pagina e
+   destruida e remontada a cada troca de rota. A cada remontagem o
+   pseudo-elemento nascia de novo e a imagem repintava: o efeito era a tela
+   "piscando" ao entrar no login e a cada redesenho do formulario.
+
+   <html> nunca e recriado, entao a imagem e pintada uma vez e fica. O seletor
+   por data-route casa as duas telas de acesso; o atributo ja e escrito pelo
+   roteador a cada rota. */
+html[data-route="entrar"]::before,
+html[data-route="cadastro"]::before {
   content: '';
   position: fixed;
   z-index: -1;

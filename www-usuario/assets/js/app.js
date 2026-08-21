@@ -390,6 +390,10 @@ async function renderMobileRoute() {
   try {
     await renderMobilePage(routeState, view);
   } catch (error) {
+    // Registrar SEMPRE: sem isto o erro fica invisivel e so sobra a tela de
+    // aviso, que nao diz nada a quem precisa consertar. (A arvore www ja
+    // fazia isto; esta ficou para tras.)
+    console.error('[rota]', routeName, error);
     view.setAttribute('data-route-error', routeName);
     view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p></div></div>';
   } finally {

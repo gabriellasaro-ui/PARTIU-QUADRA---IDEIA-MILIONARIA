@@ -501,8 +501,19 @@ export const venueService = {
   /* Todos os clubes da pessoa. */
   async myClubs() {
     if (API_BASE_URL) {
-      const data = await api.get('/api/clubes/meus');
-      return data?.clubes || [];
+      try {
+        const data = await api.get('/api/clubes/meus');
+        return data?.clubes || [];
+      } catch (error) {
+        /* Backend anterior a esta rota responde 404, e a tela do clube inteira
+           morria em "Nao foi possivel carregar" — sem dizer por que. Durante
+           uma janela de deploy (app novo, servidor ainda antigo) isso derruba
+           uma tela que tem como funcionar: da para chegar no mesmo resultado
+           filtrando a lista geral. Mais lento, mas vivo. */
+        const user = await this.profile();
+        const clubs = await this.clubs();
+        return clubs.filter((club) => club.members?.some((m) => m.id === user.id));
+      }
     }
     const user = await this.profile();
     const clubs = await this.clubs();

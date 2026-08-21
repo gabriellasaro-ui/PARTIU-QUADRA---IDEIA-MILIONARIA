@@ -1,19 +1,24 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<!-- Icones escolhidos para NAO parecerem os de qualquer app:
+       compass em vez de lupa  — "explorar" e sair procurando, nao consultar;
+       ticket em vez de agenda — uma reserva e um ingresso para um horario;
+       layout-grid em vez das tres listras — as listras sao o menu de todo
+       mundo, e aqui elas abrem uma folha com secoes, nao uma gaveta.
+     O mapa fica com map-pinned no botao central, que e a acao principal. -->
 <nav class="tabbar" aria-label="Navegação principal">
   <a href="./index.html#home" data-nav-page="home">
     <i class="ic" data-lucide="house"></i><span>Início</span>
   </a>
   <a href="./index.html#quadras" data-nav-page="quadras">
-    <i class="ic" data-lucide="search"></i><span>Explorar</span>
+    <i class="ic" data-lucide="compass"></i><span>Explorar</span>
   </a>
   <a class="tabbar-map" href="./index.html#mapa" data-nav-page="mapa">
     <span><i class="ic" data-lucide="map-pinned"></i></span><em>Mapa</em>
   </a>
   <a href="./index.html#reservas" data-nav-page="reservas">
-    <i class="ic" data-lucide="calendar-check"></i><span>Reservas</span>
+    <i class="ic" data-lucide="ticket"></i><span>Reservas</span>
   </a>
   <button type="button" data-sheet-open="menu-sheet" data-nav-page="menu"
           aria-expanded="false" aria-haspopup="dialog" aria-label="Abrir menu">
-    <i class="ic" data-lucide="menu"></i><span>Menu</span>
+    <i class="ic" data-lucide="layout-grid"></i><span>Menu</span>
   </button>
 </nav>

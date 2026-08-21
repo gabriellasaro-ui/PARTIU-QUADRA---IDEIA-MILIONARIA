@@ -81,8 +81,17 @@ function displayText(value) {
   return replacements[value] || value;
 }
 
+/* Rotulo mostrado quando ainda nao ha local escolhido. Nao e uma cidade:
+   fingir que a pessoa esta em Goiania fazia o app mostrar distancias erradas
+   com cara de certas — e ela nem sabia que havia um palpite ali. */
+const LOCAL_NAO_ESCOLHIDO = 'Escolher local';
+
 function currentLocation() {
-  return storage.get('current_location', 'Goiânia, GO');
+  return storage.get('current_location', LOCAL_NAO_ESCOLHIDO);
+}
+
+function temLocalEscolhido() {
+  return Boolean(storage.get('current_location', ''));
 }
 
 function currentCoordinates() {
@@ -437,18 +446,22 @@ function rotuloModalidade(nome) {
 
 async function renderHome(root) {
   const [sports, venues] = await Promise.all([venueService.featuredSports(), venueService.featured()]);
-  const greeting = root.querySelector('[data-home-greeting]');
+  /* document, e nao `root`. O cabecalho da home vive em [data-route-header],
+     um container IRMAO de [data-route-view] — procurar dentro da view nunca
+     encontrava nada, e o "Olá" que aparecia era o texto estatico do HTML. Foi
+     por isso que o nome nunca apareceu. */
+  const greeting = document.querySelector('[data-home-greeting]');
   const chips = root.querySelector('[data-sport-chips]');
   const featured = root.querySelector('[data-featured-list]');
 
-  if (greeting) {
-    const hour = new Date().getHours();
-    greeting.textContent = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  }
+  /* "Ola", e nao "Bom dia/Boa tarde/Boa noite": pedido do dono. Saudacao por
+     horario erra sempre que o relogio do aparelho esta em outro fuso, e nao
+     acrescenta nada — quem abre o app sabe que horas sao. */
+  if (greeting) greeting.textContent = 'Olá';
   /* O nome vinha escrito no HTML ("Olá, Gabriel"), entao qualquer conta era
      cumprimentada como o usuario de demonstracao. Vem da sessao, e so o
      primeiro nome: "Boa noite, Gabriel Henrique Lisboa" nao cabe na linha. */
-  const nomeEl = root.querySelector('[data-home-name]');
+  const nomeEl = document.querySelector('[data-home-name]');
   if (nomeEl) {
     // currentUser() e sincrono (le do storage) — um .catch() aqui daria
     // TypeError, porque nao ha promessa nenhuma para encadear.
@@ -472,6 +485,20 @@ async function renderHome(root) {
   }
   if (featured) featured.innerHTML = venues.map((venue) => venueCard(venue, { action: 'Reservar' })).join('');
   syncMarketplaceState(root);
+
+  /* Primeiro acesso: pede o local na hora, sem esperar a pessoa descobrir o
+     botao no topo. Sem local, TODA distancia da tela e um palpite a partir do
+     centro de Goiania — e um palpite com cara de dado certo e pior do que
+     perguntar.
+
+     Uma vez so: `local_perguntado` marca que ja perguntamos. Quem fechar sem
+     escolher nao e perseguido a cada abertura; o botao continua no topo. */
+  if (!temLocalEscolhido() && !storage.get('local_perguntado', false)) {
+    storage.set('local_perguntado', true);
+    // Depois da pintura: abrir o sheet no meio do render deixa a tela de
+    // fundo pela metade atras dele.
+    setTimeout(() => openMarketSheet('location-sheet'), 400);
+  }
 
   await renderHomeGameCard(root);
 }
@@ -2435,6 +2462,28 @@ export function initMobileActions() {
       if (dica) dica.textContent = `O clube tem ${club.members.length} ${club.members.length === 1 ? 'membro' : 'membros'} agora.`;
     }
     openMarketSheet('club-config-sheet');
+    return;
+  }
+
+  /* Excluir conta. Duas confirmacoes de proposito: e irreversivel, e um
+     toque acidental num botao vermelho nao pode custar a conta de alguem.
+     A tela do app nao tinha esta acao — so a web —, e as lojas exigem que
+     quem cria conta pelo aplicativo consiga apaga-la por ele. */
+  const excluirConta = event.target.closest('[data-cfg-excluir]');
+  if (excluirConta) {
+    event.preventDefault();
+    if (!window.confirm('Excluir sua conta? Perfil, favoritos e preferências somem e não dá para desfazer.')) return;
+    if (!window.confirm('Confirma? Esta é a última pergunta.')) return;
+    excluirConta.setAttribute('disabled', 'disabled');
+    try {
+      await venueService.deleteAccount();
+      await authService.logout();
+      window.pqSyncAuthControls?.();
+      location.replace('./index.html');
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível excluir a conta');
+      excluirConta.removeAttribute('disabled');
+    }
     return;
   }
 

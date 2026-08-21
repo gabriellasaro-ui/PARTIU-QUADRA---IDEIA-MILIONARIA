@@ -27,8 +27,21 @@
     </section>
 
     <button class="btn block" type="submit">Salvar alterações</button>
-    <!-- Botao, e nao link: e acao, nao navegacao. Antes era
-         <a href="#home"> e nao limpava sessao nenhuma. -->
-    <button class="logout-link" type="button" data-auth-logout>Sair da conta</button>
+
+    <!-- Sair era um link miudo de 13px no rodape, do tamanho de uma nota de
+         pe de pagina — para a acao que a pessoa mais procura nesta tela.
+         Vira botao de verdade.
+
+         Excluir conta nao existia no app (so na web), e e exigencia das lojas:
+         quem cria conta pelo aplicativo precisa conseguir apaga-la por ele. -->
+    <div class="conta-acoes">
+      <button class="btn outline block" type="button" data-auth-logout>
+        <i class="ic" data-lucide="log-out"></i>Sair da conta
+      </button>
+      <button class="btn outline block conta-acoes__excluir" type="button" data-cfg-excluir>
+        <i class="ic" data-lucide="trash-2"></i>Excluir minha conta
+      </button>
+      <p class="conta-acoes__aviso">Excluir apaga perfil, favoritos e preferências. Não dá para desfazer.</p>
+    </div>
   </form>
 </div>
