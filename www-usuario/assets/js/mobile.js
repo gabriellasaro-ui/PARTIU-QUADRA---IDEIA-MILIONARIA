@@ -1,5 +1,6 @@
 import venueService, { definirLocal } from '../../services/venues.js';
 import { registrarFecharSobreposicao } from '../../services/navegacao.js';
+import { ligarParEstadoCidade } from '../../services/localidades.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/formatters.js';
 import { SERVICE_FEE_RATE } from '../../config/constants.js';
@@ -143,6 +144,16 @@ function openMarketSheet(sheetId) {
   document.querySelectorAll(`[data-sheet-open="${sheetId}"]`).forEach((trigger) => {
     trigger.setAttribute('aria-expanded', 'true');
   });
+
+  /* "Criar meu clube" abre este sheet direto pelo data-sheet-open, sem passar
+     por prefillClubForm — e ai os dois selects apareceriam vazios. Monta as
+     listas com o que ja estiver no formulario (vazio na criacao, preenchido
+     quando o prefill rodou antes). */
+  if (sheetId === 'club-edit-sheet') {
+    const form = sheet.querySelector('[data-club-form]');
+    const uf = form?.querySelector('[data-club-uf]');
+    if (uf && !uf.options.length) montarLocalClube('', '');
+  }
 
   if (sheetId === 'filter-sheet') {
     const query = routeQuery(currentRoute);
@@ -1575,7 +1586,10 @@ function syncMobileProfile(root, user) {
     form.elements.name.value = user.name;
     form.elements.email.value = user.email;
     form.elements.phone.value = user.phone;
-    form.elements.city.value = user.city;
+    /* Sem await: syncMobileProfile e sincrona e tem varios chamadores. As
+       listas chegam em seguida, e a folha so e aberta depois — esperar aqui
+       atrasaria a pintura do perfil inteiro por causa de dois seletores. */
+    montarLocalPerfil(user.state || '', user.city || '');
   }
 
   /* Folha da FICHA: como a pessoa joga. Os selects sao montados aqui porque
@@ -2038,7 +2052,8 @@ export function initMobileActions() {
         name: String(data.get('name') || '').trim(),
         email: String(data.get('email') || '').trim(),
         phone: String(data.get('phone') || '').trim(),
-        city: String(data.get('city') || '').trim()
+        city: String(data.get('city') || '').trim(),
+        state: String(data.get('state') || '').trim()
       });
       const view = document.querySelector('[data-route-view]');
       syncMobileProfile(view, saved);
@@ -2078,6 +2093,11 @@ export function initMobileActions() {
         name: String(data.get('name') || '').trim(),
         sport: String(data.get('sport') || ''),
         city: String(data.get('city') || '').trim(),
+        /* A coluna `state` sempre existiu em `clubs` e o schema ja aceitava —
+           so o formulario nunca mandava, entao todo clube nascia sem UF.
+           `|| null` porque ClubCreate.state exige exatamente 2 caracteres:
+           string vazia seria recusada com 422. */
+        state: String(data.get('state') || '').trim() || null,
         description: String(data.get('description') || '').trim(),
         createdBy: user.id,
         // Quem cria entra como dono; edição preserva os membros existentes.
@@ -2308,7 +2328,7 @@ export function initMobileActions() {
     const editClub = event.target.closest('[data-club-edit]');
     if (editClub) {
       const club = await venueService.myClub();
-      prefillClubForm(club);
+      await prefillClubForm(club);
       openMarketSheet('club-edit-sheet');
     }
   });
@@ -2964,7 +2984,7 @@ async function renderClub(root) {
   const clubNameLabel = document.querySelector('[data-pelada-club-name]');
   if (clubNameLabel) clubNameLabel.textContent = club.name;
 
-  prefillClubForm(club);
+  await prefillClubForm(club);
   renderClubChat(root, await venueService.clubChat(club.id), user.id);
   selectClubSection(clubSection);
   window.pqRefreshIcons?.(root);
@@ -3019,16 +3039,47 @@ async function fillVenueOptions() {
     .join('');
 }
 
-function prefillClubForm(club) {
+/* Desliga o ouvinte de troca de UF do preenchimento anterior. Sem isto,
+   reabrir o sheet empilha ouvintes e cada troca de estado dispara uma
+   requisicao a mais de cidades. */
+let desligarLocalClube = null;
+
+let desligarLocalPerfil = null;
+
+async function montarLocalPerfil(uf = '', cidade = '') {
+  const form = document.querySelector('[data-profile-edit-form]');
+  if (!form) return;
+  desligarLocalPerfil?.();
+  desligarLocalPerfil = await ligarParEstadoCidade(
+    form.querySelector('[data-perfil-uf]'),
+    form.querySelector('[data-perfil-cidade]'),
+    { uf, cidade }
+  );
+}
+
+async function montarLocalClube(uf = '', cidade = '') {
+  const form = document.querySelector('[data-club-form]');
+  if (!form) return;
+  desligarLocalClube?.();
+  desligarLocalClube = await ligarParEstadoCidade(
+    form.querySelector('[data-club-uf]'),
+    form.querySelector('[data-club-cidade]'),
+    { uf, cidade }
+  );
+}
+
+async function prefillClubForm(club) {
   const form = document.querySelector('[data-club-form]');
   if (!form) return;
   const title = document.querySelector('[data-club-form-title]');
   if (title) title.textContent = club ? 'Editar clube' : 'Criar clube';
   form.elements.id.value = club?.id || '';
   form.elements.name.value = club?.name || '';
-  form.elements.city.value = club?.city || '';
   form.elements.description.value = club?.description || '';
   if (club?.sport) form.elements.sport.value = club.sport;
+  // Cidade agora e <select> e depende da UF: precisa das duas listas antes de
+  // conseguir marcar a cidade gravada.
+  await montarLocalClube(club?.state || '', club?.city || '');
 }
 
 async function renderGame(root) {

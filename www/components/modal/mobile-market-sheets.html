@@ -143,7 +143,14 @@
       <input type="hidden" name="id">
       <div class="field"><label>Nome do clube</label><input type="text" name="name" placeholder="Pelada dos Cria" required maxlength="60"></div>
       <div class="field"><label>Esporte</label><select name="sport" data-sport-options required></select></div>
-      <div class="field"><label>Cidade</label><input type="text" name="city" placeholder="Goiânia, GO" required maxlength="60"></div>
+      <!-- Era um input de texto com placeholder "Goiânia, GO", que virava
+           "Goiania"/"goiânia"/"GOIANIA" conforme quem digitasse — e ai nenhum
+           filtro por cidade fechava. Listas do IBGE, servidas pelo proprio
+           backend em /api/localidades. -->
+      <div class="input-row mobile-two">
+        <div class="field"><label>Estado</label><select name="state" data-club-uf required></select></div>
+        <div class="field"><label>Cidade</label><select name="city" data-club-cidade required disabled></select></div>
+      </div>
       <div class="field"><label>Combinado do grupo</label><input type="text" name="description" placeholder="Toda quinta às 20h" maxlength="120"></div>
       <div class="profile-edit-actions">
         <button class="btn outline" type="button" data-sheet-close>Cancelar</button>
