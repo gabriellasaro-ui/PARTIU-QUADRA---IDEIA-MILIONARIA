@@ -1,4 +1,9 @@
 <div class="toast" id="pq-toast" role="status" aria-live="polite" aria-atomic="true" hidden>
   <i class="ic" data-lucide="circle-check"></i>
   <span data-toast-msg></span>
+  <!-- So aparece no aviso persistente: no de 2,6 s ele some sozinho antes de
+       alguem tentar fechar. -->
+  <button class="toast__close" type="button" data-toast-close aria-label="Fechar aviso" hidden>
+    <i class="ic" data-lucide="x"></i>
+  </button>
 </div>

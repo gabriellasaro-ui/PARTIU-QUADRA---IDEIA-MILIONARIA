@@ -3069,6 +3069,11 @@ async function marcarChatDoClubeLido() {
     const club = await venueService.myClub();
     if (!club) return;
     await venueService.markClubChatRead(club.id);
+    /* Segunda porta de fechamento do aviso: a primeira e entrar na rota do
+       clube (app.js). Quem chegou aqui por dentro da tela — trocando de aba —
+       nao passou por um hashchange, e sem isto o aviso ficaria aceso com a
+       conversa aberta na frente da pessoa. */
+    window.pqToastFechar?.(`clube:${club.id}`);
     // Repinta o contador na hora: esperar o proximo ciclo deixaria o balao
     // acesso com a conversa ja aberta na frente da pessoa.
     notificationService.refreshNavBadges?.().catch(() => {});

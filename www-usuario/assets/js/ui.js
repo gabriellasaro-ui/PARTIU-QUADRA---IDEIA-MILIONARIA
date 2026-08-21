@@ -84,16 +84,68 @@
   syncAuthControls();
   window.addEventListener('storage', syncAuthControls);
 
-  function toast(msg) {
+  /* Aviso de tela.
+
+     `opcoes` e opcional e o padrao continua o de sempre: 2600 ms e some. As
+     ~30 chamadas pqToast('...') espalhadas pelo app nao mudaram.
+
+     O que entrou:
+       persistente  fica ate alguem fechar. Mensagem de clube usa isto — um
+                    aviso de 2,6 s some antes de a pessoa terminar de ler, e
+                    ai o app "avisou" sem que ninguem visse;
+       href         torna o aviso clicavel, levando a tela certa;
+       id           permite fechar depois, por codigo, quando a pessoa abre a
+                    mensagem por outro caminho. */
+  function toast(msg, opcoes) {
     var t = document.getElementById('pq-toast');
     if (!t) return;
+    opcoes = opcoes || {};
     var m = t.querySelector('[data-toast-msg]');
     if (m) m.textContent = msg;
+
+    t.dataset.toastId = opcoes.id || '';
+    t.classList.toggle('toast--clicavel', Boolean(opcoes.href));
+    t.dataset.toastHref = opcoes.href || '';
+
+    var fechar = t.querySelector('[data-toast-close]');
+    if (fechar) fechar.hidden = !opcoes.persistente;
+
     t.hidden = false;
     clearTimeout(t._pqt);
-    t._pqt = setTimeout(function () { t.hidden = true; }, 2600);
+    /* Persistente NAO agenda o fechamento. Agendar e depois cancelar deixaria
+       uma janela em que o aviso some sozinho se algo redesenhar a tela. */
+    if (!opcoes.persistente) {
+      t._pqt = setTimeout(function () { t.hidden = true; }, 2600);
+    }
   }
   window.pqToast = toast;
+
+  /* Fecha um aviso especifico. Sem id, fecha qualquer um. O id evita que
+     fechar o aviso do clube A apague o do clube B, que ninguem leu ainda. */
+  function toastFechar(id) {
+    var t = document.getElementById('pq-toast');
+    if (!t || t.hidden) return;
+    if (id && t.dataset.toastId !== id) return;
+    clearTimeout(t._pqt);
+    t.hidden = true;
+    t.dataset.toastId = '';
+    t.dataset.toastHref = '';
+  }
+  window.pqToastFechar = toastFechar;
+
+  document.addEventListener('click', function (event) {
+    var t = document.getElementById('pq-toast');
+    if (!t || t.hidden) return;
+    if (event.target.closest('[data-toast-close]')) {
+      toastFechar();
+      return;
+    }
+    var alvo = event.target.closest('#pq-toast');
+    if (alvo && t.dataset.toastHref) {
+      location.hash = t.dataset.toastHref.replace(/^#/, '');
+      toastFechar();
+    }
+  });
 
   function closeSportSelects(except) {
     document.querySelectorAll('[data-sport-select]').forEach(function (picker) {

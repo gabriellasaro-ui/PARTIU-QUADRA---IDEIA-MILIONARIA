@@ -594,14 +594,54 @@ function initRealtime() {
     window.addEventListener('pq:auth-logout', () => pushService.disposePush());
   }
 
-  window.addEventListener('pq:ws:event', () => {
+  window.addEventListener('pq:ws:event', (evento) => {
     window.clearTimeout(window.__pqBadgeTimer);
     window.__pqBadgeTimer = window.setTimeout(() => {
       notificationService.refreshNavBadges().catch(() => {});
     }, 800);
+    avisarMensagemDeClube(evento.detail);
   });
   window.addEventListener('pq:auth-expired', disconnectWS);
   window.addEventListener('pq:auth-logout', disconnectWS);
+
+  /* Entrar na tela do clube fecha o aviso daquele clube. O outro caminho de
+     fechamento e marcar como lido, em mobile.js — sao duas portas para a
+     mesma sala, e as duas precisam apagar o aviso. */
+  window.addEventListener('hashchange', () => {
+    if (parseMobileRouteHash(location.hash).name === 'clube') {
+      window.pqToastFechar?.();
+    }
+  });
+
+  /* Rede caida ou WS fora do ar: o contador ainda chega, so que mais devagar.
+     Sem isto, refreshNavBadges so roda no boot e a cada evento — e um evento
+     que nunca chega nao dispara nada. */
+  window.setInterval(() => {
+    notificationService.refreshNavBadges().catch(() => {});
+  }, 60000);
+}
+
+/* Aviso de mensagem nova no clube.
+
+   PERSISTENTE de proposito: 2,6 s some antes de a pessoa terminar de ler, e o
+   pedido era justamente um aviso que fica ate ela abrir a mensagem.
+
+   O id e por clube: fechar o aviso do clube A nao pode apagar o do clube B,
+   que ninguem leu ainda.
+
+   Nao aparece se a pessoa JA esta na tela do clube — ali as mensagens estao
+   na frente dela, e avisar seria ruido. */
+function avisarMensagemDeClube(evento) {
+  if (!evento || evento.type !== 'club.message.new') return;
+  if (parseMobileRouteHash(location.hash).name === 'clube') return;
+  const texto = evento.mensagem?.text || '';
+  const autor = evento.autorNome || 'Alguém';
+  const clube = evento.clubName ? ` · ${evento.clubName}` : '';
+  window.pqToast?.(`${autor}${clube}: ${texto}`.slice(0, 120), {
+    persistente: true,
+    href: '#clube',
+    id: `clube:${evento.clubId || ''}`
+  });
 }
 
 /* Sair da conta vale em qualquer plataforma.
