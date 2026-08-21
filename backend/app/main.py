@@ -46,45 +46,69 @@ setup_logging(settings.log_level)
 
 logger = logging.getLogger(__name__)
 
-#: De quanto em quanto tempo o servidor procura pagamento mock para confirmar.
-#: Nao e o tempo de espera — quem manda nisso e payment_mock_confirm_seconds.
-INTERVALO_CONFIRMADOR_S = 5.0
+#: De quanto em quanto tempo a manutencao roda. Nao e o tempo de espera de
+#: nada: quem manda nisso e payment_mock_confirm_seconds e
+#: booking_payment_expire_minutes.
+INTERVALO_MANUTENCAO_S = 5.0
 
 
-def _confirmar_mock_pendentes() -> int:
+def _rodar_manutencao() -> dict:
+    """As tres tarefas periodicas, rodadas em processo.
+
+    Todas ja existem em workers/tasks.py, mas o Celery precisa de Redis e de
+    um worker de pe — que em desenvolvimento quase nunca estao. Sem elas:
+
+      confirmar  — a reserva nunca sai de "Aguardando pagamento";
+      expirar    — quem reservou e nao pagou segura o horario PARA SEMPRE,
+                   e nenhum outro jogador consegue aquele slot;
+      concluir   — a partida jogada nunca vira "concluida".
+
+    A segunda e a mais cara: o indice unico de slot considera
+    `pending_payment` ocupado (que e o certo — o horario tem de ficar preso
+    enquanto a pessoa paga), entao sem ninguem expirando, uma desistencia
+    silenciosa tira o horario do mercado de vez.
+    """
     from .core.database import SessionLocal
+    from .services import bookings as bookings_svc
     from .services import mock_autoconfirm
 
     with SessionLocal() as db:
-        return mock_autoconfirm.confirmar_pendentes(db)
+        confirmados = mock_autoconfirm.confirmar_pendentes(db)
+    with SessionLocal() as db:
+        expiradas = bookings_svc.expire_stale(db)
+        db.commit()
+    with SessionLocal() as db:
+        concluidas = bookings_svc.complete_finished(db)
+        db.commit()
+    return {"confirmados": confirmados, "expiradas": expiradas, "concluidas": concluidas}
 
 
-async def _laco_confirmador_mock() -> None:
-    """Faz o papel do adquirente quando se roda com o provedor mock.
+async def _laco_manutencao() -> None:
+    """Substitui o Celery beat quando se roda em desenvolvimento.
 
-    Pix real e confirmado por webhook do banco. Com o mock nao ha banco, e a
-    tarefa Celery que cobria isso so roda com Redis e um worker de pe — que em
-    desenvolvimento quase nunca estao. Sem ninguem confirmando, a reserva
-    ficava presa em "Aguardando pagamento" e o gerente nunca via o pedido.
+    Confirmar pagamento fica no SERVIDOR, e nao no navegador: um callback
+    disparado pelo cliente e callback forjado. O front fazia isso e quebrou em
+    silencio quando PAYMENT_WEBHOOK_SECRET entrou no .env.
 
-    Fica no servidor, e nao no navegador: confirmar pagamento a partir do
-    cliente e callback forjado. O front fazia isso e quebrou em silencio
-    quando PAYMENT_WEBHOOK_SECRET entrou no .env.
+    Expirar reserva importa tanto quanto: o horario fica preso enquanto a
+    pessoa paga (correto), mas se ninguem expirar, quem desistiu leva o
+    horario junto — nenhum outro jogador consegue reservar aquele slot,
+    nunca mais.
 
     A sessao do banco e sincrona, entao roda em thread para nao travar o loop.
     """
     while True:
-        await asyncio.sleep(INTERVALO_CONFIRMADOR_S)
+        await asyncio.sleep(INTERVALO_MANUTENCAO_S)
         try:
-            confirmados = await asyncio.to_thread(_confirmar_mock_pendentes)
-            if confirmados:
-                logger.info("Pagamentos mock confirmados: %s", confirmados)
+            feito = await asyncio.to_thread(_rodar_manutencao)
+            if any(feito.values()):
+                logger.info("Manutencao de reservas: %s", feito)
         except asyncio.CancelledError:
             raise
         except Exception:
             # Uma falha aqui nao pode derrubar o servidor: o proximo ciclo
             # tenta de novo daqui a pouco.
-            logger.warning("Falha ao confirmar pagamentos mock", exc_info=True)
+            logger.warning("Falha na manutencao de reservas", exc_info=True)
 
 
 @asynccontextmanager
@@ -93,16 +117,16 @@ async def lifespan(application: FastAPI):
 
     # So com o provedor mock. Producao nem chega aqui: Settings recusa o boot
     # com PAYMENT_PROVIDER=mock.
-    confirmador = None
+    manutencao = None
     if settings.payment_provider.strip().lower() == "mock":
-        confirmador = asyncio.create_task(_laco_confirmador_mock())
+        manutencao = asyncio.create_task(_laco_manutencao())
 
     yield
 
-    if confirmador:
-        confirmador.cancel()
+    if manutencao:
+        manutencao.cancel()
         try:
-            await confirmador
+            await manutencao
         except asyncio.CancelledError:
             pass
     manager.stop_subscriber()
