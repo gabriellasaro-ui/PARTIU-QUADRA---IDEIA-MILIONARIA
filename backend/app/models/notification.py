@@ -51,6 +51,8 @@ NOTIF_CLUBE_RECUSADO = "clube.recusado"
 NOTIF_CLUBE_CARGO = "clube.cargo"
 NOTIF_PELADA_CRIADA = "pelada.criada"
 NOTIF_PELADA_PRESENCA = "pelada.presenca"
+#: Falta gente e a pelada e amanha — vai so para quem ainda nao respondeu.
+NOTIF_PELADA_FALTAM = "pelada.faltam"
 NOTIF_PARTIDA_PRESENCA = "partida.presenca"
 NOTIF_PARTIDA_ATRASO = "partida.atraso"
 NOTIF_PARTIDA_ENCERRADA = "partida.encerrada"

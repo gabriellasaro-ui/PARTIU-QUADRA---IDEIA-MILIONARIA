@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..models import (
     PELADA_KIND_AVULSA,
+    PELADA_STATUS_AGENDADA,
     Pelada,
     PeladaAttendance,
 )
@@ -45,6 +46,27 @@ def list_for_user(db: Session, user_id, limit: int = 200) -> list[Pelada]:
     )
 
 
+def list_agendadas_sem_chamada(db: Session, limit: int = 500) -> list[Pelada]:
+    """Peladas ainda nao convocadas, para a chamada de faltantes.
+
+    O filtro de data fica no servico, e nao aqui: `date_iso` e texto e
+    `start_time` tambem, entao comparar no banco exigiria concatenar strings
+    de um jeito diferente em cada dialeto. Em troca, esta consulta ja corta o
+    grosso — so as agendadas que ninguem convocou.
+    """
+    return list(
+        db.execute(
+            select(Pelada)
+            .where(
+                Pelada.chamada_em.is_(None),
+                Pelada.status == PELADA_STATUS_AGENDADA,
+            )
+            .order_by(Pelada.date_iso)
+            .limit(limit)
+        ).scalars()
+    )
+
+
 def list_by_club(db: Session, club_id) -> list[Pelada]:
     club_id = _uuid(club_id)
     if club_id is None:
@@ -67,9 +89,14 @@ def by_booking_date(db: Session, booking_id, date_iso: str) -> Pelada | None:
     ).scalar_one_or_none()
 
 
-def list_attendance(db: Session, pelada_id) -> list[tuple[PeladaAttendance, uuid.UUID]]:
-    """Retorna linhas de presenca com user_id (o join nao e necessario — o
-    id ja esta na PK)."""
+def list_attendance(db: Session, pelada_id) -> list[PeladaAttendance]:
+    """Linhas de presenca da pelada.
+
+    A anotacao dizia list[tuple[PeladaAttendance, uuid.UUID]] e a funcao
+    sempre devolveu objetos soltos — o user_id ja esta na propria linha, entao
+    o join do nome nunca foi necessario. Quem confiou na assinatura escreveu
+    `for a, _ in ...` e tomou TypeError.
+    """
     pelada_id = _uuid(pelada_id)
     if pelada_id is None:
         return []

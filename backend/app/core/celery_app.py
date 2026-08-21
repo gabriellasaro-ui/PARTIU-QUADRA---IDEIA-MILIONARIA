@@ -51,6 +51,15 @@ celery_app.conf.update(
             "task": "app.workers.tasks.confirmar_pagamentos_pendentes",
             "schedule": 10.0,
         },
+        # Fase 21 (clube): chama quem nao respondeu quando falta gente para a
+        # pelada. A cada 15 min, e nao a cada minuto: a marca `chamada_em` ja
+        # garante um aviso por pelada, entao rodar mais rapido so gastaria
+        # consulta. E nao pode ser MUITO lento — uma pelada marcada de vespera
+        # precisa ser convocada antes de acontecer.
+        "convocar-faltantes": {
+            "task": "app.workers.tasks.convocar_faltantes",
+            "schedule": 900.0,
+        },
         # Fase 8 (gerente): segunda-feira 03:00 grava os repasses da semana
         # anterior por arena (settlements pending).
         "gerar-settlements-semanais": {

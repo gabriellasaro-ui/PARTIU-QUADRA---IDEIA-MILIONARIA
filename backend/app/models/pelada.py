@@ -69,6 +69,12 @@ class Pelada(Base):
     )
     plan: Mapped[str] = mapped_column(String(15), default="avulso")
     reservation_code: Mapped[str | None] = mapped_column(String(20))
+    #: Quando a convocacao de faltantes foi disparada. Existe para o aviso sair
+    #: UMA vez por pelada: a tarefa roda em ciclo curto, e sem marca ela
+    #: reavisaria as mesmas pessoas a cada volta ate a hora do jogo — o jeito
+    #: mais rapido de ensinar alguem a ignorar as notificacoes do app.
+    chamada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     status: Mapped[str] = mapped_column(
         String(15), default=PELADA_STATUS_AGENDADA, index=True
     )

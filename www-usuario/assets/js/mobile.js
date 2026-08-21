@@ -2936,7 +2936,12 @@ function peladaDateLabel(pelada) {
    agendado — nao havia motivo para inventar outro card. */
 function peladaCard(pelada, userId, venue) {
   const mine = pelada.attendance?.[userId] || null;
-  const going = Object.values(pelada.attendance || {}).filter((v) => v === 'sim').length;
+  /* Prefere o numero do SERVIDOR. A conta local fica como reserva para um
+     app novo falando com backend velho — mas duas contas do mesmo valor, uma
+     na tela e outra dentro do aviso, divergem no dia em que alguem mudar a
+     regra de um lado so. */
+  const going = pelada.going ?? Object.values(pelada.attendance || {}).filter((v) => v === 'sim').length;
+  const faltam = pelada.faltam ?? Math.max(0, (pelada.maxPlayers || 0) - going);
   const statusClass = pelada.kind === 'avulsa' ? 'pendente' : 'pago';
   const statusLabel = pelada.kind === 'avulsa' ? 'Avulsa' : 'Do clube';
   const end = pelada.startTime && pelada.duration
@@ -2955,6 +2960,11 @@ function peladaCard(pelada, userId, venue) {
       <span class="res-meta">${icon('calendar-days')}${escapeHtml(peladaDateLabel(pelada))} - ${escapeHtml(pelada.startTime || '')}${end ? ' a ' + escapeHtml(end) : ''}</span>
       <div class="res-foot">
         <span class="status ${statusClass}">${statusLabel}</span>
+        <!-- "faltam 4" diz o que fazer; "6/10" so informa. O clube existe
+             para a pelada nao ficar vazia, entao a lacuna e a informacao. -->
+        ${faltam > 0
+          ? `<span class="status pendente pelada-faltam">Faltam ${faltam}</span>`
+          : '<span class="status pago">Time completo</span>'}
         <span class="res-val">${going}/${pelada.maxPlayers || '-'}</span>
       </div>
       <div class="seg pelada-card__seg" role="group" aria-label="Sua presença">${votes}</div>

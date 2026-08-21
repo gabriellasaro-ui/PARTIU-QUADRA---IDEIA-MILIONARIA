@@ -51,6 +51,19 @@ def confirmar_pagamentos_pendentes() -> dict:
         return {"confirmados": mock_autoconfirm.confirmar_pendentes(db)}
 
 
+@celery_app.task(name="app.workers.tasks.convocar_faltantes")
+def convocar_faltantes() -> dict:
+    """Fase 21: chama quem nao respondeu quando falta gente para a pelada.
+
+    E o que fecha o ciclo do clube — o grupo existe para a pelada nao ficar
+    vazia, e ate aqui ninguem era lembrado de confirmar.
+    """
+    from ..services import peladas as peladas_svc
+
+    with SessionLocal() as db:
+        return {"convocadas": peladas_svc.convocar_faltantes(db)}
+
+
 @celery_app.task(name="app.workers.tasks.enviar_notificacao_push")
 def enviar_notificacao_push(
     user_id,

@@ -61,7 +61,9 @@ def _rodar_manutencao() -> dict:
       confirmar  — a reserva nunca sai de "Aguardando pagamento";
       expirar    — quem reservou e nao pagou segura o horario PARA SEMPRE,
                    e nenhum outro jogador consegue aquele slot;
-      concluir   — a partida jogada nunca vira "concluida".
+      concluir   — a partida jogada nunca vira "concluida";
+      convocar   — ninguem e lembrado de confirmar presenca, e a pelada
+                   chega no dia com metade do time.
 
     A segunda e a mais cara: o indice unico de slot considera
     `pending_payment` ocupado (que e o certo — o horario tem de ficar preso
@@ -71,6 +73,7 @@ def _rodar_manutencao() -> dict:
     from .core.database import SessionLocal
     from .services import bookings as bookings_svc
     from .services import mock_autoconfirm
+    from .services import peladas as peladas_svc
 
     with SessionLocal() as db:
         confirmados = mock_autoconfirm.confirmar_pendentes(db)
@@ -80,7 +83,14 @@ def _rodar_manutencao() -> dict:
     with SessionLocal() as db:
         concluidas = bookings_svc.complete_finished(db)
         db.commit()
-    return {"confirmados": confirmados, "expiradas": expiradas, "concluidas": concluidas}
+    with SessionLocal() as db:
+        convocadas = peladas_svc.convocar_faltantes(db)
+    return {
+        "confirmados": confirmados,
+        "expiradas": expiradas,
+        "concluidas": concluidas,
+        "convocadas": convocadas,
+    }
 
 
 async def _laco_manutencao() -> None:

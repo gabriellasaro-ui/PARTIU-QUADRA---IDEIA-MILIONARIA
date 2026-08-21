@@ -7,12 +7,12 @@ avulsa gera 1 na data da reserva. Data/hora/arena/esporte sao sempre
 derivados da reserva no servidor.
 """
 import uuid
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from ..core.timezone import now_local
+from ..core.timezone import TZ, now_local
 from ..core.ws import publish_user_event
 from ..models import (
     ATTENDANCE_NAO,
@@ -64,7 +64,112 @@ def _pelada_dict(db: Session, pelada: Pelada) -> dict:
         "reservationCode": pelada.reservation_code,
         "status": pelada.status,
         "attendance": attendance,
+        # O front ja contava isto sozinho a cada card. Agora vem do servidor
+        # porque a notificacao tambem precisa do numero — e duas contas do
+        # mesmo valor, uma na tela e outra no aviso, divergem no dia em que
+        # alguem mudar a regra de um lado so.
+        "going": sum(1 for v in attendance.values() if v == ATTENDANCE_SIM),
+        "faltam": max(0, pelada.max_players - sum(1 for v in attendance.values() if v == ATTENDANCE_SIM)),
     }
+
+
+def convocar_faltantes(db: Session, *, horas: int = 24) -> int:
+    """Chama quem ainda nao respondeu, quando falta gente para a pelada.
+
+    E o que fecha o ciclo do clube: o grupo existe para a pelada nao ficar
+    vazia, e ate aqui ninguem era lembrado de confirmar.
+
+    Tres cortes, e cada um evita um jeito diferente de irritar as pessoas:
+
+      SO QUEM NAO RESPONDEU. Quem ja disse sim, talvez ou nao decidiu — mandar
+      de novo e cobranca, nao lembrete.
+
+      SO PELADA DE CLUBE COM VAGA. Se ja tem gente suficiente, nao falta
+      ninguem, e o aviso vira ruido.
+
+      UMA VEZ POR PELADA (`chamada_em`). A tarefa roda em ciclo curto; sem a
+      marca, as mesmas pessoas seriam avisadas a cada volta ate a hora do
+      jogo.
+
+    Devolve quantas peladas foram convocadas.
+    """
+    from ..models import NOTIF_PELADA_FALTAM, PELADA_KIND_CLUBE
+
+    agora = now_local()
+    limite = agora + timedelta(hours=horas)
+
+    convocadas = 0
+    for pelada in repo.list_agendadas_sem_chamada(db):
+        if pelada.kind != PELADA_KIND_CLUBE or not pelada.club_id:
+            continue
+        quando = _quando(pelada)
+        # Janela: comeca depois de agora e antes do limite. Pelada que ja
+        # passou nao se enche mais, e a de daqui a uma semana nao e urgente.
+        if quando is None or not (agora < quando <= limite):
+            continue
+
+        presencas = {str(a.user_id): a.value for a in repo.list_attendance(db, pelada.id)}
+        vao = sum(1 for v in presencas.values() if v == ATTENDANCE_SIM)
+        faltam = pelada.max_players - vao
+
+        # Marca ANTES de decidir se avisa: pelada cheia tambem nao deve voltar
+        # a ser examinada a cada ciclo ate o jogo acontecer.
+        pelada.chamada_em = agora
+        if faltam <= 0:
+            continue
+
+        alvos = [
+            m.user_id
+            for m, _ in clubs_repo.list_members(db, pelada.club_id)
+            if str(m.user_id) not in presencas
+        ]
+        if not alvos:
+            continue
+
+        quantos = "1 vaga" if faltam == 1 else f"{faltam} vagas"
+        for uid in alvos:
+            _notify(
+                db, uid, NOTIF_PELADA_FALTAM,
+                "Falta gente na pelada",
+                f"{pelada.title} é {_quando_por_extenso(quando)} e ainda tem {quantos}.",
+                {
+                    "peladaId": str(pelada.id),
+                    "clubId": str(pelada.club_id),
+                    "title": pelada.title,
+                    "faltam": faltam,
+                },
+            )
+        convocadas += 1
+
+    db.commit()
+    return convocadas
+
+
+def _quando(pelada) -> datetime | None:
+    """Data e hora da pelada como datetime local."""
+    try:
+        dia = datetime.strptime(pelada.date_iso, "%Y-%m-%d").date()
+        hora, minuto = (int(x) for x in str(pelada.start_time).split(":")[:2])
+    except (TypeError, ValueError):
+        return None
+    return datetime.combine(dia, time(hour=hora, minute=minuto), tzinfo=TZ)
+
+
+def _quando_por_extenso(quando: datetime) -> str:
+    """"hoje as 20h" / "amanha as 20h" / "sabado as 20h".
+
+    O texto vai para a barra de notificacoes, onde a pessoa le de passagem —
+    "2026-08-22 20:00" exige traduzir mentalmente para saber se e urgente.
+    """
+    hoje = now_local().date()
+    dias = (quando.date() - hoje).days
+    hora = quando.strftime("%Hh%M").replace("h00", "h")
+    if dias == 0:
+        return f"hoje às {hora}"
+    if dias == 1:
+        return f"amanhã às {hora}"
+    nomes = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
+    return f"{nomes[quando.weekday()]} às {hora}"
 
 
 def list_peladas(db: Session, user) -> list[dict]:
