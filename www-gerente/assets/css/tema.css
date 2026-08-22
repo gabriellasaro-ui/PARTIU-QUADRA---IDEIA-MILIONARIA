@@ -475,3 +475,123 @@ html[data-manager-app][data-manager-view="agenda"] .cal-col.today {
   background-color: color-mix(in srgb, var(--pq-brand) 7%, transparent);
   box-shadow: inset 2px 0 0 var(--pq-brand), inset -2px 0 0 var(--pq-brand);
 }
+
+
+/* ═════════════ Agenda: densidade e leitura, no estilo de calendario ═══════ */
+
+/* BLOCOS SOLIDOS.
+
+   Os blocos eram fundo escuro com texto colorido — legiveis um a um, mas numa
+   grade de sete colunas o olho procura MANCHA DE COR, e nao le texto. Com
+   fundo quase igual ao da coluna, achar as reservas exigia varrer a tela.
+
+   Agora a cor do estado e o FUNDO, com tinta escura por cima. E o que todo
+   calendario faz, e o motivo e esse: a cor tem de ser vista antes de ser
+   lida. */
+html[data-manager-app] .cal-ev {
+  padding: 3px 7px;
+  border-left-width: 0;
+  border-radius: 5px;
+  box-shadow: none;
+  line-height: 1.2;
+}
+
+html[data-manager-app] .cal-ev.pago { background: var(--pq-brand); color: #06120c; }
+html[data-manager-app] .cal-ev.confirmado { background: var(--ev-conf-solid); color: #06101f; }
+html[data-manager-app] .cal-ev.pendente { background: var(--pq-gold); color: #241a04; }
+html[data-manager-app] .cal-ev.solicitada { background: var(--ev-sol-solid); color: #2a1602; }
+
+/* A que nao vai acontecer perde a cor: continua na grade como historico, sem
+   disputar com o que esta de pe. */
+html[data-manager-app] .cal-ev.recusada,
+html[data-manager-app] .cal-ev.cancelada,
+html[data-manager-app] .cal-ev.expirada {
+  background: var(--pq-panel-2);
+  color: var(--pq-muted);
+  border: 1px dashed var(--pq-line-strong);
+  text-decoration: line-through;
+}
+
+.cal-ev .t { font-size: 11px; font-weight: 700; }
+.cal-ev .h { font-size: 10px; opacity: .78; margin-top: 0; }
+
+:root {
+  --ev-conf-solid: #6ea2ff;
+  --ev-sol-solid: #ffb454;
+}
+
+:root[data-theme="light"] {
+  --ev-conf-solid: #4b83f0;
+  --ev-sol-solid: #ef9a2e;
+}
+
+/* GRADE QUASE INVISIVEL.
+
+   As linhas de hora sao referencia, nao conteudo: precisam existir para o olho
+   medir altura, e desaparecer quando ele olha para as reservas. Estavam no
+   mesmo peso das bordas de coluna, e a grade lia como uma tabela. */
+html[data-manager-app][data-manager-view="agenda"] .cal-col {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--pq-line) 55%, transparent) 0,
+    color-mix(in srgb, var(--pq-line) 55%, transparent) 1px,
+    transparent 1px,
+    transparent var(--hourh)
+  );
+}
+
+/* A REGUA fica colada na linha, e nao centrada na faixa: o rotulo "19:00" tem
+   de apontar para onde as 19h COMECAM. Centrado, ele fica meia hora fora do
+   lugar que nomeia. */
+.cal-gutter .hr span {
+  top: -7px;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* LINHA DO AGORA — a mesma convencao de todo calendario. */
+.cal-now {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  left: 0;
+  height: 0;
+  border-top: 2px solid var(--pq-danger);
+  pointer-events: none;
+}
+
+.cal-now > i {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pq-danger);
+}
+
+/* Bloco estreito (tres ou mais na mesma hora): so a hora, centrada.
+
+   A cor ja carrega o estado e o clique abre o detalhe. Numa tira de 55px, hora
+   e a unica informacao que cabe inteira — e e ela que orienta o olho na
+   vertical, que e como se le um calendario. */
+.cal-ev.is-tight {
+  display: grid;
+  place-items: center;
+  padding: 2px 4px;
+}
+
+.cal-ev .so-hora {
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+
+/* O titulo corta com reticencias em vez de vazar. */
+.cal-ev .t,
+.cal-ev .h {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -11,7 +11,7 @@ import { renderManagerReviews, initManagerReviews } from './manager-reviews.js';
 import { renderManagerBookingDetail, initManagerBookingDetail } from './manager-booking-detail.js';
 import {
   renderManagerBookingForm, renderManagerCourtForm, renderManagerSettings, initManagerForms
-} from './manager-forms.js';
+, prefillReservaNova } from './manager-forms.js';
 import { renderManagerFinance, initManagerFinance } from './manager-finance.js';
 import { aplicarTema, definirTema, claroLigado } from '../../services/tema.js';
 import { connectWS, disconnectWS } from '../../services/ws.js';
@@ -154,7 +154,14 @@ function markActiveNav() {
 }
 
 function routeFromHash(routes, fallback) {
-  const hash = location.hash.replace(/^#/, '').trim();
+  const bruto = location.hash.replace(/^#/, '').trim();
+  /* A QUERY sai antes de procurar a rota.
+
+     `#reserva-nova?dia=2026-08-20&hora=15:00` — que e como a agenda abre o
+     formulario ja preenchido — nao casava com nenhum alias e caia no
+     dashboard: o clique no horario vazio levava a pessoa para a tela errada,
+     sem erro nenhum. O `?` nao faz parte do nome da rota. */
+  const hash = bruto.split('?')[0];
   // Rotas com parametro: #reserva/7 e #quadra/2 resolvem pela primeira parte.
   const base = hash.split('/')[0];
   return Object.entries(routes)
@@ -222,7 +229,12 @@ async function renderDesktopRoute() {
     await renderManagerSettings(view);
     sincronizarInterruptorDeTema(view);
   }
-  if (routeName === 'reservaNova') await renderManagerBookingForm(view);
+  if (routeName === 'reservaNova') {
+    await renderManagerBookingForm(view);
+    // Depois do render: o select de horas so existe quando o formulario ja foi
+    // montado, e preencher antes escreveria num campo que sera reescrito.
+    prefillReservaNova(view);
+  }
   if (routeName === 'reservaDetalhe') await renderManagerBookingDetail(view);
   if (routeName === 'quadraForm') await renderManagerCourtForm(view);
   markActiveNav();

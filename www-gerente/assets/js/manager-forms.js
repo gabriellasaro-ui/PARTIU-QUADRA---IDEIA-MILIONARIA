@@ -453,3 +453,39 @@ export function initManagerForms() {
     }
   });
 }
+
+
+/* Nova reserva vinda de um clique na agenda: dia e hora ja preenchidos.
+
+   `#reserva-nova?dia=2026-08-26&hora=20:00`. Sem isto o gesto de clicar no
+   buraco da agenda levaria a um formulario em branco, e o dono teria de
+   redigitar exatamente o que estava vendo na tela um segundo antes — que e o
+   tipo de atrito que faz a pessoa desistir de usar a tela e anotar no caderno.
+*/
+export function prefillReservaNova(root) {
+  const q = location.hash.split('?')[1];
+  if (!q) return;
+  const params = new URLSearchParams(q);
+  const dia = params.get('dia');
+  const hora = params.get('hora');
+
+  if (dia) {
+    const campo = root.querySelector('[name="data"]');
+    if (campo) {
+      // O campo e texto livre ("Hoje", "24/08"): a data vai no formato que a
+      // pessoa reconhece, e nao em ISO.
+      const [a, m, d] = dia.split('-');
+      campo.value = `${d}/${m}/${a}`;
+    }
+  }
+  if (hora) {
+    const sel = root.querySelector('[name="inicio"]');
+    if (sel) {
+      // O select e montado depois; se a opcao ainda nao existe, cria.
+      if (!Array.from(sel.options).some((o) => o.value === hora)) {
+        sel.insertAdjacentHTML('beforeend', `<option value="${hora}">${hora}</option>`);
+      }
+      sel.value = hora;
+    }
+  }
+}

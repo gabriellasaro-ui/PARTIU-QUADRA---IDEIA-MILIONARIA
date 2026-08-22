@@ -216,6 +216,51 @@ function atributosEvento(e) {
     data-status="${escapeHtml(e.status)}" data-cls="${escapeHtml(e.cls)}"`;
 }
 
+/* RESERVAS SIMULTANEAAS LADO A LADO.
+
+   Uma arena com tres quadras tem, por definicao, tres reservas as 20h de
+   sabado. Todas eram desenhadas na mesma posicao, com a mesma largura: a de
+   cima tapava as outras, e o dono via UMA reserva onde havia tres. Nao era
+   feiura — era a agenda escondendo receita.
+
+   O algoritmo e o mesmo dos calendarios: varre em ordem de inicio, agrupa o
+   que se sobrepoe no tempo e divide a largura da coluna entre os membros do
+   grupo. Cada evento sai com {col, de} = "sou o 2o de 3".
+
+   Grupo, e nao par a par: A sobrepoe B, B sobrepoe C, mas A pode nao tocar C —
+   e mesmo assim os tres precisam caber lado a lado, senao A e C se cobririam. */
+function distribuir(eventos) {
+  const ordenados = [...eventos].sort((a, b) => a.inicio - b.inicio || a.fim - b.fim);
+  const saida = [];
+  let grupo = [];
+  let fimDoGrupo = -Infinity;
+
+  const fechar = () => {
+    if (!grupo.length) return;
+    // Dentro do grupo, cada evento vai para a primeira coluna livre.
+    const colunas = [];
+    grupo.forEach((e) => {
+      let alvo = colunas.findIndex((ultima) => ultima <= e.inicio);
+      if (alvo === -1) { colunas.push(e.fim); alvo = colunas.length - 1; }
+      else colunas[alvo] = e.fim;
+      saida.push({ e, col: alvo, de: 0 });
+    });
+    // `de` e o total de colunas do grupo: todos os membros usam a mesma
+    // largura, senao os blocos ficariam com tamanhos diferentes na mesma faixa.
+    const total = colunas.length;
+    saida.slice(-grupo.length).forEach((item) => { item.de = total; });
+    grupo = [];
+  };
+
+  ordenados.forEach((e) => {
+    if (e.inicio >= fimDoGrupo) { fechar(); fimDoGrupo = e.fim; }
+    else fimDoGrupo = Math.max(fimDoGrupo, e.fim);
+    grupo.push(e);
+  });
+  fechar();
+  return saida;
+}
+
 function renderDesktop(root, eventos, segunda) {
   const head = root.querySelector('[data-agenda-head]');
   const body = root.querySelector('[data-agenda-body]');
@@ -242,6 +287,21 @@ function renderDesktop(root, eventos, segunda) {
   const altura = horas.length * ALTURA_HORA;
 
   body.style.setProperty('--hourh', `${ALTURA_HORA}px`);
+
+  /* A LINHA DO AGORA.
+
+     Numa grade de sete colunas, "que horas sao" e a primeira coisa que o dono
+     precisa saber para ler o resto: o que ja passou nao pede acao, o que vem a
+     seguir pede. Sem a linha, ele compara a regua da esquerda com o relogio do
+     canto da tela toda vez.
+
+     So aparece se HOJE estiver na semana visivel e dentro do expediente
+     desenhado — no meio de uma semana passada ela nao significa nada. */
+  const agora = new Date();
+  const horaAgora = agora.getHours() + agora.getMinutes() / 60;
+  const colunaHoje = DIAS.findIndex((_, i) => ehHoje(i));
+  const mostrarAgora = colunaHoje >= 0
+    && horaAgora >= HORA_INICIAL && horaAgora <= HORA_FINAL + 1;
   /* A quadra escolhida no filtro, quando ha uma. O filtro guarda o ROTULO
      (nome da quadra), e o expediente e indexado por id — a ponte e aqui. */
   const quadraAtual = quadraFiltro && quadraFiltro !== 'todas'
@@ -293,14 +353,40 @@ function renderDesktop(root, eventos, segunda) {
       }
     }
 
-    return `<div class="cal-col${ehHoje(i) ? ' today' : ''}" style="min-height:${altura}px">${fechados}${
-      doDia.map((e) => {
+    const linhaAgora = (mostrarAgora && i === colunaHoje)
+      ? `<div class="cal-now" style="top:${(horaAgora - HORA_INICIAL) * ALTURA_HORA}px" aria-hidden="true"><i></i></div>`
+      : '';
+
+    return `<div class="cal-col${ehHoje(i) ? ' today' : ''}" data-cal-dia="${escapeHtml(diaISO || '')}"
+      data-cal-inicio="${HORA_INICIAL}" data-cal-hourh="${ALTURA_HORA}"
+      style="min-height:${altura}px">${fechados}${linhaAgora}${
+      distribuir(doDia).map(({ e, col, de }) => {
         const top = (e.inicio - HORA_INICIAL) * ALTURA_HORA;
-        const h = Math.max(34, (e.fim - e.inicio) * ALTURA_HORA - 4);
-        return `<div class="cal-ev ${e.cls}" style="top:${top}px;height:${h}px" role="button" tabindex="0"
-          title="${escapeHtml(e.cliente)} · ${escapeHtml(e.hora)}" ${atributosEvento(e)}>
-          <div class="t">${escapeHtml(e.cliente)}</div>
-          <div class="h">${escapeHtml(e.horaCurta)} <span>${escapeHtml(e.status)}</span></div>
+        const h = Math.max(26, (e.fim - e.inicio) * ALTURA_HORA - 3);
+        /* Largura e deslocamento vem da distribuicao: reservas simultaneas
+           dividem a coluna do dia em vez de se cobrirem. */
+        const larg = 100 / de;
+        const esq = larg * col;
+        /* O QUE CABE MUDA COM A LARGURA.
+
+           Com tres reservas na mesma hora, a coluna do dia vira tres tiras de
+           ~55px. "Sobrepoe Teste" nesse espaco vira "Sobrepo…", que nao
+           identifica ninguem — e ocupa a linha que poderia dizer algo util.
+
+           Entao: sozinha, mostra cliente e quadra; a dois, cliente e hora; a
+           tres ou mais, so a HORA, grande. A cor ja diz o estado e o clique
+           abre o detalhe — numa tira estreita, hora e a unica informacao que
+           cabe inteira e que orienta o olho na vertical. */
+        const apertado = de >= 3;
+        const corpo = apertado
+          ? `<div class="t so-hora">${escapeHtml(e.horaCurta)}</div>`
+          : `<div class="t">${escapeHtml(e.cliente)}</div>
+             <div class="h">${escapeHtml(e.horaCurta)}${de > 1 ? '' : ` · ${escapeHtml(e.quadra)}`}</div>`;
+
+        return `<div class="cal-ev ${e.cls}${apertado ? ' is-tight' : ''}" role="button" tabindex="0"
+          style="top:${top}px;height:${h}px;left:calc(${esq}% + 3px);width:calc(${larg}% - 5px)"
+          title="${escapeHtml(e.cliente)} · ${escapeHtml(e.quadra)} · ${escapeHtml(e.hora)}" ${atributosEvento(e)}>
+          ${corpo}
         </div>`;
       }).join('')
     }</div>`;
@@ -420,6 +506,46 @@ function abrirDetalhe(root, el) {
   modal.hidden = false;
 }
 
+/* CLICAR NUM HORARIO VAZIO ABRE A NOVA RESERVA JA PREENCHIDA.
+
+   E o gesto que todo calendario tem e que faltava aqui: o dono via um buraco
+   as 20h de sabado, e para vender aquele horario tinha de sair da agenda, abrir
+   "Nova reserva" e redigitar o dia e a hora que estava vendo na tela.
+
+   Nao vale para horario FECHADO: ali a hachura ja diz que nao ha o que
+   vender, e abrir o formulario levaria a uma reserva que o proprio servidor
+   recusa (409, "a quadra nao abre neste dia").
+*/
+function cliqueNoVazio(alvo, event) {
+  const col = alvo.closest('.cal-col');
+  if (!col) return false;
+  // Clique em cima de reserva ou de faixa fechada nao cria nada.
+  if (event.target.closest('.cal-ev')) return false;
+
+  const rect = col.getBoundingClientRect();
+  const y = event.clientY - rect.top;
+  const inicio = Number(col.dataset.calInicio || 8);
+  const alturaHora = Number(col.dataset.calHourh || 41);
+  const hora = Math.floor(inicio + y / alturaHora);
+  const dia = col.dataset.calDia;
+  if (!dia || !Number.isFinite(hora)) return false;
+
+  // Dentro de faixa fechada: nao abre.
+  const fechado = Array.from(col.querySelectorAll('.cal-closed')).some((f) => {
+    const t = parseFloat(f.style.top || '0');
+    const h = parseFloat(f.style.height || '0');
+    return y >= t && y < t + h;
+  });
+  if (fechado) {
+    window.pqToast?.('A quadra não abre neste horário');
+    return true;
+  }
+
+  const q = new URLSearchParams({ dia, hora: `${String(hora).padStart(2, '0')}:00` });
+  location.hash = `#reserva-nova?${q}`;
+  return true;
+}
+
 export function initManagerAgenda() {
   document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
@@ -457,6 +583,10 @@ export function initManagerAgenda() {
       root.querySelector('[data-agenda-event-modal]').hidden = true;
       return;
     }
+
+    // Por ULTIMO: so cria reserva se o clique nao foi em nada mais da tela.
+    const coluna = event.target.closest('.cal-col');
+    if (coluna && cliqueNoVazio(coluna, event)) return;
 
     const ev = event.target.closest('[data-ev]');
     if (ev) abrirDetalhe(root, ev);
