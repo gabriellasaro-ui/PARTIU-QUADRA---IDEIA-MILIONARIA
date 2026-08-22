@@ -128,7 +128,7 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
   display: flex; align-items: center; gap: 12px;
   padding: 50px 18px 16px;
   position: sticky; top: 0; z-index: 5;
-  background: rgba(255,255,255,.86);
+  background: var(--pq-panel-veil);
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid var(--line);
 }
@@ -227,7 +227,7 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
   position: absolute; z-index: 2;
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 30px;
-  background: rgba(255,255,255,.95); color: var(--ink);
+  background: var(--pq-panel-veil); color: var(--ink);
   box-shadow: 0 2px 8px rgba(0,0,0,.12);
 }
 .pill .ic { width: 14px; height: 14px; }
@@ -262,7 +262,7 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
 .hero .back {
   position: absolute; top: 50px; left: 16px; z-index: 3;
   width: 40px; height: 40px; border-radius: 13px;
-  background: rgba(255,255,255,.92); color: var(--ink);
+  background: var(--pq-panel-veil); color: var(--ink);
   display: grid; place-items: center; box-shadow: 0 4px 12px rgba(0,0,0,.18);
 }
 .detail-head { padding: 18px 20px 4px; }
@@ -442,7 +442,7 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
 .tabbar {
   flex: 0 0 auto;
   display: flex; justify-content: space-around;
-  background: rgba(255,255,255,.92);
+  background: var(--pq-panel-veil);
   backdrop-filter: saturate(180%) blur(14px);
   border-top: 1px solid var(--line);
   padding: 10px 8px 16px;

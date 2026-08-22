@@ -29,6 +29,16 @@
   --pq-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Superficie quase-opaca (barras fixas, folhas, cabecalhos que borram o que
+   passa por baixo). Era rgba(255,255,255,.9x) cravado em 20 lugares — como nao
+   e hex, a primeira tokenizacao nao enxergou, e o rodape continuou branco no
+   modo escuro. Os brancos de alfa BAIXO nao entraram aqui: aqueles sao veu
+   sobre foto e devem mesmo continuar brancos. */
+:root {
+  --pq-panel-veil: rgba(255, 255, 255, .97);
+}
+
+
 /* Tokens de estado que faltavam: eram cores cravadas espalhadas pelo CSS
    (vermelho de exclusao, ambar de aviso). Sem nome, nao havia como troca-las
    no modo escuro. */
@@ -429,8 +439,8 @@ html[data-route="mapa"] .mobile-map-route {
 
 .navbar {
   padding: 18px 16px;
-  background: rgba(247, 248, 244, .90);
-  border-bottom: 1px solid rgba(228, 231, 223, .78);
+  background: var(--pq-panel-veil);
+  border-bottom: 1px solid var(--pq-line);
   backdrop-filter: blur(16px) saturate(140%);
   /* FIXA no topo. O backdrop-filter acima ja tinha sido escrito para isso —
      desfocar o que passa por tras so faz sentido se algo passar por tras —,
@@ -492,7 +502,7 @@ html[data-route="mapa"] .mobile-map-route {
   border-radius: 0;
   border: 0;
   border-top: 1px solid var(--pq-line);
-  background: rgba(255, 255, 255, .96);
+  background: var(--pq-panel-veil);
   box-shadow: 0 -8px 26px rgba(17, 17, 17, .08);
   backdrop-filter: blur(18px) saturate(160%);
 }
@@ -555,7 +565,7 @@ button .ic,
   border-radius: var(--pq-radius);
   justify-content: flex-start;
   border: 1px solid rgba(22, 138, 72, .2);
-  background: rgba(255, 255, 255, .98);
+  background: var(--pq-panel-veil);
   color: var(--pq-ink);
   box-shadow: 0 14px 34px rgba(5, 13, 9, .18);
   animation: pq-toast-in .22s cubic-bezier(.2, .8, .2, 1);
@@ -651,7 +661,7 @@ button .ic,
   height: 40px;
   border: 0;
   border-radius: var(--pq-radius);
-  background: rgba(255, 255, 255, .94);
+  background: var(--pq-panel-veil);
   color: var(--pq-muted);
   box-shadow: 0 8px 20px rgba(5, 13, 9, .2);
 }
@@ -684,7 +694,7 @@ button .ic,
   width: auto;
   min-height: 40px;
   padding: 0 12px;
-  background: rgba(255, 255, 255, .94);
+  background: var(--pq-panel-veil);
 }
 
 .venue-booking {
@@ -857,7 +867,7 @@ button .ic,
   height: 22px;
   padding: 0 !important;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .88) !important;
+  background: var(--pq-panel-veil) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, .16);
   overflow: hidden;
   cursor: pointer;
@@ -1020,7 +1030,7 @@ button .ic,
   padding: 8px 11px;
   border: 1px solid var(--pq-line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, .94);
+  background: var(--pq-panel-veil);
   box-shadow: 0 8px 22px rgba(5, 13, 9, .14);
   color: var(--pq-ink);
   font-size: 10.5px;
@@ -1352,7 +1362,7 @@ button .ic,
   min-height: 30px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .88);
+  background: var(--pq-panel-veil);
   color: var(--pq-brand-deep);
   font-size: 10px;
   font-weight: 850;
@@ -2565,7 +2575,7 @@ button .ic,
   inset: 0 auto 0 0;
   width: 46%;
   border-radius: inherit;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .95), transparent);
+  background: linear-gradient(90deg, transparent, var(--pq-panel-veil), transparent);
   filter: blur(.2px);
   animation: pq-approval-route-flow 2.5s cubic-bezier(.4, 0, .2, 1) infinite;
 }
@@ -4041,7 +4051,7 @@ html[data-route="mapa"] .phone {
 .venue-distance-pill {
   top: 10px;
   right: 10px;
-  background: rgba(255, 255, 255, .95);
+  background: var(--pq-panel-veil);
   color: var(--pq-brand-deep);
 }
 
@@ -4288,7 +4298,7 @@ html[data-route="mapa"] .phone {
   padding: 8px 8px max(8px, var(--pq-safe-bottom));
   border-top: 1px solid var(--pq-line);
   border-radius: 24px 24px 0 0;
-  background: rgba(255, 255, 255, .97);
+  background: var(--pq-panel-veil);
   box-shadow: 0 -8px 24px rgba(7, 94, 58, .08);
 }
 
@@ -4423,7 +4433,7 @@ html[data-route="mapa"] .phone {
   padding: 0 11px;
   border: 1px solid rgba(255, 255, 255, .55);
   border-radius: 999px;
-  background: rgba(255, 255, 255, .92);
+  background: var(--pq-panel-veil);
   color: var(--pq-ink);
   font-size: 10px;
   font-weight: 800;
@@ -4989,7 +4999,7 @@ html[data-route="mapa"] .phone {
   padding: 14px;
   border-radius: 24px;
   border-color: var(--pq-line);
-  background: rgba(255, 255, 255, .97);
+  background: var(--pq-panel-veil);
   box-shadow: 0 14px 34px rgba(7, 94, 58, .15);
   backdrop-filter: blur(14px);
 }
@@ -6282,7 +6292,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
   border: 0;
   border-top: 1px solid var(--pq-line);
   border-radius: 24px 24px 0 0;
-  background: rgba(255, 255, 255, .97);
+  background: var(--pq-panel-veil);
   box-shadow: 0 -8px 24px rgba(7, 94, 58, .08);
   backdrop-filter: blur(18px) saturate(160%);
 }
@@ -6723,7 +6733,7 @@ html[data-route="cadastro"]::before {
   z-index: -1;
   inset: 0;
   height: 100vh;
-  background: #fff url('../images/login-hero-mobile.webp') no-repeat bottom center;
+  background: var(--pq-panel) url('../images/login-hero-mobile.webp') no-repeat bottom center;
   background-size: cover;
 }
 
@@ -6732,7 +6742,7 @@ html[data-route="cadastro"]::before {
 .auth-page .auth-body {
   padding: 18px 16px 20px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, .94);
+  background: var(--pq-panel-veil);
   box-shadow: 0 12px 34px rgba(11, 61, 38, .1);
   backdrop-filter: blur(2px);
 }
@@ -7063,11 +7073,6 @@ html[data-route="cadastro"]::before {
 .onb-step--done .btn { width: 100%; margin-top: auto; }
 
 /* ── Resultado da busca de clube ── */
-
-.club-hit .btn-xs {
-  padding: 8px 14px;
-  font-size: 12px;
-}
 
 /* ── Código do clube e zona de risco ── */
 
@@ -7854,4 +7859,73 @@ html[data-theme="dark"] {
 /* A casca do mapa passa a ancorar o filtro flutuante. */
 .leaflet-map-shell {
   position: relative;
+}
+
+:root[data-theme="dark"] {
+  --pq-panel-veil: rgba(24, 33, 29, .97);
+}
+
+/* CARTAO DE CLUBE NA BUSCA — estava ilegivel.
+
+   `.btn` tem `width: 100%` (faz sentido para o botao principal de uma tela) e
+   `.btn-xs` so mudava padding e fonte. Dentro da linha flex, o botao entao
+   esticava para a largura toda e esmagava a coluna de texto ate sobrar uma
+   letra: o nome do clube sumia atras do botao e o resto quebrava numa palavra
+   por linha.
+
+   Vira grade de tres colunas com papeis explicitos: escudo (fixo), texto (o
+   que estica) e acao (o tamanho do proprio rotulo). */
+.club-hit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.club-hit > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.club-hit strong {
+  overflow: hidden;
+  font-size: 13.5px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.club-hit small {
+  overflow: hidden;
+  color: var(--pq-muted);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A acao ocupa o tamanho do proprio texto, e nao a linha inteira. */
+.club-hit .btn-xs {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Filtro de modalidade encostado a ESQUERDA.
+
+   O botao flutuante ja nasce em left: 12px; o que faltava era a LISTA, que
+   abria alinhada pela borda do botao mas ficava com os rotulos centralizados
+   herdando o text-align dos cartoes de esporte. Nome de modalidade se le da
+   esquerda, como toda lista. */
+.map-filter-list,
+.map-filter-item {
+  text-align: left;
+}
+
+.map-filter-float {
+  left: 12px;
+  right: auto;
 }

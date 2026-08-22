@@ -553,7 +553,10 @@ async function renderHome(root) {
         </a>`)
       .concat(`
         <a class="sport-item" href="#quadras?esporte=outros">
-          <span>${icon('circle-ellipsis')}</span>
+          <!-- O mesmo desenho de "varias bolas" que serve de padrao em
+               sport-icons.js. Antes eram tres simbolos diferentes para a mesma
+               ideia: reticencias na home, faiscas em explorar e no mapa. -->
+          <span>${sportIcon('outros')}</span>
           <strong>Outros</strong>
         </a>`)
       .join('');
@@ -653,7 +656,7 @@ async function renderExplore(root, route) {
 
   const persistentQuery = `${term ? `&q=${encodeURIComponent(term)}` : ''}${now ? '&agora=1' : ''}`;
   root.querySelector('[data-sport-filters]').innerHTML = [
-    `<a class="sport-filter-chip ${sport ? '' : 'on'}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}${persistentQuery}">${icon('sparkles')}Todos</a>`,
+    `<a class="sport-filter-chip ${sport ? '' : 'on'}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}${persistentQuery}">${sportIcon('outros')}Todos</a>`,
     ...sports.map((item) => {
       const on = item === sport ? 'on' : '';
       return `<a class="sport-filter-chip ${on}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}&esporte=${encodeURIComponent(item)}${persistentQuery}">${sportIcon(item)}${escapeHtml(item)}</a>`;
@@ -766,7 +769,7 @@ async function renderMap(root, route) {
     };
     lista.innerHTML = [
       `<a class="map-filter-item ${esportesSel.length ? '' : 'on'}" href="${linkPara([])}">
-         ${icon('sparkles')}<span>Todas as modalidades</span>${esportesSel.length ? '' : icon('check', 'ic map-filter-item__ck')}</a>`,
+         ${sportIcon('outros')}<span>Todas as modalidades</span>${esportesSel.length ? '' : icon('check', 'ic map-filter-item__ck')}</a>`,
       ...sports.map((item) => {
         const marcado = esportesSel.includes(item);
         const proxima = marcado
@@ -1874,7 +1877,6 @@ function syncMobileProfile(root, user) {
   // DEPOIS da declaracao de `set`: chamado antes, caia na zona morta do const
   // e derrubava a tela de perfil inteira com ReferenceError.
   set('[data-profile-sport]', user.favoriteSport || '—');
-  set('[data-profile-position]', user.position || 'Jogador');
   set('[data-profile-position-value]', user.position || '—');
   set('[data-profile-level]', nivel ? nivel.label : '—');
   set('[data-profile-birth]', formatBirthDate(user.birthDate));
@@ -2201,10 +2203,15 @@ async function renderClubSearch(root, route) {
 
   lista.innerHTML = achados.length
     ? achados.map((club) => `<article class="payment-row club-hit">
-        <span class="badge-ic">${escapeHtml(club.name.charAt(0).toUpperCase())}</span>
+        <span class="badge-ic">${club.photo
+          ? `<img src="${escapeHtml(club.photo)}" alt="">`
+          : escapeHtml(club.name.charAt(0).toUpperCase())}</span>
         <span>
           <strong>${escapeHtml(club.name)}</strong>
-          <small>${escapeHtml(club.sport)} &middot; ${escapeHtml(club.city)} &middot; ${club.members.length} no time</small>
+          <!-- Uma linha so, com reticencias: "Futebol Society · Belo Horizonte
+               · 5 no time" nao cabe em tela estreita e, quebrando, empurrava o
+               cartao para cinco linhas de altura. -->
+          <small>${escapeHtml(rotuloModalidade(club.sport))} &middot; ${escapeHtml(club.city)} &middot; ${club.members.length} no time</small>
         </span>
         <button class="btn btn-xs" type="button"
                 data-club-join="${club.id}"
