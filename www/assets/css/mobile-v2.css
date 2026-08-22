@@ -37,7 +37,7 @@ html {
   /* Acompanha --pq-paper: e o fundo que aparece no overscroll (o
      "elastico") e atras da safe area. Verde ali devolvia a cor antiga
      toda vez que alguem puxava a tela. */
-  background: #ffffff;
+  background: var(--pq-panel);
 }
 
 body {
@@ -157,7 +157,7 @@ html[data-route="mapa"] .mobile-map-route {
   width: 30px;
   height: 30px;
   border-radius: var(--pq-radius);
-  background: #ffffff;
+  background: var(--pq-panel);
   color: var(--pq-green);
   border: 0;
   box-shadow: none;
@@ -343,7 +343,7 @@ html[data-route="mapa"] .mobile-map-route {
 
 .card .photo {
   height: 190px;
-  background: #dfe9df;
+  background: var(--pq-tint-strong);
 }
 
 .card .photo::after {
@@ -809,7 +809,7 @@ button .ic,
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #dfeee3;
+  background: var(--pq-tint-strong);
 }
 
 .leaflet-mobile-map {
@@ -817,7 +817,7 @@ button .ic,
   height: 100%;
   min-height: 0;
   max-height: none;
-  background: #dfeee3;
+  background: var(--pq-tint-strong);
 }
 
 .leaflet-container {
@@ -916,7 +916,7 @@ button .ic,
   padding: 6px 9px;
   border: 2px solid var(--pq-green);
   border-radius: 999px;
-  background: #fff;
+  background: var(--pq-panel);
   color: var(--pq-ink);
   box-shadow: 0 7px 18px rgba(5, 13, 9, .2);
   font-size: 11.5px;
@@ -934,7 +934,7 @@ button .ic,
   transform: translateX(-50%) rotate(45deg);
   border-right: 2px solid var(--pq-green);
   border-bottom: 2px solid var(--pq-green);
-  background: #fff;
+  background: var(--pq-panel);
 }
 
 .leaflet-popup-content-wrapper {
@@ -1256,7 +1256,7 @@ button .ic,
   width: 36px;
   height: 36px;
   border-radius: var(--pq-radius);
-  background: #fff;
+  background: var(--pq-panel);
   color: var(--pq-green);
 }
 
@@ -1287,7 +1287,7 @@ button .ic,
   min-height: 52px;
   border: 1px solid var(--pq-line);
   border-radius: var(--pq-radius);
-  background: #fff;
+  background: var(--pq-panel);
   color: var(--pq-ink);
   font-size: 15px;
   font-weight: 850;
@@ -1306,7 +1306,7 @@ button .ic,
 
 .coupon-row {
   justify-content: space-between;
-  background: #fff;
+  background: var(--pq-panel);
 }
 
 .coupon-row small {
@@ -1327,7 +1327,7 @@ button .ic,
 .profile-cover {
   position: relative;
   height: 92px;
-  background: #dff3e6;
+  background: var(--pq-tint);
 }
 
 .profile-role {
@@ -1416,7 +1416,7 @@ button .ic,
   padding: 8px 12px;
   border: 1px solid var(--pq-line);
   border-radius: 999px;
-  background: #f8fcf9;
+  background: var(--pq-panel);
   color: var(--pq-brand-deep);
   font-size: 11px;
   font-weight: 850;
@@ -1499,7 +1499,7 @@ button .ic,
   margin: 12px 0 18px;
   padding: 8px 11px;
   border-radius: 999px;
-  background: #e8f6ed;
+  background: var(--pq-tint);
   color: var(--pq-muted);
   font-size: 12px;
 }
@@ -1577,7 +1577,7 @@ button .ic,
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #dff3e6;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
 }
 
@@ -1683,7 +1683,7 @@ button .ic,
   width: 44px;
   height: 26px;
   border-radius: 999px;
-  background: #cfd6d1;
+  background: var(--pq-line-strong);
   transition: background .16s ease;
 }
 
@@ -1695,7 +1695,7 @@ button .ic,
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   box-shadow: 0 2px 6px rgba(5, 13, 9, .18);
   transition: transform .16s ease;
 }
@@ -1913,7 +1913,7 @@ button .ic,
 }
 
 .map-radius .chip.on {
-  background: #fff;
+  background: var(--pq-panel);
   color: var(--pq-brand-strong);
   box-shadow: 0 2px 6px rgba(16, 43, 28, .10);
 }
@@ -2130,7 +2130,7 @@ button .ic,
   display: flex;
   min-height: calc(100dvh - var(--pq-tabbar-height) - var(--pq-safe-bottom));
   flex-direction: column;
-  background: #eef3ef;
+  background: var(--pq-tint);
 }
 
 .mobile-chat-thread[hidden] {
@@ -2150,7 +2150,7 @@ button .ic,
   gap: 10px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--pq-line);
-  background: #fff;
+  background: var(--pq-panel);
 }
 
 .mobile-thread-head .icon-btn {
@@ -2204,12 +2204,12 @@ button .ic,
 
 .bubble.them {
   align-self: flex-start;
-  background: #fff;
+  background: var(--pq-panel);
 }
 
 .bubble.me {
   align-self: flex-end;
-  background: #c8f7d9;
+  background: var(--pq-tint);
 }
 
 .bub-txt {
@@ -2230,7 +2230,7 @@ button .ic,
   gap: 9px;
   padding: 10px 12px max(10px, var(--pq-safe-bottom));
   border-top: 1px solid var(--pq-line);
-  background: #fff;
+  background: var(--pq-panel);
 }
 
 .mobile-composer input {
@@ -2375,7 +2375,7 @@ button .ic,
 
 .booking-flow li.is-error > span {
   border-color: #efbdc6;
-  background: #fff0f2;
+  background: var(--pq-danger-soft);
   color: #b4233c;
 }
 
@@ -2411,7 +2411,7 @@ button .ic,
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #e2f4e8;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
   font-size: 12px;
   font-weight: 900;
@@ -2476,7 +2476,7 @@ button .ic,
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #e2f4e8;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
 }
 
@@ -2568,7 +2568,7 @@ button .ic,
   height: 44px;
   border: 1px solid #c8e5d2;
   border-radius: 50%;
-  background: #f5fbf7;
+  background: var(--pq-panel);
   color: var(--pq-brand-deep);
   box-shadow: 0 7px 20px rgba(8, 81, 47, .1);
 }
@@ -2703,7 +2703,7 @@ button .ic,
   height: 68px;
   margin: 0 auto 18px;
   border-radius: 50%;
-  background: #e2f4e8;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
   box-shadow: 0 0 0 10px rgba(22, 167, 101, .08);
 }
@@ -2769,7 +2769,7 @@ button .ic,
   height: 6px;
   margin-top: 11px;
   border-radius: 999px;
-  background: #dfe9e2;
+  background: var(--pq-tint-strong);
 }
 
 .approval-progress > span {
@@ -2822,7 +2822,7 @@ button .ic,
   margin: 18px auto;
   padding: 13px;
   border-radius: 18px;
-  background: #edf8f1;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
   text-align: left;
 }
@@ -2849,7 +2849,7 @@ button .ic,
 }
 
 .approval-view--rejected .approval-symbol {
-  background: #fff0f2;
+  background: var(--pq-danger-soft);
   color: #b4233c;
   box-shadow: 0 0 0 10px rgba(180, 35, 60, .07);
 }
@@ -2938,7 +2938,7 @@ button .ic,
   height: 52px;
   border: 1px solid #cce8d6;
   border-radius: 50%;
-  background: #e2f6e9;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
   font-size: 15px;
   font-weight: 950;
@@ -3055,7 +3055,7 @@ button .ic,
   padding: 0;
   border: 2px solid transparent;
   border-radius: 16px;
-  background: #dce9df;
+  background: var(--pq-tint-strong);
   cursor: pointer;
 }
 
@@ -3095,7 +3095,7 @@ button .ic,
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #e5f5eb;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
 }
 
@@ -3138,7 +3138,7 @@ button .ic,
   padding: 0;
   border: 1px solid var(--pq-line);
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   color: var(--pq-ink);
   cursor: pointer;
 }
@@ -3197,7 +3197,7 @@ button .ic,
 }
 
 .calendar-day:hover:not(:disabled) {
-  background: #e9f7ee;
+  background: var(--pq-tint);
 }
 
 .calendar-day.is-today:not(.on) {
@@ -3453,7 +3453,7 @@ html {
   /* Acompanha --pq-paper: e o fundo que aparece no overscroll (o
      "elastico") e atras da safe area. Verde ali devolvia a cor antiga
      toda vez que alguem puxava a tela. */
-  background: #ffffff;
+  background: var(--pq-panel);
 }
 
 body {
@@ -3544,7 +3544,7 @@ html[data-route="mapa"] .phone {
   position: relative;
   padding: calc(18px + var(--pq-safe-top)) 16px 18px;
   border-bottom: 1px solid var(--pq-line);
-  background: #edf8f1;
+  background: var(--pq-tint);
 }
 
 .market-nav {
@@ -3626,7 +3626,7 @@ html[data-route="mapa"] .phone {
   height: 40px;
   border: 1px solid var(--pq-line);
   border-radius: 50%;
-  background: #f9fdf9;
+  background: var(--pq-panel);
   color: var(--pq-brand-deep);
 }
 
@@ -3745,7 +3745,7 @@ html[data-route="mapa"] .phone {
   padding: 10px 11px;
   border: 1px solid #cae7d4;
   border-radius: 20px;
-  background: #e8f6ed;
+  background: var(--pq-tint);
   color: var(--pq-ink);
 }
 
@@ -3762,7 +3762,7 @@ html[data-route="mapa"] .phone {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   color: var(--pq-brand-deep);
 }
 
@@ -3913,7 +3913,7 @@ html[data-route="mapa"] .phone {
   padding: 11px 13px;
   border: 1px solid #cae7d4;
   border-radius: 22px;
-  background: #e5f6eb;
+  background: var(--pq-tint);
   color: var(--pq-ink);
 }
 
@@ -4001,7 +4001,7 @@ html[data-route="mapa"] .phone {
 
 .venue-card .photo {
   height: 176px;
-  background: #dce5dd;
+  background: var(--pq-tint-strong);
 }
 
 .venue-card .photo::after {
@@ -4036,7 +4036,7 @@ html[data-route="mapa"] .phone {
 .venue-availability {
   bottom: 10px;
   left: 10px;
-  background: #dff5e7;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
 }
 
@@ -4106,7 +4106,7 @@ html[data-route="mapa"] .phone {
   padding: 5px 7px;
   border: 0;
   border-radius: 999px;
-  background: #edf7f0;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
   font-size: 9.5px;
 }
@@ -4147,7 +4147,7 @@ html[data-route="mapa"] .phone {
   gap: 16px;
   padding: calc(20px + var(--pq-safe-top)) 16px 16px;
   border-bottom: 1px solid var(--pq-line);
-  background: #edf8f1;
+  background: var(--pq-tint);
 }
 
 .explore-header > div {
@@ -4189,7 +4189,7 @@ html[data-route="mapa"] .phone {
 
 .explore-search button {
   border: 1px solid var(--pq-line);
-  background: #e2f3e8;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
 }
 
@@ -4366,7 +4366,7 @@ html[data-route="mapa"] .phone {
 .venue-hero {
   height: 270px;
   border-radius: 0;
-  background: #dce5dd;
+  background: var(--pq-tint-strong);
 }
 
 .venue-hero::after {
@@ -4449,13 +4449,13 @@ html[data-route="mapa"] .phone {
 
 .venue-hero-dot.on {
   width: 20px;
-  background: #fff;
+  background: var(--pq-panel);
 }
 
 .detail-head {
   padding: 17px 16px 16px;
   border-bottom: 1px solid var(--pq-line);
-  background: #f8fcf9;
+  background: var(--pq-panel);
 }
 
 .verified-label {
@@ -4491,7 +4491,7 @@ html[data-route="mapa"] .phone {
   border-top: 1px solid var(--pq-line);
   border-bottom: 1px solid var(--pq-line);
   border-radius: 18px;
-  background: #edf8f1;
+  background: var(--pq-tint);
 }
 
 .venue-proof > span {
@@ -4630,7 +4630,7 @@ html[data-route="mapa"] .phone {
 
 .slot.busy {
   border-color: #e5e9e5;
-  background: #ecefec;
+  background: var(--pq-tint);
   color: #a8b0aa;
 }
 
@@ -4638,7 +4638,7 @@ html[data-route="mapa"] .phone {
    nada ocupando ali, so o relogio andou. */
 .slot.past {
   border-color: #eceeec;
-  background: #f6f7f6;
+  background: var(--pq-panel);
   color: #b9c0ba;
   text-decoration: none;
 }
@@ -4650,7 +4650,7 @@ html[data-route="mapa"] .phone {
    bloqueado. Apagado nao promete nem proibe — e o que ele e. */
 .slot.nofit {
   border-color: #eceeec;
-  background: #fbfcfb;
+  background: var(--pq-panel);
   color: #aeb6b0;
   text-decoration: none;
 }
@@ -4722,7 +4722,7 @@ html[data-route="mapa"] .phone {
   right: 12.5%;
   left: 12.5%;
   height: 2px;
-  background: #dce8df;
+  background: var(--pq-tint-strong);
   content: "";
 }
 
@@ -4771,7 +4771,7 @@ html[data-route="mapa"] .phone {
 
 .booking-flow li.is-done > span {
   border-color: #b9ddc5;
-  background: #e4f4e9;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
 }
 
@@ -4826,7 +4826,7 @@ html[data-route="mapa"] .phone {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #e1f3e7;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
   font-size: 12px;
   font-weight: 900;
@@ -4849,7 +4849,7 @@ html[data-route="mapa"] .phone {
 .booking-step__status {
   padding: 5px 8px;
   border-radius: 999px;
-  background: #eaf6ee;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
   font-size: 9px;
   font-weight: 850;
@@ -4995,7 +4995,7 @@ html[data-route="mapa"] .phone {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e0f3e7;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
 }
 
@@ -5083,7 +5083,7 @@ html[data-route="mapa"] .phone {
      Opaco, e nao translucido: com backdrop-filter: none logo abaixo, um fundo
      transparente deixaria o conteudo passar por tras sem desfoque, e agora a
      barra e fixa, entao passaria conteudo por baixo dela o tempo todo. */
-  background: #ffffff;
+  background: var(--pq-panel);
   backdrop-filter: none;
 }
 
@@ -5202,7 +5202,7 @@ html[data-route="mapa"] .phone {
   padding: 15px;
   border: 1px solid #cfe6d7;
   border-radius: 20px;
-  background: #f2faf5;
+  background: var(--pq-tint);
 }
 
 .checkout-total .line {
@@ -5275,7 +5275,7 @@ html[data-route="mapa"] .phone {
 
 .method.on {
   border-color: var(--pq-brand);
-  background: #f3fbf6;
+  background: var(--pq-tint);
   box-shadow: 0 0 0 3px #e4f3e9;
 }
 
@@ -5287,7 +5287,7 @@ html[data-route="mapa"] .phone {
 
 .method.is-unavailable {
   border-color: #e5e9e5;
-  background: #f0f2f0;
+  background: var(--pq-tint);
   color: #9aa49d;
   cursor: not-allowed;
 }
@@ -5331,7 +5331,7 @@ html[data-route="mapa"] .phone {
   width: 64px;
   height: 64px;
   margin-bottom: 16px;
-  background: #ddf3e5;
+  background: var(--pq-tint);
   color: var(--pq-brand-strong);
   box-shadow: 0 0 0 9px rgba(22, 167, 101, .09);
 }
@@ -5366,7 +5366,7 @@ html[data-route="mapa"] .phone {
   gap: 12px;
   padding: 13px;
   border-bottom: 1px solid var(--pq-line);
-  background: #eef8f1;
+  background: var(--pq-tint);
 }
 
 .ticket-venue img {
@@ -5408,7 +5408,7 @@ html[data-route="mapa"] .phone {
   padding: 11px 13px;
   border: 1px dashed #aad2b7;
   border-radius: 16px;
-  background: #f2faf5;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
   text-align: left;
 }
@@ -5445,7 +5445,7 @@ html[data-route="mapa"] .phone {
   gap: 4px;
   padding: 4px;
   border-radius: 999px;
-  background: #e3f1e7;
+  background: var(--pq-tint);
 }
 
 .seg-item {
@@ -5621,7 +5621,7 @@ html[data-route="mapa"] .phone {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #dff4e7;
+  background: var(--pq-tint);
 }
 
 .current-location-action > span:nth-child(2),
@@ -5691,12 +5691,12 @@ html[data-route="mapa"] .phone {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #dff4e7;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
 }
 
 .notification-list__icon--success {
-  background: #e6faee;
+  background: var(--pq-tint);
   color: var(--pq-brand);
 }
 
@@ -5714,7 +5714,7 @@ html[data-route="mapa"] .phone {
   margin-top: 13px;
   border: 1px solid var(--pq-line);
   border-radius: 999px;
-  background: #edf7f0;
+  background: var(--pq-tint);
   color: var(--pq-brand-deep);
   font-size: 12px;
   font-weight: 850;
@@ -5808,7 +5808,7 @@ html[data-route="mapa"] .phone {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #dff4e7;
+  background: var(--pq-tint);
 }
 
 .filter-now > span:nth-child(2) {
@@ -5839,7 +5839,7 @@ html[data-route="mapa"] .phone {
   width: 42px;
   height: 25px;
   border-radius: 999px;
-  background: #cdd5ce;
+  background: var(--pq-line-strong);
 }
 
 .filter-switch::after {
@@ -5850,7 +5850,7 @@ html[data-route="mapa"] .phone {
   width: 19px;
   height: 19px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   box-shadow: 0 2px 5px rgba(16, 24, 19, .2);
   transition: transform .16s ease;
 }
@@ -5870,7 +5870,7 @@ html[data-route="mapa"] .phone {
 
 /* ---------- mapas ---------- */
 .map-navbar {
-  background: #edf8f1;
+  background: var(--pq-tint);
 }
 
 .map-filter-strip {
@@ -6782,7 +6782,7 @@ html[data-route="cadastro"]::before {
   justify-content: center;
   border: 1px solid var(--pq-line);
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   color: #4285f4;
   font-weight: 800;
 }
@@ -7085,7 +7085,7 @@ html[data-route="cadastro"]::before {
   justify-content: center;
   border: 0;
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   color: var(--pq-brand-strong);
   cursor: pointer;
 }
@@ -7125,7 +7125,7 @@ html[data-route="cadastro"]::before {
   justify-content: center;
   border: 1px solid var(--pq-line);
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   color: #c0392b;
   cursor: pointer;
 }
@@ -7156,7 +7156,7 @@ html[data-route="cadastro"]::before {
   padding: 6px 30px 6px 12px;
   border: 1px solid var(--pq-line);
   border-radius: 999px;
-  background: #fff;
+  background: var(--pq-panel);
   font-size: 13px;
   font-weight: 800;
   color: var(--pq-ink);
@@ -7169,7 +7169,7 @@ html[data-route="cadastro"]::before {
   padding: 12px;
   border: 1px solid var(--pq-brand-strong);
   border-radius: 16px;
-  background: #f3fbf6;
+  background: var(--pq-tint);
 }
 
 .club-requests .mobile-section-head {
@@ -7271,7 +7271,7 @@ html[data-route="cadastro"]::before {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   color: var(--pq-brand-strong);
 }
 
@@ -7301,7 +7301,7 @@ html[data-route="cadastro"]::before {
   border: 1px solid #f2c7c7;
   border-radius: 12px;
   margin: 0 0 12px;
-  background: #fdf2f2;
+  background: var(--pq-danger-soft);
   color: #c0392b;
   font-size: 13px;
 }
@@ -7329,7 +7329,7 @@ html[data-route="cadastro"]::before {
   z-index: 9000;
   display: grid;
   place-items: center;
-  background: #f7faf8;
+  background: var(--pq-panel);
 }
 
 /* Loading: pin de localizacao com bola de futebol, balancando.
@@ -7445,31 +7445,28 @@ html[data-route="cadastro"]::before {
   cursor: pointer;
 }
 
-/* Icones de modalidade — SVG proprio (assets/js/sport-icons.js), nao Lucide.
+/* Icones de modalidade: os PNG do Gabriel usados como MASCARA.
 
-   Herdam a cor do texto ao lado igual aos icones do Lucide, entao convivem na
-   mesma linha sem destoar. O <span> existe para o SVG poder ser dimensionado
-   pelo contexto (chip pequeno, card grande) sem editar o desenho. */
+   Sao linha preta sobre transparente. Como <img> ficariam pretos sempre —
+   sumiriam no modo escuro e brigariam com o verde do chip selecionado. Como
+   mascara, o desenho vira recorte e a cor sai de currentColor, acompanhando o
+   texto ao lado em qualquer tema. Mesma tecnica do .ic-pix.
+
+   A imagem chega por --ic-sport-img, escrito inline por sportIcon(). */
 .ic-sport {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;
   width: 24px;
   height: 24px;
   flex: 0 0 auto;
-  color: inherit;
-}
-
-.ic-sport > svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+  background-color: currentColor;
+  -webkit-mask: var(--ic-sport-img) no-repeat center / contain;
+  mask: var(--ic-sport-img) no-repeat center / contain;
 }
 
 /* No card grande de "Escolha seu jogo" o desenho respira mais. */
 .sport-item .ic-sport {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
 }
 
 /* Nos chips de filtro ele acompanha o texto, menor. */
@@ -7531,4 +7528,168 @@ html[data-route="cadastro"] .auth-page {
 html[data-route="entrar"] .screen,
 html[data-route="cadastro"] .screen {
   padding-bottom: var(--pq-safe-bottom);
+}
+
+/* CABECALHO DA FOLHA FIXO.
+
+   .market-sheet__panel rola por inteiro (overflow-y: auto), e o cabecalho
+   rolava junto: em formulario longo — criar clube e o caso — o titulo e o "X"
+   saiam pela borda de cima e a folha ficava sem saida visivel. Quem nao acha o
+   X tenta o botao voltar do aparelho e cai fora da tela inteira.
+
+   O padding de cima do painel muda de dono: passa para o cabecalho, que fica
+   grudado em top: 0 com fundo proprio (senao o conteudo passa por baixo e se
+   le os dois sobrepostos). As margens negativas fazem esse fundo cobrir toda a
+   largura, incluindo o padding lateral do painel. */
+.market-sheet__panel {
+  padding-top: 0;
+}
+
+.market-sheet__head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0 -16px;
+  padding: 18px 16px 14px;
+  background: var(--pq-panel);
+}
+
+/* ─────────────────────────── MODO ESCURO ───────────────────────────────
+   Claro de fabrica, escuro por ESCOLHA — nunca automatico.
+
+   Nao ha `prefers-color-scheme` aqui de proposito. O pedido foi "modo claro de
+   fabrica e modo escuro escolha do usuario": um app que vira escuro sozinho
+   porque o Android esta escuro nao e escolha, e surpresa. Quem quiser escuro
+   liga em Configuracoes, e a escolha fica gravada.
+
+   Tudo abaixo e troca de TOKEN. Os 82 fundos claros do arquivo ja apontam para
+   --pq-panel / --pq-tint / --pq-tint-strong, entao mudar estes valores vira a
+   tela inteira sem tocar em regra nenhuma. Os quatro acentos que sobraram
+   cravados (#008f4c, #007c42, #082c1b, #c8324d) sao cores saturadas de marca e
+   de alerta — funcionam sobre fundo escuro do mesmo jeito.
+
+   Verde e escuro brigam: o verde da marca (#16a765) sobre quase-preto tem
+   contraste baixo demais para texto. Por isso a marca CLAREIA no escuro em vez
+   de manter o mesmo hex — o objetivo e ler, nao repetir o valor. */
+:root[data-theme="dark"] {
+  --pq-ink: #e8f2ec;
+  --pq-ink-soft: #b3c9bd;
+  --pq-muted: #8ba396;
+
+  /* Fundo em duas camadas: o app um degrau mais escuro que os cartoes, para o
+     cartao continuar sendo "a coisa em cima". No escuro isso e o que substitui
+     a sombra, que praticamente some. */
+  --pq-app-bg: #0e1613;
+  --pq-paper: #0e1613;
+  --pq-panel: #18211d;
+  --pq-surface: #18211d;
+  --pq-surface-2: #212b26;
+
+  --pq-tint: #1e2f26;
+  --pq-tint-strong: #263b30;
+  --pq-danger-soft: #3a1f24;
+
+  --pq-line: #2a3831;
+  --pq-line-strong: #3a4a42;
+
+  /* Marca mais clara: #16a765 sobre #18211d nao alcanca contraste de leitura. */
+  --pq-green: #35c785;
+  --pq-brand: #35c785;
+  --pq-brand-strong: #4dd598;
+  --pq-brand-deep: #7ee3b4;
+  --pq-green-dark: #7ee3b4;
+  --pq-green-soft: #1e2f26;
+  --pq-signal: #2f6b4c;
+  --pq-signal-soft: #1e2f26;
+  --pq-court: #2f6b4c;
+
+  --pq-gold: #f0b429;
+  --pq-amber-soft: #3a2c14;
+  --pq-blue: #5b8def;
+  --pq-rose: #f07f93;
+
+  /* Sombra nao aparece no escuro; o que separa e a borda. */
+  --pq-shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --pq-shadow-2: 0 18px 46px rgba(0, 0, 0, .6);
+}
+
+/* O <html> tem fundo cravado (e o que aparece no overscroll e atras da safe
+   area). Sem isto, puxar a tela no escuro mostrava uma faixa branca. */
+:root[data-theme="dark"] html,
+html[data-theme="dark"] {
+  background: #0e1613;
+}
+
+/* Fotos e mapa: no escuro o branco puro das imagens fica ofuscante. Um leve
+   rebaixamento tira o brilho sem descaracterizar a foto da quadra. */
+:root[data-theme="dark"] .venue-card img,
+:root[data-theme="dark"] .res-card img,
+:root[data-theme="dark"] .leaflet-map-shell {
+  filter: brightness(.88);
+}
+
+/* A barra de status do Android segue o tema pela meta theme-color, escrita
+   pelo JS; aqui fica o par visual do topo da tela. */
+:root[data-theme="dark"] .navbar {
+  background: var(--pq-app-bg);
+}
+
+/* BADGES DA QUADRA SEM O VERDE — como na versao web.
+
+   As "caracteristicas" (Grama sintetica, Iluminada, Vestiario...) vinham com
+   pastilha verde-clara e texto verde. Numa tela onde o verde ja marca preco,
+   nota, botao principal e chip selecionado, mais verde nao destaca: dilui. A
+   web resolveu isso ha tempos usando neutro com borda fina, e ali as
+   caracteristicas se leem como INFORMACAO, nao como acao.
+
+   Neutro tambem e o que sobrevive ao modo escuro sem virar mancha clara. */
+.tag,
+.venue-card .tag {
+  background: var(--pq-surface-2);
+  color: var(--pq-ink-soft);
+  border: 1px solid var(--pq-line);
+}
+
+.venue-amenity > span {
+  background: var(--pq-surface-2);
+  color: var(--pq-ink-soft);
+}
+
+.venue-amenity {
+  border-bottom: 1px solid var(--pq-line);
+}
+
+/* ONBOARDING COM AR ENTRE OS CARTOES.
+
+   As opcoes ficam numa grade de 3 colunas com gap de 7px e altura minima de
+   44px — apertado quando cada opcao e um cartao com icone e rotulo. Encostadas
+   assim, a fileira lia como um bloco unico e era dificil ver onde uma opcao
+   termina e a outra comeca, que e justamente o que a tela pede para fazer.
+
+   Mais respiro entre as opcoes, mais altura em cada uma, e mais espaco entre a
+   pergunta e a grade. O cartao cresce junto porque tem altura de conteudo. */
+.onb-step .filter-choice-grid {
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.onb-step .filter-choice-grid > * {
+  min-height: 56px;
+  padding: 10px 8px;
+}
+
+.onb-step {
+  gap: 8px;
+  padding: 26px 20px 22px;
+}
+
+.onb-step > p {
+  margin-bottom: 4px;
+}
+
+/* Em tela baixa o cartao encosta nas bordas de cima e de baixo; um respiro
+   minimo evita que ele pareca cortado. */
+.onb-page {
+  padding-top: 20px;
+  padding-bottom: calc(32px + var(--pq-safe-bottom));
 }

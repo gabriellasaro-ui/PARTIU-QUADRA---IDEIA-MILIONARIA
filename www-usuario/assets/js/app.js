@@ -14,6 +14,11 @@ import { initMobileActions, renderMobilePage } from './mobile.js';
 import { initPlayerDesktopActions, renderPlayerDesktopPage } from './player-desktop.js';
 import { loadGame, destroyGame } from './game-mode.js';
 import { mostrarLoading, esconderLoading } from './loading.js';
+import { aplicarTema } from '../../services/tema.js';
+
+/* Antes de qualquer rota: sem isto o app abre claro e SALTA para escuro
+   quando a tela de config for montada — um flash branco a cada abertura. */
+aplicarTema();
 
 const MOBILE_ROUTES = {
   home: {

@@ -20,10 +20,25 @@
       <div class="field"><label>Distância padrão</label><div class="select-wrap"><select><option>Até 2 km</option><option selected>Até 5 km</option><option>Até 10 km</option></select></div></div>
     </section>
 
+    <!-- A secao Privacidade saiu inteira.
+
+         "Mostrar meu nome para a arena" nao podia ser opcional: a arena
+         precisa saber quem reservou para receber a pessoa no portao, e o nome
+         ja vai na reserva de qualquer jeito. Um interruptor que nao pode ser
+         desligado e pior que interruptor nenhum — promete um controle que nao
+         existe.
+
+         "Compartilhar estatisticas" nao tinha nem definicao: nao havia nada no
+         backend lendo isso, nem tela mostrando estatistica de ninguem para
+         ninguem. Era um botao esperando um significado. -->
+
     <section class="settings-section">
-      <h2>Privacidade</h2>
-      <label class="switch-row"><span>Mostrar meu nome para a arena<small>Usado para identificar a reserva</small></span><span class="switch on"></span></label>
-      <label class="switch-row"><span>Compartilhar estatísticas</span><span class="switch"></span></label>
+      <h2>Aparência</h2>
+      <!-- Claro de fabrica. O escuro e escolha, e fica gravada no aparelho. -->
+      <label class="switch-row" data-cfg-tema>
+        <span>Modo escuro<small>Fundo escuro para jogar à noite</small></span>
+        <span class="switch"></span>
+      </label>
     </section>
 
     <button class="btn block" type="submit">Salvar alterações</button>

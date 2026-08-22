@@ -16,6 +16,7 @@ import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
 import geoService from '../../services/geo.js';
 import { sportIcon } from './sport-icons.js';
+import { escuroLigado, definirTema } from '../../services/tema.js';
 
 let currentRoute = null;
 let activeMobileMap = null;
@@ -1180,6 +1181,46 @@ async function renderPayment(root, route) {
     location.hash = 'quadras';
     return;
   }
+
+  /* A GUARDA QUE VALE: aqui, e nao no botao.
+
+     Ate agora esta tela confiava no que vinha na URL — hora e duracao — e
+     nunca perguntava se aquele bloco existe. Toda validacao morava na tela da
+     quadra, o que so protege quem chegou pelo botao "Continuar". Botao voltar,
+     link antigo, recarregar a pagina, ou qualquer caminho que eu nao tenha
+     mapeado entrava direto no pagamento de um horario que pode nao estar mais
+     livre — ou nunca ter estado.
+
+     Conferir aqui cobre TODAS as entradas de uma vez, porque toda reserva
+     passa por esta tela. O backend ja recusa no POST (409), entao dinheiro
+     nao se perde; o que se ganha e a pessoa descobrir ANTES de escolher a
+     forma de pagamento, e nao depois. */
+  if (context.plan !== 'mensalista' && API_BASE_URL) {
+    const inicio = Number(String(context.hour).slice(0, 2));
+    let slots = null;
+    try {
+      slots = await venueService.availability(context.venue.id, context.date);
+    } catch (error) {
+      slots = null; // Sem resposta nao da para acusar nada: segue e o POST decide.
+    }
+    if (Array.isArray(slots) && slots.length) {
+      const estado = new Map(slots.map((slot) => [slot.hour, slot.status]));
+      const ocupadas = [];
+      for (let i = 0; i < context.duration; i += 1) {
+        const h = `${String(inicio + i).padStart(2, '0')}:00`;
+        // Hora fora da agenda do dia conta como indisponivel: pedir 3h a
+        // partir das 22h nao "cabe" so porque 23h e 00h nao aparecem na lista.
+        if (estado.get(h) !== 'free') ocupadas.push(h);
+      }
+      if (ocupadas.length) {
+        window.pqToast?.(ocupadas.length === 1
+          ? `Horário ${ocupadas[0]} já está reservado`
+          : `Horários ${ocupadas.join(', ')} já estão reservados`);
+        location.replace(`#quadra/${context.venue.id}`);
+        return;
+      }
+    }
+  }
   const {
     venue,
     date,
@@ -2058,28 +2099,34 @@ async function renderClubSearch(root, route) {
   const campo = root.querySelector('[data-search-form] input[name="q"]');
   if (campo) campo.value = termo;
 
-  if (!termo.trim()) {
-    lista.innerHTML = `<div class="empty">
-      <span class="empty-ic"><i class="ic" data-lucide="search"></i></span>
-      <h3>Ache seu time</h3>
-      <p>Busque pelo nome do clube ou cole o código que mandaram no grupo.</p>
-    </div>`;
-    window.pqRefreshIcons?.(root);
-    return;
-  }
+  /* SEM BUSCA, MOSTRA OS CLUBES — nao uma tela vazia.
 
+     Antes esta tela so listava algo depois de digitar: sem termo, devolvia um
+     cartaz "Ache seu time" e voltava. Mas quem procura clube para entrar NAO
+     SABE O NOME DE NENHUM ainda — era preciso adivinhar para descobrir. Um
+     clube aberto, recem-criado por outra conta, ficava invisivel na unica tela
+     que existe para encontra-lo, e a leitura correta era "o app nao mostra meu
+     clube".
+
+     Agora a busca FILTRA uma lista que ja esta la, que e como toda tela de
+     descoberta funciona. */
   const [clubes, meus] = await Promise.all([venueService.clubs(), venueService.myClubs()]);
   const jaSou = new Set(meus.map((c) => String(c.id)));
   const alvo = normalizeSearch(termo);
   const alvoCodigo = alvo.replace(/[^a-z0-9]/g, '');
 
-  const achados = clubes.filter((club) => {
-    if (jaSou.has(String(club.id))) return false;
-    // Codigo casa EXATO, nunca por pedaco: codigo e identidade, nao palavra
-    // chave. Busca parcial vazaria quais codigos existem.
-    if (club.code && normalizeSearch(club.code) === alvoCodigo) return true;
-    return normalizeSearch(club.name).includes(alvo);
-  });
+  // Clube em que ja estou nao e resultado de busca: nao ha o que fazer com ele
+  // aqui, e o botao diria "Entrar" num lugar onde eu ja entrei.
+  const disponiveis = clubes.filter((club) => !jaSou.has(String(club.id)));
+
+  const achados = !termo.trim()
+    ? disponiveis
+    : disponiveis.filter((club) => {
+      // Codigo casa EXATO, nunca por pedaco: codigo e identidade, nao palavra
+      // chave. Busca parcial vazaria quais codigos existem.
+      if (club.code && normalizeSearch(club.code) === alvoCodigo) return true;
+      return normalizeSearch(club.name).includes(alvo);
+    });
 
   /* Clube PRIVADO nao vem em /api/clubes — ele nao aparece em busca nenhuma,
      de proposito. A unica porta e o codigo, e e aqui que ela abre: com 6
@@ -2104,12 +2151,21 @@ async function renderClubSearch(root, route) {
                 data-club-codigo="${escapeHtml(club.code || '')}"
                 data-requires-auth="clubes?codigo=${escapeHtml(club.code || '')}">${club.joinMode === 'solicitacao' ? 'Pedir para entrar' : 'Entrar'}</button>
       </article>`).join('')
-    : `<div class="empty">
+    : (termo.trim()
+      ? `<div class="empty">
         <span class="empty-ic"><i class="ic" data-lucide="search-x"></i></span>
         <h3>Nenhum clube com esse nome ou código</h3>
         <p>Confira o código com quem te chamou, ou crie o seu.</p>
         <button class="btn block" type="button" data-sheet-open="club-edit-sheet" data-requires-auth="clube">Criar meu clube</button>
-      </div>`;
+      </div>`
+      /* Vazio de verdade: nao ha clube nenhum para entrar. Diferente de "sua
+         busca nao achou" — e a pessoa nao deve procurar melhor, deve criar. */
+      : `<div class="empty">
+        <span class="empty-ic"><i class="ic" data-lucide="shield"></i></span>
+        <h3>Nenhum clube por aqui ainda</h3>
+        <p>Seja o primeiro: crie o seu e chame a turma pelo código.</p>
+        <button class="btn block" type="button" data-sheet-open="club-edit-sheet" data-requires-auth="clube">Criar meu clube</button>
+      </div>`);
 
   window.pqRefreshIcons?.(root);
 }
@@ -2151,7 +2207,13 @@ export async function renderMobilePage(route, root) {
     carteira: renderWallet,
     carteiraAcao: renderWalletAction,
     perfil: renderProfile,
-    config: async () => {},
+    config: async (root) => {
+      /* O interruptor precisa CHEGAR no estado certo: a pagina e remontada a
+         cada visita, entao ele nasce sempre desligado no HTML. Sem isto, quem
+         esta no escuro abria Configuracoes e via "modo escuro: desligado". */
+      const linha = root.querySelector('[data-cfg-tema] .switch');
+      if (linha) linha.classList.toggle('on', escuroLigado());
+    },
     mensagens: renderMessages,
     clube: renderClub,
     game: renderGame,
@@ -2823,6 +2885,21 @@ export function initMobileActions() {
       clubPhoto.disabled = false;
       clubPhoto.value = '';
     }
+  });
+
+  /* Modo escuro: o unico interruptor desta tela que faz alguma coisa.
+
+     O resto do formulario e data-demo-form — diz "Configuracoes salvas" e nao
+     grava nada. Este nao passa por ali: grava na hora do toque, porque tema e
+     efeito imediato e nao tem "salvar" que faca sentido depois de ja ter
+     mudado a tela inteira. */
+  document.addEventListener('click', (event) => {
+    const linhaTema = event.target.closest('[data-cfg-tema]');
+    if (!linhaTema) return;
+    // ui.js ja virou a classe .on nesta mesma linha (handler generico do
+    // .switch-row); aqui so lemos o resultado e gravamos.
+    const ligado = linhaTema.querySelector('.switch')?.classList.contains('on');
+    definirTema(ligado ? 'dark' : 'light');
   });
 
   document.addEventListener('click', async (event) => {

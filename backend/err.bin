@@ -1,0 +1,1 @@
+{"detail":[{"type":"value_error","loc":["body","senha"],"msg":"Value error, A senha precisa ter pelo menos 8 caracteres, uma letra maiúscula, um número, um caractere especial.","input":"abc","ctx":{"error":{}}}]}

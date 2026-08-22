@@ -103,11 +103,43 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok) {
-    const message = payload?.message || payload?.detail || 'Falha na comunicacao com a API';
-    throw new ApiError(message, response, payload);
+    throw new ApiError(mensagemDoErro(payload), response, payload);
   }
 
   return payload;
+}
+
+
+/* O `detail` do FastAPI nem sempre e texto.
+
+   Em erro de validacao (422) ele e uma LISTA de objetos
+   ({type, loc, msg, input}), e passar isso para `new Error(...)` produz
+   literalmente "[object Object]" na tela — foi o que apareceu ao criar uma
+   senha fraca, no exato momento em que a pessoa mais precisava ler a regra.
+
+   O prefixo "Value error, " e ruido do Pydantic e sai fora; varias falhas
+   viram uma frase so, para nao empilhar toasts. */
+function mensagemDoErro(payload) {
+  const limpar = (texto) => String(texto).replace(/^Value error,\s*/i, '').trim();
+
+  if (typeof payload?.message === 'string' && payload.message.trim()) {
+    return payload.message.trim();
+  }
+
+  const detail = payload?.detail;
+  if (typeof detail === 'string' && detail.trim()) return limpar(detail);
+
+  if (Array.isArray(detail)) {
+    const partes = detail
+      .map((item) => (typeof item === 'string' ? item : item?.msg))
+      .filter(Boolean)
+      .map(limpar);
+    if (partes.length) return [...new Set(partes)].join(' ');
+  }
+
+  if (detail && typeof detail === 'object' && detail.msg) return limpar(detail.msg);
+
+  return 'Falha na comunicacao com a API';
 }
 
 export const api = {
