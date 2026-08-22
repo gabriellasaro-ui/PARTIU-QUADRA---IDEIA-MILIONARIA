@@ -5,7 +5,7 @@ Expandido na Fase 2 (auth) com sessoes, devices e preferencias.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Date, DateTime, Float, String, func
+from sqlalchemy import Date, DateTime, Float, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,7 +39,10 @@ class User(Base):
         String(20), default=PROVIDER_PASSWORD, server_default=PROVIDER_PASSWORD
     )
     phone: Mapped[str | None] = mapped_column(String(20))
-    photo: Mapped[str | None] = mapped_column(String(500))
+    #: Data URL da imagem enviada pelo app (o front ja reduz para 512px
+    #: JPEG). Nao cabe em String(500) — em Postgres isso truncaria ou
+    #: estouraria; no SQLite passaria calado ate a producao.
+    photo: Mapped[str | None] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(String(120))
     state: Mapped[str | None] = mapped_column(String(2))
     position: Mapped[str | None] = mapped_column(String(40))

@@ -13,9 +13,9 @@ import { refreshIcons } from './component-loader.js';
 let currentRoute = null;
 let desktopMap = null;
 let activeDesktopApprovalTimer = null;
-/* Fallback, nao a verdade: e o centro de Goiania, usado so enquanto a pessoa
+/* Fallback, nao a verdade: e o centro de Belo Horizonte, usado so enquanto a pessoa
    nao escolheu local nenhum. Quem manda e localEscolhido(). */
-const LOCAL_PADRAO = [-16.6950, -49.2550];
+const LOCAL_PADRAO = [-19.9300, -43.9400];
 
 /* O mapa tem que seguir o mesmo local da lista. Antes lia a constante direto:
    trocar para "usar minha localizacao" reordenava os resultados mas o mapa
@@ -356,7 +356,7 @@ async function renderExplore(root, route) {
      grava "Goiania" sem acento e o rotulo fixo era "Goiânia, GO" — nenhuma
      opcao casava, o <select> caia na primeira (que e "Usar minha
      localizacao") e parecia ativo sem nunca ter obtido posicao alguma. */
-  const local = escolhido?.label || query.get('local') || cidades[0]?.label || 'Goiânia, GO';
+  const local = escolhido?.label || query.get('local') || cidades[0]?.label || 'Belo Horizonte, MG';
   const radius = query.get('raio') || '5';
   const now = query.get('agora') === '1';
   const [sports, listedVenues] = await Promise.all([

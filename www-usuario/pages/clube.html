@@ -12,7 +12,7 @@
   <!-- ───────── Sem clube ───────── -->
   <div class="container" data-club-empty hidden>
     <div class="empty">
-      <span class="empty-ic"><i class="ic" data-lucide="users"></i></span>
+      <span class="empty-ic"><i class="ic" data-lucide="shield"></i></span>
       <h3>Você ainda não tem um clube</h3>
       <p>O clube guarda seu time e organiza a pelada de sempre: quem entra, quando joga e quem confirmou.</p>
       <button class="btn block" type="button" data-sheet-open="club-edit-sheet" data-requires-auth="clube">Criar meu clube</button>
@@ -37,6 +37,11 @@
       <div class="profile-identity">
         <div class="profile-avatar-wrap">
           <span class="profile-avatar" data-club-avatar>C</span>
+          <!-- So a gestao troca o escudo; renderClub esconde de quem e membro. -->
+          <label class="profile-avatar-edit" for="club-photo-input" data-club-photo-edit hidden aria-label="Alterar foto do clube">
+            <i class="ic" data-lucide="camera"></i>
+            <input id="club-photo-input" type="file" accept="image/*" data-club-photo-input hidden>
+          </label>
         </div>
         <button class="profile-edit-action" type="button" data-club-edit>
           <i class="ic" data-lucide="pencil"></i><span>Editar</span>

@@ -7445,3 +7445,90 @@ html[data-route="cadastro"]::before {
   cursor: pointer;
 }
 
+/* Icones de modalidade — SVG proprio (assets/js/sport-icons.js), nao Lucide.
+
+   Herdam a cor do texto ao lado igual aos icones do Lucide, entao convivem na
+   mesma linha sem destoar. O <span> existe para o SVG poder ser dimensionado
+   pelo contexto (chip pequeno, card grande) sem editar o desenho. */
+.ic-sport {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  color: inherit;
+}
+
+.ic-sport > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* No card grande de "Escolha seu jogo" o desenho respira mais. */
+.sport-item .ic-sport {
+  width: 30px;
+  height: 30px;
+}
+
+/* Nos chips de filtro ele acompanha o texto, menor. */
+.sport-filter-chip .ic-sport,
+.chip-esporte .ic-sport {
+  width: 18px;
+  height: 18px;
+}
+
+/* Estrela: PREENCHIDA em amarelo.
+
+   Antes so as 5 estrelas da avaliacao eram cheias; a estrela avulsa (nota da
+   quadra no card, nota do membro no clube) era contorno — a mesma informacao
+   com dois pesos visuais diferentes na mesma tela. Agora nota e sempre a
+   estrela cheia amarela, e vazia so quando representa ponto NAO obtido. */
+.ic-star {
+  color: #f2b307;
+  fill: #f2b307;
+}
+
+.ic-star.is-empty {
+  color: #d5ded8;
+  fill: none;
+}
+
+/* O BANNER DO LOGIN, quarta tentativa — e desta vez a lista inteira.
+
+   As vezes anteriores eu tornei transparentes html, body e .auth-page e o
+   banner continuou sem aparecer. O motivo: a arvore real e
+
+     body > .app-wrap > .phone > .screen > main[data-route-view] > .auth-page
+
+   e .phone e .screen pintam fundo em DOIS pontos cada uma (o bloco base e o
+   override mais abaixo, com --pq-app-bg). Bastava uma delas continuar opaca
+   para tapar o html::before, que fica em z-index -1. Consertar camada por
+   camada, descobrindo a seguinte a cada rodada, e o que fez isso voltar tres
+   vezes; entao aqui vao TODAS as camadas de uma vez, nas duas rotas. */
+html[data-route="entrar"] .app-wrap,
+html[data-route="entrar"] .phone,
+html[data-route="entrar"] .screen,
+html[data-route="cadastro"] .app-wrap,
+html[data-route="cadastro"] .phone,
+html[data-route="cadastro"] .screen {
+  background: transparent;
+}
+
+/* CENTRALIZADO, nao no topo.
+
+   A regra antiga prendia o formulario no alto para nao cobrir o jogador e a
+   bola da ilustracao. Mas a tela pedida e a do formulario flutuando no meio,
+   entao o cartao vai para o centro e a imagem passa a ser fundo mesmo. */
+html[data-route="entrar"] .auth-page,
+html[data-route="cadastro"] .auth-page {
+  justify-content: center;
+}
+
+/* Sem a barra de abas nas telas de acesso: ela reservava ~70px no rodape,
+   deslocando o cartao para cima do centro real. */
+html[data-route="entrar"] .screen,
+html[data-route="cadastro"] .screen {
+  padding-bottom: var(--pq-safe-bottom);
+}

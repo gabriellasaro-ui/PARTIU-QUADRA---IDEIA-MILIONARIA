@@ -15,7 +15,7 @@ from ..core.timezone import TZ, now_local
 from ..models import Arena, Court
 from ..repositories import venues as repo
 
-DEFAULT_LOC = (-16.6869, -49.2648)  # Centro de Goiania
+DEFAULT_LOC = (-19.9227, -43.9451)  # Centro de Belo Horizonte
 HERO_IMG = (
     "https://images.unsplash.com/photo-1459865264687-595d652de67e"
     "?auto=format&fit=crop&w=1600&q=80"

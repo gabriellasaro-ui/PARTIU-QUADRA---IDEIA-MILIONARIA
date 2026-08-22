@@ -18,7 +18,9 @@ function initStars(container) {
   for (let i = 1; i <= 5; i++) {
     const btn = document.createElement('button');
     btn.className = 'game-rating__star';
-    btn.textContent = '★';
+    // Icone, nao caractere: o simbolo cru herda a fonte do sistema e
+    // sai com peso e alinhamento diferentes em cada aparelho.
+    btn.innerHTML = '<i class="ic ic-star" data-lucide="star"></i>';
     btn.dataset.value = i;
     btn.addEventListener('click', () => {
       container.querySelectorAll('.game-rating__star').forEach((s, idx) => {
@@ -27,25 +29,28 @@ function initStars(container) {
     });
     container.appendChild(btn);
   }
+  // Sem isso os <i data-lucide> ficam vazios e as estrelas somem da tela.
+  window.pqRefreshIcons?.(container);
 }
 
 function renderPlayers(list, container, showBadge) {
   container.innerHTML = list.map(p => {
     const initial = p.name.charAt(0).toUpperCase();
-    const badge = showBadge ? `<span class="game-player__badge confirmed">✓ Confirmado</span>` : '';
+    const badge = showBadge ? `<span class="game-player__badge confirmed"><i class="ic" data-lucide="check"></i>Confirmado</span>` : '';
     return `<div class="game-player">
       <div class="game-player__avatar">${initial}</div>
       <div class="game-player__info">
         <div class="game-player__name">${p.name}</div>
         <div class="game-player__meta">
           <span>${p.position}</span>
-          <span>★ ${p.rating}</span>
+          <span><i class="ic ic-star" data-lucide="star"></i>${p.rating}</span>
           ${p.confirmedAt ? `<span>· ${p.confirmedAt}</span>` : ''}
         </div>
       </div>
       ${badge}
     </div>`;
   }).join('');
+  window.pqRefreshIcons?.(container);
 }
 
 // O relogio e o placar aparecem em mais de uma aba. Um unico ponto de escrita
@@ -893,7 +898,8 @@ function bindEvents() {
   $('gameBtnConfirm')?.addEventListener('click', async () => {
     await venueService.confirmPresence(match?.id);
     window.pqToast?.('Presença confirmada!');
-    $('gameBtnConfirm').textContent = '✓ Confirmado';
+    $('gameBtnConfirm').innerHTML = '<i class="ic" data-lucide="check"></i>Confirmado';
+    window.pqRefreshIcons?.($('gameBtnConfirm'));
     $('gameBtnConfirm').disabled = true;
     $('gameBtnConfirm').style.opacity = '0.6';
   });
@@ -959,7 +965,7 @@ function bindEvents() {
 
   $('gameShareResult')?.addEventListener('click', () => {
     if (!match) return;
-    const text = `🏟 Partiu Quadra!\n${match.venueName}: ${match.score.teamA} × ${match.score.teamB}\n#PartiuQuadra`;
+    const text = `Partiu Quadra!\n${match.venueName}: ${match.score.teamA} × ${match.score.teamB}\n#PartiuQuadra`;
     if (navigator.share) {
       navigator.share({ title: 'Resultado da partida', text });
     } else {
@@ -970,7 +976,7 @@ function bindEvents() {
 
   $('gameShareWhatsApp')?.addEventListener('click', () => {
     if (!match) return;
-    const text = encodeURIComponent(`🏟 Partiu Quadra!\n${match.venueName}: ${match.score.teamA} × ${match.score.teamB}`);
+    const text = encodeURIComponent(`Partiu Quadra!\n${match.venueName}: ${match.score.teamA} × ${match.score.teamB}`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   });
 }

@@ -15,6 +15,7 @@ import { authHashFor, safeNext, requiresLogin } from '../../middleware/auth.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
 import geoService from '../../services/geo.js';
+import { sportIcon } from './sport-icons.js';
 
 let currentRoute = null;
 let activeMobileMap = null;
@@ -22,14 +23,14 @@ let activeUserMarker = null;
 let activeMobileApprovalTimer = null;
 let gameCardTicker = null;
 let clubSection = 'peladas';
-const DEFAULT_LOCATION = [-16.6950, -49.2550];
+const DEFAULT_LOCATION = [-19.9300, -43.9400];
 const APPROVAL_WINDOW_MS = 15 * 60 * 1000;
 const MOCK_APPROVAL_DELAY_MS = 5000;
 const LOCATION_COORDINATES = {
-  'Goiania, GO': DEFAULT_LOCATION,
-  'Goiânia, GO': DEFAULT_LOCATION,
-  'Aparecida de Goiania, GO': [-16.8233, -49.2434],
-  'Aparecida de Goiânia, GO': [-16.8233, -49.2434]
+  'Belo Horizonte, MG': DEFAULT_LOCATION,
+  'Contagem, MG': [-19.9317, -44.0536],
+  'Nova Lima, MG': [-19.9857, -43.8464],
+  'Betim, MG': [-19.9678, -44.1983]
 };
 /* Icone por modalidade.
 
@@ -58,20 +59,6 @@ const LOCATION_COORDINATES = {
    (Bola de futebol, raquete e bola de basquete NAO existem nesta versao do
    lucide — conferido no bundle. Daí a escolha por quadra, que alias
    identifica melhor.) */
-const SPORT_ICONS = {
-  'Futebol de Campo': 'goal',
-  // Society: rede de gol menor. 'fence' (alambrado) era abstrato demais —
-  // ninguem olha um cercado e pensa "society". Os tres futebois se separam
-  // pelo TAMANHO do simbolo do gol: campo (goal), society (rede), futsal
-  // (quadra coberta).
-  'Futebol Society': 'grid3x3',
-  Futsal: 'warehouse',
-  Futvolei: 'waves',
-  Volei: 'volleyball',
-  'Beach Tennis': 'umbrella',
-  Tenis: 'circle-dashed',
-  Basquete: 'target'
-};
 const PAYMENT_METHOD_LABELS = {
   pix: 'Pix',
   card: 'Cartão de crédito',
@@ -304,7 +291,7 @@ function amenityIcon(label) {
 
 function ratingStars(rating, className = 'ic') {
   return Array.from({ length: 5 }, (_, index) => (
-    icon('star', `${className} ${index >= Math.round(Number(rating)) ? 'is-empty' : ''}`)
+    icon('star', `${className} ic-star ${index >= Math.round(Number(rating)) ? 'is-empty' : ''}`)
   )).join('');
 }
 
@@ -421,7 +408,7 @@ function venueCard(venue, options = {}) {
         <div class="body">
           <div class="venue-card-kicker">
             <span>${escapeHtml(venue.sport)}</span>
-            <b>${icon('star')}${venue.rating}</b>
+            <b>${icon('star', 'ic ic-star')}${venue.rating}</b>
           </div>
           <h3>${escapeHtml(venue.name)}</h3>
           <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${formatDistance(venue.distance)} km</p>
@@ -435,14 +422,30 @@ function venueCard(venue, options = {}) {
     </article>`;
 }
 
+/* A reserva manda no card, nao a quadra.
+
+   Antes o card so era montado se a quadra fosse encontrada na lista; quando
+   nao era, `renderReservations` devolvia string vazia e a reserva DESAPARECIA
+   da tela — sem erro, sem aviso, sem linha no console. Uma reserva paga sumir
+   e o pior tipo de bug: a pessoa acha que perdeu o dinheiro.
+
+   A resposta de /api/reservas ja traz venueName, sport, neighborhood e image.
+   A quadra agora e enfeite: se vier, melhora o link e a foto; se nao vier, o
+   card sai assim mesmo com o que a reserva sabe de si. */
 function reservationCard(reservation, venue) {
+  const nome = venue?.name || reservation.venueName || 'Quadra';
+  const foto = venue?.image || reservation.image || '';
+  const esporte = venue?.sport || reservation.sport || '';
+  const bairro = venue?.neighborhood || reservation.neighborhood || '';
+  const alvo = venue?.id || reservation.venueId || '';
+  const local = [esporte, bairro].filter(Boolean).join(' - ');
   return `
-    <a href="#quadra/${venue.id}" data-status="${reservation.group}">
+    <a href="${alvo ? `#quadra/${alvo}` : '#reservas'}" data-status="${escapeHtml(reservation.group || 'proxima')}">
       <article class="res-card">
-        <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" loading="lazy">
+        <img src="${escapeHtml(foto)}" alt="${escapeHtml(nome)}" loading="lazy">
         <div class="res-info">
-          <strong>${escapeHtml(venue.name)}</strong>
-          <span class="res-meta">${icon('map-pin')}${escapeHtml(venue.sport)} - ${escapeHtml(venue.neighborhood)}</span>
+          <strong>${escapeHtml(nome)}</strong>
+          <span class="res-meta">${icon('map-pin')}${escapeHtml(local)}</span>
           <span class="res-meta">${icon('calendar-days')}${escapeHtml(reservation.date)} - ${escapeHtml(reservation.hour)} a ${escapeHtml(reservation.endHour)}</span>
           <div class="res-foot">
             <span class="status ${escapeHtml(reservation.statusClass)}">${escapeHtml(reservation.status)}</span>
@@ -528,7 +531,7 @@ async function renderHome(root) {
     chips.innerHTML = sports
       .map((sport) => `
         <a class="sport-item" href="#quadras?esporte=${encodeURIComponent(sport)}">
-          <span>${icon(SPORT_ICONS[sport] || 'trophy')}</span>
+          <span>${sportIcon(sport)}</span>
           <strong>${escapeHtml(rotuloModalidade(sport))}</strong>
         </a>`)
       .concat(`
@@ -636,7 +639,7 @@ async function renderExplore(root, route) {
     `<a class="sport-filter-chip ${sport ? '' : 'on'}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}${persistentQuery}">${icon('sparkles')}Todos</a>`,
     ...sports.map((item) => {
       const on = item === sport ? 'on' : '';
-      return `<a class="sport-filter-chip ${on}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}&esporte=${encodeURIComponent(item)}${persistentQuery}">${icon(SPORT_ICONS[item] || 'trophy')}${escapeHtml(item)}</a>`;
+      return `<a class="sport-filter-chip ${on}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}&esporte=${encodeURIComponent(item)}${persistentQuery}">${sportIcon(item)}${escapeHtml(item)}</a>`;
     })
   ].join('');
 
@@ -679,6 +682,20 @@ function zoomDoRaio(km) {
   return 11;
 }
 
+
+/* Distancia em km entre dois pontos (haversine). O Leaflet tem distanceTo,
+   mas so depois do mapa existir — aqui e preciso decidir o enquadramento
+   ANTES de desenhar. */
+function distanciaKm([lat1, lng1], [lat2, lng2]) {
+  const R = 6371;
+  const rad = (g) => (g * Math.PI) / 180;
+  const dLat = rad(lat2 - lat1);
+  const dLng = rad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 async function renderMap(root, route) {
   const query = routeQuery(route);
   const sport = query.get('esporte') || '';
@@ -703,7 +720,7 @@ async function renderMap(root, route) {
      relance, e e o mesmo simbolo que a pessoa ja viu na home. */
   filters.innerHTML = [
     `<a class="chip chip-esporte ${sport ? '' : 'on'}" href="#mapa?raio=${raio}">${icon('sparkles')}Todos</a>`,
-    ...sports.map((item) => `<a class="chip chip-esporte ${item === sport ? 'on' : ''}" href="#mapa?esporte=${encodeURIComponent(item)}&raio=${raio}">${icon(SPORT_ICONS[item] || 'trophy')}${escapeHtml(rotuloModalidade(item))}</a>`)
+    ...sports.map((item) => `<a class="chip chip-esporte ${item === sport ? 'on' : ''}" href="#mapa?esporte=${encodeURIComponent(item)}&raio=${raio}">${sportIcon(item)}${escapeHtml(rotuloModalidade(item))}</a>`)
   ].join('');
 
 
@@ -741,6 +758,13 @@ async function renderMap(root, route) {
     })
   }).addTo(activeMobileMap).bindPopup('Você está aqui');
 
+  /* O enquadramento so considera o que esta DENTRO do raio escolhido.
+
+     Antes toda quadra entrava no bounds, entao uma arena a 600 km obrigava o
+     fitBounds a abrir ate caber o pais inteiro — o mapa abria mostrando o
+     Brasil e a pessoa nao via a propria rua. O raio e um filtro: se ele diz
+     10 km, o mapa mostra 10 km. Quadra fora disso ainda ganha marcador (da
+     para arrastar ate la), so nao manda no zoom. */
   const bounds = [userLocation];
   venues.forEach((venue) => {
     const position = [venue.map.lat, venue.map.lng];
@@ -757,14 +781,18 @@ async function renderMap(root, route) {
       offset: [0, -26],
       minWidth: 228
     });
-    bounds.push(position);
+    if (distanciaKm(userLocation, position) <= raio) bounds.push(position);
   });
 
+  /* Sem nada perto, o mapa fica no raio pedido em vez de dar zoom out atras
+     de uma quadra distante. A lista abaixo continua mostrando que ela existe. */
   if (bounds.length > 1) {
     activeMobileMap.fitBounds(bounds, {
       paddingTopLeft: [28, 60],
       paddingBottomRight: [28, 80],
-      maxZoom: 14
+      maxZoom: 15,
+      /* Piso de zoom: nunca abrir mais do que o raio escolhido pede. */
+      minZoom: zoomDoRaio(raio)
     });
   }
   setTimeout(() => activeMobileMap?.invalidateSize(), 50);
@@ -1595,8 +1623,34 @@ async function renderReservations(root) {
     .filter((reservation) => !planos.has(reservation.code))
     .map((reservation) => {
       const venue = venues.find((item) => item.id === reservation.venueId);
-      return venue ? reservationCard(reservation, venue) : '';
+      // Sem `venue` o card sai do mesmo jeito: a reserva se descreve sozinha.
+      return reservationCard(reservation, venue);
     }).join('');
+
+  /* Aplicar a aba ATIVA agora.
+
+     O filtro das abas em ui.js so roda no clique. Na primeira pintura ninguem
+     clicou, entao "Proximas" vinha marcada mas a lista mostrava tudo — e o
+     [data-empty] ("Nada por aqui") continuava escondido mesmo sem card nenhum,
+     deixando um retangulo em branco no lugar da explicacao. */
+  aplicarAbaDeReservas(root);
+}
+
+/* Espelha o que ui.js faz no clique, para o primeiro desenho. */
+function aplicarAbaDeReservas(root) {
+  const seg = root.querySelector('[data-seg]');
+  const grupo = root.querySelector('#minhas-reservas');
+  if (!seg || !grupo) return;
+  const ativo = seg.querySelector('.seg-item.on') || seg.querySelector('.seg-item');
+  const filtro = ativo?.dataset.filter ?? '';
+  let visiveis = 0;
+  grupo.querySelectorAll('[data-status]').forEach((item) => {
+    const ok = filtro === '' || item.getAttribute('data-status') === filtro;
+    item.style.display = ok ? '' : 'none';
+    if (ok) visiveis += 1;
+  });
+  const vazio = grupo.querySelector('[data-empty]');
+  if (vazio) vazio.hidden = visiveis > 0;
 }
 
 async function renderFavorites(root) {
@@ -1699,7 +1753,12 @@ function syncMobileProfile(root, user) {
   }
   root.querySelector('[data-profile-name]').textContent = user.name;
   root.querySelector('[data-profile-since]').textContent = `Jogador desde ${user.memberSince}`;
-  root.querySelector('[data-profile-city]').textContent = user.city;
+  /* Sem cidade, o pin ficava sozinho na tela — um alfinete apontando para
+     nada. Some a linha inteira, nao so o texto. */
+  const cidade = [user.city, user.state].filter(Boolean).join(', ');
+  root.querySelector('[data-profile-city]').textContent = cidade;
+  const linhaLocal = root.querySelector('.profile-location');
+  if (linhaLocal) linhaLocal.hidden = !cidade;
   root.querySelector('[data-profile-games]').textContent = user.stats.games;
   root.querySelector('[data-profile-reservations]').textContent = user.stats.reservations;
   root.querySelector('[data-profile-favorites]').textContent = user.stats.favorites;
@@ -2728,6 +2787,44 @@ export function initMobileActions() {
     }
   });
 
+  document.addEventListener('change', async (event) => {
+    const clubPhoto = event.target.closest('[data-club-photo-input]');
+    if (!clubPhoto) return;
+    const file = clubPhoto.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      window.pqToast?.('Escolha uma imagem de até 10 MB');
+      clubPhoto.value = '';
+      return;
+    }
+
+    clubPhoto.disabled = true;
+    try {
+      const club = await venueService.myClub();
+      if (!club) throw new Error('Clube não encontrado');
+      const photo = await imageFileToDataUrl(file);
+      /* saveClub e um upsert: sem os campos obrigatorios o backend recusaria
+         o corpo, entao os atuais vao junto e so a foto muda. */
+      await venueService.saveClub({
+        id: club.id,
+        name: club.name,
+        sport: club.sport,
+        city: club.city,
+        state: club.state,
+        description: club.description,
+        photo
+      });
+      const view = document.querySelector('[data-route-view]');
+      if (view) await renderClub(view);
+      window.pqToast?.('Escudo do clube atualizado');
+    } catch (error) {
+      window.pqToast?.(error.message || 'Não foi possível atualizar o escudo');
+    } finally {
+      clubPhoto.disabled = false;
+      clubPhoto.value = '';
+    }
+  });
+
   document.addEventListener('click', async (event) => {
     const sheetTrigger = event.target.closest('[data-sheet-open]');
     if (sheetTrigger) {
@@ -2864,6 +2961,64 @@ export function initMobileActions() {
       month.setMonth(month.getMonth() + Number(calendarNav.dataset.calendarNav));
       booking.dataset.calendarMonth = calendarMonthValue(month);
       renderBookingCalendar(root);
+      return;
+    }
+
+
+    /* CONFERIR ANTES DE SEGUIR.
+
+       A agenda que esta na tela foi buscada quando a data foi escolhida. Entre
+       aquele instante e este clique, outra pessoa pode ter reservado uma das
+       horas do bloco — e o preco ja calculado continuaria mostrando as 3h,
+       levando alguem a pagar por um horario que nao existe mais. A reserva so
+       falharia no POST, depois do pagamento ja ter comecado.
+
+       Entao aqui a agenda e buscada DE NOVO e o bloco inteiro e conferido. Se
+       qualquer hora dele caiu, a navegacao para, o toast diz QUAL hora caiu, e
+       a tela redesenha com a agenda nova — a pessoa ve o que mudou. */
+    const bkCta = event.target.closest('[data-bk-cta]');
+    if (bkCta) {
+      const root = bkCta.closest('[data-venue-page]');
+      const booking = root?.querySelector('[data-booking]');
+      if (!root || !booking) return;
+
+      const hora = booking.dataset.hour;
+      if (!hora) { event.preventDefault(); return; }
+      // Mensalista comeca no proximo dia da semana, nao nesta data: conferir a
+      // agenda de hoje diria a coisa errada.
+      if (booking.dataset.planKind === 'mensalista') return;
+
+      event.preventDefault();
+      const destino = bkCta.getAttribute('href');
+      const inicio = Number(hora.slice(0, 2));
+      const dur = Math.max(1, Math.min(3, Number(booking.dataset.duration || 1)));
+
+      let slots;
+      try {
+        slots = await venueService.availability(booking.dataset.venueId, booking.dataset.date);
+      } catch (error) {
+        window.pqToast?.('Não foi possível confirmar os horários. Tente de novo.');
+        return;
+      }
+
+      const estado = new Map(slots.map((slot) => [slot.hour, slot.status]));
+      const ocupadas = [];
+      for (let i = 0; i < dur; i += 1) {
+        const h = `${String(inicio + i).padStart(2, '0')}:00`;
+        if (estado.get(h) !== 'free') ocupadas.push(h);
+      }
+
+      if (ocupadas.length) {
+        booking.dataset.availability = JSON.stringify(slots);
+        booking.dataset.hour = '';
+        renderBooking(root);
+        window.pqToast?.(ocupadas.length === 1
+          ? `Horário ${ocupadas[0]} já está reservado`
+          : `Horários ${ocupadas.join(', ')} já estão reservados`);
+        return;
+      }
+
+      if (destino) location.hash = destino.replace(/^#/, '');
       return;
     }
 
@@ -3303,7 +3458,7 @@ function memberRow(member, user, meuCargo) {
       ? `<span class="member-actions">${acoes.join('')}</span>`
       : member.role === 'admin'
         ? '<span class="status">Admin</span>'
-        : `<span class="member-rating">${icon('star')}${rating ?? '-'}</span>`;
+        : `<span class="member-rating">${icon('star', 'ic ic-star')}${rating ?? '-'}</span>`;
 
   return `<div class="payment-row member-row">
     <span class="badge-ic member-row__avatar">${initial}</span>
@@ -3396,8 +3551,16 @@ async function renderClub(root) {
   const clubView = root.querySelector('[data-club-view]');
   const [peladas, venues] = await Promise.all([venueService.peladas(), venueService.list({})]);
   const venueOf = (p) => venues.find((v) => v.id === p.venueId);
+  /* "Proximas" quer dizer PROXIMAS.
+
+     O filtro so descartava as canceladas, entao pelada de semana passada
+     seguia na lista sob o titulo "Proximas peladas" — e ficava no topo, porque
+     a ordem e crescente por data. Quem abria o clube via primeiro um jogo que
+     ja aconteceu. Agora o corte e a data de hoje; o que passou sai. */
+  const hoje = localDateValue();
   const upcoming = peladas
     .filter((p) => p.status !== 'cancelada')
+    .filter((p) => String(p.dateISO || '') >= hoje)
     .sort((a, b) => String(a.dateISO).localeCompare(String(b.dateISO)));
 
   fillSportOptions();
@@ -3430,7 +3593,15 @@ async function renderClub(root) {
   root.querySelector('[data-club-sport]').textContent = club.sport;
   root.querySelector('[data-club-city]').textContent = club.city;
   root.querySelector('[data-club-description]').textContent = club.description || '';
-  root.querySelector('[data-club-avatar]').textContent = club.name.charAt(0).toUpperCase();
+  /* Escudo do clube: a foto quando existe, a inicial quando nao. Mesmo
+     comportamento do avatar do perfil, para as duas telas nao divergirem. */
+  const escudo = root.querySelector('[data-club-avatar]');
+  if (escudo) {
+    escudo.classList.toggle('has-photo', Boolean(club.photo));
+    escudo.innerHTML = club.photo
+      ? `<img src="${escapeHtml(club.photo)}" alt="${escapeHtml(club.name)}">`
+      : escapeHtml(club.name.charAt(0).toUpperCase());
+  }
   root.querySelector('[data-member-label]').textContent = club.members.length === 1 ? '1 no time' : `${club.members.length} no time`;
   root.querySelector('[data-pelada-label]').textContent = upcoming.length === 1 ? '1 marcada' : `${upcoming.length} marcadas`;
   /* O cargo vem do servidor (myRole) e nao e mais deduzido da lista de
@@ -3487,6 +3658,9 @@ async function renderClub(root) {
   const sozinho = club.members.length <= 1;
   const btnEditar = root.querySelector('[data-club-edit]');
   if (btnEditar) btnEditar.hidden = !souGestao;
+  // Trocar o escudo e edicao do clube: mesma permissao do botao Editar.
+  const trocaFoto = root.querySelector('[data-club-photo-edit]');
+  if (trocaFoto) trocaFoto.hidden = !souGestao;
   const btnSair = root.querySelector('[data-club-leave]');
   if (btnSair) btnSair.hidden = souDono;
   const btnApagar = root.querySelector('[data-club-delete]');

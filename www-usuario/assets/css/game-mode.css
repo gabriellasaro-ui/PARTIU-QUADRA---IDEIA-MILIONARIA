@@ -1655,3 +1655,51 @@ body.is-tv-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .game-tv__team b[data-score-drag] { transition: none; }
 }
+
+/* CARD DA PARTIDA MAIOR.
+
+   E o unico card da home que muda de estado sozinho — chegando, rolando,
+   encerrada — e era o mais baixo da tela, com titulo de 12,5px competindo com
+   listas de quadras bem maiores logo abaixo. O que informa mais tinha o menor
+   peso visual.
+
+   Cresce a caixa (68 -> 92px), o icone (40 -> 48), o titulo (12,5 -> 15) e o
+   contador (17 -> 22), mantendo as mesmas tres colunas: nada se reposiciona,
+   so ganha presenca. */
+.game-card {
+  min-height: 92px;
+  gap: 13px;
+  padding: 15px 16px;
+  border-radius: 24px;
+}
+
+.game-card__icon {
+  width: 48px;
+  height: 48px;
+}
+
+.game-card__icon .ic {
+  width: 24px;
+  height: 24px;
+}
+
+.game-card__label {
+  font-size: 10.5px;
+}
+
+.game-card__title {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.game-card__meta {
+  font-size: 10.5px;
+}
+
+.game-card__countdown {
+  font-size: 22px;
+}
+
+.game-card__countdown small {
+  font-size: 9.5px;
+}

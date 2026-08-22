@@ -754,9 +754,9 @@ export const venueService = {
       const data = await api.get('/api/peladas');
       return data?.peladas || [];
     }
-    const all = storage.get('peladas', clone(PELADAS));
-    if (clubId === undefined || clubId === null) return all;
-    return all.filter((p) => p.clubId === Number(clubId));
+    /* Sem API nao ha pelada de verdade. Devolver a lista de exemplo faria a
+       tela prometer jogos que ninguem marcou — o mesmo erro da agenda. */
+    return [];
   },
 
   async savePelada(pelada) {
@@ -773,8 +773,7 @@ export const venueService = {
       const data = await api.get(`/api/clubes/${clubId}/mensagens`);
       return data?.mensagens || [];
     }
-    const all = storage.get('club_chat', clone(CLUB_CHAT));
-    return all.filter((m) => m.clubId === Number(clubId));
+    return [];
   },
 
   async sendClubMessage(clubId, message) {

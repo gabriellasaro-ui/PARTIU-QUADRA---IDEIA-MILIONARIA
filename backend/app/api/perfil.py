@@ -51,6 +51,9 @@ class PerfilPatch(BaseModel):
     #: ISO (YYYY-MM-DD). String vazia limpa o campo.
     birthDate: str | None = None
     foot: str | None = None
+    #: Data URL (o app reduz para 512px JPEG antes de enviar) ou URL http.
+    #: String vazia remove a foto e volta para a inicial do nome.
+    photo: str | None = None
 
 
 def _estatisticas(db: Session, user: User) -> dict:
@@ -159,6 +162,24 @@ def salvar_perfil(
                     status_code=422,
                     detail="Data de nascimento inválida. Use o formato AAAA-MM-DD.",
                 )
+
+    # Foto: entrava como qualquer campo de texto e nao entrava nunca — nao
+    # estava no schema. Aqui ela e validada de fato, porque o conteudo vem do
+    # aparelho: so data URL de imagem ou http(s), nada de javascript: ou de
+    # outro esquema que a tela vai colocar num src.
+    if patch.photo is not None:
+        bruto = patch.photo.strip()
+        if not bruto:
+            user.photo = None
+        else:
+            valida = bruto.startswith("data:image/") or bruto.startswith(("http://", "https://"))
+            if not valida:
+                raise HTTPException(status_code=422, detail="Formato de imagem invalido")
+            # ~1,4 MB de base64 = ~1 MB de imagem. O app manda muito menos que
+            # isso; o teto existe para uma chamada direta nao encher a linha.
+            if len(bruto) > 1_400_000:
+                raise HTTPException(status_code=413, detail="Imagem muito grande")
+            user.photo = bruto
 
     # commit, nao flush: get_db() so fecha a sessao, entao um flush sozinho
     # some no fim do request. A resposta saia com os dados novos e o banco

@@ -147,7 +147,7 @@ const PLAYER_DESKTOP_ROUTES = {
     page: './pages/player-desktop/explorar.html',
     title: 'Explorar quadras - Qadras',
     heading: 'Explorar quadras',
-    sub: 'Quadras disponíveis perto de Goiânia',
+    sub: 'Quadras disponíveis perto de você',
     nav: 'quadras'
   },
   quadra: {

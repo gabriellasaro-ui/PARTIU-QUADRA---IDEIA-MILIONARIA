@@ -74,7 +74,10 @@ class Club(Base):
     city: Mapped[str] = mapped_column(String(60))
     state: Mapped[str | None] = mapped_column(String(2))
     description: Mapped[str | None] = mapped_column(Text)
-    photo: Mapped[str | None] = mapped_column(String(500))
+    #: Data URL da imagem enviada pelo app (o front ja reduz para 512px
+    #: JPEG). Nao cabe em String(500) — em Postgres isso truncaria ou
+    #: estouraria; no SQLite passaria calado ate a producao.
+    photo: Mapped[str | None] = mapped_column(Text)
     owner_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), index=True
     )

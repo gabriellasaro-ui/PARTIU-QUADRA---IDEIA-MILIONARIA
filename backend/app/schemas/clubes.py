@@ -21,6 +21,9 @@ class ClubCreate(BaseModel):
     #: Limite de membros. O servico prende o valor entre o total atual e o
     #: teto do sistema — o cliente nao manda um numero que valha sozinho.
     maxMembers: int | None = Field(default=None, ge=1, le=1000)
+    #: Data URL da imagem (o app reduz antes de enviar) ou URL http. String
+    #: vazia remove e volta para a inicial do nome.
+    photo: str | None = None
 
 
 class ClubJoin(BaseModel):

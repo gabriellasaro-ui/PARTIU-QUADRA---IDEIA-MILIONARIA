@@ -214,6 +214,26 @@ def _exigir_espaco_para_entrar(db: Session, user) -> None:
         )
 
 
+
+def _foto_valida(bruto: str | None) -> str | None:
+    """Mesma regra da foto de perfil.
+
+    O conteudo vem do aparelho e termina num `src` na tela, entao so passa
+    data URL de imagem ou http(s) — nunca javascript: nem outro esquema.
+    Devolve None para string vazia, que e como se remove a foto.
+    """
+    if bruto is None:
+        return None
+    valor = bruto.strip()
+    if not valor:
+        return ""
+    if not (valor.startswith("data:image/") or valor.startswith(("http://", "https://"))):
+        raise HTTPException(status_code=422, detail="Formato de imagem invalido")
+    if len(valor) > 1_400_000:
+        raise HTTPException(status_code=413, detail="Imagem muito grande")
+    return valor
+
+
 def create_club(db: Session, user, body) -> dict:
     if body.id:
         return update_club(db, user, body)
@@ -237,6 +257,7 @@ def create_club(db: Session, user, body) -> dict:
         owner_id=user.id,
         join_mode=_modo_valido(getattr(body, "joinMode", None)),
         max_members=_limite_valido(getattr(body, "maxMembers", None)),
+        photo=(_foto_valida(getattr(body, "photo", None)) or None),
     )
     db.add(club)
     repo.add_member(db, club.id, user.id, role=CLUB_ROLE_DONO)
@@ -265,6 +286,9 @@ def update_club(db: Session, user, body) -> dict:
     limite = getattr(body, "maxMembers", None)
     if limite:
         club.max_members = _limite_valido(limite, minimo=repo.count_members(db, club.id))
+    foto = getattr(body, "photo", None)
+    if foto is not None:
+        club.photo = _foto_valida(foto) or None
     db.commit()
     return _club_dict(db, club, user)
 

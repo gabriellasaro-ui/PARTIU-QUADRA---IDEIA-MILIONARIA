@@ -120,8 +120,8 @@ DEMO_USERS = [
 # Para voltar a ter varias, o historico deste arquivo guarda as cinco.
 ARENAS = [
     {"key": "bolanarede", "name": "Arena Bola na Rede", "owner": "dono@arenabolanarede.com.br",
-     "address": "Jardim Goiás", "city": "Goiania", "state": "GO",
-     "lat": -16.7060, "lng": -49.2350,
+     "address": "Savassi", "city": "Belo Horizonte", "state": "MG",
+     "lat": -19.9386, "lng": -43.9333,
      "sport": "Futebol Society", "price_cents": 12000, "price_monthly_cents": 40800,
      "photo": "photo-1556056504-5c7696c4c28d",
      "gallery": ["photo-1556056504-5c7696c4c28d", "photo-1577223625816-7546f13df25d",
@@ -163,8 +163,8 @@ def _seed_users(db) -> int:
                 id=uuid.uuid4(),
                 password_hash=hash_password(pwd),
                 provider="password",
-                city="Goiania",
-                state="GO",
+                city="Belo Horizonte",
+                state="MG",
                 **data,
             )
         )
@@ -703,8 +703,8 @@ def _seed_clubs(db) -> int:
             name="Bola na Rede F.C.",
             code="BANRED",
             sport="Futebol Society",
-            city="Goiania",
-            state="GO",
+            city="Belo Horizonte",
+            state="MG",
             description="Turma das quartas na Arena Bola na Rede. Resenha garantida.",
             owner_id=gabriel.id,
             join_mode=CLUB_JOIN_ABERTO,
@@ -738,8 +738,8 @@ def _seed_clubs(db) -> int:
             name="Quinta Suada",
             code="QUINTA",
             sport="Futsal",
-            city="Goiania",
-            state="GO",
+            city="Belo Horizonte",
+            state="MG",
             description="Pelada de quinta. Peça para entrar que a gente avalia.",
             owner_id=mariana.id,
             join_mode=CLUB_JOIN_SOLICITACAO,
