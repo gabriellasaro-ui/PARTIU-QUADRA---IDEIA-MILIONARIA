@@ -9,6 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png">
   <link rel="stylesheet" href="./assets/css/desktop.css">
   <link rel="stylesheet" href="./assets/css/manager-app.css">
+  <link rel="stylesheet" href="./assets/css/tema.css">
   <style>
     /* Tela de passagem: existe por menos de um piscar. Só o suficiente para
        não haver um retângulo branco entre abrir o app e a primeira tela. */
@@ -16,8 +17,8 @@
       display: grid;
       min-height: 100vh;
       place-items: center;
-      background: #0f1c15;
-      color: #e8f2ec;
+      background: var(--pq-app-bg, #0e1613);
+      color: var(--pq-ink, #e8f2ec);
       font-family: 'Inter', system-ui, sans-serif;
       gap: 14px;
       text-align: center;
@@ -29,14 +30,14 @@
       height: 62px;
       place-items: center;
       border-radius: 18px;
-      background: #1b7a3e;
+      background: var(--pq-brand, #16a765);
       color: #fff;
       font-size: 30px;
       font-weight: 800;
     }
 
     .entrada__txt {
-      color: #8ba396;
+      color: var(--pq-muted, #8ba396);
       font-size: 13px;
     }
   </style>
@@ -65,6 +66,11 @@
 
   <script type="module">
     import storage from './storage/storage.js';
+    import { aplicarTema } from './services/tema.js';
+
+    // O tema entra ANTES do redirect: esta tela some rapido, mas sem isto
+    // pisca no tema errado a cada abertura do app.
+    aplicarTema();
 
     const destino = storage.getAuthToken() ? './dashboard.html' : './login.html';
     location.replace(destino);

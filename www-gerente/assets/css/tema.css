@@ -1,0 +1,175 @@
+/* =========================================================================
+   TEMA DO PAINEL DO GERENTE — mesma identidade do app do jogador.
+
+   O painel tinha 48 tokens em DOIS vocabularios paralelos (--manager-* e a
+   paleta do desktop: --green, --ink, --line...), varios definidos duas vezes
+   com valores diferentes. Nenhum deles era o mesmo verde do app do jogador,
+   entao os dois produtos pareciam de empresas diferentes.
+
+   Em vez de reescrever 16 mil linhas de CSS trocando token por token, os
+   tokens existentes passam a REFERENCIAR uma paleta unica (--pq-*), a mesma
+   do app. As regras nao mudam; o que elas significam, sim. Trocar o tema vira
+   uma troca de paleta, e nao uma varredura.
+
+   ESCURO DE FABRICA. O painel e ferramenta de trabalho, usada em arena a noite
+   e por horas seguidas — o oposto do app do jogador, que se abre por dois
+   minutos no sol. Por isso aqui o padrao e escuro e o claro e a escolha, ao
+   contrario do app.
+
+   Este arquivo tem de ser carregado DEPOIS de desktop.css e manager-app.css:
+   mesma especificidade, entao vence quem vem por ultimo.
+   ========================================================================= */
+
+/* ── Paleta base: ESCURO (o padrao) ─────────────────────────────────────── */
+:root {
+  /* Marca — os mesmos valores do app do jogador no escuro. O verde de marca
+     CLAREIA sobre fundo escuro: #16a765 sobre quase-preto nao alcanca
+     contraste de leitura, e o objetivo e ler, nao repetir o hex. */
+  --pq-brand: #35c785;
+  --pq-brand-strong: #4dd598;
+  --pq-brand-deep: #7ee3b4;
+  --pq-signal: #2f6b4c;
+  --pq-signal-soft: #1e2f26;
+
+  /* Superficies em camadas: o fundo do app um degrau abaixo dos cartoes, para
+     o cartao continuar sendo "a coisa em cima". No escuro isso substitui a
+     sombra, que praticamente desaparece. */
+  --pq-app-bg: #0e1613;
+  --pq-panel: #18211d;
+  --pq-panel-2: #212b26;
+  --pq-tint: #1e2f26;
+  --pq-tint-strong: #263b30;
+
+  --pq-ink: #e8f2ec;
+  --pq-ink-soft: #b3c9bd;
+  --pq-muted: #8ba396;
+
+  --pq-line: #2a3831;
+  --pq-line-strong: #3a4a42;
+
+  --pq-gold: #f0b429;
+  --pq-amber-soft: #3a2c14;
+  --pq-blue: #5b8def;
+  --pq-danger: #ff8095;
+  --pq-danger-soft: #3a1f24;
+
+  --pq-shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --pq-shadow-2: 0 18px 46px rgba(0, 0, 0, .6);
+
+  /* Controles nativos (select, input, barra de rolagem) sao desenhados pelo
+     SISTEMA: nenhum CSS nosso os alcanca. Sem esta linha o Android e o Windows
+     desenham a lista do <select> clara com texto claro. */
+  color-scheme: dark;
+}
+
+/* ── Claro: escolha da pessoa, em Configuracoes ─────────────────────────── */
+:root[data-theme="light"] {
+  --pq-brand: #16a765;
+  --pq-brand-strong: #0c8b52;
+  --pq-brand-deep: #075e3a;
+  --pq-signal: #b9edcb;
+  --pq-signal-soft: #edf9f1;
+
+  --pq-app-bg: #f3f8f4;
+  --pq-panel: #ffffff;
+  --pq-panel-2: #f3f5f1;
+  --pq-tint: #e8f6ed;
+  --pq-tint-strong: #dfeee3;
+
+  --pq-ink: #143523;
+  --pq-ink-soft: #315742;
+  --pq-muted: #6b7f72;
+
+  --pq-line: #dce9df;
+  --pq-line-strong: #c7ddce;
+
+  --pq-gold: #e4a11b;
+  --pq-amber-soft: #ffedd5;
+  --pq-blue: #2563eb;
+  --pq-danger: #c94151;
+  --pq-danger-soft: #fdf2f2;
+
+  --pq-shadow-1: 0 2px 4px rgba(7, 94, 58, .03), 0 14px 34px rgba(7, 94, 58, .07);
+  --pq-shadow-2: 0 18px 46px rgba(17, 17, 17, .14);
+
+  color-scheme: light;
+}
+
+/* ── Os 48 tokens antigos, agora apontando para a paleta ────────────────── *
+ *
+ * Ficam com o nome que sempre tiveram porque sao usados em centenas de regras
+ * pelas 16 mil linhas de CSS. Trocar os NOMES seria uma varredura arriscada
+ * sem ganho nenhum; trocar o VALOR resolve o tema inteiro.
+ *
+ * Os que nao sao cor (raio, fonte, safe area, largura da barra lateral) nao
+ * aparecem aqui: nao tem nada a ver com tema e continuam onde estavam.
+ *
+ * SELETOR: html[data-manager-app], e nao :root. O manager-app.css declara os
+ * --manager-* dentro de `html[data-manager-app]`, que tem especificidade maior
+ * (0,1,1) que `:root` (0,1,0) — um bloco :root aqui perderia mesmo vindo
+ * depois, e os apelidos continuariam com os valores claros antigos. Empatando
+ * a especificidade, vence quem carrega por ultimo, que e este arquivo.
+ */
+html[data-manager-app],
+:root {
+  /* vocabulario --manager-* */
+  --manager-bg: var(--pq-app-bg);
+  --manager-panel: var(--pq-panel);
+  --manager-panel-soft: var(--pq-tint);
+  --manager-ink: var(--pq-ink);
+  --manager-ink-soft: var(--pq-ink-soft);
+  --manager-muted: var(--pq-muted);
+  --manager-line: var(--pq-line);
+  --manager-line-strong: var(--pq-line-strong);
+  --manager-green: var(--pq-brand);
+  --manager-green-strong: var(--pq-brand-strong);
+  --manager-green-deep: var(--pq-brand-deep);
+  --manager-green-light: var(--pq-signal);
+  --manager-blue: var(--pq-blue);
+  --manager-danger: var(--pq-danger);
+  --manager-warning: var(--pq-gold);
+  --manager-shadow: var(--pq-shadow-1);
+
+  /* vocabulario do desktop */
+  --bg: var(--pq-app-bg);
+  --panel: var(--pq-panel);
+  --ink: var(--pq-ink);
+  --ink-2: var(--pq-ink-soft);
+  --muted: var(--pq-muted);
+  --line: var(--pq-line);
+  --line-2: var(--pq-line);
+  --green: var(--pq-brand);
+  --green-600: var(--pq-brand-strong);
+  --green-700: var(--pq-brand-deep);
+  --green-ink: var(--pq-brand-deep);
+  --mint: var(--pq-tint);
+  --mint-line: var(--pq-line-strong);
+  --amber: var(--pq-gold);
+  --blue: var(--pq-blue);
+  --volt: var(--pq-signal);
+  --volt-deep: var(--pq-brand-strong);
+
+  /* barra lateral: um degrau distinto do fundo, para separar navegacao de
+     conteudo sem precisar de borda grossa */
+  --sb: var(--pq-panel);
+  --sb-2: var(--pq-tint);
+  --sb-line: var(--pq-line);
+  --sb-txt: var(--pq-muted);
+  --sb-txt-2: var(--pq-ink);
+}
+
+/* O <html> tem de pintar tambem: e o que aparece no overscroll e atras da
+   safe area. Sem isto, puxar a pagina no escuro mostra uma faixa branca. */
+html,
+body {
+  background: var(--pq-app-bg);
+  color: var(--pq-ink);
+}
+
+/* Fotos no escuro: branco puro de imagem fica ofuscante ao lado de uma
+   interface escura. Um rebaixamento leve tira o brilho sem descaracterizar. */
+:root:not([data-theme="light"]) .court-thumb img,
+:root:not([data-theme="light"]) .qcard img,
+:root:not([data-theme="light"]) .manager-court-photo img {
+  filter: brightness(.88);
+}

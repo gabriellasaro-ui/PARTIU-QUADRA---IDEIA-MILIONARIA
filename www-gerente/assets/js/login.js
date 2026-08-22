@@ -5,6 +5,9 @@
    pessoa segue para o dashboard. */
 import authService from '../../services/auth.js';
 import { API_BASE_URL } from '../../config/constants.js';
+import { aplicarTema } from '../../services/tema.js';
+
+aplicarTema();
 
 function redirect() {
   const params = new URLSearchParams(location.search);

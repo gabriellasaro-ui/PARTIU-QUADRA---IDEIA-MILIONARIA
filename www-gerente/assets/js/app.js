@@ -13,6 +13,11 @@ import {
   renderManagerBookingForm, renderManagerCourtForm, renderManagerSettings, initManagerForms
 } from './manager-forms.js';
 import { renderManagerFinance, initManagerFinance } from './manager-finance.js';
+import { aplicarTema, definirTema, claroLigado } from '../../services/tema.js';
+
+/* Antes de qualquer rota: sem isto o painel abre claro e SALTA para
+   escuro quando o tema for aplicado — um flash branco a cada abertura. */
+aplicarTema();
 
 const DESKTOP_ROUTES = {
   dashboard: {
@@ -199,7 +204,10 @@ async function renderDesktopRoute() {
   if (routeName === 'agenda') await renderManagerAgenda(view);
   if (routeName === 'financeiro') await renderManagerFinance(view);
   if (routeName === 'avaliacoes') await renderManagerReviews(view);
-  if (routeName === 'config') await renderManagerSettings(view);
+  if (routeName === 'config') {
+    await renderManagerSettings(view);
+    sincronizarInterruptorDeTema(view);
+  }
   if (routeName === 'reservaNova') await renderManagerBookingForm(view);
   if (routeName === 'reservaDetalhe') await renderManagerBookingDetail(view);
   if (routeName === 'quadraForm') await renderManagerCourtForm(view);
@@ -328,3 +336,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   initModals();
   initRedirectToast();
 });
+
+/* Interruptor de tema em Configuracoes.
+
+   O ui.js ja vira a classe .on de qualquer .switch-row (handler generico);
+   aqui so lemos o resultado e gravamos. Fica fora do "Salvar alteracoes" do
+   formulario de proposito: o tema muda a tela na hora, e confirmar depois
+   disso nao faria sentido. */
+document.addEventListener('click', (event) => {
+  const linha = event.target.closest('[data-cfg-tema]');
+  if (!linha) return;
+  const claro = linha.querySelector('.switch')?.classList.contains('on');
+  definirTema(claro ? 'light' : 'dark');
+});
+
+/* A tela de Configuracoes e remontada a cada visita e o interruptor nasce
+   desligado no HTML. Sem sincronizar, quem esta no claro abriria e leria
+   "modo claro: desligado". */
+export function sincronizarInterruptorDeTema(raiz = document) {
+  const sw = raiz.querySelector('[data-cfg-tema] .switch');
+  if (sw) sw.classList.toggle('on', claroLigado());
+}
