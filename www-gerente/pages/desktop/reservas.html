@@ -1,10 +1,18 @@
-<!-- Reservas — porte de _legacy/.../g_reservas.html.
+<!-- RESERVAS — a tela onde o dono aceita ou recusa.
 
-     Voltam o banner de solicitacoes (com contagem real, nao "3 reservas
-     precisam de atencao" escrito na mao), o resumo do periodo, os filtros
-     por status e as linhas com Aprovar / Recusar / Ver detalhes. A tabela
-     que estava aqui nao deixava aprovar nem abrir a reserva.
-     Montado por assets/js/manager-reservations.js. -->
+     Refeita em torno de uma pergunta: "o que precisa de mim AGORA?". Tudo o
+     mais na tela e consulta, e consulta pode esperar.
+
+     AVULSAS E MENSALISTAS VIRARAM ABAS.
+
+     Antes mensalistas era uma secao no rodape da mesma pagina. Sao operacoes
+     diferentes e nao competem pela mesma atencao: a avulsa e uma decisao
+     PONTUAL com prazo — aprova ou recusa em 15 minutos, senao expira. O
+     mensalista e compromisso recorrente que ja esta na grade; o dono olha para
+     acompanhar, nao para decidir. Empilhados, a pendencia de hoje se perdia no
+     meio das recorrencias, e rolar ate o fim para ver mensalista era pior
+     ainda.
+-->
 <div class="toolbar">
   <div class="field grow">
     <svg class="ic"><use href="#i-search"/></svg>
@@ -15,46 +23,85 @@
   </a>
 </div>
 
+<!-- O banner some quando nao ha o que responder: aviso permanente vira
+     decoracao e para de ser lido. -->
 <a class="req-banner" href="#solicitacoes" data-booking-banner hidden>
   <span class="ico"><svg class="ic"><use href="#i-bell"/></svg></span>
   <div><b data-booking-banner-count></b><small>Aprove ou recuse antes que o prazo termine.</small></div>
   <svg class="ic sm"><use href="#i-right"/></svg>
 </a>
 
-<section class="manager-reservation-overview" aria-label="Resumo das reservas">
-  <article><span><svg class="ic"><use href="#i-calendar"/></svg></span><div><strong class="num" data-booking-total>0</strong><small>Reservas no período</small></div></article>
-  <article><span><svg class="ic"><use href="#i-wallet"/></svg></span><div><strong class="num" data-booking-volume>R$ 0</strong><small>Valor movimentado</small></div></article>
-  <article data-booking-pending-card><span><svg class="ic"><use href="#i-clock"/></svg></span><div><strong class="num" data-booking-pending>0</strong><small>Aguardando aprovação</small></div></article>
-</section>
+<div class="tabs manager-scope-tabs" data-seg role="tablist" aria-label="Tipo de reserva">
+  <button type="button" class="on" data-booking-scope="avulso">
+    Avulsas <span class="scope-count num" data-scope-count-avulso>0</span>
+  </button>
+  <button type="button" data-booking-scope="mensalista">
+    Mensalistas <span class="scope-count num" data-scope-count-mensalista>0</span>
+  </button>
+</div>
 
-<section class="manager-section" id="solicitacoes">
-  <div class="manager-section__head manager-section__head--stack">
-    <div><span>Operação</span><h2>Reservas avulsas</h2></div>
-    <div class="tabs manager-filter-tabs" data-seg>
-      <button type="button" class="on" data-booking-filter="">Todas</button>
-      <button type="button" data-booking-filter="solicitada">Solicitações</button>
-      <button type="button" data-booking-filter="pago">Pagas</button>
-      <button type="button" data-booking-filter="pendente">Pendentes</button>
-      <button type="button" data-booking-filter="confirmado">Confirmadas</button>
+<!-- ══════════════════════════ AVULSAS ══════════════════════════ -->
+<div data-scope-panel="avulso">
+  <section class="manager-reservation-overview" aria-label="Resumo das reservas">
+    <article><span><svg class="ic"><use href="#i-calendar"/></svg></span><div><strong class="num" data-booking-total>0</strong><small>Reservas no período</small></div></article>
+    <article><span><svg class="ic"><use href="#i-wallet"/></svg></span><div><strong class="num" data-booking-volume>R$ 0,00</strong><small>Valor movimentado</small></div></article>
+    <article data-booking-pending-card><span><svg class="ic"><use href="#i-clock"/></svg></span><div><strong class="num" data-booking-pending>0</strong><small>Aguardando aprovação</small></div></article>
+  </section>
+
+  <section class="manager-section" id="solicitacoes">
+    <div class="manager-section__head manager-section__head--stack">
+      <div><span>Operação</span><h2>Reservas avulsas</h2></div>
+      <div class="tabs manager-filter-tabs" data-seg>
+        <button type="button" class="on" data-booking-filter="">Todas</button>
+        <button type="button" data-booking-filter="solicitada">Solicitações</button>
+        <button type="button" data-booking-filter="pago">Pagas</button>
+        <button type="button" data-booking-filter="pendente">Pendentes</button>
+        <button type="button" data-booking-filter="confirmado">Confirmadas</button>
+      </div>
     </div>
-  </div>
 
-  <div class="manager-bookings" data-manager-reservation-list></div>
+    <div class="manager-bookings" data-manager-reservation-list></div>
 
-  <div class="manager-empty-list" data-booking-empty hidden>
-    <svg class="ic"><use href="#i-calendar"/></svg>
-    <strong>Nenhuma reserva neste filtro</strong>
-    <span>Escolha outro status para continuar.</span>
-  </div>
-</section>
+    <div class="manager-empty-list" data-booking-empty hidden>
+      <svg class="ic"><use href="#i-calendar"/></svg>
+      <strong>Nenhuma reserva neste filtro</strong>
+      <span>Escolha outro status para continuar.</span>
+    </div>
 
-<!-- Mensalistas aqui e so o resumo: e receita recorrente e horário ja
-     comprometido, entao nao disputa espaco com o que pede decisao. A
-     gestao fica na propria secao. -->
-<section class="manager-section manager-members-section" id="mensalistas">
-  <div class="manager-section__head">
-    <div><span>Recorrência</span><h2>Mensalistas</h2><p>Clientes com dia e horário fixos na sua grade · <b data-manager-mensal-count>0</b> planos.</p></div>
-    <a class="btn btn-outline" href="./dashboard.html#mensalistas">Gerenciar <svg class="ic sm"><use href="#i-right"/></svg></a>
-  </div>
-  <div class="mensal-grid" data-manager-mensal-list></div>
-</section>
+    <!-- PAGINACAO.
+
+         A lista vinha cortada em 200 linhas sem dizer que havia corte: a tela
+         mostrava o que coubesse e o dono nao tinha como saber que faltava.
+         Aqui o total aparece em texto, e nao so as setas — "1-20 de 148" e o
+         que responde "ja vi tudo?". -->
+    <nav class="pager" data-booking-pager hidden aria-label="Páginas de reservas">
+      <button type="button" class="btn btn-soft btn-xs" data-pager-prev>
+        <svg class="ic sm"><use href="#i-left"/></svg> Anterior
+      </button>
+      <span class="pager__info" data-pager-info></span>
+      <button type="button" class="btn btn-soft btn-xs" data-pager-next>
+        Próxima <svg class="ic sm"><use href="#i-right"/></svg>
+      </button>
+    </nav>
+  </section>
+</div>
+
+<!-- ═════════════════════════ MENSALISTAS ═════════════════════════ -->
+<div data-scope-panel="mensalista" hidden>
+  <section class="manager-section manager-members-section" id="mensalistas">
+    <div class="manager-section__head">
+      <div>
+        <span>Recorrência</span>
+        <h2>Mensalistas</h2>
+        <p>Clientes com dia e horário fixos na sua grade · <b data-manager-mensal-count>0</b> planos.</p>
+      </div>
+      <a class="btn btn-outline" href="./dashboard.html#mensalistas">Gerenciar <svg class="ic sm"><use href="#i-right"/></svg></a>
+    </div>
+    <div class="mensal-grid" data-manager-mensal-list></div>
+    <div class="manager-empty-list" data-mensal-empty hidden>
+      <svg class="ic"><use href="#i-repeat"/></svg>
+      <strong>Nenhum mensalista ainda</strong>
+      <span>Quem assina um plano aparece aqui com o dia e o horário fixos.</span>
+    </div>
+  </section>
+</div>

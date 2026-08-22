@@ -35,16 +35,42 @@
   syncAuthControls();
   window.addEventListener('storage', syncAuthControls);
 
-  function toast(msg) {
+  /* toast(msg) — e toast(msg, { persistente, texto }).
+
+     O aviso de SOLICITACAO nao pode sumir sozinho em 2,6 segundos: e uma
+     decisao com prazo de 15 minutos, e o dono pode estar de costas para a tela
+     atendendo alguem. Some quando ele fecha, ou quando a lista de reservas e
+     redesenhada — que e o momento em que ele viu.
+
+     A assinatura antiga continua valendo: as chamadas existentes passam so a
+     mensagem e seguem com os mesmos 2,6s. */
+  function toast(msg, opcoes) {
     var t = document.getElementById('pq-toast');
     if (!t) return;
+    opcoes = opcoes || {};
     var m = t.querySelector('[data-toast-msg]');
-    if (m) m.textContent = msg;
+    if (m) m.textContent = opcoes.texto ? msg + ' — ' + opcoes.texto : msg;
     t.hidden = false;
+    t.classList.toggle('is-persistent', Boolean(opcoes.persistente));
     clearTimeout(t._pqt);
-    t._pqt = setTimeout(function () { t.hidden = true; }, 2600);
+    if (!opcoes.persistente) {
+      t._pqt = setTimeout(function () { t.hidden = true; }, 2600);
+    }
   }
   window.pqToast = toast;
+  window.pqToastFechar = function () {
+    var t = document.getElementById('pq-toast');
+    if (!t) return;
+    clearTimeout(t._pqt);
+    t.hidden = true;
+    t.classList.remove('is-persistent');
+  };
+
+  /* Fechar no clique. Sem isto, um toast persistente so sairia da tela com F5
+     — e ficaria tapando o proprio botao de aprovar. */
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('#pq-toast')) window.pqToastFechar();
+  });
 
   function closeSportSelects(except) {
     document.querySelectorAll('[data-sport-select]').forEach(function (picker) {

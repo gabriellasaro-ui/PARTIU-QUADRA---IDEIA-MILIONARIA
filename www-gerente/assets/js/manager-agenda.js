@@ -122,13 +122,44 @@ function eventosApi(quadras) {
   });
 }
 
+/* Expediente da semana: {quadraId: {dia: [[abre, fecha], ...]}}.
+
+   Guardado no modulo porque a grade e desenhada em dois lugares (desktop e
+   mobile) e refazer a chamada para cada um dobraria o trafego para o mesmo
+   dado. */
+let expedienteCarregado = {};
+let colunasCarregadas = [];
+
 async function eventosDaSemana(segunda) {
   if (API_BASE_URL) {
     const data = await managerService.agenda(segunda.toISOString().slice(0, 10));
     quadrasCarregadas = data.quadras;
+    expedienteCarregado = data.expediente || {};
+    colunasCarregadas = data.colunas || [];
     return eventosApi(data.eventos);
   }
+  expedienteCarregado = {};
+  colunasCarregadas = [];
   return eventosMock(segunda);
+}
+
+/* Faixas de funcionamento de UMA coluna (dia) da grade.
+
+   Sem quadra escolhida, a grade mostra a arena inteira: uma hora conta como
+   aberta se QUALQUER quadra abre nela. Fechar a coluna porque a quadra 2 nao
+   abre esconderia a 1, que abre.
+
+   Sem expediente conhecido (mock, ou backend antigo), devolve null — e a grade
+   nao pinta nada, em vez de inventar que esta tudo aberto ou tudo fechado. */
+function faixasDoDia(diaISO, quadraId) {
+  const ids = Object.keys(expedienteCarregado);
+  if (!ids.length) return null;
+  const alvos = quadraId && expedienteCarregado[quadraId] ? [quadraId] : ids;
+  const faixas = [];
+  alvos.forEach((id) => {
+    (expedienteCarregado[id]?.[diaISO] || []).forEach((f) => faixas.push(f));
+  });
+  return faixas;
 }
 
 function atributosEvento(e) {
@@ -166,11 +197,47 @@ function renderDesktop(root, eventos, segunda) {
   const altura = horas.length * ALTURA_HORA;
 
   body.style.setProperty('--hourh', `${ALTURA_HORA}px`);
+  /* A quadra escolhida no filtro, quando ha uma. O filtro guarda o ROTULO
+     (nome da quadra), e o expediente e indexado por id — a ponte e aqui. */
+  const quadraAtual = quadraFiltro && quadraFiltro !== 'todas'
+    ? (quadrasCarregadas.find((c) => c.label === quadraFiltro)?.id || null)
+    : null;
+
   body.innerHTML = `<div class="cal-gutter">${
     horas.map((h) => `<div class="hr"><span>${String(h).padStart(2, '0')}:00</span></div>`).join('')
   }</div>` + DIAS.map((_, i) => {
     const doDia = eventos.filter((e) => e.dow === i);
-    return `<div class="cal-col${ehHoje(i) ? ' today' : ''}" style="min-height:${altura}px">${
+
+    /* FECHADO DESENHADO, e nao deixado em branco.
+
+       A grade so mostrava reservas: espaco vazio podia ser horario livre
+       esperando cliente OU quadra fechada. As duas coisas pedem acoes opostas
+       do dono — uma diz "baixe o preco", a outra diz "abra o dia" — e ele nao
+       tinha como distinguir olhando.
+
+       As faixas fechadas viram blocos hachurados por cima da coluna. Sem
+       expediente conhecido nao desenha nada: inventar "tudo aberto" seria
+       repetir o problema com outra cara. */
+    const diaISO = colunasCarregadas[i]?.dia;
+    const faixas = diaISO ? faixasDoDia(diaISO, quadraAtual) : null;
+    let fechados = '';
+    if (faixas) {
+      if (!faixas.length) {
+        fechados = `<div class="cal-closed" style="top:0;height:${altura}px"><span>Fechado</span></div>`;
+      } else {
+        const abre = Math.min(...faixas.map((f) => f[0]));
+        const fecha = Math.max(...faixas.map((f) => f[1]));
+        if (abre > HORA_INICIAL) {
+          fechados += `<div class="cal-closed" style="top:0;height:${(abre - HORA_INICIAL) * ALTURA_HORA}px"></div>`;
+        }
+        if (fecha < HORA_FINAL + 1) {
+          const topo = (fecha - HORA_INICIAL) * ALTURA_HORA;
+          fechados += `<div class="cal-closed" style="top:${topo}px;height:${altura - topo}px"></div>`;
+        }
+      }
+    }
+
+    return `<div class="cal-col${ehHoje(i) ? ' today' : ''}" style="min-height:${altura}px">${fechados}${
       doDia.map((e) => {
         const top = (e.inicio - HORA_INICIAL) * ALTURA_HORA;
         const h = Math.max(34, (e.fim - e.inicio) * ALTURA_HORA - 4);

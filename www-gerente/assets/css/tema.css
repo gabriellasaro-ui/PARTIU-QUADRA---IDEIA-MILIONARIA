@@ -173,3 +173,152 @@ body {
 :root:not([data-theme="light"]) .manager-court-photo img {
   filter: brightness(.88);
 }
+
+
+/* ══════════════ Reservas: escopo, paginador e toast que fica ══════════════ */
+
+/* ABAS DE ESCOPO — avulsas x mensalistas.
+
+   Maiores que os filtros de status logo abaixo, e de proposito: sao coisas de
+   niveis diferentes. O escopo troca O QUE se esta vendo; o filtro so recorta
+   dentro disso. Com o mesmo peso visual, o dono lia cinco abas irmas e nao
+   entendia por que "Mensalistas" nao convivia com "Pagas". */
+.manager-scope-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 18px;
+}
+
+.manager-scope-tabs > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  color: var(--pq-muted);
+  font-size: 14px;
+  font-weight: 700;
+  transition: background .14s ease, color .14s ease, border-color .14s ease;
+}
+
+.manager-scope-tabs > button.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  /* Texto ESCURO sobre o verde: no tema escuro a marca e clara, e branco
+     sobre ela nao se le. */
+  color: #0b1a12;
+}
+
+/* O contador dentro da aba responde "tem algo aqui?" antes do clique. */
+.scope-count {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* PAGINADOR.
+
+   O texto do meio carrega o total ("1-20 de 148"), que e o que responde "ja vi
+   tudo?". So com setas, o dono clica ate acabar sem saber o tamanho do que
+   esta olhando — e era exatamente esse o problema do corte silencioso em 200
+   linhas. */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pq-line);
+}
+
+.pager__info {
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pager button[disabled] {
+  opacity: .4;
+  cursor: default;
+}
+
+/* TOAST QUE FICA.
+
+   O aviso de solicitacao nao pode sumir em 2,6s: e decisao com prazo de 15
+   minutos e o dono pode estar de costas para a tela. Fica ate ele fechar (ou
+   ate a lista ser redesenhada, que e quando ele viu).
+
+   Cor de marca e nao neutra: este toast pede acao, e nao confirma algo que ja
+   aconteceu como os outros. */
+.toast.is-persistent {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #0b1a12;
+  cursor: pointer;
+  box-shadow: var(--pq-shadow-2);
+}
+
+.toast.is-persistent .ic {
+  color: #0b1a12;
+}
+
+
+/* ════════════════════ Agenda: o fechado ganha desenho ════════════════════ */
+
+/* HORARIO FECHADO.
+
+   A grade so desenhava reservas, e espaco vazio era ambiguo: horario livre
+   esperando cliente, ou quadra que nem abre nesse dia? As duas situacoes
+   pedem acoes OPOSTAS do dono — "baixe o preco" contra "abra o dia" — e ele
+   nao tinha como distinguir olhando.
+
+   Hachura, e nao cor cheia: cor cheia competiria com os blocos de reserva, que
+   sao o que importa na tela. A hachura le como "aqui nao ha o que acontecer"
+   sem puxar o olho. */
+.cal-closed {
+  position: absolute;
+  z-index: 0;
+  right: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--pq-line-strong) 55%, transparent) 0 5px,
+    transparent 5px 11px
+  );
+}
+
+.cal-closed > span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--pq-panel);
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+/* Os eventos ficam ACIMA da hachura: ela e fundo, nao sobreposicao. */
+.cal-ev {
+  position: relative;
+  z-index: 1;
+}
+
+/* A legenda ganha o terceiro estado, senao a hachura aparece na grade sem
+   nada que a explique. */
+.cal-legend .fechado {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--pq-line-strong) 0 3px,
+    transparent 3px 6px
+  );
+  background-color: transparent;
+}

@@ -143,7 +143,11 @@ export const managerService = {
     return {
       quadras: (data.quadras || []).map(mapCourt),
       eventos: (data.eventos || []).map(mapAgendaEvent),
-      colunas: data.colunas || []
+      colunas: data.colunas || [],
+      /* O expediente por quadra e por dia. Sem ele a grade nao distingue
+         horario livre de quadra fechada, e espaco vazio volta a ser ambiguo —
+         que era o defeito. Este mapa estava sendo descartado aqui. */
+      expediente: data.expediente || {}
     };
   },
 

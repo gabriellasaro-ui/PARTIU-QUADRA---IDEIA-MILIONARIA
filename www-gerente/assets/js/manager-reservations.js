@@ -19,6 +19,13 @@ const MEMBERS_KEY = 'manager-members';
 let filtro = '';
 let busca = '';
 
+/* Estado da tela. Modulo e nao DOM porque a tela e remontada a cada troca de
+   rota: guardar no elemento faria a pagina voltar para a 1 toda vez que o dono
+   abrisse uma reserva e voltasse. */
+let escopo = 'avulso';
+let pagina = 1;
+const POR_PAGINA = 20;
+
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -66,9 +73,19 @@ export async function renderManagerReservations(root) {
   const lista = root.querySelector('[data-manager-reservation-list]');
   if (!lista) return;
 
-  // `loadBookings` devolve o envelope da paginacao; a lista fica em .reservas.
-  const pagina = await loadBookings({ porPagina: 50 });
-  const todas = pagina.reservas;
+  /* A busca e o filtro de status vao para o SERVIDOR junto da pagina.
+
+     Filtrar no cliente sobre uma pagina de 20 daria um resultado ridiculo:
+     "nenhuma reserva" porque o que se procura esta na pagina 4. Quem pagina
+     tem de filtrar do mesmo lado. */
+  const resposta = await loadBookings({
+    pagina,
+    porPagina: POR_PAGINA,
+    plano: 'avulso',
+    status: filtro || undefined,
+    q: busca.trim() || undefined
+  });
+  const todas = resposta.reservas;
   const solicitadas = todas.filter((r) => r.status === 'Solicitada');
 
   // O banner some quando nao ha o que responder — um aviso permanente vira
@@ -76,6 +93,7 @@ export async function renderManagerReservations(root) {
   const banner = root.querySelector('[data-booking-banner]');
   if (banner) {
     banner.hidden = solicitadas.length === 0;
+    // (a contagem completa e ajustada abaixo, depois do resumo)
     const texto = root.querySelector('[data-booking-banner-count]');
     if (texto) {
       texto.textContent = solicitadas.length === 1
@@ -88,18 +106,40 @@ export async function renderManagerReservations(root) {
     const el = root.querySelector(sel);
     if (el) el.textContent = valor;
   };
-  set('[data-booking-total]', todas.length);
-  set('[data-booking-volume]', formatCurrency(todas.reduce((t, r) => t + Number(r.valor || 0), 0)));
-  set('[data-booking-pending]', solicitadas.length);
-  root.querySelector('[data-booking-pending-card]')?.classList.toggle('has-pending', solicitadas.length > 0);
+  // O TOTAL do conjunto, e nao o tamanho da pagina: "20 reservas no periodo"
+  // quando existem 148 seria simplesmente falso.
+  set('[data-booking-total]', resposta.total);
+  /* Valor e pendencias tambem sao do CONJUNTO, e nao da pagina.
 
-  const termo = busca.trim().toLowerCase();
-  const visiveis = todas.filter((r) => (!filtro || r.cls === filtro)
-    && (!termo || `${r.cliente} ${r.quadra} ${r.codigo || ''}`.toLowerCase().includes(termo)));
+     Somar a pagina daria "R$ 2.400 movimentados" numa arena que movimentou 18
+     mil — e o dono confere o proprio caixa por esse numero. Vem de uma consulta
+     separada, sem paginar, porque totalizador nao pagina. */
+  const resumo = await loadBookings({ porPagina: 100, plano: 'avulso' });
+  set('[data-booking-volume]', formatCurrency(
+    resumo.reservas.reduce((t, r) => t + Number(r.valor || 0), 0)
+  ));
+  const pendentesTotal = resumo.reservas.filter((r) => r.status === 'Solicitada').length;
+  set('[data-booking-pending]', pendentesTotal);
+  root.querySelector('[data-booking-pending-card]')?.classList.toggle('has-pending', pendentesTotal > 0);
 
-  lista.innerHTML = visiveis.map(linha).join('');
+  lista.innerHTML = todas.map(linha).join('');
   const vazio = root.querySelector('[data-booking-empty]');
-  if (vazio) vazio.hidden = visiveis.length > 0;
+  if (vazio) vazio.hidden = todas.length > 0;
+
+  /* Paginador: o TOTAL em texto, e nao so as setas.
+
+     "1-20 de 148" e o que responde "ja vi tudo?" — com setas apenas, o dono
+     clica ate acabar sem nunca saber o tamanho do que esta olhando. */
+  const pager = root.querySelector('[data-booking-pager]');
+  if (pager) {
+    pager.hidden = resposta.paginas <= 1;
+    const primeiro = todas.length ? (resposta.pagina - 1) * resposta.porPagina + 1 : 0;
+    const ultimo = (resposta.pagina - 1) * resposta.porPagina + todas.length;
+    const info = pager.querySelector('[data-pager-info]');
+    if (info) info.textContent = `${primeiro}-${ultimo} de ${resposta.total}`;
+    pager.querySelector('[data-pager-prev]').disabled = resposta.pagina <= 1;
+    pager.querySelector('[data-pager-next]').disabled = resposta.pagina >= resposta.paginas;
+  }
 
   root.querySelectorAll('[data-booking-filter]').forEach((b) => {
     b.classList.toggle('on', b.dataset.bookingFilter === filtro);
@@ -112,12 +152,22 @@ export async function renderManagerReservations(root) {
     } catch (error) {}
   }
   const box = root.querySelector('[data-manager-mensal-list]');
-  if (box) {
-    box.innerHTML = mensalistas.length
-      ? mensalistas.map(cardMensalista).join('')
-      : '<p class="panel-sub">Nenhum mensalista ainda. Quem assina aparece aqui com o horário fixo.</p>';
-  }
+  if (box) box.innerHTML = mensalistas.map(cardMensalista).join('');
+  const vazioMensal = root.querySelector('[data-mensal-empty]');
+  if (vazioMensal) vazioMensal.hidden = mensalistas.length > 0;
   set('[data-manager-mensal-count]', mensalistas.length);
+
+  /* ABAS DE ESCOPO. Avulsa e mensalista sao operacoes diferentes: uma e
+     decisao com prazo, a outra e acompanhamento. Empilhadas na mesma pagina, a
+     pendencia de hoje se perdia no meio das recorrencias. */
+  set('[data-scope-count-avulso]', resumo.total);
+  set('[data-scope-count-mensalista]', mensalistas.length);
+  root.querySelectorAll('[data-booking-scope]').forEach((b) => {
+    b.classList.toggle('on', b.dataset.bookingScope === escopo);
+  });
+  root.querySelectorAll('[data-scope-panel]').forEach((p) => {
+    p.hidden = p.dataset.scopePanel !== escopo;
+  });
 
   window.pqRefreshIcons?.(root);
 }
@@ -154,14 +204,70 @@ export function initManagerReservations() {
     const aba = event.target.closest('[data-booking-filter]');
     if (aba) {
       filtro = aba.dataset.bookingFilter;
+      // Trocar o filtro VOLTA para a pagina 1: continuar na 4 mostraria
+      // "nenhuma reserva" para um filtro que tem tres.
+      pagina = 1;
       await renderManagerReservations(root);
+      return;
+    }
+
+    const troca = event.target.closest('[data-booking-scope]');
+    if (troca) {
+      escopo = troca.dataset.bookingScope;
+      pagina = 1;
+      await renderManagerReservations(root);
+      return;
+    }
+
+    const anterior = event.target.closest('[data-pager-prev]');
+    if (anterior && !anterior.disabled) {
+      pagina = Math.max(1, pagina - 1);
+      await renderManagerReservations(root);
+      // Voltar ao topo da lista: paginar e ficar no rodape faz a pessoa achar
+      // que nada mudou.
+      root.querySelector('#solicitacoes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    const proxima = event.target.closest('[data-pager-next]');
+    if (proxima && !proxima.disabled) {
+      pagina += 1;
+      await renderManagerReservations(root);
+      root.querySelector('#solicitacoes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
 
+  /* A busca vai para o SERVIDOR, entao nao pode ir a cada tecla: sao 20
+     requisicoes para escrever "Matheus". Espera 300ms depois da ultima tecla,
+     que e menos do que se leva para digitar a proxima letra. */
+  let esperaBusca = null;
   document.addEventListener('input', (event) => {
     const campo = event.target.closest('[data-booking-search]');
     if (!campo) return;
     busca = campo.value;
-    renderManagerReservations(document.querySelector('[data-desktop-route-view]'));
+    pagina = 1;
+    clearTimeout(esperaBusca);
+    esperaBusca = setTimeout(() => {
+      renderManagerReservations(document.querySelector('[data-desktop-route-view]'));
+    }, 300);
+  });
+
+  /* SOLICITACAO CHEGANDO: toast na hora.
+
+     O dono esta no balcao com o cliente na frente. Descobrir a solicitacao no
+     proximo F5 e tarde: a reserva expira sozinha em 15 minutos. O evento vem
+     pelo WebSocket; se a tela de reservas estiver aberta, ela se redesenha
+     junto — ver o toast e a lista continuar velha seria pior que nao avisar. */
+  window.addEventListener('pq:ws:event', async (evento) => {
+    const dado = evento.detail || {};
+    if (dado.type !== 'reserva.solicitada') return;
+    window.pqToast?.(dado.titulo || 'Nova solicitação de reserva', {
+      persistente: true,
+      texto: dado.texto
+    });
+    const root = document.querySelector('[data-desktop-route-view]');
+    if (root?.querySelector('[data-manager-reservation-list]')) {
+      await renderManagerReservations(root);
+    }
   });
 }

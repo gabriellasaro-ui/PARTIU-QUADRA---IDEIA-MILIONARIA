@@ -14,10 +14,24 @@ import {
 } from './manager-forms.js';
 import { renderManagerFinance, initManagerFinance } from './manager-finance.js';
 import { aplicarTema, definirTema, claroLigado } from '../../services/tema.js';
+import { connectWS, disconnectWS } from '../../services/ws.js';
+import storage from '../../storage/storage.js';
 
 /* Antes de qualquer rota: sem isto o painel abre claro e SALTA para
    escuro quando o tema for aplicado — um flash branco a cada abertura. */
 aplicarTema();
+
+/* TEMPO REAL no painel.
+
+   O painel nao tinha WebSocket nenhum — o dono so descobria uma solicitacao
+   nova recarregando a pagina, e a reserva expira sozinha em 15 minutos. Ele
+   esta no balcao, com o cliente na frente; F5 nao e um plano.
+
+   Conecta so com sessao: sem token o /ws responde 401 e o backoff ficaria
+   tentando para sempre numa tela de login. */
+if (storage.getAuthToken()) connectWS();
+
+window.addEventListener('pq:auth-expired', disconnectWS);
 
 const DESKTOP_ROUTES = {
   dashboard: {

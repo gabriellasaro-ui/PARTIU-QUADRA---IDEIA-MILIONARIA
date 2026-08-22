@@ -49,7 +49,7 @@ from .bookings import (
     _sessions,
     compute_quote,
 )
-from .catalog import _as_local
+from .catalog import _as_local, _day_window
 
 PAYMENT_MANUAL = "manual"
 
@@ -264,11 +264,12 @@ def agenda(db: Session, manager, semana: str | None = None) -> dict:
             "statusClass": _STATUS_CLASS.get(booking.status, "pendente"),
         })
 
+    cortes = repo.list_courts_for_arena(db, arena.id)
     colunas = []
     for i in range(7):
         d = start.date() + timedelta(days=i)
         colunas.append({"dia": d.strftime("%Y-%m-%d"), "rotulo": d.strftime("%a, %d/%m")})
-    quadras = [serialize_court(c) for c in repo.list_courts_for_arena(db, arena.id)]
+    quadras = [serialize_court(c) for c in cortes]
 
     return {
         "semana": start.date().strftime("%Y-%m-%d"),
@@ -276,7 +277,36 @@ def agenda(db: Session, manager, semana: str | None = None) -> dict:
         "quadras": quadras,
         "horas": list(range(8, 24)),
         "eventos": eventos,
+        # O EXPEDIENTE, por quadra e por dia.
+        #
+        # A grade so desenhava RESERVAS, e espaco vazio nao dizia nada: aquele
+        # buraco na terca de manha e horario livre esperando cliente, ou a
+        # quadra nem abre nesse dia? As duas coisas pediam acoes opostas do
+        # dono, e ele nao tinha como distinguir olhando.
+        "expediente": _expediente_da_semana(db, cortes, start),
     }
+
+
+def _expediente_da_semana(db: Session, courts, start: datetime) -> dict:
+    """{quadraId: {"AAAA-MM-DD": [[abre, fecha], ...]}}, faixas em horas.
+
+    Lista vazia = FECHADO naquele dia. `_day_window` ja concentra as tres
+    regras (linha ausente cai no padrao, linha com horario abre, closed fecha),
+    entao ler `court_recurring_availability` direto aqui refaria o bug que a
+    coluna `closed` veio corrigir.
+    """
+    mapa: dict = {}
+    for court in courts:
+        por_dia: dict = {}
+        for i in range(7):
+            dia = start + timedelta(days=i)
+            faixas = _day_window(db, court, dia)
+            por_dia[dia.date().strftime("%Y-%m-%d")] = [
+                [abre.hour + abre.minute / 60, fecha.hour + fecha.minute / 60]
+                for abre, fecha in faixas
+            ]
+        mapa[str(court.id)] = por_dia
+    return mapa
 
 
 # --- Reservas -------------------------------------------------------------
