@@ -31,13 +31,44 @@
   <svg class="ic sm"><use href="#i-right"/></svg>
 </a>
 
-<div class="tabs manager-scope-tabs" data-seg role="tablist" aria-label="Tipo de reserva">
-  <button type="button" class="on" data-booking-scope="avulso">
-    Avulsas <span class="scope-count num" data-scope-count-avulso>0</span>
-  </button>
-  <button type="button" data-booking-scope="mensalista">
-    Mensalistas <span class="scope-count num" data-scope-count-mensalista>0</span>
-  </button>
+<!-- BARRA DE CONTROLE: escopo, periodo e status na mesma linha.
+
+     Antes o escopo era um par de pilulas verdes grandes soltas no meio da
+     tela, e o periodo simplesmente NAO EXISTIA — a API aceitava `de`/`ate`
+     desde a fase 2 e nenhuma tela oferecia os campos.
+
+     Os tres controles pertencem juntos porque respondem a mesma pergunta:
+     "que recorte da agenda eu quero ver agora?". Separados, o dono mudava um e
+     procurava os outros. -->
+<div class="filtro-barra">
+  <div class="seg-escopo" role="tablist" aria-label="Tipo de reserva">
+    <button type="button" class="on" data-booking-scope="avulso">
+      Avulsas <span class="seg-num" data-scope-count-avulso>0</span>
+    </button>
+    <button type="button" data-booking-scope="mensalista">
+      Mensalistas <span class="seg-num" data-scope-count-mensalista>0</span>
+    </button>
+  </div>
+
+  <div class="filtro-periodo" data-scope-only="avulso">
+    <!-- ATALHOS + INTERVALO PROPRIO. Os atalhos servem ao dia a dia; quem
+         fecha o mes precisa de "1 a 31 de julho", e nao de "ultimos 30 dias a
+         partir de agora". -->
+    <div class="chips-periodo">
+      <button type="button" class="on" data-periodo="">Tudo</button>
+      <button type="button" data-periodo="7">7 dias</button>
+      <button type="button" data-periodo="30">30 dias</button>
+    </div>
+    <div class="campo-data">
+      <label for="res-de">De</label>
+      <input type="date" id="res-de" data-booking-de>
+      <label for="res-ate">até</label>
+      <input type="date" id="res-ate" data-booking-ate>
+      <button type="button" class="btn-limpar" data-periodo-limpar hidden aria-label="Limpar período">
+        <svg class="ic sm"><use href="#i-x"/></svg>
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════ AVULSAS ══════════════════════════ -->
@@ -74,14 +105,22 @@
          mostrava o que coubesse e o dono nao tinha como saber que faltava.
          Aqui o total aparece em texto, e nao so as setas — "1-20 de 148" e o
          que responde "ja vi tudo?". -->
+    <!-- O RODAPE aparece SEMPRE que ha reserva, mesmo com uma pagina so.
+
+         Antes ele sumia quando tudo cabia numa pagina — e sumia junto o TOTAL,
+         que e a informacao que responde "ja vi tudo?". O dono ficava sem saber
+         se estava vendo 18 de 18 ou 18 de 200. As setas e que ficam
+         desabilitadas quando nao ha para onde ir. -->
     <nav class="pager" data-booking-pager hidden aria-label="Páginas de reservas">
-      <button type="button" class="btn btn-soft btn-xs" data-pager-prev>
-        <svg class="ic sm"><use href="#i-left"/></svg> Anterior
-      </button>
       <span class="pager__info" data-pager-info></span>
-      <button type="button" class="btn btn-soft btn-xs" data-pager-next>
-        Próxima <svg class="ic sm"><use href="#i-right"/></svg>
-      </button>
+      <span class="pager__nav">
+        <button type="button" class="btn btn-soft btn-xs" data-pager-prev>
+          <svg class="ic sm"><use href="#i-left"/></svg> Anterior
+        </button>
+        <button type="button" class="btn btn-soft btn-xs" data-pager-next>
+          Próxima <svg class="ic sm"><use href="#i-right"/></svg>
+        </button>
+      </span>
     </nav>
   </section>
 </div>

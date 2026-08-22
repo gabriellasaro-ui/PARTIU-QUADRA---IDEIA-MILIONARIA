@@ -177,326 +177,7 @@ body {
 
 /* ══════════════ Reservas: escopo, paginador e toast que fica ══════════════ */
 
-/* ABAS DE ESCOPO — avulsas x mensalistas.
 
-   Maiores que os filtros de status logo abaixo, e de proposito: sao coisas de
-   niveis diferentes. O escopo troca O QUE se esta vendo; o filtro so recorta
-   dentro disso. Com o mesmo peso visual, o dono lia cinco abas irmas e nao
-   entendia por que "Mensalistas" nao convivia com "Pagas". */
-.manager-scope-tabs {
-  display: flex;
-  gap: 8px;
-  margin: 4px 0 18px;
-}
-
-.manager-scope-tabs > button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 18px;
-  border: 1px solid var(--pq-line);
-  border-radius: 999px;
-  background: var(--pq-panel);
-  color: var(--pq-muted);
-  font-size: 14px;
-  font-weight: 700;
-  transition: background .14s ease, color .14s ease, border-color .14s ease;
-}
-
-.manager-scope-tabs > button.on {
-  border-color: var(--pq-brand);
-  background: var(--pq-brand);
-  /* Texto ESCURO sobre o verde: no tema escuro a marca e clara, e branco
-     sobre ela nao se le. */
-  color: #0b1a12;
-}
-
-/* O contador dentro da aba responde "tem algo aqui?" antes do clique. */
-.scope-count {
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, currentColor 16%, transparent);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-/* PAGINADOR.
-
-   O texto do meio carrega o total ("1-20 de 148"), que e o que responde "ja vi
-   tudo?". So com setas, o dono clica ate acabar sem saber o tamanho do que
-   esta olhando — e era exatamente esse o problema do corte silencioso em 200
-   linhas. */
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--pq-line);
-}
-
-.pager__info {
-  color: var(--pq-muted);
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.pager button[disabled] {
-  opacity: .4;
-  cursor: default;
-}
-
-/* TOAST QUE FICA.
-
-   O aviso de solicitacao nao pode sumir em 2,6s: e decisao com prazo de 15
-   minutos e o dono pode estar de costas para a tela. Fica ate ele fechar (ou
-   ate a lista ser redesenhada, que e quando ele viu).
-
-   Cor de marca e nao neutra: este toast pede acao, e nao confirma algo que ja
-   aconteceu como os outros. */
-.toast.is-persistent {
-  border-color: var(--pq-brand);
-  background: var(--pq-brand);
-  color: #0b1a12;
-  cursor: pointer;
-  box-shadow: var(--pq-shadow-2);
-}
-
-.toast.is-persistent .ic {
-  color: #0b1a12;
-}
-
-
-/* ════════════════════ Agenda: o fechado ganha desenho ════════════════════ */
-
-/* HORARIO FECHADO.
-
-   A grade so desenhava reservas, e espaco vazio era ambiguo: horario livre
-   esperando cliente, ou quadra que nem abre nesse dia? As duas situacoes
-   pedem acoes OPOSTAS do dono — "baixe o preco" contra "abra o dia" — e ele
-   nao tinha como distinguir olhando.
-
-   Hachura, e nao cor cheia: cor cheia competiria com os blocos de reserva, que
-   sao o que importa na tela. A hachura le como "aqui nao ha o que acontecer"
-   sem puxar o olho. */
-/* MUITO mais discreta que a primeira versao.
-
-   A hachura estava com listras de 5px em 55% de opacidade e virou o elemento
-   DOMINANTE da tela: numa semana com o domingo fechado e a segunda abrindo so
-   a noite, metade do calendario era listra, e as quatro reservas de verdade
-   sumiam no meio. O fechado e CONTEXTO — a resposta a "por que aqui esta
-   vazio?" — e nao conteudo.
-
-   Agora: fundo levemente rebaixado, listras finas e espacadas, quase um papel
-   de parede. Continua distinguindo fechado de livre sem disputar com o que
-   importa. */
-.cal-closed {
-  position: absolute;
-  z-index: 0;
-  right: 0;
-  left: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  background-color: color-mix(in srgb, var(--pq-app-bg) 55%, transparent);
-  background-image: repeating-linear-gradient(
-    -45deg,
-    color-mix(in srgb, var(--pq-line) 60%, transparent) 0 1px,
-    transparent 1px 9px
-  );
-}
-
-/* Um rotulo por bloco, no alto e nao no centro: no centro de um bloco de dez
-   horas ele fica longe da borda que explica, e o olho nao liga uma coisa a
-   outra. */
-.cal-closed {
-  align-content: start;
-  padding-top: 8px;
-}
-
-.cal-closed > span {
-  padding: 2px 9px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--pq-panel) 88%, transparent);
-  color: var(--pq-muted);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .02em;
-}
-
-/* O dia inteiro fechado ganha o rotulo no meio: ali nao ha reserva nenhuma
-   para competir, e centralizado ele explica a coluna toda de uma vez. */
-.cal-closed.is-full {
-  align-content: center;
-  padding-top: 0;
-}
-
-/* Os eventos ficam ACIMA da hachura: ela e fundo, nao sobreposicao.
-
-   SO z-index. `position: relative` aqui — que foi o que escrevi primeiro —
-   sobrescreve o `position: absolute` de desktop.css, e e ele que coloca cada
-   reserva na sua hora. Com relative, os blocos voltavam ao fluxo normal e se
-   empilhavam um debaixo do outro: a primeira reserva do dia parecia certa (por
-   acaso, e a primeira do fluxo) e as seguintes escorregavam para fora da
-   coluna. z-index ja funciona porque o elemento ja tem posicao nao-estatica. */
-.cal-ev {
-  z-index: 1;
-}
-
-/* A legenda ganha o terceiro estado, senao a hachura aparece na grade sem
-   nada que a explique. */
-.cal-legend .fechado {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--pq-line-strong) 0 3px,
-    transparent 3px 6px
-  );
-  background-color: transparent;
-}
-
-
-/* ═════════════ Estados da agenda: cor que carrega significado ═════════════
-
-   Fundo e tinta por estado, em par. No claro sao os tons palidos originais; no
-   escuro, fundos profundos com tinta clara — o inverso, e nao o mesmo hex,
-   porque contraste nao se conserva ao virar o fundo.
-
-   A borda esquerda de 3px continua, mas deixou de ser a UNICA pista: numa
-   grade de sete colunas ninguem le 3 pixels de relance. */
-:root {
-  --ev-pago-bg: #14372a;
-  --ev-pago-ink: #7ee3b4;
-  --ev-conf-bg: #16294a;
-  --ev-conf-ink: #93b4ff;
-  --ev-pend-bg: #3a2c14;
-  --ev-pend-ink: #f5c451;
-  --ev-sol-bg: #3d2a12;
-  --ev-sol-ink: #ffb454;
-}
-
-:root[data-theme="light"] {
-  --ev-pago-bg: #e7f2ea;
-  --ev-pago-ink: #0c5c38;
-  --ev-conf-bg: #e6efff;
-  --ev-conf-ink: #1c3d8f;
-  --ev-pend-bg: #fff3d6;
-  --ev-pend-ink: #7a4d10;
-  --ev-sol-bg: #ffeacc;
-  --ev-sol-ink: #8a4b06;
-}
-
-/* AS LINHAS DA GRADE.
-
-   `.cal-col` e `.ch-day` desenham a divisao com border-left, e o listrado das
-   horas vem de um repeating-linear-gradient. No escuro, essas linhas herdavam
-   uma cor clara demais e a grade virava uma gaiola de riscos brancos por cima
-   do conteudo — o proprio calendario competia com as reservas. Aqui elas
-   voltam a ser divisao: visiveis o bastante para orientar, discretas o
-   bastante para sumir quando nao se olha para elas. */
-:root:not([data-theme="light"]) .cal,
-:root:not([data-theme="light"]) .cal-head,
-:root:not([data-theme="light"]) .ch-day,
-:root:not([data-theme="light"]) .cal-col,
-:root:not([data-theme="light"]) .cal-gutter,
-:root:not([data-theme="light"]) .cal-gutter .hr {
-  border-color: var(--pq-line);
-}
-
-:root:not([data-theme="light"]) .cal-col {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    var(--pq-line) 0,
-    var(--pq-line) 1px,
-    transparent 1px,
-    transparent var(--hourh)
-  );
-}
-
-/* A regua das horas e referencia, nao conteudo: fica em cinza medio para nao
-   disputar com os nomes dos clientes. */
-:root:not([data-theme="light"]) .cal-gutter .hr span {
-  color: var(--pq-muted);
-}
-
-/* Hover no escuro CLAREIA. `filter: brightness(.97)` escurece — pensado para
-   fundo claro — e sobre bloco escuro o efeito e o bloco sumir ao passar o
-   mouse, o oposto de destacar. */
-:root:not([data-theme="light"]) .cal-ev:hover {
-  filter: brightness(1.25);
-}
-
-/* Reserva cancelada/recusada: riscada, mas LEGIVEL.
-
-   Com --pq-muted sobre o painel claro o contraste ficava em 3,9 — abaixo do
-   minimo de leitura. O risco e o cinza do fundo ja dizem "isto nao vale mais";
-   apagar o texto tambem e diminuir duas vezes, e o dono ainda precisa LER de
-   quem era a reserva que caiu. */
-:root[data-theme="light"] .cal-ev.recusada,
-:root[data-theme="light"] .cal-ev.cancelada,
-:root[data-theme="light"] .cal-ev.expirada,
-html[data-manager-app][data-theme="light"] .cal-ev.recusada,
-html[data-manager-app][data-theme="light"] .cal-ev.cancelada,
-html[data-manager-app][data-theme="light"] .cal-ev.expirada {
-  color: var(--pq-ink-soft);
-}
-
-
-/* ═══════════ Agenda: a semana INTEIRA visivel, sem rolagem interna ═══════ */
-
-/* O calendario tinha barra de rolagem PROPRIA (max-height 680px, overflow
-   auto) dentro de uma pagina que tambem rola. Duas rolagens aninhadas na tela
-   cujo objetivo e "ver a semana de uma vez": o dono rolava a de dentro
-   procurando a reserva, e a de fora sumia com o cabecalho.
-
-   Agora a grade tem a altura que precisar. Ela se mantem curta porque
-   ajustarJanela() ja recorta o intervalo pelo expediente real e encolhe a hora
-   ate 34px — quem abre so das 18h as 23h ve cinco linhas, e nao dezesseis. */
-html[data-manager-app][data-manager-view="agenda"] .cal-body,
-html[data-manager-app] .cal-body {
-  max-height: none;
-  overflow-y: visible;
-}
-
-/* A regua das horas acompanha o fundo do painel: o rotulo tem fundo proprio
-   para "cortar" a linha da grade atras dele, e com o fundo errado ele virava
-   um retangulo claro sobre a coluna escura. */
-:root:not([data-theme="light"]) .cal-gutter .hr span {
-  background: var(--pq-panel);
-}
-
-/* O DIA DE HOJE precisa se destacar mais que uma bolinha no cabecalho.
-
-   Numa grade de sete colunas iguais, achar "onde estou" custa uma leitura de
-   datas. A coluna de hoje ganha um fundo levemente distinto e uma borda de
-   marca — o dono acha o dia sem ler numero nenhum. */
-html[data-manager-app][data-manager-view="agenda"] .cal-col.today {
-  background-color: color-mix(in srgb, var(--pq-brand) 7%, transparent);
-  box-shadow: inset 2px 0 0 var(--pq-brand), inset -2px 0 0 var(--pq-brand);
-}
-
-
-/* ═════════════ Agenda: densidade e leitura, no estilo de calendario ═══════ */
-
-/* BLOCOS SOLIDOS.
-
-   Os blocos eram fundo escuro com texto colorido — legiveis um a um, mas numa
-   grade de sete colunas o olho procura MANCHA DE COR, e nao le texto. Com
-   fundo quase igual ao da coluna, achar as reservas exigia varrer a tela.
-
-   Agora a cor do estado e o FUNDO, com tinta escura por cima. E o que todo
-   calendario faz, e o motivo e esse: a cor tem de ser vista antes de ser
-   lida. */
-html[data-manager-app] .cal-ev {
-  padding: 3px 7px;
-  border-left-width: 0;
-  border-radius: 5px;
-  box-shadow: none;
-  line-height: 1.2;
-}
-
-html[data-manager-app] .cal-ev.pago { background: var(--pq-brand); color: #06120c; }
 html[data-manager-app] .cal-ev.confirmado { background: var(--ev-conf-solid); color: #06101f; }
 html[data-manager-app] .cal-ev.pendente { background: var(--pq-gold); color: #241a04; }
 html[data-manager-app] .cal-ev.solicitada { background: var(--ev-sol-solid); color: #2a1602; }
@@ -876,3 +557,323 @@ html[data-manager-app][data-manager-view="agenda"] .cal-col {
   font-size: 12.5px;
   text-align: center;
 }
+
+
+/* ═══════════════ Reservas: barra de controle do recorte ═════════════════ */
+
+/* Escopo, periodo e status na mesma linha, porque respondem a mesma pergunta:
+   "que recorte da agenda eu quero ver agora?". */
+.filtro-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 4px 0 18px;
+}
+
+/* SEGMENTO, e nao duas pilulas verdes soltas.
+
+   Antes eram dois botoes grandes de marca boiando no meio da tela — pesavam
+   mais que o titulo da secao e mais que o proprio conteudo. Segmento com
+   trilho: o par se le como UMA escolha entre duas, que e o que ele e, e o
+   ativo se destaca sem gritar. */
+.seg-escopo {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--pq-line);
+  border-radius: 10px;
+  background: var(--pq-panel-2);
+}
+
+.seg-escopo > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background .14s ease, color .14s ease;
+}
+
+.seg-escopo > button.on {
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  box-shadow: var(--pq-shadow-1);
+}
+
+.seg-num {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--pq-tint-strong);
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.seg-escopo > button.on .seg-num {
+  background: var(--pq-brand);
+  color: #06120c;
+}
+
+/* PERIODO: atalhos + intervalo proprio, lado a lado.
+
+   Os atalhos servem ao dia a dia; quem fecha o mes precisa de "1 a 31 de
+   julho". Os dois escrevem no MESMO par de datas — dois estados paralelos
+   sempre divergem, e o dono nao saberia qual vale. */
+.filtro-periodo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.chips-periodo { display: inline-flex; gap: 5px; }
+
+.chips-periodo > button {
+  padding: 6px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: all .14s ease;
+}
+
+.chips-periodo > button.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+.campo-data {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--pq-line);
+  border-radius: 10px;
+  background: var(--pq-panel);
+}
+
+.campo-data label {
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.campo-data input[type="date"] {
+  padding: 3px 5px;
+  border: 0;
+  background: transparent;
+  color: var(--pq-ink);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.campo-data input[type="date"]:focus { outline: 2px solid var(--pq-brand); border-radius: 5px; }
+
+.btn-limpar {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pq-tint-strong);
+  color: var(--pq-muted);
+}
+
+.btn-limpar:hover { background: var(--pq-danger-soft); color: var(--pq-danger); }
+
+/* O rodape da paginacao agora separa a INFORMACAO (esquerda) da NAVEGACAO
+   (direita): o total e leitura, as setas sao acao. */
+.pager { justify-content: space-between; }
+.pager__nav { display: inline-flex; gap: 8px; }
+
+
+/* ═══════════ Dashboard: as duas colunas com o mesmo peso ═══════════════ */
+
+/* "Proximas reservas" era 1,35fr contra 0,65fr da "Disponibilidade" — o dobro
+   da largura para uma lista que, numa arena comum, tem tres linhas. O
+   resultado era um retangulo branco enorme e vazio ao lado do bloco que
+   REALMENTE responde "como esta minha semana?", espremido em 300px.
+
+   O peso segue o uso, e nao a ordem em que as secoes foram escritas: as duas
+   valem o mesmo, entao dividem a largura. E a altura deixa de ser esticada —
+   um cartao com tres linhas nao precisa acompanhar a altura do vizinho. */
+html[data-manager-app] .manager-dashboard-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "bookings occupancy"
+    "intelligence occupancy";
+  align-items: start;
+}
+
+/* O cartao de proximas reservas para de crescer sem conteudo. Se houver muitas,
+   ele rola por dentro em vez de empurrar a pagina. */
+html[data-manager-app] .manager-panel--bookings {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+/* Vazio nao e um retangulo em branco: e uma frase que diz por que esta vazio. */
+.manager-empty-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 34px 20px;
+  color: var(--pq-muted);
+  font-size: 12.5px;
+}
+
+.manager-empty-inline .ic { width: 18px; height: 18px; opacity: .7; }
+
+/* O MAPA DE CALOR ganha o espaco que a coluna passou a ter: era o bloco mais
+   importante da tela desenhado no menor lugar dela. */
+.manager-heatmap__cell { min-height: 15px; }
+
+@media (max-width: 1100px) {
+  html[data-manager-app] .manager-dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "bookings" "intelligence" "occupancy";
+  }
+  html[data-manager-app] .manager-panel--bookings { max-height: none; }
+}
+
+
+/* ═════════════════ Galeria de fotos da quadra (cadastro) ════════════════ */
+
+/* Cinco vagas desde o inicio: a regra deixa de ser texto e vira o TAMANHO DA
+   TAREFA, visivel de relance. "Envie 5 fotos" escrito e uma frase; cinco
+   quadrados vazios sao um pedido. */
+.galeria {
+  padding: 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-panel-2);
+}
+
+.galeria__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.galeria__topo strong { display: block; font-size: 13.5px; }
+
+.galeria__topo small {
+  display: block;
+  margin-top: 2px;
+  color: var(--pq-gold);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.galeria__topo small.ok { color: var(--pq-brand); }
+
+.galeria__barra {
+  height: 4px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--pq-line);
+}
+
+.galeria__barra > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pq-gold);
+  transition: width .2s ease, background .2s ease;
+}
+
+.galeria__barra > i.ok { background: var(--pq-brand); }
+
+.galeria__grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 10px;
+}
+
+.galeria__item {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  background: var(--pq-line);
+}
+
+.galeria__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* A CAPA e a foto que aparece na busca. Dizer qual e evita a surpresa de
+   descobrir depois que a vitrine escolheu a pior imagem. */
+.galeria__item.capa { outline: 2px solid var(--pq-brand); outline-offset: -2px; }
+
+.galeria__item figcaption {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--pq-brand);
+  color: #06120c;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.galeria__x {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity .14s ease;
+}
+
+.galeria__item:hover .galeria__x,
+.galeria__x:focus-visible { opacity: 1; }
+
+/* Vaga: tracejada, para ler como "falta aqui" e nao como imagem quebrada. */
+.galeria__vaga {
+  display: grid;
+  aspect-ratio: 4 / 3;
+  place-items: center;
+  border: 1.5px dashed var(--pq-line-strong);
+  border-radius: 10px;
+  color: var(--pq-line-strong);
+}
+
+.galeria__vaga .ic { width: 22px; height: 22px; }
+
+.galeria__dica {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 12px 0 0;
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.galeria__dica .ic { flex: 0 0 auto; margin-top: 1px; }
+
+/* Salvar travado enquanto faltam fotos: recusar depois de a tela toda estar
+   preenchida e o pior momento para dar a noticia. */
+button[type="submit"][disabled] { opacity: .5; cursor: not-allowed; }

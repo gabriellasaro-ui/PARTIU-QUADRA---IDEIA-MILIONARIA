@@ -12,7 +12,7 @@ import { renderManagerMessages, initManagerMessages } from './manager-messages.j
 import { renderManagerBookingDetail, initManagerBookingDetail } from './manager-booking-detail.js';
 import {
   renderManagerBookingForm, renderManagerCourtForm, renderManagerSettings, initManagerForms
-, prefillReservaNova } from './manager-forms.js';
+, prefillReservaNova, initGaleriaQuadra } from './manager-forms.js';
 import { renderManagerFinance, initManagerFinance } from './manager-finance.js';
 import { aplicarTema, definirTema, claroLigado } from '../../services/tema.js';
 import { connectWS, disconnectWS } from '../../services/ws.js';
@@ -255,6 +255,7 @@ function initDesktopRouter() {
   initManagerMessages();
   initManagerBookingDetail();
   initManagerForms();
+  initGaleriaQuadra();
   window.addEventListener('hashchange', renderDesktopRoute);
   return renderDesktopRoute();
 }

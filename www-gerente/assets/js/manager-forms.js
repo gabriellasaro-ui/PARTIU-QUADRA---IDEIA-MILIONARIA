@@ -84,6 +84,14 @@ export async function renderManagerCourtForm(root) {
   const lista = API_BASE_URL ? (await loadCourts()).quadras : courts();
   const quadra = id ? lista.find((c) => String(c.id) === id) : null;
 
+  /* A galeria comeca com as fotos que a quadra JA tem.
+
+     Sem isto, editar o preco enviaria uma lista vazia e apagaria as cinco
+     fotos existentes — e o backend recusaria com "envie pelo menos 5", o que
+     e ainda mais confuso: o dono ve o erro numa tela onde as fotos estao
+     visivelmente la. */
+  definirFotos(quadra?.fotosLista || [], root);
+
   setPageMeta(
     quadra ? `Editar ${quadra.label}` : 'Cadastrar quadra',
     quadra ? 'Ajuste os dados do espaço' : 'Adicione um novo espaço à sua arena'
@@ -330,7 +338,14 @@ export function initManagerForms() {
           preco: Number(d.get('price')),
           abertura: String(d.get('abre')),
           fechamento: String(d.get('fecha')),
-          ativa: root.querySelector('[data-switch="active"]')?.classList.contains('on') ?? true
+          ativa: root.querySelector('[data-switch="active"]')?.classList.contains('on') ?? true,
+          /* AS FOTOS FALTAVAM NO CORPO.
+
+             O backend exige cinco desde a fase 2 e o formulario nunca as
+             enviava — nem uma. A regra existia dos dois lados e nao se
+             encontrava no meio: o campo mandava tudo menos justamente o que
+             era obrigatorio. */
+          fotos: fotosDoFormulario()
         };
         try {
           if (id) {
@@ -488,4 +503,129 @@ export function prefillReservaNova(root) {
       sel.value = hora;
     }
   }
+}
+
+
+/* ═══════════════════ Galeria de fotos da quadra ═══════════════════════════
+
+   O campo aceitava UMA foto e a vitrine exige cinco. Aqui a regra deixa de ser
+   um texto que ninguem le e vira estado da tela: contador, barra e o botao de
+   salvar travado ate completar.
+
+   Travar ANTES e nao depois: recusar no envio, com a tela toda preenchida, e o
+   pior momento possivel para dar a noticia — a pessoa ja gastou o esforco e
+   descobre que precisa sair para buscar imagem.
+*/
+const MIN_FOTOS = 5;
+
+/* As fotos vivem aqui e nao no DOM: o preview e um data URL grande, e guardar
+   em atributo faria o HTML da pagina crescer alguns megabytes. */
+let fotosDaQuadra = [];
+
+function pintarGaleria(root) {
+  const grade = root.querySelector('[data-galeria-grade]');
+  if (!grade) return;
+
+  grade.innerHTML = fotosDaQuadra.map((src, i) => `
+    <figure class="galeria__item${i === 0 ? ' capa' : ''}">
+      <img src="${src}" alt="Foto ${i + 1} da quadra">
+      ${i === 0 ? '<figcaption>Capa</figcaption>' : ''}
+      <button type="button" class="galeria__x" data-galeria-remove="${i}" aria-label="Remover foto ${i + 1}">
+        <svg class="ic sm"><use href="#i-trash"/></svg>
+      </button>
+    </figure>`).join('')
+    // Os espacos que faltam aparecem VAZIOS, e nao ausentes: cinco caixas
+    // desde o inicio mostram o tamanho da tarefa.
+    + Array.from({ length: Math.max(0, MIN_FOTOS - fotosDaQuadra.length) }, () =>
+      '<div class="galeria__vaga"><svg class="ic"><use href="#i-image"/></svg></div>').join('');
+
+  const conta = root.querySelector('[data-galeria-conta]');
+  const faltam = MIN_FOTOS - fotosDaQuadra.length;
+  if (conta) {
+    conta.textContent = faltam > 0
+      ? `${fotosDaQuadra.length} de ${MIN_FOTOS} — faltam ${faltam} para publicar`
+      : `${fotosDaQuadra.length} fotos · pronta para a vitrine`;
+    conta.classList.toggle('ok', faltam <= 0);
+  }
+
+  const barra = root.querySelector('[data-galeria-progresso]');
+  if (barra) {
+    barra.style.width = `${Math.min(100, (fotosDaQuadra.length / MIN_FOTOS) * 100)}%`;
+    barra.classList.toggle('ok', faltam <= 0);
+  }
+
+  /* O botao de salvar segue o estado. `title` e nao so `disabled`: botao
+     desabilitado sem explicacao faz a pessoa clicar de novo achando que a tela
+     travou. */
+  const salvar = root.querySelector('[type="submit"]');
+  if (salvar) {
+    salvar.disabled = faltam > 0;
+    salvar.title = faltam > 0 ? `Faltam ${faltam} fotos para publicar a quadra` : '';
+  }
+  window.pqRefreshIcons?.(root);
+}
+
+export function initGaleriaQuadra() {
+  document.addEventListener('change', async (event) => {
+    const input = event.target.closest('[data-galeria-input]');
+    if (!input) return;
+    const root = document.querySelector('[data-desktop-route-view]');
+    if (!root) return;
+
+    const arquivos = Array.from(input.files || []);
+    for (const arquivo of arquivos) {
+      if (!String(arquivo.type).startsWith('image/')) continue;
+      if (arquivo.size > 10 * 1024 * 1024) {
+        window.pqToast?.('Cada foto precisa ter até 10 MB');
+        continue;
+      }
+      try {
+        fotosDaQuadra.push(await reduzirImagem(arquivo));
+      } catch (error) {
+        window.pqToast?.('Não foi possível ler uma das imagens');
+      }
+    }
+    input.value = '';
+    pintarGaleria(root);
+  });
+
+  document.addEventListener('click', (event) => {
+    const x = event.target.closest('[data-galeria-remove]');
+    if (!x) return;
+    const root = document.querySelector('[data-desktop-route-view]');
+    fotosDaQuadra.splice(Number(x.dataset.galeriaRemove), 1);
+    pintarGaleria(root);
+  });
+}
+
+/* Reduz antes de enviar: foto de celular tem 4 MB, e cinco delas em data URL
+   passariam do limite do corpo da requisicao. 1280px basta para a vitrine. */
+function reduzirImagem(arquivo, maxLado = 1280, qualidade = 0.82) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onerror = () => reject(new Error('falha ao ler'));
+    leitor.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('falha ao abrir'));
+      img.onload = () => {
+        const escala = Math.min(1, maxLado / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * escala);
+        c.height = Math.round(img.naturalHeight * escala);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', qualidade));
+      };
+      img.src = String(leitor.result);
+    };
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
+export function fotosDoFormulario() {
+  return fotosDaQuadra.slice();
+}
+
+export function definirFotos(lista, root) {
+  fotosDaQuadra = Array.isArray(lista) ? lista.slice() : [];
+  if (root) pintarGaleria(root);
 }

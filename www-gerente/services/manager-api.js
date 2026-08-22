@@ -75,6 +75,9 @@ const mapCourt = (c) => ({
      dizer quais quadras ainda nao chegaram la — senao o dono so descobre
      quando percebe que aquela quadra nao recebe reserva. */
   fotos: (c.fotos || []).length,
+  /* A lista COMPLETA, para a tela de edicao repovoar a galeria. Sem ela,
+     editar o preco enviaria fotos: [] e apagaria as existentes. */
+  fotosLista: c.fotos || [],
   occupancy: 0,
   amenities: c.comodidades || []
 });

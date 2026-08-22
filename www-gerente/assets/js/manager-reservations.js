@@ -24,6 +24,8 @@ let busca = '';
    abrisse uma reserva e voltasse. */
 let escopo = 'avulso';
 let pagina = 1;
+let de = '';
+let ate = '';
 const POR_PAGINA = 20;
 
 function escapeHtml(value) {
@@ -83,7 +85,9 @@ export async function renderManagerReservations(root) {
     porPagina: POR_PAGINA,
     plano: 'avulso',
     status: filtro || undefined,
-    q: busca.trim() || undefined
+    q: busca.trim() || undefined,
+    de: de || undefined,
+    ate: ate || undefined
   });
   const todas = resposta.reservas;
   const solicitadas = todas.filter((r) => r.status === 'Solicitada');
@@ -114,7 +118,10 @@ export async function renderManagerReservations(root) {
      Somar a pagina daria "R$ 2.400 movimentados" numa arena que movimentou 18
      mil — e o dono confere o proprio caixa por esse numero. Vem de uma consulta
      separada, sem paginar, porque totalizador nao pagina. */
-  const resumo = await loadBookings({ porPagina: 100, plano: 'avulso' });
+  const resumo = await loadBookings({
+    porPagina: 100, plano: 'avulso',
+    de: de || undefined, ate: ate || undefined
+  });
   set('[data-booking-volume]', formatCurrency(
     resumo.reservas.reduce((t, r) => t + Number(r.valor || 0), 0)
   ));
@@ -132,7 +139,9 @@ export async function renderManagerReservations(root) {
      clica ate acabar sem nunca saber o tamanho do que esta olhando. */
   const pager = root.querySelector('[data-booking-pager]');
   if (pager) {
-    pager.hidden = resposta.paginas <= 1;
+    // Aparece sempre que ha reserva: o TOTAL e a informacao que responde "ja
+    // vi tudo?", e ela sumia junto com o paginador quando cabia numa pagina.
+    pager.hidden = resposta.total === 0;
     const primeiro = todas.length ? (resposta.pagina - 1) * resposta.porPagina + 1 : 0;
     const ultimo = (resposta.pagina - 1) * resposta.porPagina + todas.length;
     const info = pager.querySelector('[data-pager-info]');
@@ -168,6 +177,18 @@ export async function renderManagerReservations(root) {
   root.querySelectorAll('[data-scope-panel]').forEach((p) => {
     p.hidden = p.dataset.scopePanel !== escopo;
   });
+  // O periodo so vale para avulsas: mensalista e compromisso fixo, e filtrar
+  // por data ali nao responde nada.
+  root.querySelectorAll('[data-scope-only]').forEach((p) => {
+    p.hidden = p.dataset.scopeOnly !== escopo;
+  });
+
+  const campoDe = root.querySelector('[data-booking-de]');
+  const campoAte = root.querySelector('[data-booking-ate]');
+  if (campoDe) campoDe.value = de;
+  if (campoAte) campoAte.value = ate;
+  const limpar = root.querySelector('[data-periodo-limpar]');
+  if (limpar) limpar.hidden = !(de || ate);
 
   window.pqRefreshIcons?.(root);
 }
@@ -211,6 +232,41 @@ export function initManagerReservations() {
       return;
     }
 
+    /* ATALHOS DE PERIODO: preenchem os dois campos de data.
+
+       Nao sao um modo separado — escrevem em `de`/`ate` como se a pessoa
+       tivesse digitado. Dois estados paralelos ("atalho" e "intervalo") sempre
+       divergem: o dono clica em 7 dias, ajusta a data final e nao sabe mais
+       qual dos dois vale. */
+    const atalho = event.target.closest('[data-periodo]');
+    if (atalho) {
+      const dias = Number(atalho.dataset.periodo);
+      if (!dias) { de = ''; ate = ''; }
+      else {
+        const hoje = new Date();
+        const inicio = new Date(hoje);
+        inicio.setDate(inicio.getDate() - (dias - 1));
+        const iso = (d) => d.toISOString().slice(0, 10);
+        de = iso(inicio);
+        ate = iso(hoje);
+      }
+      root.querySelectorAll('[data-periodo]').forEach((b) => {
+        b.classList.toggle('on', b === atalho);
+      });
+      pagina = 1;
+      await renderManagerReservations(root);
+      return;
+    }
+
+    if (event.target.closest('[data-periodo-limpar]')) {
+      de = ''; ate = ''; pagina = 1;
+      root.querySelectorAll('[data-periodo]').forEach((b) => {
+        b.classList.toggle('on', b.dataset.periodo === '');
+      });
+      await renderManagerReservations(root);
+      return;
+    }
+
     const troca = event.target.closest('[data-booking-scope]');
     if (troca) {
       escopo = troca.dataset.bookingScope;
@@ -235,6 +291,21 @@ export function initManagerReservations() {
       await renderManagerReservations(root);
       root.querySelector('#solicitacoes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  });
+
+  /* Digitar a data aplica na hora. Sem "aplicar": um botao a mais entre a
+     escolha e o resultado, para um campo que ja tem valor completo. */
+  document.addEventListener('change', async (event) => {
+    const campo = event.target.closest('[data-booking-de], [data-booking-ate]');
+    if (!campo) return;
+    const root = document.querySelector('[data-desktop-route-view]');
+    if (!root) return;
+    if (campo.hasAttribute('data-booking-de')) de = campo.value;
+    else ate = campo.value;
+    // Digitou data: nenhum atalho esta ativo, porque o intervalo agora e outro.
+    root.querySelectorAll('[data-periodo]').forEach((b) => b.classList.remove('on'));
+    pagina = 1;
+    await renderManagerReservations(root);
   });
 
   /* A busca vai para o SERVIDOR, entao nao pode ir a cada tecla: sao 20

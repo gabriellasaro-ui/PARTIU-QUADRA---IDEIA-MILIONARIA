@@ -15,13 +15,39 @@
       <p>Como o espaço aparece para os jogadores na busca.</p>
     </div>
     <div class="set-fields">
-      <div class="set-avatar">
-        <span class="ava" data-court-photo>+</span>
-        <div>
-          <button type="button" class="btn btn-outline" data-file-trigger="#foto-file" data-court-photo-label>Enviar foto</button>
-          <input type="file" id="foto-file" accept="image/*" data-preview="[data-court-photo]" hidden>
-          <div class="av-meta">PNG ou JPG, até 5&nbsp;MB</div>
+      <!-- GALERIA, e nao "enviar foto" no singular.
+
+           O campo aceitava UMA imagem, e a vitrine exige cinco: quem escolhe
+           onde jogar quer ver o piso, a iluminacao, o vestiario e o entorno —
+           com uma foto o anuncio e promessa sem prova, e a arena que caprichou
+           fica igual a que nao caprichou.
+
+           A barra de progresso existe porque "5 fotos" dito em texto vira
+           regra abstrata; vendo 2 de 5 preenchidos, o dono sabe quanto falta
+           sem contar. E o botao de salvar so libera ao completar — recusar
+           depois de a pessoa ter preenchido a tela inteira e o pior momento
+           possivel para dar a noticia. -->
+      <div class="galeria" data-galeria>
+        <div class="galeria__topo">
+          <div>
+            <strong>Fotos da quadra</strong>
+            <small data-galeria-conta>0 de 5 — mínimo para publicar</small>
+          </div>
+          <button type="button" class="btn btn-outline btn-xs" data-file-trigger="#foto-file">
+            <svg class="ic sm"><use href="#i-image"/></svg> Adicionar fotos
+          </button>
+          <input type="file" id="foto-file" accept="image/*" multiple hidden data-galeria-input>
         </div>
+
+        <div class="galeria__barra"><i data-galeria-progresso style="width:0%"></i></div>
+
+        <div class="galeria__grade" data-galeria-grade></div>
+
+        <p class="galeria__dica">
+          <svg class="ic sm"><use href="#i-info"/></svg>
+          A primeira foto é a capa. Mostre o piso, a iluminação acesa, o vestiário
+          e a vista de fora — quadras com mais de 5 fotos recebem mais reservas.
+        </p>
       </div>
       <div class="inp"><label>Nome / apelido da quadra</label><input type="text" name="label" placeholder="Ex.: Society 1" required></div>
       <div class="input-row">
