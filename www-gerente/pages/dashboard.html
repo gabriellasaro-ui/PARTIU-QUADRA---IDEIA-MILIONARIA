@@ -23,20 +23,20 @@
 <section class="manager-dashboard-kpis" aria-label="Resumo operacional">
   <article class="manager-dashboard-kpi manager-dashboard-kpi--revenue">
     <span><svg class="ic"><use href="#i-dollar"/></svg></span>
-    <div><small>Faturamento no periodo</small><strong class="num">R$ <span data-overview-gross>0</span></strong></div>
+    <div><small>Faturamento no período</small><strong class="num">R$ <span data-overview-gross>0</span></strong></div>
     <a href="./dashboard.html#financeiro" aria-label="Abrir financeiro"><svg class="ic sm"><use href="#i-right"/></svg></a>
   </article>
   <article class="manager-dashboard-kpi">
     <span><svg class="ic"><use href="#i-calendar"/></svg></span>
-    <div><small>Reservas no periodo</small><strong class="num" data-overview-period-reservations>0</strong></div>
+    <div><small>Reservas no período</small><strong class="num" data-overview-period-reservations>0</strong></div>
   </article>
   <article class="manager-dashboard-kpi">
     <span><svg class="ic"><use href="#i-bell"/></svg></span>
-    <div><small>Solicitacoes abertas</small><strong class="num" data-overview-period-requests>0</strong></div>
+    <div><small>Solicitações abertas</small><strong class="num" data-overview-period-requests>0</strong></div>
   </article>
   <article class="manager-dashboard-kpi">
     <span><svg class="ic"><use href="#i-clock"/></svg></span>
-    <div><small>Ocupacao media</small><strong class="num"><span data-overview-occ>0</span>%</strong></div>
+    <div><small>Ocupação média</small><strong class="num"><span data-overview-occ>0</span>%</strong></div>
   </article>
 </section>
 
@@ -75,18 +75,21 @@
   </div>
   <div class="manager-chart">
     <svg class="lc" data-overview-chart viewBox="0 0 620 240" role="img" aria-label="Faturamento dos últimos sete dias">
-      <path class="lc-area" data-chart-area d="" fill="#e7f5ed"/>
-      <path class="lc-line" data-chart-line d=""/>
     </svg>
   </div>
 </section>
 
-<section class="manager-panel manager-panel--opportunities">
-  <div class="manager-panel__head">
-    <div><span>Oportunidades</span><h2>Ações para melhorar a agenda</h2></div>
-  </div>
-  <div class="manager-insights" data-overview-insights></div>
-</section>
+<!-- A secao OPORTUNIDADES saiu por completo — inclusive o titulo.
+
+     Na primeira remocao eu tirei so o conteudo e deixei o cabecalho, entao
+     sobrou uma caixa com nome e nada dentro: "Acoes para melhorar a agenda"
+     seguida de vazio, o que e pior do que a secao inventada, porque parece
+     defeito.
+
+     Ela dizia "terca e seu dia mais fraco, crie uma promocao" a partir de um
+     grafico fabricado. Conselho comercial baseado em numero que ninguem mediu.
+     O lugar dessa resposta e o mapa de calor abaixo, que sai de reserva e
+     procura reais. -->
 
 <div class="manager-dashboard-grid">
   <section class="manager-panel manager-panel--bookings">

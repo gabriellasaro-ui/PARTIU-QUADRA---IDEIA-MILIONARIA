@@ -26,32 +26,87 @@ function escapeHtml(value) {
 
 /* Ocupacao por faixa: noite e o horário nobre da pelada, entao ela puxa mais.
    Deriva do numero de reservas para nao ser um numero solto. */
-function faixas(total) {
-  const base = [
-    { lab: 'Manhã', sub: '08h–12h', peso: 0.42 },
-    { lab: 'Tarde', sub: '12h–18h', peso: 0.54 },
-    { lab: 'Noite', sub: '18h–23h', peso: 0.77 }
+function faixas(ritmo) {
+  /* AS TRES FAIXAS saem do mapa de calor REAL.
+
+     Eram pesos escritos a mao (0.42 manha, 0.54 tarde, 0.77 noite) vezes um
+     fator que crescia com o total: um desenho da forma que se ESPERA ver, e
+     nao do que a arena tem. Uma arena vazia mostrava "noite 66%", e o dono
+     concluiria que a noite dele enche.
+
+     Agora e a proporcao de reservas + procura de cada faixa sobre o total da
+     semana. Sem movimento nenhum, todas em 0% — que e a resposta certa. */
+  const faixas = [
+    { lab: 'Manhã', sub: '08h–12h', de: 8, ate: 12 },
+    { lab: 'Tarde', sub: '12h–18h', de: 12, ate: 18 },
+    { lab: 'Noite', sub: '18h–23h', de: 18, ate: 24 }
   ];
-  const fator = Math.min(1.25, 0.7 + total * 0.08);
-  return base.map((f) => ({ ...f, occ: Math.min(99, Math.round(f.peso * 100 * fator)) }));
+  if (!ritmo) return faixas.map((f) => ({ ...f, occ: 0 }));
+
+  const somar = (de, ate) => {
+    let t = 0;
+    for (let d = 0; d < 7; d += 1) {
+      for (let h = de; h < ate; h += 1) {
+        t += (ritmo.reservas[d]?.[h] || 0) + (ritmo.procura[d]?.[h] || 0);
+      }
+    }
+    return t;
+  };
+  const totais = faixas.map((f) => somar(f.de, f.ate));
+  const geral = totais.reduce((a, b) => a + b, 0);
+  return faixas.map((f, i) => ({
+    ...f,
+    occ: geral ? Math.round((totais[i] / geral) * 100) : 0
+  }));
 }
 
-function renderHeatmap(root) {
+/* MAPA DE CALOR — do /api/gerente/ritmo, e nao de um padrao escrito a mao.
+
+   A versao anterior desenhava `linha >= 9 ? 3 : 2` com um comentario dizendo
+   "o padrao real de pelada": uma figura inventada, com a forma que se espera
+   ver, apresentada como medicao. Uma arena com cinco reservas via o mesmo
+   degrade de uma arena lotada — e o dono concluiria que a noite dele enche.
+
+   Duas camadas, e elas nao sao a mesma coisa: RESERVA e o que aconteceu;
+   PROCURA e quem escolheu aquele horario e nao reservou. A segunda e a unica
+   que sugere acao (abrir horario, rever preco), e sem ela um quadrado vazio e
+   ambiguo — ninguem quer, ou ninguem conseguiu? */
+async function renderHeatmap(root, dados) {
   const grid = root.querySelector('[data-overview-heatmap]');
   if (!grid) return;
+
+  if (!dados) {
+    // Sem dado nao ha mapa. Desenhar a grade cinza e honesto; desenhar um
+    // degrade bonito seria repetir o problema.
+    grid.innerHTML = '<p class="manager-heatmap__vazio">Sem dados de procura ainda.</p>';
+    return;
+  }
+
+  // A escala e RELATIVA ao maior valor da propria arena: 4 reservas numa
+  // quinta podem ser o pico de uma quadra e ruido de outra. Escala fixa
+  // pintaria toda arena pequena de frio.
+  const pico = Math.max(
+    1,
+    ...dados.reservas.flat(),
+    ...dados.procura.flat()
+  );
+  const faixa = (v) => (v <= 0 ? 0 : Math.min(4, Math.ceil((v / pico) * 4)));
+
+  const DIAS_MAPA = dados.dias;
   let html = '<span class="manager-heatmap__corner" aria-hidden="true"></span>';
-  html += DIAS.map((d) => `<strong class="manager-heatmap__day">${d}</strong>`).join('');
-  HORAS.forEach((hora, linha) => {
-    html += `<small class="manager-heatmap__hour">${hora}</small>`;
-    DIAS.forEach((dia, col) => {
-      // Mais quente a noite e no fim de semana — o padrão real de pelada.
-      const noite = linha >= 9 ? (linha >= 10 && linha <= 13 ? 3 : 2) : (linha >= 6 ? 1 : 0);
-      const fds = col >= 5 ? 1 : 0;
-      const b = Math.min(4, noite + fds);
-      const occ = [12, 34, 56, 78, 94][b];
-      html += `<span class="manager-heatmap__cell b${b}" role="img" aria-label="${dia}, ${hora}: ${occ}% de ocupação" title="${dia} · ${hora} · ${occ}%"></span>`;
+  html += DIAS_MAPA.map((d) => `<strong class="manager-heatmap__day">${d}</strong>`).join('');
+
+  for (let h = 8; h <= 23; h += 1) {
+    html += `<small class="manager-heatmap__hour">${String(h).padStart(2, '0')}h</small>`;
+    DIAS_MAPA.forEach((dia, col) => {
+      const res = dados.reservas[col]?.[h] || 0;
+      const pro = dados.procura[col]?.[h] || 0;
+      const b = faixa(res + pro);
+      const titulo = `${dia} · ${String(h).padStart(2, '0')}h · ${res} ${res === 1 ? 'reserva' : 'reservas'}`
+        + (pro ? ` · ${pro} ${pro === 1 ? 'procura' : 'procuras'} sem reservar` : '');
+      html += `<span class="manager-heatmap__cell b${b}" role="img" aria-label="${titulo}" title="${titulo}"></span>`;
     });
-  });
+  }
   grid.innerHTML = html;
 }
 
@@ -60,46 +115,90 @@ function renderHeatmap(root) {
    Antes ele assumia que o indice 0 era segunda e usava DIAS[i] como rotulo. A
    serie real comeca no primeiro dia do intervalo escolhido — que pode ser uma
    quinta — e o eixo passaria a mentir sobre qual dia e qual. */
+/* BARRAS, e nao linha.
+
+   A linha ligava os pontos: numa semana com faturamento em UM dia e zero nos
+   outros seis, isso desenhava um TRIANGULO gigante subindo de zero a 150 e
+   voltando. A linha sugere continuidade — "veio subindo, vai descendo" — e
+   faturamento diario nao e continuo: cada dia e um valor independente.
+
+   Barra nao promete transicao entre os dias. Com dado esparso ela mostra
+   exatamente o que ha: um dia com movimento e seis vazios, sem inventar a
+   rampa entre eles.
+
+   Dia zerado ganha um trilho fino em vez de nada: sem ele, o eixo fica com
+   buracos e nao da para contar os dias. */
+/* DINHEIRO COM CENTAVOS, sempre.
+
+   O painel mostrava "R$ 696" para R$ 695,52 porque usava Math.round(). Meio
+   real perdido num numero nao muda decisao nenhuma — mas o dono confere o
+   caixa dele por esta tela, e um valor que nao bate com o extrato faz ele
+   parar de confiar no painel inteiro. Centavo e o que separa "o sistema
+   mostra" de "o sistema sabe". */
+function dinheiro(valor) {
+  return Number(valor || 0).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
 function renderChart(root, pontosSerie) {
   const svg = root.querySelector('[data-overview-chart]');
   if (!svg) return;
-  const valores = pontosSerie.map((p) => p.valor);
+
   const W = 620;
   const H = 240;
-  const x0 = 46;
-  const x1 = W - 18;
-  const y0 = 22;
+  const x0 = 52;
+  const x1 = W - 14;
+  const y0 = 20;
   const y1 = H - 34;
-  const max = Math.max(...valores, 100) * 1.15;
 
-  // Um ponto so dividiria por zero no calculo do x.
-  const passo = valores.length > 1 ? (x1 - x0) / (valores.length - 1) : 0;
-  const pontos = pontosSerie.map((p, i) => ({
-    x: x0 + i * passo,
-    y: y1 - (p.valor / max) * (y1 - y0),
-    lab: p.rotulo,
-    v: p.valor
-  }));
-  const pico = valores.indexOf(Math.max(...valores));
+  svg.innerHTML = '';
+  if (!pontosSerie.length) {
+    svg.insertAdjacentHTML('beforeend',
+      `<text class="lc-vazio" x="${W / 2}" y="${H / 2}" text-anchor="middle">Sem faturamento no período</text>`);
+    return;
+  }
 
-  const linhas = [0, 0.25, 0.5, 0.75, 1].map((p) => {
-    const y = y1 - p * (y1 - y0);
+  const valores = pontosSerie.map((p) => Number(p.valor) || 0);
+  const maior = Math.max(...valores);
+  // Teto arredondado para cima, para o rotulo do topo ser um numero redondo.
+  const max = maior > 0 ? Math.ceil(maior * 1.2 / 10) * 10 : 100;
+
+  const vao = (x1 - x0) / pontosSerie.length;
+  const largura = Math.min(46, vao * 0.56);
+
+  // Grade: quatro linhas, com o valor em reais na esquerda.
+  const grade = [0, 0.5, 1].map((f) => {
+    const y = y1 - f * (y1 - y0);
     return `<line class="lc-grid" x1="${x0}" y1="${y}" x2="${x1}" y2="${y}"/>
-            <text class="lc-yl" x="${x0 - 9}" y="${y + 3}">${Math.round(p * max)}</text>`;
+            <!-- O EIXO fica redondo de proposito: e escala de leitura, e nao
+                 valor a conferir. Centavo no eixo so polui. -->
+            <text class="lc-yl" x="${x0 - 10}" y="${y + 3.5}">${Math.round(f * max)}</text>`;
   }).join('');
 
-  const linha = pontos.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-  const area = `${linha} L${x1} ${y1} L${x0} ${y1} Z`;
+  const barras = pontosSerie.map((p, i) => {
+    const v = Number(p.valor) || 0;
+    const cx = x0 + vao * i + vao / 2;
+    const alt = v > 0 ? Math.max(3, (v / max) * (y1 - y0)) : 0;
+    const y = y1 - alt;
+    const destaque = v > 0 && v === maior;
+    const trilho = `<rect class="lc-trilho" x="${cx - largura / 2}" y="${y0}" width="${largura}" height="${y1 - y0}" rx="4"/>`;
+    const barra = v > 0
+      ? `<rect class="lc-bar${destaque ? ' peak' : ''}" x="${cx - largura / 2}" y="${y}" width="${largura}" height="${alt}" rx="4">
+           <title>${p.rotulo}: R$ ${v.toFixed(2).replace('.', ',')}</title>
+         </rect>`
+      : '';
+    // O valor so aparece no dia de maior movimento: em sete rotulos, o numero
+    // vira ruido e ninguem le nenhum.
+    const rotuloValor = destaque
+      ? `<text class="lc-val" x="${cx}" y="${y - 7}" text-anchor="middle">R$ ${v.toFixed(2).replace('.', ',')}</text>`
+      : '';
+    return `${trilho}${barra}${rotuloValor}
+      <text class="lc-xl" x="${cx}" y="${H - 10}" text-anchor="middle">${p.rotulo}</text>`;
+  }).join('');
 
-  svg.querySelector('[data-chart-line]')?.setAttribute('d', linha);
-  svg.querySelector('[data-chart-area]')?.setAttribute('d', area);
-
-  svg.querySelectorAll('.lc-grid, .lc-yl, .lc-dot, .lc-xl').forEach((n) => n.remove());
-  svg.insertAdjacentHTML('beforeend', linhas + pontos.map((p, i) => `
-    <circle class="lc-dot ${i === pico ? 'peak' : ''}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === pico ? 5 : 3.4}"/>
-    <text class="lc-xl" x="${p.x.toFixed(1)}" y="${H - 9}" style="text-anchor:${i === 0 ? 'start' : (i === pontos.length - 1 ? 'end' : 'middle')}">${p.lab}</text>`).join(''));
-
-  return { pico, valores };
+  svg.insertAdjacentHTML('beforeend', grade + barras);
 }
 
 /* Serie REAL dos ultimos 7 dias. */
@@ -154,18 +253,18 @@ export async function renderManagerOverview(root) {
     pendentes = reservas.filter((r) => r.status === 'Solicitada' || r.status === 'Pendente').length;
     deHoje = reservas.filter((r) => r.data === 'Hoje').length;
     receitaHoje = deHoje.reduce((t, r) => t + Number(r.valor || 0), 0);
-    ocupacao = Math.round(((faixas(reservas.length).reduce((t, f) => t + f.occ, 0)) / 3));
+    ocupacao = 0;  // sem API nao ha ocupacao a calcular
     proximas = reservas;
   }
 
-  set(root, '[data-overview-gross]', Math.round(bruto).toLocaleString('pt-BR'));
+  set(root, '[data-overview-gross]', dinheiro(bruto));
   set(root, '[data-overview-period-reservations]', total);
   set(root, '[data-overview-period-requests]', pendentes);
 
   set(root, '[data-overview-today]', deHoje);
   // O rotulo diz "hoje", entao tem que ser hoje. Estava mostrando o bruto do
   // periodo inteiro debaixo de um rotulo diario.
-  set(root, '[data-overview-revenue]', Math.round(receitaHoje).toLocaleString('pt-BR'));
+  set(root, '[data-overview-revenue]', dinheiro(receitaHoje));
   set(root, '[data-overview-requests]',
     `${pendentes} ${pendentes === 1 ? 'solicitação aguardando' : 'solicitações aguardando'}`);
 
@@ -184,21 +283,29 @@ export async function renderManagerOverview(root) {
             <small>${escapeHtml(r.quadra)} · ${escapeHtml(r.data)} · ${escapeHtml(r.hora)}</small>
           </div>
           <div class="manager-upcoming__value">
-            <strong class="num">R$ ${Math.round(Number(r.valor || 0))}</strong>
+            <strong class="num">R$ ${dinheiro(r.valor)}</strong>
             <span class="status ${escapeHtml(cls)}">${escapeHtml(status)}</span>
           </div>
         </article>`;
       }).join('')
     : '<div class="manager-empty-inline"><svg class="ic"><use href="#i-calendar"/></svg><span>Nenhuma reserva próxima.</span></div>';
 
-  const lista = faixas(total);
+  /* O ritmo e buscado UMA vez e serve aos dois blocos: as tres faixas e o
+     mapa de calor. Duas chamadas para o mesmo dado dobrariam o trafego e
+     poderiam mostrar numeros diferentes na mesma tela. */
+  let ritmo = null;
+  if (API_BASE_URL) {
+    try { ritmo = await managerService.ritmo(); } catch (error) { ritmo = null; }
+  }
+
+  const lista = faixas(ritmo);
   if (root.querySelector('[data-overview-occupancy]')) root.querySelector('[data-overview-occupancy]').innerHTML = lista.map((f) => `
     <div>
       <p><span>${f.lab} <small>${f.sub}</small></span><strong>${f.occ}%</strong></p>
       <span class="manager-progress"><i style="width:${f.occ}%"></i></span>
     </div>`).join('');
 
-  renderHeatmap(root);
+  await renderHeatmap(root, ritmo);
 
   /* O grafico da semana agora sai da SERIE REAL do backend.
 

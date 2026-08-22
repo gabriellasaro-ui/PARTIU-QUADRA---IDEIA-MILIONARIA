@@ -831,3 +831,48 @@ html[data-manager-app][data-manager-view="agenda"] .cal-col {
 [hidden] {
   display: none !important;
 }
+
+
+/* ═══════════ Dashboard: o grafico em barras precisa de estilo ═══════════ */
+
+/* As barras nasceram PRETAS porque criei as classes no SVG e nao as estilizei:
+   <rect> sem fill e preto por padrao, e o "trilho" do dia vazio virou uma
+   coluna solida ocupando a altura toda. Sete tarjas pretas no lugar do
+   grafico. */
+.lc-trilho {
+  fill: color-mix(in srgb, var(--pq-line) 45%, transparent);
+}
+
+.lc-bar {
+  fill: var(--pq-brand);
+  transition: fill .14s ease;
+}
+
+/* O dia de maior movimento e o unico que precisa saltar. */
+.lc-bar.peak { fill: var(--pq-brand-strong); }
+.lc-bar:hover { fill: var(--pq-brand-deep); }
+
+.lc-val {
+  fill: var(--pq-ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.lc-vazio {
+  fill: var(--pq-muted);
+  font-size: 13px;
+}
+
+.lc-grid { stroke: var(--pq-line); stroke-width: 1; }
+.lc-yl { fill: var(--pq-muted); font-size: 11px; text-anchor: end; }
+.lc-xl { fill: var(--pq-muted); font-size: 11.5px; font-weight: 600; }
+
+/* Mapa de calor sem dado: uma frase, e nao uma grade cinza que parece
+   defeito. */
+.manager-heatmap__vazio {
+  grid-column: 1 / -1;
+  padding: 22px;
+  color: var(--pq-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
