@@ -322,3 +322,89 @@ body {
   );
   background-color: transparent;
 }
+
+
+/* ═════════════ Estados da agenda: cor que carrega significado ═════════════
+
+   Fundo e tinta por estado, em par. No claro sao os tons palidos originais; no
+   escuro, fundos profundos com tinta clara — o inverso, e nao o mesmo hex,
+   porque contraste nao se conserva ao virar o fundo.
+
+   A borda esquerda de 3px continua, mas deixou de ser a UNICA pista: numa
+   grade de sete colunas ninguem le 3 pixels de relance. */
+:root {
+  --ev-pago-bg: #14372a;
+  --ev-pago-ink: #7ee3b4;
+  --ev-conf-bg: #16294a;
+  --ev-conf-ink: #93b4ff;
+  --ev-pend-bg: #3a2c14;
+  --ev-pend-ink: #f5c451;
+  --ev-sol-bg: #3d2a12;
+  --ev-sol-ink: #ffb454;
+}
+
+:root[data-theme="light"] {
+  --ev-pago-bg: #e7f2ea;
+  --ev-pago-ink: #0c5c38;
+  --ev-conf-bg: #e6efff;
+  --ev-conf-ink: #1c3d8f;
+  --ev-pend-bg: #fff3d6;
+  --ev-pend-ink: #7a4d10;
+  --ev-sol-bg: #ffeacc;
+  --ev-sol-ink: #8a4b06;
+}
+
+/* AS LINHAS DA GRADE.
+
+   `.cal-col` e `.ch-day` desenham a divisao com border-left, e o listrado das
+   horas vem de um repeating-linear-gradient. No escuro, essas linhas herdavam
+   uma cor clara demais e a grade virava uma gaiola de riscos brancos por cima
+   do conteudo — o proprio calendario competia com as reservas. Aqui elas
+   voltam a ser divisao: visiveis o bastante para orientar, discretas o
+   bastante para sumir quando nao se olha para elas. */
+:root:not([data-theme="light"]) .cal,
+:root:not([data-theme="light"]) .cal-head,
+:root:not([data-theme="light"]) .ch-day,
+:root:not([data-theme="light"]) .cal-col,
+:root:not([data-theme="light"]) .cal-gutter,
+:root:not([data-theme="light"]) .cal-gutter .hr {
+  border-color: var(--pq-line);
+}
+
+:root:not([data-theme="light"]) .cal-col {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--pq-line) 0,
+    var(--pq-line) 1px,
+    transparent 1px,
+    transparent var(--hourh)
+  );
+}
+
+/* A regua das horas e referencia, nao conteudo: fica em cinza medio para nao
+   disputar com os nomes dos clientes. */
+:root:not([data-theme="light"]) .cal-gutter .hr span {
+  color: var(--pq-muted);
+}
+
+/* Hover no escuro CLAREIA. `filter: brightness(.97)` escurece — pensado para
+   fundo claro — e sobre bloco escuro o efeito e o bloco sumir ao passar o
+   mouse, o oposto de destacar. */
+:root:not([data-theme="light"]) .cal-ev:hover {
+  filter: brightness(1.25);
+}
+
+/* Reserva cancelada/recusada: riscada, mas LEGIVEL.
+
+   Com --pq-muted sobre o painel claro o contraste ficava em 3,9 — abaixo do
+   minimo de leitura. O risco e o cinza do fundo ja dizem "isto nao vale mais";
+   apagar o texto tambem e diminuir duas vezes, e o dono ainda precisa LER de
+   quem era a reserva que caiu. */
+:root[data-theme="light"] .cal-ev.recusada,
+:root[data-theme="light"] .cal-ev.cancelada,
+:root[data-theme="light"] .cal-ev.expirada,
+html[data-manager-app][data-theme="light"] .cal-ev.recusada,
+html[data-manager-app][data-theme="light"] .cal-ev.cancelada,
+html[data-manager-app][data-theme="light"] .cal-ev.expirada {
+  color: var(--pq-ink-soft);
+}

@@ -1338,10 +1338,42 @@ html[data-manager-app] .cal-ev {
   border-radius: 10px;
 }
 
+/* Especificidade maior que a de desktop.css, entao E AQUI que a cor do estado
+   se decide de verdade. Aponta para os mesmos tokens por estado: manter dois
+   lugares com valores proprios foi o que fez a correcao anterior "nao pegar". */
 html[data-manager-app] .cal-ev.pago {
-  background: var(--pq-tint);
-  border-color: var(--manager-green);
-  color: var(--manager-green-deep);
+  background: var(--ev-pago-bg);
+  border-color: var(--ev-pago-ink);
+  color: var(--ev-pago-ink);
+}
+
+html[data-manager-app] .cal-ev.confirmado {
+  background: var(--ev-conf-bg);
+  border-color: var(--ev-conf-ink);
+  color: var(--ev-conf-ink);
+}
+
+html[data-manager-app] .cal-ev.pendente {
+  background: var(--ev-pend-bg);
+  border-color: var(--ev-pend-ink);
+  color: var(--ev-pend-ink);
+}
+
+html[data-manager-app] .cal-ev.solicitada {
+  background: var(--ev-sol-bg);
+  border-color: var(--ev-sol-ink);
+  color: var(--ev-sol-ink);
+}
+
+/* Reserva que nao vai acontecer: cinza e riscada. Ocupa espaco na grade por
+   ser historico, mas nao pode disputar atencao com o que esta de pe. */
+html[data-manager-app] .cal-ev.recusada,
+html[data-manager-app] .cal-ev.cancelada,
+html[data-manager-app] .cal-ev.expirada {
+  background: var(--pq-panel-2);
+  border-color: var(--pq-line-strong);
+  color: var(--pq-muted);
+  text-decoration: line-through;
 }
 
 html[data-manager-app] .manager-agenda-mobile {
@@ -3696,7 +3728,10 @@ html[data-manager-app][data-manager-view="agenda"] .manager-agenda-court-filter 
 html[data-manager-app][data-manager-view="agenda"] .manager-agenda-court-filter button.on { background:var(--manager-green-strong); color:#fff; }
 html[data-manager-app][data-manager-view="agenda"] .cal-head { border-bottom-color:var(--pq-line); background:var(--pq-tint); }
 html[data-manager-app][data-manager-view="agenda"] .cal-head > * { color:var(--manager-green-deep); font-weight:800; }
-html[data-manager-app][data-manager-view="agenda"] .cal-col { background-image:repeating-linear-gradient(to bottom,#e8f0eb 0,#e8f0eb 1px,transparent 1px,transparent var(--hourh)); }
+/* Listrado das horas: era #e8f0eb cravado, um cinza claro que no escuro
+   virava uma gaiola de riscos brancos POR CIMA das reservas — o calendario
+   competindo com o conteudo dele. */
+html[data-manager-app][data-manager-view="agenda"] .cal-col { background-image:repeating-linear-gradient(to bottom,var(--pq-line) 0,var(--pq-line) 1px,transparent 1px,transparent var(--hourh)); }
 html[data-manager-app][data-manager-view="agenda"] .cal-col.today { background-color:var(--pq-tint); }
 html[data-manager-app][data-manager-view="agenda"] .cal-ev { border-radius:7px; box-shadow:inset 3px 0 0 currentColor; }
 
