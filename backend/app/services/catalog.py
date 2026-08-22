@@ -183,8 +183,25 @@ def get_venue_detail(db: Session, court_id, *, lat=None, lng=None) -> dict | Non
 
 
 def _day_window(db: Session, court: Court, day: datetime) -> list[tuple[time, time]]:
+    """Faixas de funcionamento do dia. Lista vazia = FECHADO.
+
+    Tres situacoes distintas, que antes eram duas:
+
+      linha com closed=True  -> o gerente disse que nao abre. Devolve [].
+      linha com horario      -> abre nessas faixas.
+      nenhuma linha          -> nao configurado ainda; cai no padrao do court.
+
+    O terceiro caso e o fallback, e ele so vale para quem NUNCA mexeu na grade.
+    Antes ele tambem engolia o segundo: apagar o domingo caia no padrao e a
+    quadra aparecia aberta — o oposto do que o gerente tinha feito.
+    """
     rec = repo.recurring_for_court(db, court.id, day.weekday())
     if rec:
+        # Basta uma linha marcada como fechada para o dia inteiro fechar: e
+        # assim que o gerente desliga o dia, e ter faixa junto seria
+        # contraditorio.
+        if any(getattr(r, "closed", False) for r in rec):
+            return []
         return [(r.start_time, r.end_time) for r in rec]
     return [(court.opening_time, court.closing_time)]
 

@@ -69,7 +69,7 @@ def test_reserva_ocupa_o_horario_na_agenda(client):
         "Idempotency-Key": uuid.uuid4().hex,
     }
     r = client.post("/api/reservas", headers=hdrs, json={
-        "quadraId": quadra, "data": amanha, "hora": alvo, "duracao": 1,
+        "quadraId": quadra, "data": amanha, "hora": alvo, "dur": 1,
     })
     assert r.status_code == 200, r.text
 
@@ -91,5 +91,5 @@ def test_horario_que_ja_passou_nao_pode_ser_reservado(client):
     r = client.post("/api/reservas", headers={
         "Authorization": f"Bearer {reg.json()['token']}",
         "Idempotency-Key": uuid.uuid4().hex,
-    }, json={"quadraId": quadra, "data": ontem, "hora": "10:00", "duracao": 1})
+    }, json={"quadraId": quadra, "data": ontem, "hora": "10:00", "dur": 1})
     assert r.status_code == 409

@@ -10,7 +10,7 @@ start_at).
 import uuid
 from datetime import datetime, time
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, Time, func
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, Time, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -77,3 +77,17 @@ class CourtRecurringAvailability(Base):
     day_of_week: Mapped[int] = mapped_column(Integer)  # 0 = segunda, 6 = domingo
     start_time: Mapped[time] = mapped_column(Time)
     end_time: Mapped[time] = mapped_column(Time)
+    #: FECHADO NESSE DIA, dito explicitamente pelo gerente.
+    #:
+    #: Antes, "nao abre domingo" so podia ser expresso APAGANDO a linha do
+    #: domingo — e `recurring_for_court` trata lista vazia como "usa o
+    #: opening/closing padrao do court". Ou seja: apagar o domingo fazia a
+    #: quadra aparecer ABERTA no horario padrao, o oposto do que o gerente
+    #: quis, e ele so descobriria quando alguem reservasse.
+    #:
+    #: Com a coluna, ausencia e fechamento deixam de ser a mesma coisa:
+    #:   linha ausente  -> nao configurado, cai no padrao do court
+    #:   closed = True  -> o gerente disse que nao abre
+    closed: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("0"), nullable=False
+    )

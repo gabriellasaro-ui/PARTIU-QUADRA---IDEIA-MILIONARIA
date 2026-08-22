@@ -57,7 +57,12 @@ def test_idempotency_replay(client, login):
         json={
             "quadraId": str(court.id),
             "data": futuro,
-            "hora": "23:00",
+            # 21h, e nao 23h: a quadra FECHA as 23h, entao uma reserva de 1h
+            # comecando ali terminaria depois do expediente. Passava antes
+            # porque nada validava a janela de funcionamento; hoje o servidor
+            # recusa (409), e este teste e sobre idempotencia, nao sobre
+            # horario.
+            "hora": "21:00",
             "dur": 1,
             "plano": "avulso",
             "pagamento": "pix",
@@ -72,7 +77,12 @@ def test_idempotency_replay(client, login):
         json={
             "quadraId": str(court.id),
             "data": futuro,
-            "hora": "23:00",
+            # 21h, e nao 23h: a quadra FECHA as 23h, entao uma reserva de 1h
+            # comecando ali terminaria depois do expediente. Passava antes
+            # porque nada validava a janela de funcionamento; hoje o servidor
+            # recusa (409), e este teste e sobre idempotencia, nao sobre
+            # horario.
+            "hora": "21:00",
             "dur": 1,
             "plano": "avulso",
             "pagamento": "pix",

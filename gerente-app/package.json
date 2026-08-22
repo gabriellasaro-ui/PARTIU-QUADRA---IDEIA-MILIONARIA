@@ -1,0 +1,6 @@
+{
+  "name": "qadras-gerente-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Raiz do Capacitor para o APK do painel do gerente. Existe separada porque o CLI le capacitor.config.json do diretorio atual, e um repo com dois apps precisa de duas raizes. O codigo continua em ../www-gerente e o projeto nativo em ../android-gerente."
+}

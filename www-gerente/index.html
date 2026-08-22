@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-manager-app>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Qadras Gerente</title>
+  <meta name="theme-color" content="#1b7a3e">
+  <link rel="apple-touch-icon" href="./assets/icons/apple-touch-180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png">
+  <link rel="stylesheet" href="./assets/css/desktop.css">
+  <link rel="stylesheet" href="./assets/css/manager-app.css">
+  <style>
+    /* Tela de passagem: existe por menos de um piscar. Só o suficiente para
+       não haver um retângulo branco entre abrir o app e a primeira tela. */
+    .entrada {
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      background: #0f1c15;
+      color: #e8f2ec;
+      font-family: 'Inter', system-ui, sans-serif;
+      gap: 14px;
+      text-align: center;
+    }
+
+    .entrada__marca {
+      display: grid;
+      width: 62px;
+      height: 62px;
+      place-items: center;
+      border-radius: 18px;
+      background: #1b7a3e;
+      color: #fff;
+      font-size: 30px;
+      font-weight: 800;
+    }
+
+    .entrada__txt {
+      color: #8ba396;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <!--
+    PONTO DE ENTRADA DO APK DO GERENTE.
+
+    O Capacitor exige um index.html no webDir — é o que ele abre quando o app
+    abre. Este painel nasceu para a web, onde a pessoa digita /login.html ou
+    /dashboard.html; no app não há barra de endereço, e sem este arquivo o
+    `cap add` recusava o projeto inteiro.
+
+    Ele não é uma tela: decide para onde ir e sai da frente. Com sessão
+    guardada vai ao painel, sem sessão vai ao login — a mesma regra que
+    dashboard.html e login.html já aplicam entre si, só que aplicada uma vez
+    na abertura em vez de num redirecionamento em cadeia.
+
+    `location.replace` e não `assign`: esta tela não pode entrar no histórico,
+    senão o botão voltar do Android cairia aqui e ricochetearia de volta.
+  -->
+  <main class="entrada">
+    <span class="entrada__marca">Q</span>
+    <span class="entrada__txt">Abrindo o painel…</span>
+  </main>
+
+  <script type="module">
+    import storage from './storage/storage.js';
+
+    const destino = storage.getAuthToken() ? './dashboard.html' : './login.html';
+    location.replace(destino);
+  </script>
+
+  <noscript>
+    <p>Este painel precisa de JavaScript. <a href="./login.html">Ir para o login</a>.</p>
+  </noscript>
+</body>
+</html>

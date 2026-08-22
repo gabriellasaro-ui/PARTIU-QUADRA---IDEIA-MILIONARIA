@@ -57,7 +57,7 @@ from ..repositories import bookings as repo
 from ..repositories import payments as pay_repo
 from ..repositories import venues as venues_repo
 from sqlalchemy import select
-from .catalog import _as_local
+from .catalog import _as_local, _day_window
 from .messages import ensure_conversation_for_booking
 from .notifications import notify_booking_event
 from .payments import get_provider
@@ -193,6 +193,58 @@ def _ensure_slots_free(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Horário indisponível (manutenção ou evento)",
             )
+        _exigir_dentro_do_expediente(db, court, start, end)
+
+
+def _exigir_dentro_do_expediente(
+    db: Session, court: Court, start: datetime, end: datetime
+) -> None:
+    """A reserva tem de caber na grade que o gerente definiu para aquele dia.
+
+    Isto faltava por completo: `_ensure_slots_free` so olhava reserva
+    sobreposta e bloqueio de manutencao. Dava para reservar as 3 da manha, ou
+    num dia que o gerente fechou — a agenda nem mostrava o horario, mas o POST
+    aceitava, e a unica guarda era a tela nao oferecer.
+
+    Guarda de tela nao e guarda: relogio errado, aba velha, link antigo ou uma
+    chamada direta na API passam por cima. E agora que o gerente pode FECHAR um
+    dia, a decisao dele precisa valer no servidor, senao e so um rotulo.
+    """
+    # EM HORA LOCAL. `start` chega em UTC (_parse_start converte), e a grade do
+    # gerente e escrita no fuso do produto: comparar direto colocaria 19h como
+    # 22h e recusaria uma reserva perfeitamente dentro do expediente. Mesma
+    # armadilha de 3 horas que ja apareceu no controle de leitura do clube.
+    inicio_local = _as_local(start)
+    fim_local = _as_local(end)
+
+    faixas = _day_window(db, court, inicio_local)
+    if not faixas:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A quadra não abre neste dia",
+        )
+
+    # A janela pedida precisa caber INTEIRA em uma das faixas. Emendar duas
+    # faixas (manha e noite, com almoco fechado no meio) reservaria o intervalo
+    # fechado junto.
+    hora_inicio = inicio_local.time()
+    hora_fim = fim_local.time()
+    # Reserva que atravessa a meia-noite nao existe no produto (max 3h dentro
+    # do mesmo dia); tratar como fora do expediente e o correto e o simples.
+    if hora_fim <= hora_inicio:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Horário fora do funcionamento da quadra",
+        )
+
+    for abre, fecha in faixas:
+        if abre <= hora_inicio and hora_fim <= fecha:
+            return
+
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="Horário fora do funcionamento da quadra",
+    )
 
 
 def _generate_code(db: Session) -> str:

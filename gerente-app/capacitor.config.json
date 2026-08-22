@@ -1,0 +1,12 @@
+{
+  "appId": "br.com.qadras.gerente",
+  "appName": "Qadras Gerente",
+  "webDir": "../www-gerente",
+  "android": {
+    "path": "../android-gerente"
+  },
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  }
+}
