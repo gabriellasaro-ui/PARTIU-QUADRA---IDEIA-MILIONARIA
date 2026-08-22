@@ -3,8 +3,8 @@
    Com API_BASE_URL vazio o botao nao faz nada e avisa: sem backend nao ha
    sessao valida. Com backend, o /api/auth/login devolve { token, user } e a
    pessoa segue para o dashboard. */
-import authService from '../services/auth.js';
-import { API_BASE_URL } from '../config/constants.js';
+import authService from '../../services/auth.js';
+import { API_BASE_URL } from '../../config/constants.js';
 
 function redirect() {
   const params = new URLSearchParams(location.search);

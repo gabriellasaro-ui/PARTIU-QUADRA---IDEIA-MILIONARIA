@@ -11,7 +11,7 @@
 import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
 import storage from '../../storage/storage.js';
 import { API_BASE_URL } from '../../config/constants.js';
-import managerService from '../services/manager-api.js';
+import managerService from '../../services/manager-api.js';
 
 const KEY = 'manager-booking-status';
 const NOVAS = 'manager-bookings-novas';
