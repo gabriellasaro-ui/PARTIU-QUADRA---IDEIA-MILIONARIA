@@ -2325,8 +2325,9 @@ export async function renderMobilePage(route, root) {
     onboarding: renderOnboarding,
     clubes: renderClubSearch
   };
-  // O percentual da taxa aparece em texto corrido; preencher aqui evita
-  // "9%" escrito na mao voltando a divergir da constante.
+  /* A porcentagem da taxa saiu das telas de reserva e pagamento: o valor em
+     reais ja esta ao lado, e e ele que a pessoa paga. O gancho continua aqui
+     para quem ainda precise exibi-la (a web tem uma tela de detalhamento). */
   root.querySelectorAll('[data-fee-pct]').forEach((el) => {
     el.textContent = String(Math.round(SERVICE_FEE_RATE * 100));
   });

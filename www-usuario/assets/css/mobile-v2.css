@@ -8002,3 +8002,61 @@ html[data-theme="dark"] {
   color: var(--pq-ink);
   border-color: var(--pq-line);
 }
+
+/* ── Ultimos ajustes de leitura ─────────────────────────────────────────── */
+
+/* DURACAO: o subtitulo seguia branco no cartao selecionado.
+
+   `.dur.on span` era rgba(255,255,255,.78) — feito para o verde ESCURO do modo
+   claro. No escuro o cartao selecionado tem o verde CLARO da marca, e a regra
+   do tema so escureceu o `strong`: "1h" ficava preto e "Jogo rapido" logo
+   abaixo, branco. Duas cores opostas dentro do mesmo botao. */
+:root[data-theme="dark"] .booking-step .dur.on span,
+:root[data-theme="dark"] .dur.on span {
+  color: rgba(11, 26, 18, .72);
+}
+
+/* BOTAO DE ENVIAR: o rotulo volta ao centro real.
+
+   O botao e flex centralizado e tem a seta DEPOIS do texto — entao o conjunto
+   "texto + seta" e que ficava centrado, e o texto sozinho aparecia deslocado
+   para a esquerda. Com a seta fora do fluxo, o rotulo ocupa a largura toda e
+   se centraliza de fato. */
+.checkout-action .btn {
+  position: relative;
+}
+
+.checkout-action .btn > [data-payment-cta-label] {
+  flex: 1;
+  text-align: center;
+}
+
+.checkout-action .btn > .ic {
+  position: absolute;
+  right: 16px;
+}
+
+/* ABAS DE RESERVAS: a selecionada era quase igual a folha.
+
+   `.seg` tem fundo `--mint` e `.seg-item.on` tinha `--panel`. No modo escuro os
+   dois viraram tons de verde-quase-preto separados por poucos pontos de
+   luminosidade — nao dava para ver qual aba estava ativa, so um retangulo
+   cinza um pouco diferente do outro.
+
+   Agora a ativa e VERDE cheia, nos dois temas: a aba selecionada e o unico
+   estado dessa barra que precisa ser visto de relance. */
+.seg-item.on {
+  background: var(--pq-brand);
+  box-shadow: none;
+  color: #fff;
+}
+
+:root[data-theme="dark"] .seg-item.on {
+  background: var(--pq-brand);
+  color: #0b1a12;
+}
+
+.seg-item {
+  color: var(--pq-muted);
+  transition: background .14s ease, color .14s ease;
+}
