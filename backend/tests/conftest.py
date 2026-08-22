@@ -55,3 +55,21 @@ def login(client):
         return {"Authorization": f"Bearer {data['token']}"}
 
     return _login
+
+
+@pytest.fixture()
+def db_session():
+    """Sessao direta no banco de teste.
+
+    Existe para os testes que precisam olhar o DOMINIO, e nao a resposta HTTP —
+    por exemplo conferir que uma preferencia salva pela API de fato governa o
+    envio de push. Pelo cliente HTTP isso nao da para ver: o push nao aparece
+    em resposta nenhuma.
+    """
+    from app.core.database import SessionLocal
+
+    sessao = SessionLocal()
+    try:
+        yield sessao
+    finally:
+        sessao.close()

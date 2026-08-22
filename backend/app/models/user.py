@@ -5,7 +5,7 @@ Expandido na Fase 2 (auth) com sessoes, devices e preferencias.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Date, DateTime, Float, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, Float, Integer, String, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -50,6 +50,30 @@ class User(Base):
     birth_date: Mapped[datetime | None] = mapped_column(Date)
     foot: Mapped[str | None] = mapped_column(String(10))
     favorite_sport: Mapped[str | None] = mapped_column(String(60))
+
+    # --- Preferencias (tela de Configuracoes) -----------------------------
+    #
+    # A tela existia desde o inicio como `data-demo-form`: dizia "Configuracoes
+    # salvas" e nao gravava nada. Trocar o esporte padrao, desligar um aviso ou
+    # mudar a distancia nao sobrevivia a fechar o app.
+    #
+    # Sao colunas e nao um JSON solto porque cada uma tem consumidor proprio:
+    # as tres de notificacao decidem se o push sai (o worker le), e as duas de
+    # busca alimentam a Home e o mapa. Num blob, filtrar "quem aceita lembrete"
+    # viraria varredura na tabela inteira.
+    notify_booking: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=text("1")
+    )
+    notify_reminder: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=text("1")
+    )
+    notify_club: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=text("1")
+    )
+    #: Distancia padrao da busca, em km.
+    search_radius: Mapped[int] = mapped_column(
+        Integer, default=10, server_default=text("10")
+    )
     rating: Mapped[float | None] = mapped_column(Float)
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

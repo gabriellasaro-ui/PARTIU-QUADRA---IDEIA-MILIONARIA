@@ -155,7 +155,7 @@
 .game-card__progress span {
   display: block;
   height: 100%;
-  background: #fff;
+  background: var(--pq-panel);
   transition: width 1s linear;
 }
 
@@ -210,7 +210,7 @@
   position: relative;
   height: 190px;
   overflow: hidden;
-  background: #dce5dd;
+  background: var(--pq-tint-strong);
 }
 
 .game-hero__img {
@@ -706,7 +706,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--pq-panel);
   animation: gameCardDot 1.4s ease-in-out infinite;
 }
 
@@ -817,12 +817,12 @@
 }
 
 .game-score-btn--b {
-  border-color: #f5e2b8;
-  background: #fdf6e6;
+  border-color: var(--pq-line);
+  background: var(--pq-tint);
 }
 
 .game-score-btn--b b {
-  color: #8a6008;
+  color: var(--pq-gold);
 }
 
 /* Eventos */
@@ -853,7 +853,7 @@
 
 .game-event__icon.goal-a { color: var(--pq-brand); }
 .game-event__icon.goal-b { color: var(--pq-gold, #e4a11b); }
-.game-event__icon.yellow { color: #e4a11b; }
+.game-event__icon.yellow { color: var(--pq-gold); }
 .game-event__icon.red { color: #e85d75; }
 
 .game-empty {
@@ -897,7 +897,7 @@
 }
 
 .game-result__score .team-a { color: var(--pq-brand-deep); }
-.game-result__score .team-b { color: #8a6008; }
+.game-result__score .team-b { color: var(--pq-gold); }
 
 .game-result__x {
   color: var(--pq-muted);

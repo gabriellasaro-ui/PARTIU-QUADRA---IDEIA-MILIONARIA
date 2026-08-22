@@ -10,6 +10,7 @@ ja esta persistida quando o dispatch enfileira o push, entao `push_logs` pode
 referenciar a notification com seguranca.
 """
 import logging
+import uuid
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -22,10 +23,17 @@ from ..models import (
     NOTIF_BOOKING_COMPLETED,
     NOTIF_BOOKING_EXPIRED,
     NOTIF_BOOKING_REJECTED,
+    NOTIF_CLUBE_ENTROU,
+    NOTIF_CLUBE_SOLICITACAO,
+    NOTIF_MESSAGE_NEW,
+    NOTIF_PARTIDA_PRESENCA,
     NOTIF_PAYMENT_CONFIRMED,
+    NOTIF_PELADA_CRIADA,
+    NOTIF_PELADA_FALTAM,
     Arena,
     Booking,
     Notification,
+    User,
 )
 from ..repositories import notifications as repo
 from .catalog import _as_local
@@ -155,6 +163,56 @@ def emit_notification(
     return n
 
 
+
+# ─── Preferencias de aviso ─────────────────────────────────────────────────
+#
+# Os interruptores de Configuracoes precisam MANDAR em alguma coisa. Enquanto
+# o envio nao os consultasse, desligar "Lembrete do jogo" mudava um booleano no
+# banco e o lembrete continuava chegando — o pior tipo de configuracao, a que
+# parece obedecer.
+#
+# O evento e mapeado para a coluna que o governa. Evento sem dono aqui e sempre
+# enviado: silenciar por omissao esconderia avisos que ninguem pediu para
+# desligar (uma reserva recusada, por exemplo, tem de chegar).
+_PREF_POR_EVENTO = {
+    # "Reserva confirmada" — o ciclo da reserva dar certo.
+    NOTIF_PAYMENT_CONFIRMED: "notify_booking",
+    NOTIF_BOOKING_APPROVED: "notify_booking",
+    NOTIF_BOOKING_COMPLETED: "notify_booking",
+    # "Lembrete do jogo" — o que chega ANTES da hora para chamar para a quadra.
+    NOTIF_PELADA_FALTAM: "notify_reminder",
+    NOTIF_PELADA_CRIADA: "notify_reminder",
+    NOTIF_PARTIDA_PRESENCA: "notify_reminder",
+    # "Mensagens do clube".
+    NOTIF_MESSAGE_NEW: "notify_club",
+    NOTIF_CLUBE_ENTROU: "notify_club",
+    NOTIF_CLUBE_SOLICITACAO: "notify_club",
+    # Fora daqui de proposito, portanto SEMPRE enviados: booking.rejected,
+    # booking.cancelled, booking.expired, clube.aprovado/recusado/cargo. Sao
+    # avisos de que algo deu errado ou mudou contra a vontade da pessoa — ela
+    # nao pediu para desligar isso, e silenciar por omissao esconderia
+    # justamente o que ela precisa saber.
+}
+
+
+def quer_receber(db: Session, user_id, event_type: str) -> bool:
+    coluna = _PREF_POR_EVENTO.get(event_type)
+    if coluna is None:
+        return True
+    # O id chega ora como UUID (dominio), ora como str (a API e o push
+    # serializam). db.get() exige o tipo da coluna e estoura com o outro, entao
+    # a conversao mora aqui — e nao em cada chamador, que e onde se esquece.
+    if isinstance(user_id, str):
+        try:
+            user_id = uuid.UUID(user_id)
+        except ValueError:
+            return True
+    usuario = db.get(User, user_id)
+    if usuario is None:
+        return True
+    return bool(getattr(usuario, coluna, True))
+
+
 def notify_booking_event(db: Session, booking: Booking, event_type: str) -> None:
     """Hook pos-commit dos mutators de reserva (confirm_payment, approve, ...)."""
     cfg = _BOOKING_NOTIFS.get(event_type)
@@ -177,16 +235,28 @@ def notify_booking_event(db: Session, booking: Booking, event_type: str) -> None
     }
     body = _BOOKING_BODIES.get(event_type, "").format(code=booking.code, arena=arena_name)
     for uid in recipients:
-        emit_notification(
-            db, uid, type=event_type, title=cfg["title"], body=body, data=data
-        )
+        # A linha in-app continua sendo criada mesmo com o aviso desligado: o
+        # interruptor e sobre INTERROMPER a pessoa (push), nao sobre esconder o
+        # historico dela dentro do app.
+        if quer_receber(db, uid, event_type):
+            emit_notification(
+                db, uid, type=event_type, title=cfg["title"], body=body, data=data
+            )
+        else:
+            notify_user(db, uid, type=event_type, title=cfg["title"], body=body, data=data)
+            db.commit()
 
 
 def notify_message_new(
-    user_id, *, title: str, body: str, data: dict | None = None
+    user_id, *, title: str, body: str, data: dict | None = None, db: Session | None = None
 ) -> None:
     """Push da mensagem nova — sem linha in-app (o chat tem badge proprio).
-    O WS `message.new` ja e emitido pelo dominio de mensagens."""
+    O WS `message.new` ja e emitido pelo dominio de mensagens.
+
+    `db` e opcional para nao quebrar quem ja chamava sem ele; quando vem, a
+    preferencia da pessoa e respeitada."""
+    if db is not None and not quer_receber(db, user_id, "message.new"):
+        return
     try:
         celery_app.send_task(
             _PUSH_TASK,

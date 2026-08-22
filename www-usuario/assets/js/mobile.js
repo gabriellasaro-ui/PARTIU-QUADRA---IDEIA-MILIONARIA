@@ -396,14 +396,29 @@ function venueCard(venue, options = {}) {
   const removable = options.removable
     ? `<button class="favorite-float on" type="button" data-favorite-toggle="${venue.arenaId}" aria-label="Remover dos favoritos">${icon('heart', 'ic fill')}</button>`
     : '';
-  const availability = venue.id % 3 === 0 ? 'Hoje a noite' : 'Livre agora';
+  /* "Aberta agora" vem do servidor. Antes era `venue.id % 3 === 0`, e como o
+     id e UUID a conta dava NaN — TODA quadra dizia "Livre agora", inclusive as
+     fechadas. Quando o backend nao manda o campo (null), o selo some em vez de
+     chutar. */
+  const aberta = venue.openNow;
+  const selo = aberta === true
+    ? '<span class="venue-status is-open"><i></i>Aberta agora</span>'
+    : aberta === false
+      ? '<span class="venue-status is-closed"><i></i>Fechada agora</span>'
+      : '';
   return `
     <article class="card venue-card" data-venue-id="${venue.id}">
       ${removable}
       <a class="venue-card-link" href="#quadra/${venue.id}">
+        <!-- O selo de disponibilidade SAIU da foto.
+
+             Texto claro sobre foto qualquer nao tem contraste garantido: cada
+             quadra tem uma imagem diferente, e sobre grama clara ou ceu o
+             rotulo sumia. Aqui embaixo ele fica sobre fundo solido e se le
+             sempre. Na foto ficou so a distancia, que e um numero curto e ja
+             tinha pilula propria. -->
         <div class="photo">
           <span class="venue-distance-pill">${icon('navigation')}${formatDistance(venue.distance)} km</span>
-          <span class="venue-availability">${icon('clock-3')}${availability}</span>
           <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" loading="lazy">
         </div>
         <div class="body">
@@ -411,6 +426,7 @@ function venueCard(venue, options = {}) {
             <span>${escapeHtml(venue.sport)}</span>
             <b>${icon('star', 'ic ic-star')}${venue.rating}</b>
           </div>
+          ${selo}
           <h3>${escapeHtml(venue.name)}</h3>
           <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${formatDistance(venue.distance)} km</p>
           <div class="tags">${venue.tags.slice(0, 2).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
@@ -699,30 +715,68 @@ function distanciaKm([lat1, lng1], [lat2, lng2]) {
 
 async function renderMap(root, route) {
   const query = routeQuery(route);
-  const sport = query.get('esporte') || '';
+  /* MULTIPLA ESCOLHA: `?esporte=` aceita varios separados por virgula.
+
+     A fileira de chips so deixava escolher UM esporte por vez — quem joga
+     futsal e volei tinha de olhar o mapa duas vezes. A URL continua sendo a
+     fonte de verdade (igual em renderExplore), agora com lista. */
+  const esportesSel = (query.get('esporte') || '')
+    .split(',').map((s) => s.trim()).filter(Boolean);
+  const sport = esportesSel.length === 1 ? esportesSel[0] : '';
   /* 10 km por padrao: cobre a cidade inteira na maioria dos casos, sem
      trazer quadra de outro municipio. `?raio=` na URL ainda manda, para quem
      chega por um link com alcance definido. */
   const raio = RAIOS_MAPA.includes(Number(query.get('raio'))) ? Number(query.get('raio')) : 10;
-  const [sports, venues] = await Promise.all([
+  const [sports, todas] = await Promise.all([
     venueService.sports(),
-    venueService.list({ sport })
+    venueService.list({})
   ]);
-  const filters = root.querySelector('[data-map-filters]');
+  // O filtro por varios esportes e feito aqui: a API filtra por um so.
+  const venues = esportesSel.length
+    ? todas.filter((v) => esportesSel.includes(v.sport || v.esporte))
+    : todas;
   const summary = root.querySelector('[data-map-summary]');
   const mapElement = root.querySelector('[data-live-map]');
   const userLocation = currentCoordinates();
 
-  summary.textContent = sport
-    ? `${venues.length} opções de ${displayText(sport)}`
+  summary.textContent = esportesSel.length === 1
+    ? `${venues.length} opções de ${displayText(esportesSel[0])}`
     : `${venues.length} quadras perto de você`;
-  /* Filtro de esporte com ICONE, e nao so o nome. Uma fileira de pilulas de
-     texto todas iguais obriga a ler cada uma; o icone e reconhecido de
-     relance, e e o mesmo simbolo que a pessoa ja viu na home. */
-  filters.innerHTML = [
-    `<a class="chip chip-esporte ${sport ? '' : 'on'}" href="#mapa?raio=${raio}">${icon('sparkles')}Todos</a>`,
-    ...sports.map((item) => `<a class="chip chip-esporte ${item === sport ? 'on' : ''}" href="#mapa?esporte=${encodeURIComponent(item)}&raio=${raio}">${sportIcon(item)}${escapeHtml(rotuloModalidade(item))}</a>`)
-  ].join('');
+
+  /* Lista de multipla escolha, dentro do botao flutuante sobre o mapa.
+
+     Cada linha alterna um esporte e reescreve a URL — nao ha "aplicar", o mapa
+     responde a cada toque. O rotulo do botao diz o estado sem precisar abrir:
+     "Todas", o nome quando e um so, ou "N modalidades". */
+  const lista = root.querySelector('[data-map-filter-list]');
+  const rotulo = root.querySelector('[data-map-filter-label]');
+  if (rotulo) {
+    rotulo.textContent = esportesSel.length === 0
+      ? 'Todas'
+      : esportesSel.length === 1
+        ? rotuloModalidade(esportesSel[0])
+        : `${esportesSel.length} modalidades`;
+  }
+  if (lista) {
+    const linkPara = (lista2) => {
+      const q = new URLSearchParams();
+      if (lista2.length) q.set('esporte', lista2.join(','));
+      q.set('raio', String(raio));
+      return `#mapa?${q}`;
+    };
+    lista.innerHTML = [
+      `<a class="map-filter-item ${esportesSel.length ? '' : 'on'}" href="${linkPara([])}">
+         ${icon('sparkles')}<span>Todas as modalidades</span>${esportesSel.length ? '' : icon('check', 'ic map-filter-item__ck')}</a>`,
+      ...sports.map((item) => {
+        const marcado = esportesSel.includes(item);
+        const proxima = marcado
+          ? esportesSel.filter((s) => s !== item)
+          : [...esportesSel, item];
+        return `<a class="map-filter-item ${marcado ? 'on' : ''}" href="${linkPara(proxima)}">
+          ${sportIcon(item)}<span>${escapeHtml(rotuloModalidade(item))}</span>${marcado ? icon('check', 'ic map-filter-item__ck') : ''}</a>`;
+      })
+    ].join('');
+  }
 
 
 
@@ -743,7 +797,13 @@ async function renderMap(root, route) {
      quarteiroes seria o filtro mentindo sobre o que mostra. */
   }).setView(userLocation, zoomDoRaio(raio));
 
-  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  /* O mapa e IMAGEM, nao CSS: nenhum token o alcanca. No escuro, o basemap
+     claro virava uma placa branca ofuscante ocupando a tela inteira — o unico
+     retangulo aceso num app escuro. A CARTO publica o par escuro do mesmo
+     mapa, entao e so trocar a variante e as ruas continuam iguais. */
+  const temaEscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+  const variante = temaEscuro ? 'dark_all' : 'light_all';
+  window.L.tileLayer(`https://{s}.basemaps.cartocdn.com/${variante}/{z}/{x}/{y}{r}.png`, {
     attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: 'abcd',
     maxZoom: 19
@@ -2170,6 +2230,48 @@ async function renderClubSearch(root, route) {
   window.pqRefreshIcons?.(root);
 }
 
+
+/* Configuracoes que existem de verdade.
+
+   A tela era `data-demo-form`: mostrava "Configuracoes salvas" e nao gravava
+   nada — trocar o esporte padrao ou desligar um aviso nao sobrevivia a fechar
+   o app. Agora tudo aqui vem do servidor e volta para ele.
+
+   Grava NO TOQUE, sem botao "Salvar": o tema muda a tela na hora e seria
+   estranho ter de confirmar depois; e, com os outros gravando junto, um botao
+   sozinho para metade dos controles confundiria mais do que ajudaria. */
+async function renderConfig(root) {
+  // A pagina e remontada a cada visita: os controles nascem com o valor do
+  // HTML, e sem isto quem esta no escuro abria e via "modo escuro: desligado".
+  const linhaTema = root.querySelector('[data-cfg-tema] .switch');
+  if (linhaTema) linhaTema.classList.toggle('on', escuroLigado());
+
+  const seletorEsporte = root.querySelector('[data-cfg-esportes]');
+  if (seletorEsporte && !seletorEsporte.options.length) {
+    const esportes = await venueService.sports().catch(() => []);
+    seletorEsporte.innerHTML = ['<option value="">Sem preferência</option>']
+      .concat(esportes.map((e) => `<option value="${escapeHtml(e)}">${escapeHtml(rotuloModalidade(e))}</option>`))
+      .join('');
+  }
+
+  let config = null;
+  try {
+    config = await venueService.config();
+  } catch (error) {
+    config = null;
+  }
+  if (!config) return;
+
+  root.querySelectorAll('[data-cfg]').forEach((linha) => {
+    const chave = linha.dataset.cfg;
+    linha.querySelector('.switch')?.classList.toggle('on', Boolean(config[chave]));
+  });
+  root.querySelectorAll('[data-cfg-select]').forEach((select) => {
+    const valor = config[select.dataset.cfgSelect];
+    if (valor !== undefined && valor !== null) select.value = String(valor);
+  });
+}
+
 export async function renderMobilePage(route, root) {
   if (activeMobileApprovalTimer) {
     clearInterval(activeMobileApprovalTimer);
@@ -2207,13 +2309,7 @@ export async function renderMobilePage(route, root) {
     carteira: renderWallet,
     carteiraAcao: renderWalletAction,
     perfil: renderProfile,
-    config: async (root) => {
-      /* O interruptor precisa CHEGAR no estado certo: a pagina e remontada a
-         cada visita, entao ele nasce sempre desligado no HTML. Sem isto, quem
-         esta no escuro abria Configuracoes e via "modo escuro: desligado". */
-      const linha = root.querySelector('[data-cfg-tema] .switch');
-      if (linha) linha.classList.toggle('on', escuroLigado());
-    },
+    config: renderConfig,
     mensagens: renderMessages,
     clube: renderClub,
     game: renderGame,
@@ -2893,13 +2989,77 @@ export function initMobileActions() {
      grava nada. Este nao passa por ali: grava na hora do toque, porque tema e
      efeito imediato e nao tem "salvar" que faca sentido depois de ja ter
      mudado a tela inteira. */
+  /* Abrir/fechar a lista de modalidades do mapa. Fecha ao tocar fora, porque
+     ela flutua SOBRE o mapa e ficar aberta atrapalha justamente o que a tela
+     serve para fazer. */
   document.addEventListener('click', (event) => {
+    const caixa = document.querySelector('[data-map-filter-box]');
+    if (!caixa) return;
+    const gatilho = event.target.closest('[data-map-filter-toggle]');
+    const lista = caixa.querySelector('[data-map-filter-list]');
+    if (!lista) return;
+
+    if (gatilho) {
+      event.preventDefault();
+      const abrindo = lista.hidden;
+      lista.hidden = !abrindo;
+      gatilho.setAttribute('aria-expanded', String(abrindo));
+      caixa.classList.toggle('is-open', abrindo);
+      return;
+    }
+    // Toque numa opcao: a navegacao por hash redesenha a tela inteira, entao
+    // nao ha o que fechar aqui.
+    if (!event.target.closest('[data-map-filter-box]')) {
+      lista.hidden = true;
+      caixa.classList.remove('is-open');
+      caixa.querySelector('[data-map-filter-toggle]')?.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  document.addEventListener('click', async (event) => {
     const linhaTema = event.target.closest('[data-cfg-tema]');
-    if (!linhaTema) return;
-    // ui.js ja virou a classe .on nesta mesma linha (handler generico do
-    // .switch-row); aqui so lemos o resultado e gravamos.
-    const ligado = linhaTema.querySelector('.switch')?.classList.contains('on');
-    definirTema(ligado ? 'dark' : 'light');
+    if (linhaTema) {
+      // ui.js ja virou a classe .on nesta mesma linha (handler generico do
+      // .switch-row); aqui so lemos o resultado e gravamos.
+      const ligado = linhaTema.querySelector('.switch')?.classList.contains('on');
+      definirTema(ligado ? 'dark' : 'light');
+      return;
+    }
+
+    /* Interruptores de notificacao: gravam no toque.
+
+       Se o servidor recusar, o interruptor VOLTA. Deixa-lo ligado depois de
+       uma falha diria que o aviso esta ativo quando nao esta — e a pessoa so
+       descobriria pelo aviso que nunca chega. */
+    const linhaCfg = event.target.closest('[data-cfg]');
+    if (!linhaCfg) return;
+    const chave = linhaCfg.dataset.cfg;
+    const swi = linhaCfg.querySelector('.switch');
+    const ligado = swi?.classList.contains('on');
+    try {
+      await venueService.salvarConfig({ [chave]: Boolean(ligado) });
+    } catch (error) {
+      swi?.classList.toggle('on', !ligado);
+      window.pqToast?.(error.message || 'Não foi possível salvar');
+    }
+  });
+
+  /* Selects (esporte e distancia): mesma regra, gravam ao mudar. */
+  document.addEventListener('change', async (event) => {
+    const select = event.target.closest('[data-cfg-select]');
+    if (!select) return;
+    const chave = select.dataset.cfgSelect;
+    const bruto = select.value;
+    const valor = chave === 'searchRadius' ? Number(bruto) : bruto;
+    const anterior = select.dataset.cfgAnterior ?? '';
+    try {
+      await venueService.salvarConfig({ [chave]: valor });
+      select.dataset.cfgAnterior = bruto;
+      window.pqToast?.('Preferência salva');
+    } catch (error) {
+      if (anterior) select.value = anterior;
+      window.pqToast?.(error.message || 'Não foi possível salvar');
+    }
   });
 
   document.addEventListener('click', async (event) => {

@@ -89,6 +89,7 @@ def to_venue(
     lat: float | None = None,
     lng: float | None = None,
     reviews: list | None = None,
+    db: Session | None = None,
 ) -> dict:
     photos = court.photos or []
     avg, count = (stats or {}).get(arena.id, (0, 0)) or (0, 0)
@@ -107,6 +108,12 @@ def to_venue(
         "gallery": photos or [],
         "tags": court.amenities or [],
         "map": _map_xy(arena.lat, arena.lng),
+        # "Aberta agora" de VERDADE. O card do app decidia isso com
+        # `venue.id % 3`, e como o id e UUID a conta dava NaN: todo mundo
+        # aparecia como "Livre agora", inclusive quadra fechada. `db` e
+        # opcional porque nem todo chamador tem sessao a mao; sem ela o campo
+        # sai como None e a tela simplesmente nao mostra o selo.
+        "openNow": _is_open_now(db, court) if db is not None else None,
         "reviewItems": [
             {
                 "author": author,
@@ -150,7 +157,7 @@ def list_venues(
     total = len(rows)
     page = rows[offset : offset + limit]
     venues = [
-        to_venue(arena, court, stats=stats, lat=lat, lng=lng) for court, arena in page
+        to_venue(arena, court, stats=stats, lat=lat, lng=lng, db=db) for court, arena in page
     ]
     # boost > rating > distancia — mesma regra que o app aplica do lado dele.
     venues.sort(key=lambda v: (v["rating"] or 0, -v["distance"]), reverse=True)
@@ -172,7 +179,7 @@ def get_venue_detail(db: Session, court_id, *, lat=None, lng=None) -> dict | Non
     court, arena = row
     stats = repo.review_stats(db, [arena.id])
     reviews = repo.reviews_for_arena(db, arena.id, limit=3)
-    return to_venue(arena, court, stats=stats, lat=lat, lng=lng, reviews=reviews)
+    return to_venue(arena, court, stats=stats, lat=lat, lng=lng, reviews=reviews, db=db)
 
 
 def _day_window(db: Session, court: Court, day: datetime) -> list[tuple[time, time]]:
@@ -268,7 +275,7 @@ def get_resumo(db: Session, court_id, hora: str, dur: int) -> dict | None:
     h_start = int(str(hora).split(":")[0])
     h_end = h_start + dur
     return {
-        "quadra": to_venue(arena, court, stats=repo.review_stats(db, [arena.id])),
+        "quadra": to_venue(arena, court, stats=repo.review_stats(db, [arena.id]), db=db),
         "hora": hora,
         "hora_fim": f"{h_end:02d}:00",
         "dur": dur,
@@ -308,7 +315,7 @@ def get_featured(db: Session, lat: float | None = None, lng: float | None = None
         return cached
     rows = repo.list_visible_courts(db)
     stats = repo.review_stats(db, [r[1].id for r in rows]) if rows else {}
-    venues = [to_venue(arena, court, stats=stats, lat=lat, lng=lng) for court, arena in rows]
+    venues = [to_venue(arena, court, stats=stats, lat=lat, lng=lng, db=db) for court, arena in rows]
     venues.sort(key=lambda v: (v["rating"] or 0), reverse=True)
     payload = {
         "destaques": venues[:4],
@@ -341,4 +348,4 @@ def get_favorite_venues(db: Session, user_id) -> list:
         return []
     rows = repo.list_visible_courts(db, arena_ids=arena_ids)
     stats = repo.review_stats(db, arena_ids) if rows else {}
-    return [to_venue(arena, court, stats=stats) for court, arena in rows]
+    return [to_venue(arena, court, stats=stats, db=db) for court, arena in rows]

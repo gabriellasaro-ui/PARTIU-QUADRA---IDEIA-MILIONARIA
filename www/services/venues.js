@@ -214,6 +214,22 @@ export const venueService = {
     return null;
   },
 
+  /* Configuracoes da pessoa. Sem API nao ha onde gravar: devolve os padroes
+     em vez de fingir que guardou. */
+  async config() {
+    if (!API_BASE_URL) return null;
+    const data = await api.get('/api/perfil/config');
+    return data?.config || null;
+  },
+
+  /* PATCH parcial de proposito: manda so o que mudou. Enviar o objeto inteiro
+     faria dois aparelhos abertos ao mesmo tempo sobrescreverem um ao outro. */
+  async salvarConfig(mudanca) {
+    if (!API_BASE_URL) return null;
+    const data = await api.patch('/api/perfil/config', mudanca);
+    return data?.config || null;
+  },
+
   async favoriteIds() {
     if (API_BASE_URL) {
       const data = await api.get('/api/favoritos');

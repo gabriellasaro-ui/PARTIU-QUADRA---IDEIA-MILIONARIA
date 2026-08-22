@@ -19,7 +19,13 @@
    cor sai de `currentColor`: acompanha o texto ao lado em qualquer tema, do
    mesmo jeito que o icone do Pix ja faz. */
 
-const BASE = './assets/images/sports/';
+/* ABSOLUTO, a partir da raiz do documento.
+
+   Com './assets/...' o navegador resolvia o url() a partir da FOLHA DE ESTILO
+   (/assets/css/mobile-v2.css) e nao do documento, virando
+   /assets/css/assets/images/sports/... — 404, e o icone sumia por completo.
+   Uma barra na frente resolve, e vale igual no app (localhost/) e na web. */
+const BASE = '/assets/images/sports/';
 
 /* Nome do esporte -> arquivo. Varios esportes podem apontar para o mesmo
    desenho quando nao ha um proprio; o fallback e 'outros', que e justamente

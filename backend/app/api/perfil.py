@@ -10,7 +10,7 @@ Agora a identidade sai da sessao e os numeros sao contados no banco.
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
@@ -286,3 +286,64 @@ def salvar_perfil_legado(
     db: Session = Depends(get_db),
 ):
     return salvar_perfil(patch, user, db)
+
+
+# ─────────────────────────── Configuracoes ─────────────────────────────────
+
+class ConfigPatch(BaseModel):
+    """Preferencias da tela de Configuracoes.
+
+    Todos opcionais: a tela manda so o que mudou, e ausente significa "nao
+    mexe" — diferente de `false`, que significa "desliga". Sem essa distincao,
+    salvar o esporte padrao desligaria os avisos junto.
+    """
+
+    notifyBooking: bool | None = None
+    notifyReminder: bool | None = None
+    notifyClub: bool | None = None
+    favoriteSport: str | None = None
+    searchRadius: int | None = Field(default=None, ge=1, le=100)
+
+
+def _config_dict(user: User) -> dict:
+    return {
+        "notifyBooking": bool(user.notify_booking),
+        "notifyReminder": bool(user.notify_reminder),
+        "notifyClub": bool(user.notify_club),
+        "favoriteSport": user.favorite_sport or "",
+        "searchRadius": int(user.search_radius or 10),
+    }
+
+
+@router.get("/config")
+def ler_config(
+    user: User = Depends(get_current_user),
+) -> dict:
+    return {"config": _config_dict(user)}
+
+
+@router.patch("/config")
+def salvar_config(
+    patch: ConfigPatch,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    campos = {
+        "notifyBooking": "notify_booking",
+        "notifyReminder": "notify_reminder",
+        "notifyClub": "notify_club",
+        "searchRadius": "search_radius",
+    }
+    for entrada, coluna in campos.items():
+        valor = getattr(patch, entrada)
+        if valor is not None:
+            setattr(user, coluna, valor)
+
+    # Esporte favorito ja mora em `users` e e lido pelo perfil; string vazia
+    # limpa, para quem nao quer mais um padrao.
+    if patch.favoriteSport is not None:
+        user.favorite_sport = patch.favoriteSport.strip()
+
+    db.commit()
+    db.refresh(user)
+    return {"config": _config_dict(user)}

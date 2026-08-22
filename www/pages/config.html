@@ -5,19 +5,32 @@
     <div><div class="title">Configurações</div><div class="sub">Preferências e privacidade</div></div>
   </div>
 
-  <form class="container mobile-settings" data-demo-form data-success="Configurações salvas">
+  <!-- Este formulario era data-demo-form: dizia "Configuracoes salvas" e nao
+       gravava nada. Agora cada controle grava no servidor ao ser tocado, e por
+       isso o botao "Salvar alteracoes" tambem saiu — nao havia mais o que
+       salvar depois, e um botao que nao faz nada e pior que nenhum.
+
+       As duas opcoes que sobraram de notificacao sao as que EXISTEM de fato no
+       backend. "Quadras novas por perto" e "Promocoes e cupons" foram
+       removidas: nao ha nada que as envie, entao eram interruptores ligados a
+       lugar nenhum. -->
+  <form class="container mobile-settings" data-config-form>
     <section class="settings-section">
       <h2>Notificações</h2>
-      <label class="switch-row"><span>Reserva confirmada<small>Avisar assim que a arena confirmar</small></span><span class="switch on"></span></label>
-      <label class="switch-row"><span>Lembrete do jogo<small>Uma hora antes do horário</small></span><span class="switch on"></span></label>
-      <label class="switch-row"><span>Quadras novas por perto</span><span class="switch"></span></label>
-      <label class="switch-row"><span>Promoções e cupons</span><span class="switch on"></span></label>
+      <label class="switch-row" data-cfg="notifyBooking"><span>Reserva confirmada<small>Avisar assim que a arena confirmar</small></span><span class="switch on"></span></label>
+      <label class="switch-row" data-cfg="notifyReminder"><span>Lembrete do jogo<small>Uma hora antes do horário</small></span><span class="switch on"></span></label>
+      <label class="switch-row" data-cfg="notifyClub"><span>Mensagens do clube<small>Quando alguém escrever no mural</small></span><span class="switch on"></span></label>
     </section>
 
     <section class="settings-section">
       <h2>Preferências de jogo</h2>
-      <div class="field"><label>Esporte padrão</label><div class="select-wrap"><select><option>Futebol Society</option><option>Beach Tennis</option><option>Volei</option><option>Basquete</option><option>Tenis</option><option>Futsal</option></select></div></div>
-      <div class="field"><label>Distância padrão</label><div class="select-wrap"><select><option>Até 2 km</option><option selected>Até 5 km</option><option>Até 10 km</option></select></div></div>
+      <div class="field"><label>Esporte padrão</label><div class="select-wrap"><select data-cfg-select="favoriteSport" data-cfg-esportes></select></div></div>
+      <div class="field"><label>Distância padrão</label><div class="select-wrap"><select data-cfg-select="searchRadius">
+        <option value="2">Até 2 km</option>
+        <option value="5">Até 5 km</option>
+        <option value="10">Até 10 km</option>
+        <option value="25">Até 25 km</option>
+      </select></div></div>
     </section>
 
     <!-- A secao Privacidade saiu inteira.
@@ -40,8 +53,6 @@
         <span class="switch"></span>
       </label>
     </section>
-
-    <button class="btn block" type="submit">Salvar alterações</button>
 
     <!-- Sair era um link miudo de 13px no rodape, do tamanho de uma nota de
          pe de pagina — para a acao que a pessoa mais procura nesta tela.

@@ -10,17 +10,25 @@
     </button>
   </div>
 
-  <div class="map-filter-strip">
-    <div class="chips" data-map-filters></div>
-  </div>
+  <!-- A FAIXA DE MODALIDADE SAIU.
 
-  <!-- A fileira de raio saiu daqui. Duas faixas de filtro empilhadas
-       (esporte e distancia) davam a tela do mapa mais controle do que mapa, e
-       o padrao de 10 km cobre a busca de quase todo mundo. Quem quiser outro
-       alcance muda pelo seletor de local, no topo — e o mapa reenquadra. -->
+       Ela ocupava uma tira inteira acima do mapa so para escolher esporte —
+       numa tela cujo unico objetivo e ver o mapa. Agora o mapa comeca ali, e o
+       filtro virou um botao FLUTUANDO sobre ele, que abre uma lista de
+       multipla escolha. Ocupa espaco so quando esta aberto, e permite mais de
+       um esporte ao mesmo tempo, o que a fileira de chips nao permitia. -->
 
   <div class="leaflet-map-shell">
     <div class="leaflet-mobile-map" data-live-map aria-label="Mapa interativo das quadras"></div>
     <div class="map-location-label"><span></span>Você está aqui</div>
+
+    <div class="map-filter-float" data-map-filter-box>
+      <button class="map-filter-btn" type="button" data-map-filter-toggle aria-expanded="false">
+        <i class="ic" data-lucide="sliders-horizontal"></i>
+        <span data-map-filter-label>Todas</span>
+        <i class="ic map-filter-btn__chev" data-lucide="chevron-down"></i>
+      </button>
+      <div class="map-filter-list" data-map-filter-list hidden role="group" aria-label="Modalidades"></div>
+    </div>
   </div>
 </div>
