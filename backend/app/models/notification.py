@@ -40,6 +40,16 @@ NOTIF_BOOKING_EXPIRED = "booking.expired"
 # Push da mensagem: NAO vira linha in-app
 NOTIF_MESSAGE_NEW = "message.new"
 
+#: Chegou solicitacao de reserva — vai para o DONO da arena.
+#:
+#: Nome proprio, e nao reaproveitar payment.confirmed: os dois acontecem no
+#: mesmo instante mas dizem coisas diferentes. "Pagamento confirmado" e
+#: contabilidade; "alguem quer sua quadra sabado as 20h" e uma decisao que
+#: precisa ser tomada em 15 minutos, senao a reserva expira. Reaproveitar o
+#: evento faria os dois cairem no mesmo balde de notificacao, com o mesmo peso
+#: e o mesmo texto — e o dono perderia a janela de aprovacao lendo um recibo.
+NOTIF_RESERVA_SOLICITADA = "reserva.solicitada"
+
 # Fase 9 — clubes/peladas/partidas
 NOTIF_CLUBE_ENTROU = "clube.entrou"
 #: Alguem pediu para entrar num clube em modo solicitacao — vai para a gestao.

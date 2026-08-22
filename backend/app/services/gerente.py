@@ -281,10 +281,78 @@ def agenda(db: Session, manager, semana: str | None = None) -> dict:
 
 # --- Reservas -------------------------------------------------------------
 
-def list_reservas(db: Session, manager, *, status_filtro: str | None = None, q: str | None = None) -> list:
+def _intervalo(de: str | None, ate: str | None, *, padrao_dias: int = 30):
+    """Converte o intervalo escolhido na tela em datetimes locais.
+
+    Os filtros fixos ("hoje / 7d / 30d") nao serviam a quem fecha o mes: o dono
+    quer "1 a 31 de julho", e nao "os ultimos 30 dias a partir de agora". Aqui
+    `de` e `ate` sao datas ISO (AAAA-MM-DD) e `ate` e INCLUSIVO — quem digita
+    31/07 espera o dia 31 inteiro dentro da conta, nao ate a meia-noite dele.
+    """
+    fim = now_local()
+    if ate:
+        try:
+            d = datetime.strptime(ate, "%Y-%m-%d").date()
+            fim = datetime.combine(d, time.min, tzinfo=TZ) + timedelta(days=1)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Data final invalida (use AAAA-MM-DD)")
+
+    inicio = fim - timedelta(days=padrao_dias)
+    if de:
+        try:
+            d = datetime.strptime(de, "%Y-%m-%d").date()
+            inicio = datetime.combine(d, time.min, tzinfo=TZ)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Data inicial invalida (use AAAA-MM-DD)")
+
+    if inicio >= fim:
+        raise HTTPException(status_code=422, detail="A data inicial precisa vir antes da final")
+    return inicio, fim
+
+
+def list_reservas(
+    db: Session,
+    manager,
+    *,
+    status_filtro: str | None = None,
+    q: str | None = None,
+    plano: str | None = None,
+    de: str | None = None,
+    ate: str | None = None,
+    pagina: int = 1,
+    por_pagina: int = 20,
+) -> dict:
+    """Reservas paginadas.
+
+    Devolvia uma LISTA cortada em 200 linhas sem dizer que havia corte: a tela
+    mostrava o que coubesse e o dono nao tinha como saber que faltava. Agora
+    devolve o total e a pagina, e quem chama consegue numerar.
+    """
     arena = manager_arena_or_404(db, manager)
-    rows = repo.list_arena_bookings(db, arena.id, status=status_filtro or None, q=q or None)
-    return [serialize_booking(b, c, a, u) for b, c, a, u in rows]
+    pagina = max(1, int(pagina or 1))
+    por_pagina = max(1, min(100, int(por_pagina or 20)))
+
+    inicio = fim = None
+    if de or ate:
+        inicio, fim = _intervalo(de, ate)
+
+    linhas, total = repo.list_arena_bookings(
+        db, arena.id,
+        status=status_filtro or None,
+        q=q or None,
+        plano=plano or None,
+        de=inicio, ate=fim,
+        limit=por_pagina,
+        offset=(pagina - 1) * por_pagina,
+        com_total=True,
+    )
+    return {
+        "reservas": [serialize_booking(b, c, a, u) for b, c, a, u in linhas],
+        "total": total,
+        "pagina": pagina,
+        "porPagina": por_pagina,
+        "paginas": max(1, -(-total // por_pagina)),  # teto da divisao
+    }
 
 
 def create_manual_booking(db: Session, manager, body) -> Booking:
@@ -488,16 +556,58 @@ def cancel_mensalista(db: Session, manager, booking_id) -> dict:
 
 # --- Financeiro -----------------------------------------------------------
 
-def financeiro(db: Session, manager, periodo: str = "30d") -> dict:
+def _serie_diaria(db: Session, arena_id, start: datetime, end: datetime) -> list[dict]:
+    """Um ponto por dia do intervalo, INCLUSIVE os dias sem faturamento.
+
+    A consulta so devolve dias com movimento. Se o grafico usasse isso direto,
+    uma terca vazia simplesmente sumiria e a sexta apareceria colada na
+    segunda — a serie ficaria mais curta e o desenho, mentiroso. Zero e um
+    dado; ausencia nao e.
+    """
+    porta = {d: (v, c) for d, v, c in repo.revenue_by_day(db, arena_id, start, end)}
+    pontos = []
+    dia = start.date()
+    ultimo = (end - timedelta(seconds=1)).date()
+    while dia <= ultimo:
+        chave = dia.isoformat()
+        valor, qtd = porta.get(chave, (0, 0))
+        pontos.append({
+            "dia": chave,
+            "rotulo": ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"][dia.weekday()],
+            "valor": valor / 100,
+            "reservas": qtd,
+        })
+        dia += timedelta(days=1)
+    return pontos
+
+
+def financeiro(
+    db: Session,
+    manager,
+    periodo: str = "30d",
+    *,
+    de: str | None = None,
+    ate: str | None = None,
+) -> dict:
+    """Financeiro do periodo.
+
+    `de`/`ate` mandam quando vierem: quem fecha o mes quer "1 a 31 de julho", e
+    nao "os ultimos 30 dias a partir de agora". Os atalhos fixos continuam
+    existindo para o uso do dia a dia, mas deixaram de ser a unica opcao.
+    """
     arena = manager_arena_or_404(db, manager)
-    today = now_local().date()
-    if periodo == "today":
-        start = datetime.combine(today, time.min, tzinfo=TZ)
-    elif periodo == "7d":
-        start = now_local() - timedelta(days=7)
+    if de or ate:
+        start, end = _intervalo(de, ate)
+        periodo = "custom"
     else:
-        start = now_local() - timedelta(days=30)
-    end = now_local()
+        today = now_local().date()
+        if periodo == "today":
+            start = datetime.combine(today, time.min, tzinfo=TZ)
+        elif periodo == "7d":
+            start = now_local() - timedelta(days=7)
+        else:
+            start = now_local() - timedelta(days=30)
+        end = now_local()
 
     gross, subtotal, com, cnt = repo.revenue_for_period(db, arena.id, start, end)
     liquido = subtotal - round(subtotal * settings.arena_fee_rate)
@@ -505,6 +615,13 @@ def financeiro(db: Session, manager, periodo: str = "30d") -> dict:
 
     return {
         "periodo": periodo,
+        # A tela precisa saber QUAL intervalo respondeu, senao nao ha como
+        # mostrar "1 a 31 de julho" no cabecalho do relatorio.
+        "de": start.date().isoformat(),
+        "ate": (end - timedelta(seconds=1)).date().isoformat(),
+        # Serie diaria REAL, para o grafico parar de ser desenhado a partir do
+        # total dividido por sete com pesos escolhidos a mao.
+        "serie": _serie_diaria(db, arena.id, start, end),
         "bruto": gross / 100,
         "subtotal": subtotal / 100,
         "comissao": com / 100,
@@ -616,18 +733,67 @@ def update_quadra(db: Session, manager, court_id, body) -> Court:
 
 # --- Avaliacoes -----------------------------------------------------------
 
-def list_avaliacoes(db: Session, manager) -> dict:
+def list_avaliacoes(db: Session, manager, *, quadra: str | None = None) -> dict:
+    """Avaliacoes da arena, agora sabendo QUAL QUADRA cada uma avaliou.
+
+    Uma arena com quatro quadras via uma media so, e ela nao ajuda em nada: se
+    a quadra 3 esta com o piso ruim, a nota dela dilui nas outras tres e o dono
+    nunca descobre onde esta o problema. Cada quadra tem sua nota e sua
+    distribuicao.
+
+    Avaliacao sem reserva vinculada fica em "quadra desconhecida" em vez de ser
+    atribuida a alguma: chutar a quadra errada numa nota 2 e pior que nao
+    atribuir nenhuma.
+    """
     arena = manager_arena_or_404(db, manager)
+
     avaliacoes = []
-    for review, author in repo.reviews_for_arena_owner(db, arena.id):
-        avaliacoes.append({
+    por_quadra: dict[str, dict] = {}
+    for review, author, court_id, court_name in repo.reviews_with_court(db, arena.id):
+        cid = str(court_id) if court_id else ""
+        item = {
             "id": str(review.id),
             "cliente": author,
             "nota": review.rating,
             "quando": _relative(review.created_at),
             "texto": review.comment or "",
             "resposta": review.reply,
+            "quadraId": cid,
+            "quadraNome": court_name or "Sem quadra identificada",
+        }
+        avaliacoes.append(item)
+
+        grupo = por_quadra.setdefault(cid, {
+            "quadraId": cid,
+            "quadraNome": item["quadraNome"],
+            "total": 0,
+            "soma": 0,
+            "dist": {5: 0, 4: 0, 3: 0, 2: 0, 1: 0},
         })
+        grupo["total"] += 1
+        grupo["soma"] += review.rating or 0
+        if review.rating in grupo["dist"]:
+            grupo["dist"][review.rating] += 1
+
+    quadras = [
+        {
+            "quadraId": g["quadraId"],
+            "quadraNome": g["quadraNome"],
+            "total": g["total"],
+            "media": round(g["soma"] / g["total"], 1) if g["total"] else 0,
+            "dist": [{"n": n, "qtd": g["dist"][n]} for n in (5, 4, 3, 2, 1)],
+        }
+        # A pior media primeiro: e onde o dono precisa olhar, e a lista existe
+        # para ele agir, nao para se parabenizar.
+        for g in sorted(
+            por_quadra.values(),
+            key=lambda x: (x["soma"] / x["total"]) if x["total"] else 99,
+        )
+    ]
+
+    if quadra:
+        avaliacoes = [a for a in avaliacoes if a["quadraId"] == quadra]
+
     dist = repo.review_distribution(db, arena.id)
     total = sum(d["qtd"] for d in dist)
     media = round(sum(d["n"] * d["qtd"] for d in dist) / total, 1) if total else 0
@@ -636,6 +802,8 @@ def list_avaliacoes(db: Session, manager) -> dict:
         "dist": dist,
         "total": total,
         "media": media,
+        "quadras": quadras,
+        "filtroQuadra": quadra or "",
     }
 
 
@@ -700,6 +868,24 @@ def delete_cupom(db: Session, manager, coupon_id) -> dict:
 
 # --- Perfil / config / desativacao ----------------------------------------
 
+def _validar_logo(bruto: str | None) -> str | None:
+    """Mesma regra da foto de perfil e do escudo do clube.
+
+    O conteudo vem do painel e termina num `src` na tela do jogador: so passa
+    data URL de imagem ou http(s). String vazia remove a logo.
+    """
+    if bruto is None:
+        return None
+    valor = bruto.strip()
+    if not valor:
+        return None
+    if not (valor.startswith("data:image/") or valor.startswith(("http://", "https://"))):
+        raise HTTPException(status_code=422, detail="Formato de imagem invalido")
+    if len(valor) > 1_400_000:
+        raise HTTPException(status_code=413, detail="Imagem muito grande")
+    return valor
+
+
 def arena_profile(db: Session, manager) -> dict:
     arena = manager_arena_or_404(db, manager)
     return {
@@ -712,6 +898,10 @@ def arena_profile(db: Session, manager) -> dict:
         "email": arena.email or "",
         "pixChave": arena.pix_key or "",
         "ativo": arena.is_active,
+        # A logo nao era nem lida nem gravada: o painel tinha o botao "Trocar
+        # logo" e nada acontecia. Mesma falha que parece sucesso da ficha do
+        # jogador.
+        "logo": arena.logo or "",
     }
 
 
@@ -731,6 +921,8 @@ def update_arena_profile(db: Session, manager, body) -> dict:
         arena.phone = body.telefone
     if body.email is not None:
         arena.email = body.email
+    if body.logo is not None:
+        arena.logo = _validar_logo(body.logo)
     if body.pixChave is not None:
         arena.pix_key = body.pixChave
     db.commit()
@@ -844,3 +1036,70 @@ def _relative(value) -> str:
     from .catalog import _relative_date
 
     return _relative_date(value)
+
+
+# --- Ritmo da agenda (mapa de calor) ---------------------------------------
+
+def ritmo_agenda(db: Session, manager, *, de: str | None = None, ate: str | None = None) -> dict:
+    """Mapa de calor da demanda: dia da semana x hora.
+
+    Responde a pergunta que o dono faz o tempo todo e que nenhum numero isolado
+    respondia: QUANDO a quadra enche. "Ocupacao media 2%" nao diz se o problema
+    e a terca de manha ou o domingo inteiro; o mapa diz.
+
+    Duas camadas na mesma grade, e elas nao sao a mesma coisa:
+
+      reservas — o que virou reserva de fato.
+      procura  — quantas vezes alguem ABRIU aquela quadra naquele dia/hora sem
+                 reservar. E a demanda que a arena esta perdendo, e e o unico
+                 numero aqui que sugere ACAO (abrir horario, baixar preco).
+
+    Sem a segunda camada, um horario vazio e ambiguo: ninguem quer, ou ninguem
+    achou? A distincao muda o que o dono faz.
+    """
+    arena = manager_arena_or_404(db, manager)
+    inicio, fim = _intervalo(de, ate, padrao_dias=90)
+
+    # Grade 7x24 zerada: a tela desenha a grade inteira, e buraco no meio de um
+    # mapa de calor le como "zero", nao como "sem dado".
+    reservas = [[0] * 24 for _ in range(7)]
+    total_reservas = 0
+
+    for booking, court, _arena, _user in repo.bookings_between(db, arena.id, inicio, fim):
+        if booking.status in (STATUS_CANCELLED, STATUS_EXPIRED, STATUS_REJECTED):
+            continue
+        local = _as_local(booking.start_at)
+        # Python: segunda = 0. A tela do Brasil comeca no domingo, entao a
+        # conversao mora aqui e nao em cada lugar que desenha a grade.
+        dia = (local.weekday() + 1) % 7
+        reservas[dia][local.hour] += 1
+        total_reservas += 1
+
+    procura = [[0] * 24 for _ in range(7)]
+    total_procura = 0
+    for dia_semana, hora, quantas in repo.demand_by_slot(db, arena.id, inicio, fim):
+        if dia_semana is None or hora is None:
+            continue
+        procura[int(dia_semana)][int(hora)] = int(quantas)
+        total_procura += int(quantas)
+
+    # Os picos, para a tela nao ter de recalcular nem inventar o texto.
+    def maior(grade):
+        melhor = (0, 0, 0)
+        for d, linha in enumerate(grade):
+            for h, v in enumerate(linha):
+                if v > melhor[2]:
+                    melhor = (d, h, v)
+        return {"dia": melhor[0], "hora": melhor[1], "total": melhor[2]}
+
+    return {
+        "de": inicio.date().isoformat(),
+        "ate": (fim - timedelta(seconds=1)).date().isoformat(),
+        "dias": ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"],
+        "reservas": reservas,
+        "procura": procura,
+        "totalReservas": total_reservas,
+        "totalProcura": total_procura,
+        "picoReservas": maior(reservas),
+        "picoProcura": maior(procura),
+    }

@@ -105,6 +105,33 @@ export const venueService = {
     return storage.get('conversations', clone(CONVERSATIONS));
   },
 
+  /* Encerrar o atendimento. So a arena pode — o canal existe para resolver
+     AQUELA reserva, e nao para virar linha direta por onde a proxima e
+     combinada por fora da plataforma. */
+  async encerrarConversa(conversationId) {
+    if (!API_BASE_URL) return null;
+    return api.post(`/api/mensagens/${conversationId}/encerrar`, {});
+  },
+
+  /* Bloquear a pessoa. Encerrar resolve UM atendimento; quando o problema e a
+     pessoa, a proxima reserva abre outra conversa e a arena volta ao mesmo
+     lugar. O bloqueio e so desta arena. */
+  async bloquearPessoa(playerId, motivo) {
+    if (!API_BASE_URL) return null;
+    return api.post(`/api/mensagens/bloquear/${playerId}`, { motivo: motivo || null });
+  },
+
+  async desbloquearPessoa(playerId) {
+    if (!API_BASE_URL) return null;
+    return api.delete(`/api/mensagens/bloquear/${playerId}`);
+  },
+
+  async bloqueados() {
+    if (!API_BASE_URL) return [];
+    const data = await api.get('/api/mensagens/bloqueados');
+    return data?.bloqueados || [];
+  },
+
   async sendMessage(conversationId, text) {
     if (API_BASE_URL) {
       return api.post(`/api/mensagens/${conversationId}/enviar?texto=${encodeURIComponent(text)}&de=jogador`);

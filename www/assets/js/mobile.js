@@ -3316,8 +3316,17 @@ export function initMobileActions() {
     const slot = event.target.closest('[data-slot-hour]');
     if (slot && !slot.disabled) {
       const root = slot.closest('[data-venue-page]');
-      root.querySelector('[data-booking]').dataset.hour = slot.dataset.slotHour;
+      const booking = root.querySelector('[data-booking]');
+      booking.dataset.hour = slot.dataset.slotHour;
       renderBooking(root);
+      /* Escolher um horario e o ato que carrega a informacao "quero jogar
+         AQUI, NESSA HORA" — e o que alimenta o mapa de calor do dono da
+         quadra. Depois do render: telemetria nunca na frente da tela. */
+      venueService.registrarInteresse(booking.dataset.venueId, {
+        data: booking.dataset.date,
+        hora: slot.dataset.slotHour,
+        dur: Number(booking.dataset.duration || 1)
+      });
       return;
     }
 

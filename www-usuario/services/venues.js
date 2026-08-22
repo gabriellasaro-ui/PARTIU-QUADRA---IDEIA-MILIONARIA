@@ -205,6 +205,18 @@ export const venueService = {
 
   /* Preco server-side do checkout. A estimativa local continua como fallback
      visual; na hora de confirmar o servidor manda. */
+  /* Telemetria de demanda: alimenta o mapa de calor do painel do gerente.
+
+     Dispara e ESQUECE. Nunca await no caminho do toque, e o erro e engolido:
+     o mapa do dono nao pode atrasar nem quebrar a escolha de horario de quem
+     esta tentando jogar. Sem token de proposito — quem ainda nao tem conta
+     tambem procura horario, e e justamente essa a demanda que se perde. */
+  registrarInteresse(quadraId, { data, hora, dur }) {
+    if (!API_BASE_URL || !quadraId || !hora) return;
+    api.post(`/api/quadras/${quadraId}/interesse`, { data, hora, dur }, { auth: false })
+      .catch(() => {});
+  },
+
   async quote(payload) {
     if (API_BASE_URL) {
       const data = await api.post('/api/reservas/quote', payload);

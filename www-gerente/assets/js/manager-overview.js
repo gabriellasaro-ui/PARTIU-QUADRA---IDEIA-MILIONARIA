@@ -55,9 +55,15 @@ function renderHeatmap(root) {
   grid.innerHTML = html;
 }
 
-function renderChart(root, valores) {
+/* O grafico recebe PONTOS ({rotulo, valor}), e nao so numeros.
+
+   Antes ele assumia que o indice 0 era segunda e usava DIAS[i] como rotulo. A
+   serie real comeca no primeiro dia do intervalo escolhido — que pode ser uma
+   quinta — e o eixo passaria a mentir sobre qual dia e qual. */
+function renderChart(root, pontosSerie) {
   const svg = root.querySelector('[data-overview-chart]');
   if (!svg) return;
+  const valores = pontosSerie.map((p) => p.valor);
   const W = 620;
   const H = 240;
   const x0 = 46;
@@ -66,11 +72,13 @@ function renderChart(root, valores) {
   const y1 = H - 34;
   const max = Math.max(...valores, 100) * 1.15;
 
-  const pontos = valores.map((v, i) => ({
-    x: x0 + (i * (x1 - x0)) / (valores.length - 1),
-    y: y1 - (v / max) * (y1 - y0),
-    lab: DIAS[i],
-    v
+  // Um ponto so dividiria por zero no calculo do x.
+  const passo = valores.length > 1 ? (x1 - x0) / (valores.length - 1) : 0;
+  const pontos = pontosSerie.map((p, i) => ({
+    x: x0 + i * passo,
+    y: y1 - (p.valor / max) * (y1 - y0),
+    lab: p.rotulo,
+    v: p.valor
   }));
   const pico = valores.indexOf(Math.max(...valores));
 
@@ -92,6 +100,28 @@ function renderChart(root, valores) {
     <text class="lc-xl" x="${p.x.toFixed(1)}" y="${H - 9}" style="text-anchor:${i === 0 ? 'start' : (i === pontos.length - 1 ? 'end' : 'middle')}">${p.lab}</text>`).join(''));
 
   return { pico, valores };
+}
+
+/* Serie REAL dos ultimos 7 dias. */
+async function renderChartReal(root) {
+  const svg = root.querySelector('[data-overview-chart]');
+  if (!svg) return;
+  if (!API_BASE_URL) {
+    // Sem backend nao ha faturamento: grafico vazio e honesto. Desenhar uma
+    // curva bonita aqui foi exatamente o erro que se esta corrigindo.
+    renderChart(root, []);
+    return;
+  }
+  const hoje = new Date();
+  const inicio = new Date(hoje);
+  inicio.setDate(inicio.getDate() - 6);
+  const iso = (d) => d.toISOString().slice(0, 10);
+  try {
+    const dados = await managerService.financeiro({ de: iso(inicio), ate: iso(hoje) });
+    renderChart(root, dados?.serie || []);
+  } catch (error) {
+    renderChart(root, []);
+  }
 }
 
 export async function renderManagerOverview(root) {
@@ -170,24 +200,27 @@ export async function renderManagerOverview(root) {
 
   renderHeatmap(root);
 
-  const semana = DIAS.map((_, i) => Math.round(bruto / 7 * (0.7 + (i >= 4 ? 0.6 : 0.15) + i * 0.05)));
-  renderChart(root, semana);
+  /* O grafico da semana agora sai da SERIE REAL do backend.
 
-  const melhor = DIAS[semana.indexOf(Math.max(...semana))];
-  const pior = DIAS[semana.indexOf(Math.min(...semana))];
-  if (root.querySelector('[data-overview-insights]')) root.querySelector('[data-overview-insights]').innerHTML = `
-    <article class="up">
-      <span><svg class="ic"><use href="#i-trend"/></svg></span>
-      <div><strong>${melhor} é seu melhor dia</strong><p>R$ ${Math.max(...semana)} em reservas. Mantenha a noite toda aberta.</p></div>
-    </article>
-    <article class="hot">
-      <span><svg class="ic"><use href="#i-flame"/></svg></span>
-      <div><strong>Horário nobre quase lotado</strong><p>19h–21h com ${lista[2].occ}% de ocupação. Há espaço para preço dinâmico.</p></div>
-    </article>
-    <article class="down">
-      <span><svg class="ic"><use href="#i-down"/></svg></span>
-      <div><strong>${pior} é o dia mais fraco</strong><p>Crie um pacote ou promoção para encher os horários ociosos.</p></div>
-    </article>`;
+     Antes era `bruto / 7 * (0.7 + i * 0.05)`: o total do mes dividido por sete
+     e multiplicado por pesos escolhidos a mao. Parecia dado e nao era — a
+     sexta "faturava mais" porque alguem escreveu 0.6 no codigo, e nao porque
+     tivesse faturado.
+
+     Dia sem faturamento vem como zero, e nao ausente: buraco no meio de uma
+     serie temporal encurta o desenho e desloca todos os outros dias. */
+  await renderChartReal(root);
+
+  /* O bloco OPORTUNIDADES foi removido.
+
+     Ele dizia "terca e seu dia mais fraco, crie uma promocao" — deduzido
+     daquela mesma serie fabricada. Ou seja: o painel dava CONSELHO COMERCIAL
+     baseado em numero que ninguem mediu. Um conselho errado com cara de
+     analise e pior que nenhum conselho: o dono muda o preco de um dia que
+     talvez seja o melhor dele.
+
+     O lugar dessa resposta agora e o mapa de calor (Ritmo da agenda), que sai
+     de reserva e procura de verdade. */
 
   window.pqRefreshIcons?.(root);
 }

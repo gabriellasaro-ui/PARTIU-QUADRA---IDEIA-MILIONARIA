@@ -31,6 +31,7 @@ from ..models import (
     NOTIF_BOOKING_COMPLETED,
     NOTIF_BOOKING_EXPIRED,
     NOTIF_BOOKING_REJECTED,
+    NOTIF_RESERVA_SOLICITADA,
     NOTIF_PAYMENT_CONFIRMED,
     PAYMENT_CONFIRMED,
     PAYMENT_FAILED,
@@ -59,7 +60,7 @@ from ..repositories import venues as venues_repo
 from sqlalchemy import select
 from .catalog import _as_local, _day_window
 from .messages import ensure_conversation_for_booking
-from .notifications import notify_booking_event
+from .notifications import emit_notification, notify_booking_event
 from .payments import get_provider
 
 ROLE_SISTEMA = "sistema"
@@ -728,7 +729,57 @@ def confirm_payment(
     _notify_booking_update(db, booking)
     if payment.status == PAYMENT_CONFIRMED and booking.status == STATUS_REQUESTED:
         notify_booking_event(db, booking, NOTIF_PAYMENT_CONFIRMED)
+        _avisar_solicitacao(db, booking)
     return payment, False
+
+
+def _avisar_solicitacao(db: Session, booking: Booking) -> None:
+    """Avisa o DONO da arena que chegou uma solicitacao para decidir.
+
+    Separado do `payment.confirmed` de proposito: aquele e o recibo, este e o
+    pedido de decisao. O dono tem 15 minutos para aprovar antes da reserva
+    expirar sozinha — se essa mensagem se misturar aos avisos de pagamento, a
+    janela passa enquanto ele le contabilidade.
+
+    Vai por TRES caminhos, e cada um cobre um buraco do outro:
+      - linha in-app, que sobrevive ao fechamento do app;
+      - push, para quando o painel nao esta aberto;
+      - WebSocket, para o toast aparecer na hora em quem esta com a tela
+        aberta no balcao.
+    """
+    arena = db.get(Arena, booking.arena_id)
+    if arena is None or not arena.owner_id:
+        return
+
+    court = db.get(Court, booking.court_id)
+    quando = _as_local(booking.start_at)
+    quadra = court.name if court is not None else "sua quadra"
+    corpo = (
+        f"{quadra} · {quando.strftime('%d/%m')} às {quando.strftime('%H:%M')}"
+        f" · {booking.code}"
+    )
+    dados = {
+        "bookingId": str(booking.id),
+        "bookingCode": booking.code,
+        "arenaId": str(booking.arena_id),
+        "courtName": quadra,
+        "startAt": quando.isoformat(),
+    }
+
+    emit_notification(
+        db, arena.owner_id,
+        type=NOTIF_RESERVA_SOLICITADA,
+        title="Nova solicitação de reserva",
+        body=corpo,
+        data=dados,
+    )
+    publish_user_event(arena.owner_id, {
+        "type": NOTIF_RESERVA_SOLICITADA,
+        "titulo": "Nova solicitação de reserva",
+        "texto": corpo,
+        "reservaId": str(booking.id),
+        "codigo": booking.code,
+    })
 
 
 def get_payment_record(db: Session, user, payment_id) -> Payment:

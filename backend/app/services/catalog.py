@@ -366,3 +366,35 @@ def get_favorite_venues(db: Session, user_id) -> list:
     rows = repo.list_visible_courts(db, arena_ids=arena_ids)
     stats = repo.review_stats(db, arena_ids) if rows else {}
     return [to_venue(arena, court, stats=stats, db=db) for court, arena in rows]
+
+
+def registrar_interesse(db: Session, court_id, date_str: str | None, hora: str, dur: int) -> None:
+    """Conta interesse nas horas do bloco escolhido.
+
+    A versao anterior contava na ABERTURA da agenda, somando 1 em cada hora
+    livre do dia. Media quantas vezes o dia foi aberto, e nao qual horario
+    interessa — a grade saia com o mesmo numero em todas as colunas.
+
+    Aqui conta so o bloco que a pessoa de fato escolheu: 3h a partir das 19h
+    somam 19, 20 e 21. E o unico sinal que responde "quando enche?".
+    """
+    from ..repositories import gerente as gerente_repo
+
+    dia = now_local().date()
+    if date_str:
+        try:
+            dia = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return
+    try:
+        inicio = int(str(hora).split(":")[0])
+    except (ValueError, TypeError):
+        return
+    if not 0 <= inicio <= 23:
+        return
+
+    dur = max(1, min(3, int(dur or 1)))
+    horas = [h for h in range(inicio, inicio + dur) if h <= 23]
+    # 0 = domingo (como a grade e desenhada), e nao segunda como no Python.
+    dia_semana = (dia.weekday() + 1) % 7
+    gerente_repo.registrar_procura(db, court_id, dia_semana, horas)

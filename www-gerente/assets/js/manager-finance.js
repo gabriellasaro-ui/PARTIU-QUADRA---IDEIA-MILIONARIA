@@ -79,7 +79,11 @@ export async function renderManagerFinance(root) {
 
   const periodoApi = periodo === 'hoje' ? 'today' : periodo;
   const dados = API_BASE_URL ? await managerService.financeiro(periodoApi) : null;
-  const reservas = API_BASE_URL ? await managerService.reservas() : reservasDoPeriodo();
+  // Pagina grande de proposito: aqui as reservas alimentam totalizadores, e
+  // nao uma lista navegavel — paginar isso daria um total parcial.
+  const reservas = API_BASE_URL
+    ? (await managerService.reservas({ porPagina: 100 })).reservas
+    : reservasDoPeriodo();
   const bruto = API_BASE_URL ? dados.bruto : reservas.reduce((t, r) => t + Number(r.valor || 0), 0);
   const ticket = API_BASE_URL ? dados.ticket_medio : (reservas.length ? Math.round(bruto / reservas.length) : 0);
 

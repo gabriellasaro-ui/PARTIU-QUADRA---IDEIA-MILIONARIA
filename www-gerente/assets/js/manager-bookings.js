@@ -31,10 +31,18 @@ export function bookings() {
 
 export const getBooking = (id) => bookings().find((b) => String(b.id) === String(id));
 
-/* Lista viva: do backend quando houver API, do mock caso contrario. */
-export async function loadBookings() {
-  if (!API_BASE_URL) return bookings();
-  return managerService.reservas();
+/* Lista viva do backend, agora PAGINADA.
+
+   Devolve o envelope inteiro ({reservas, total, pagina, paginas}) porque a
+   tela precisa do total para numerar as paginas. Antes vinha uma lista cortada
+   em 200 linhas sem avisar do corte — a tela mostrava o que coubesse e nao
+   havia como saber que faltava. */
+export async function loadBookings(opcoes = {}) {
+  if (!API_BASE_URL) {
+    const lista = bookings();
+    return { reservas: lista, total: lista.length, pagina: 1, paginas: 1, porPagina: lista.length };
+  }
+  return managerService.reservas(opcoes);
 }
 
 export async function loadBooking(id) {

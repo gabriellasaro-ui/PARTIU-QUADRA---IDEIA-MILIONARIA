@@ -5,7 +5,7 @@ monetarios chegam em reais (float) — o frontend do gerente le `valor`/`bruto`
 assim. Os centavos ficam no banco.
 """
 from datetime import date
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 
@@ -31,6 +31,31 @@ class MensalistaCreate(BaseModel):
     clientEmail: str = ""
 
 
+#: Quantas fotos a quadra precisa ter para entrar na vitrine.
+#:
+#: Uma foto so nao vende quadra nenhuma: quem escolhe onde jogar quer ver o
+#: piso, a iluminacao, o vestiario e o entorno. Com uma imagem, o anuncio e uma
+#: promessa sem prova, e a arena que caprichou fica igual a que nao caprichou.
+#:
+#: O numero e regra de PRODUTO e mora aqui, e nao espalhado pela tela: mudar de
+#: ideia depois deve ser trocar esta linha.
+MIN_FOTOS_QUADRA = 5
+
+
+def _validar_fotos(fotos: list[str]) -> list[str]:
+    limpas = [f.strip() for f in (fotos or []) if isinstance(f, str) and f.strip()]
+    if len(limpas) < MIN_FOTOS_QUADRA:
+        raise ValueError(
+            f"Envie pelo menos {MIN_FOTOS_QUADRA} fotos da quadra "
+            f"(você enviou {len(limpas)})"
+        )
+    for f in limpas:
+        # O conteudo vem do painel e termina num `src` na tela do jogador.
+        if not (f.startswith("data:image/") or f.startswith(("http://", "https://"))):
+            raise ValueError("Formato de imagem invalido")
+    return limpas
+
+
 class CourtCreate(BaseModel):
     nome: str
     esporte: str
@@ -43,8 +68,20 @@ class CourtCreate(BaseModel):
     comodidades: list[str] = []
     fotos: list[str] = []
 
+    @field_validator("fotos")
+    @classmethod
+    def _fotos_suficientes(cls, v):
+        return _validar_fotos(v)
+
 
 class CourtUpdate(BaseModel):
+    """PATCH: campo ausente significa "nao mexe".
+
+    `fotos` so e validado quando VEM no corpo. Sem essa distincao, salvar o
+    preco de uma quadra recusaria o pedido inteiro por falta de fotos que
+    ninguem estava tentando mudar.
+    """
+
     nome: Optional[str] = None
     esporte: Optional[str] = None
     preco: Optional[float] = None
@@ -58,6 +95,13 @@ class CourtUpdate(BaseModel):
     ativa: Optional[bool] = None
     visivel: Optional[bool] = None
     destaque: Optional[bool] = None
+
+    @field_validator("fotos")
+    @classmethod
+    def _fotos_suficientes(cls, v):
+        if v is None:
+            return v
+        return _validar_fotos(v)
 
 
 class AvaliacaoReply(BaseModel):
@@ -81,6 +125,9 @@ class ArenaProfileUpdate(BaseModel):
     endereco: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+    #: Data URL ou URL http. String vazia remove a logo e volta para a inicial
+    #: do nome da arena.
+    logo: Optional[str] = None
 
 
 class ArenaConfigUpdate(BaseModel):

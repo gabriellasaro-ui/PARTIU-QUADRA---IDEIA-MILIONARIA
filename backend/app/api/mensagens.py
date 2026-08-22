@@ -5,6 +5,7 @@ token. Conversas so existem a partir do pagamento confirmado (booking pago),
 logo conversa inexistente vira 404 para quem nao participa dela.
 """
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette.responses import Response
 
@@ -33,6 +34,60 @@ def listar_conversas(
     db: Session = Depends(get_db),
 ):
     return {"conversas": svc.list_conversations(db, user)}
+
+
+# ── Bloqueio de pessoa pela arena ──────────────────────────────────────────
+#
+# ESTE BLOCO VEM ANTES de /{cid} de proposito. O FastAPI casa as rotas na ordem
+# de declaracao: com /{cid} primeiro, "bloqueados" chega como se fosse um id de
+# conversa e a rota certa nunca e alcancada. Mesma armadilha do /meus dos
+# clubes.
+
+
+class BloqueioBody(BaseModel):
+    """Anotacao do gerente sobre o bloqueio.
+
+    Opcional, mas util quando outro atendente pergunta seis meses depois por
+    que aquela pessoa esta bloqueada.
+    """
+
+    motivo: str | None = None
+
+
+@router.get("/bloqueados")
+def listar_bloqueados(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return {"bloqueados": svc.listar_bloqueados(db, user)}
+
+
+@router.post("/bloquear/{player_id}")
+def bloquear(
+    player_id: str,
+    body: BloqueioBody | None = None,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """A arena barra alguem de abrir conversa nova com ela.
+
+    Encerrar conversa resolve UM atendimento; nao resolve quando o problema e a
+    pessoa — encerrada uma, a proxima reserva abre outra. O bloqueio e por
+    ARENA e nao global: banir da plataforma e decisao de quem a opera, e a
+    arena tem interesse proprio no assunto.
+    """
+    return svc.bloquear_pessoa(db, user, player_id, (body.motivo if body else None))
+
+
+@router.delete("/bloquear/{player_id}")
+def desbloquear(
+    player_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Existir importa tanto quanto o bloqueio: sem desfazer, um clique errado
+    seria permanente e o gerente evitaria usar a ferramenta."""
+    return svc.desbloquear_pessoa(db, user, player_id)
 
 
 @router.get("/{cid}")

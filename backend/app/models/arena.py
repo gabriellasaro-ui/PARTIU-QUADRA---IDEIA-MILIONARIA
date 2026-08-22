@@ -25,7 +25,11 @@ class Arena(Base):
     )
     name: Mapped[str] = mapped_column(String(140), index=True)
     description: Mapped[str | None] = mapped_column(Text)
-    logo: Mapped[str | None] = mapped_column(String(500))
+    #: Data URL da logo enviada pelo painel (ja reduzida pelo front) ou URL
+    #: http. String(500) nao cabia: em Postgres truncaria ou estouraria; no
+    #: SQLite passaria calado ate a producao. Mesmo defeito da foto de perfil
+    #: do jogador, encontrado depois e corrigido igual.
+    logo: Mapped[str | None] = mapped_column(Text)
     phone: Mapped[str | None] = mapped_column(String(20))
     email: Mapped[str | None] = mapped_column(String(255))
     pix_key: Mapped[str | None] = mapped_column(String(200))

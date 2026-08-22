@@ -4,7 +4,8 @@ Contrato camelCase igual ao que www-usuario/services/venues.js ja consome.
 Distancia calculada por haversine a partir de lat/lng (ou centro de Goiania).
 Cache Redis por versao de catalogo; sem Redis cai direto no banco.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -158,6 +159,7 @@ def horarios(
     except ValueError:
         # strptime numa data torta derrubava com 500.
         raise HTTPException(status_code=422, detail="Data invalida (use AAAA-MM-DD)")
+
     return {"horarios": slots, "data": data}
 
 
@@ -188,3 +190,39 @@ def detalhe_quadra(quadra_id: str, db: Session = Depends(get_db)):
     if not venue:
         raise HTTPException(status_code=404, detail="Quadra nao encontrada")
     return {"quadra": venue}
+
+
+class InteresseBody(BaseModel):
+    """Horario que a pessoa ESCOLHEU na agenda, sem necessariamente reservar."""
+
+    data: str | None = None
+    hora: str = "19:00"
+    dur: int = Field(default=1, ge=1, le=3)
+
+
+@router.post("/{quadra_id}/interesse", status_code=204)
+def registrar_interesse(
+    quadra_id: str,
+    body: InteresseBody,
+    db: Session = Depends(get_db),
+):
+    """Alimenta o mapa de calor do gerente com PROCURA por horario.
+
+    A primeira versao contava no GET da agenda, somando 1 em toda hora livre do
+    dia. Isso media quantas vezes o DIA foi aberto, nao qual horario interessa:
+    a grade saia achatada, com o mesmo numero em todas as colunas, e a pergunta
+    que o mapa existe para responder — "quando enche?" — ficava sem resposta.
+
+    Escolher um horario e um ato deliberado, e e ele que carrega a informacao.
+
+    Sem autenticacao de proposito: quem ainda nao entrou tambem procura horario,
+    e exigir conta aqui apagaria justamente a demanda de quem nao virou cliente.
+    Nao ha nada de identificavel na tabela — so quadra, dia da semana e hora.
+
+    204 porque nao ha nada a devolver, e porque a tela nao deve esperar por
+    telemetria para responder ao toque.
+    """
+    if not catalog.court_exists(db, quadra_id):
+        raise HTTPException(status_code=404, detail="Quadra nao encontrada")
+    catalog.registrar_interesse(db, quadra_id, body.data, body.hora, body.dur)
+    return Response(status_code=204)

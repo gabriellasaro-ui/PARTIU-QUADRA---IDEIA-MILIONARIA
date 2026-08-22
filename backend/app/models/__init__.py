@@ -87,6 +87,7 @@ from .notification import (
     NOTIF_CLUBE_RECUSADO,
     NOTIF_CLUBE_SOLICITACAO,
     NOTIF_MESSAGE_NEW,
+    NOTIF_RESERVA_SOLICITADA,
     NOTIF_PARTIDA_ATRASO,
     NOTIF_PARTIDA_ENCERRADA,
     NOTIF_PARTIDA_PRESENCA,
@@ -131,8 +132,12 @@ from .user import (
     User,
 )
 from .user_session import UserSession
+from .demand import SlotDemand
+from .block import ArenaBlock
 
 __all__ = [
+    "ArenaBlock",
+    "SlotDemand",
     "User",
     "UserSession",
     "Arena",
@@ -173,6 +178,7 @@ __all__ = [
     "NOTIF_BOOKING_COMPLETED",
     "NOTIF_BOOKING_EXPIRED",
     "NOTIF_MESSAGE_NEW",
+    "NOTIF_RESERVA_SOLICITADA",
     "NOTIF_CLUBE_ENTROU",
     "NOTIF_CLUBE_SOLICITACAO",
     "NOTIF_CLUBE_APROVADO",

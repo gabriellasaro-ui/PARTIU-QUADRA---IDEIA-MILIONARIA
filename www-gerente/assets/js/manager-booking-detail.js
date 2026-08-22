@@ -72,7 +72,10 @@ export async function renderManagerBookingDetail(root) {
 
   // "8 no total" era numero fixo no template antigo. Aqui e a contagem real
   // de reservas deste cliente.
-  const todas = API_BASE_URL ? await loadBookings() : bookings();
+  // Historico do cliente: pagina grande, porque aqui se CONTA e nao se navega.
+  const todas = API_BASE_URL
+    ? (await loadBookings({ porPagina: 100 })).reservas
+    : bookings();
   const doCliente = todas.filter((b) => b.cliente === r.cliente).length;
   set('[data-bd-historico]', `${doCliente} ${doCliente === 1 ? 'reserva' : 'reservas'}`);
 

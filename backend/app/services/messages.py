@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..core.timezone import utc_now
@@ -28,6 +28,7 @@ from ..models import (
     CONVERSATION_KIND_ARENA,
     MESSAGE_TYPE_TEXT,
     Arena,
+    ArenaBlock,
     Booking,
     Conversation,
     Message,
@@ -66,8 +67,11 @@ def _can_access(db: Session, user, conv: Conversation, arena: Arena) -> None:
 
 # --- Criacao (hook do pagamento confirmado) --------------------------------
 
-def ensure_conversation_for_booking(db: Session, booking: Booking) -> Conversation:
+def ensure_conversation_for_booking(db: Session, booking: Booking) -> Conversation | None:
     """Cria a conversa arena<->jogador quando a reserva e paga (idempotente).
+
+    Devolve None quando a arena bloqueou a pessoa — a reserva segue valendo, so
+    o canal nao abre.
 
     A tabela tem booking_id UNIQUE, mas o check antes evita conflito de PK e
     reutiliza a conversa existente. Nao commita — o chamador (confirm_payment)
@@ -76,6 +80,18 @@ def ensure_conversation_for_booking(db: Session, booking: Booking) -> Conversati
     existing = repo.get_by_booking(db, booking.id)
     if existing is not None:
         return existing
+
+    # BLOQUEIO: a arena barrou esta pessoa. Nao abre canal novo.
+    #
+    # Nao levanta erro: a reserva ja foi paga e nao pode falhar por causa
+    # disto — o dinheiro entrou e o jogo esta marcado. O que o bloqueio tira e
+    # a conversa, que e onde o incomodo acontece. A tela do jogador ja lida com
+    # reserva sem conversa (o botao "Falar com a arena" so aparece quando ha
+    # uma), entao o efeito e exatamente o pretendido: o jogo acontece, o canal
+    # nao abre.
+    if esta_bloqueado(db, booking.arena_id, booking.user_id):
+        return None
+
     arena = db.get(Arena, booking.arena_id)
     conv = Conversation(
         id=uuid.uuid4(),
@@ -316,3 +332,119 @@ def badges(db: Session, user) -> dict:
         "msg_ger": unread,
         "msg_clube": clube,
     }
+
+
+# --- Bloqueio de pessoa pela arena -----------------------------------------
+
+def _arena_do_gerente(db: Session, user) -> Arena:
+    """A arena que este gerente administra. 403 se ele nao administra nenhuma."""
+    from ..services.gerente import manager_arena_or_404
+
+    return manager_arena_or_404(db, user)
+
+
+def bloquear_pessoa(db: Session, user, player_id, motivo: str | None = None) -> dict:
+    """A arena barra alguem de abrir conversa nova com ela.
+
+    Encerrar conversa resolve UM atendimento; nao resolve quando o problema e a
+    pessoa. Encerrada uma, a proxima reserva abre outra e a arena volta ao
+    mesmo lugar.
+
+    O bloqueio e por ARENA e nao global: quem foi barrado numa quadra continua
+    jogando nas outras. Banir da plataforma e decisao de quem opera a
+    plataforma — e a arena tem interesse proprio no assunto, entao nao pode ser
+    ela a tomar.
+
+    Nao cancela reserva ja paga: dinheiro recebido tem de ser honrado ou
+    devolvido, e cancelar no mesmo gesto seria confisco. As conversas ABERTAS
+    sao encerradas, que e o efeito imediato que o gerente espera ao clicar.
+    """
+    if user.role == ROLE_JOGADOR:
+        raise HTTPException(status_code=403, detail="Só a arena bloqueia")
+    arena = _arena_do_gerente(db, user)
+
+    alvo = db.get(User, _uuid_ou_404(player_id))
+    if alvo is None:
+        raise HTTPException(status_code=404, detail="Pessoa não encontrada")
+    if alvo.id == user.id:
+        raise HTTPException(status_code=422, detail="Você não pode bloquear a si mesmo")
+
+    ja = db.execute(
+        select(ArenaBlock).where(
+            ArenaBlock.arena_id == arena.id, ArenaBlock.user_id == alvo.id
+        )
+    ).scalar_one_or_none()
+    if ja is None:
+        db.add(ArenaBlock(
+            id=uuid.uuid4(), arena_id=arena.id, user_id=alvo.id,
+            motivo=(motivo or "").strip()[:280] or None,
+            blocked_by=user.id,
+        ))
+
+    # Fecha o que estiver aberto: bloquear e continuar com a conversa de pe
+    # seria dizer uma coisa e fazer outra.
+    abertas = db.execute(
+        select(Conversation).where(
+            Conversation.arena_id == arena.id,
+            Conversation.player_id == alvo.id,
+            Conversation.status == CONVERSATION_ACTIVE,
+        )
+    ).scalars().all()
+    for conv in abertas:
+        conv.status = CONVERSATION_ARCHIVED
+        conv.updated_at = _utc_naive()
+
+    db.commit()
+    return {"ok": True, "bloqueado": True, "conversasEncerradas": len(abertas)}
+
+
+def desbloquear_pessoa(db: Session, user, player_id) -> dict:
+    """Desfaz o bloqueio. Existir e tao importante quanto o bloqueio: sem isso,
+    um clique errado seria permanente e o gerente evitaria usar a ferramenta."""
+    if user.role == ROLE_JOGADOR:
+        raise HTTPException(status_code=403, detail="Só a arena desbloqueia")
+    arena = _arena_do_gerente(db, user)
+    db.execute(
+        delete(ArenaBlock).where(
+            ArenaBlock.arena_id == arena.id,
+            ArenaBlock.user_id == _uuid_ou_404(player_id),
+        )
+    )
+    db.commit()
+    return {"ok": True, "bloqueado": False}
+
+
+def listar_bloqueados(db: Session, user) -> list[dict]:
+    if user.role == ROLE_JOGADOR:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    arena = _arena_do_gerente(db, user)
+    linhas = db.execute(
+        select(ArenaBlock, User)
+        .join(User, User.id == ArenaBlock.user_id)
+        .where(ArenaBlock.arena_id == arena.id)
+        .order_by(ArenaBlock.created_at.desc())
+    ).all()
+    return [
+        {
+            "id": str(b.user_id),
+            "nome": u.name,
+            "motivo": b.motivo or "",
+            "desde": b.created_at.isoformat() if b.created_at else None,
+        }
+        for b, u in linhas
+    ]
+
+
+def esta_bloqueado(db: Session, arena_id, player_id) -> bool:
+    return db.execute(
+        select(ArenaBlock.id).where(
+            ArenaBlock.arena_id == arena_id, ArenaBlock.user_id == player_id
+        )
+    ).first() is not None
+
+
+def _uuid_ou_404(valor):
+    try:
+        return valor if isinstance(valor, uuid.UUID) else uuid.UUID(str(valor))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=404, detail="Pessoa não encontrada")

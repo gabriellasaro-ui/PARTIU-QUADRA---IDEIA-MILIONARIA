@@ -147,9 +147,27 @@ export const managerService = {
     };
   },
 
-  async reservas() {
-    const data = await api.get('/api/gerente/reservas');
-    return (data.reservas || []).map(mapBooking);
+  /* Reservas PAGINADAS.
+
+     Devolve o envelope inteiro ({reservas, total, pagina, paginas}) e nao so a
+     lista: sem o total, a tela nao tem como numerar as paginas nem dizer
+     quantas reservas existem. Antes vinha uma lista cortada em 200 linhas sem
+     avisar do corte. */
+  async reservas({ pagina = 1, porPagina = 20, status, q, plano, de, ate } = {}) {
+    const p = new URLSearchParams({ pagina: String(pagina), porPagina: String(porPagina) });
+    if (status) p.set('status', status);
+    if (q) p.set('q', q);
+    if (plano) p.set('plano', plano);
+    if (de) p.set('de', de);
+    if (ate) p.set('ate', ate);
+    const data = await api.get(`/api/gerente/reservas?${p}`);
+    return {
+      reservas: (data.reservas || []).map(mapBooking),
+      total: data.total || 0,
+      pagina: data.pagina || 1,
+      paginas: data.paginas || 1,
+      porPagina: data.porPagina || porPagina
+    };
   },
 
   async reserva(id) {
@@ -187,8 +205,27 @@ export const managerService = {
     return api.delete(`/api/gerente/mensalistas/${id}`);
   },
 
+  /* Aceita atalho ('7d', '30d') OU intervalo proprio ({de, ate}).
+
+     Quem fecha o mes precisa de "1 a 31 de julho", e nao de "os ultimos 30
+     dias a partir de agora" — os atalhos continuam para o uso do dia a dia. */
+  /* Mapa de calor: dia da semana x hora, com reservas E procura. */
+  async ritmo({ de, ate } = {}) {
+    const q = new URLSearchParams();
+    if (de) q.set('de', de);
+    if (ate) q.set('ate', ate);
+    return api.get(`/api/gerente/ritmo${q.toString() ? '?' + q : ''}`);
+  },
+
   async financeiro(periodo = '7d') {
-    return api.get(`/api/gerente/financeiro?periodo=${encodeURIComponent(periodo)}`);
+    const q = new URLSearchParams();
+    if (periodo && typeof periodo === 'object') {
+      if (periodo.de) q.set('de', periodo.de);
+      if (periodo.ate) q.set('ate', periodo.ate);
+    } else {
+      q.set('periodo', String(periodo));
+    }
+    return api.get(`/api/gerente/financeiro?${q}`);
   },
 
   async quadras() {
@@ -204,8 +241,9 @@ export const managerService = {
     return api.patch(`/api/gerente/quadras/${id}`, body);
   },
 
-  async avaliacoes() {
-    const data = await api.get('/api/gerente/avaliacoes');
+  async avaliacoes(quadra) {
+    const q = quadra ? `?quadra=${encodeURIComponent(quadra)}` : '';
+    const data = await api.get(`/api/gerente/avaliacoes${q}`);
     return {
       avaliacoes: (data.avaliacoes || []).map(mapReview),
       dist: data.dist || [],

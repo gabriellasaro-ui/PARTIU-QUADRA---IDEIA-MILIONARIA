@@ -177,6 +177,10 @@ def emit_notification(
 _PREF_POR_EVENTO = {
     # "Reserva confirmada" — o ciclo da reserva dar certo.
     NOTIF_PAYMENT_CONFIRMED: "notify_booking",
+    # Solicitacao chegando fica FORA de qualquer interruptor, de proposito:
+    # e uma decisao com prazo de 15 minutos, nao uma novidade agradavel. Quem
+    # desliga isso perde reserva sem entender por que.
+
     NOTIF_BOOKING_APPROVED: "notify_booking",
     NOTIF_BOOKING_COMPLETED: "notify_booking",
     # "Lembrete do jogo" — o que chega ANTES da hora para chamar para a quadra.

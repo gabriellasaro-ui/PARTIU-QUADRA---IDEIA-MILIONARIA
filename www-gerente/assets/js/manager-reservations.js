@@ -66,7 +66,9 @@ export async function renderManagerReservations(root) {
   const lista = root.querySelector('[data-manager-reservation-list]');
   if (!lista) return;
 
-  const todas = await loadBookings();
+  // `loadBookings` devolve o envelope da paginacao; a lista fica em .reservas.
+  const pagina = await loadBookings({ porPagina: 50 });
+  const todas = pagina.reservas;
   const solicitadas = todas.filter((r) => r.status === 'Solicitada');
 
   // O banner some quando nao ha o que responder — um aviso permanente vira

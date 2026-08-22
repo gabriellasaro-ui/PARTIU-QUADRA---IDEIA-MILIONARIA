@@ -48,10 +48,25 @@ def agenda(
 def listar_reservas(
     status: str | None = Query(default=None),
     q: str | None = Query(default=None),
+    plano: str | None = Query(default=None, description="avulso | mensalista"),
+    de: str | None = Query(default=None, description="AAAA-MM-DD"),
+    ate: str | None = Query(default=None, description="AAAA-MM-DD, inclusivo"),
+    pagina: int = Query(default=1, ge=1),
+    porPagina: int = Query(default=20, ge=1, le=100),
     user: User = Depends(get_current_manager),
     db: Session = Depends(get_db),
 ):
-    return {"reservas": svc.list_reservas(db, user, status_filtro=status, q=q)}
+    """A resposta traz `total`/`pagina`/`paginas` junto das reservas.
+
+    Antes era uma lista cortada em 200 linhas SEM avisar do corte: a tela
+    mostrava o que coubesse e nao havia como saber que faltava. Uma arena com
+    um ano de operacao passa disso em semanas.
+    """
+    return svc.list_reservas(
+        db, user,
+        status_filtro=status, q=q, plano=plano,
+        de=de, ate=ate, pagina=pagina, por_pagina=porPagina,
+    )
 
 
 @router.post("/reservas")
@@ -104,10 +119,31 @@ def cancelar_mensalista(
 @router.get("/financeiro")
 def financeiro(
     periodo: str = Query(default="30d"),
+    de: str | None = Query(default=None, description="AAAA-MM-DD"),
+    ate: str | None = Query(default=None, description="AAAA-MM-DD, inclusivo"),
     user: User = Depends(get_current_manager),
     db: Session = Depends(get_db),
 ):
-    return svc.financeiro(db, user, periodo)
+    """`de`/`ate` mandam quando vierem; os atalhos fixos continuam para o uso
+    do dia a dia. Quem fecha o mes precisa de "1 a 31 de julho", e nao de "os
+    ultimos 30 dias a partir de agora"."""
+    return svc.financeiro(db, user, periodo, de=de, ate=ate)
+
+
+@router.get("/ritmo")
+def ritmo_agenda(
+    de: str | None = Query(default=None, description="AAAA-MM-DD"),
+    ate: str | None = Query(default=None, description="AAAA-MM-DD, inclusivo"),
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    """Mapa de calor de dia da semana x hora: reservas E procura.
+
+    "Ocupacao media 2%" nao diz se o problema e a terca de manha ou o domingo
+    inteiro. Este diz — e separa horario que ninguem quer de horario que todo
+    mundo quer e a arena nao abre.
+    """
+    return svc.ritmo_agenda(db, user, de=de, ate=ate)
 
 
 @router.get("/quadras")
@@ -155,10 +191,11 @@ def atualizar_quadra(
 
 @router.get("/avaliacoes")
 def avaliacoes(
+    quadra: str | None = Query(default=None, description="filtra por quadra"),
     user: User = Depends(get_current_manager),
     db: Session = Depends(get_db),
 ):
-    return svc.list_avaliacoes(db, user)
+    return svc.list_avaliacoes(db, user, quadra=quadra)
 
 
 @router.post("/avaliacoes/{rid}/resposta")

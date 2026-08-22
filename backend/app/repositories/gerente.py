@@ -62,18 +62,35 @@ def list_arena_bookings(
     *,
     status: str | None = None,
     q: str | None = None,
+    plano: str | None = None,
+    de: datetime | None = None,
+    ate: datetime | None = None,
     limit: int = 200,
+    offset: int = 0,
+    com_total: bool = False,
 ):
     """Reservas da arena com cliente (nome/telefone), mais recentes primeiro.
 
     `q` busca por cliente (nome/telefone), codigo ou quadra.
+
+    PAGINACAO de verdade (limit + offset + total), e nao um teto de 200 linhas.
+    Uma arena com um ano de operacao passa de 200 reservas em semanas, e o teto
+    silencioso escondia as mais antigas sem dizer que existiam — a tela mostrava
+    "todas" e faltavam. `com_total` faz a segunda consulta (COUNT) so quando
+    alguem precisa numerar as paginas; o resto do app nao paga por isso.
     """
     arena_id = _uuid(arena_id)
     if arena_id is None:
-        return []
+        return ([], 0) if com_total else []
     stmt = _booking_rows_query(db, arena_id)
     if status:
         stmt = stmt.where(Booking.status == status)
+    if plano:
+        stmt = stmt.where(Booking.plan == plano)
+    if de is not None:
+        stmt = stmt.where(Booking.start_at >= _utc_naive(de))
+    if ate is not None:
+        stmt = stmt.where(Booking.start_at < _utc_naive(ate))
     if q:
         like = f"%{q.strip()}%"
         conds = [
@@ -88,8 +105,16 @@ def list_arena_bookings(
         if bid is not None:
             conds.append(Booking.id == bid)
         stmt = stmt.where(or_(*conds))
-    stmt = stmt.order_by(Booking.start_at.desc()).limit(limit)
-    return list(db.execute(stmt).all())
+    if com_total:
+        # COUNT sobre a MESMA consulta filtrada, sem order_by/limit: contar a
+        # lista ja paginada devolveria o tamanho da pagina, nao o do conjunto.
+        total = db.execute(
+            select(func.count()).select_from(stmt.order_by(None).subquery())
+        ).scalar_one()
+
+    stmt = stmt.order_by(Booking.start_at.desc()).limit(limit).offset(offset)
+    linhas = list(db.execute(stmt).all())
+    return (linhas, total) if com_total else linhas
 
 
 def bookings_between(db: Session, arena_id, start: datetime, end: datetime):
@@ -311,3 +336,130 @@ def next_bookings(db: Session, arena_id, start: datetime, limit: int = 8):
             .limit(limit)
         ).all()
     )
+
+
+def demand_by_slot(db: Session, arena_id, start: datetime, end: datetime):
+    """Procura por (dia da semana, hora) nas quadras da arena.
+
+    O intervalo NAO filtra as linhas: `slot_demand` guarda um acumulado por
+    slot, e nao um evento por visita — nao ha data para cortar. O intervalo
+    entra na assinatura porque quem chama ja o tem em maos e porque o dia em
+    que houver janelamento (uma linha por mes, por exemplo) a mudanca fica
+    contida aqui.
+    """
+    from ..models import SlotDemand
+
+    arena_id = _uuid(arena_id)
+    if arena_id is None:
+        return []
+    quadras = select(Court.id).where(Court.arena_id == arena_id)
+    linhas = db.execute(
+        select(
+            SlotDemand.day_of_week,
+            SlotDemand.hour,
+            func.sum(SlotDemand.views),
+        )
+        .where(SlotDemand.court_id.in_(quadras))
+        .group_by(SlotDemand.day_of_week, SlotDemand.hour)
+    ).all()
+    return [(d, h, v or 0) for d, h, v in linhas]
+
+
+def registrar_procura(db: Session, court_id, dia_semana: int, horas: list[int]) -> None:
+    """Soma 1 na procura de cada hora olhada.
+
+    Best-effort de proposito: se falhar, engole. Isto e telemetria de produto —
+    derrubar a agenda de quem quer jogar porque o contador nao subiu seria
+    trocar o essencial pelo acessorio.
+    """
+    from ..models import SlotDemand
+
+    court_id = _uuid(court_id)
+    if court_id is None or not horas:
+        return
+    try:
+        existentes = {
+            (r.day_of_week, r.hour): r
+            for r in db.execute(
+                select(SlotDemand).where(
+                    SlotDemand.court_id == court_id,
+                    SlotDemand.day_of_week == dia_semana,
+                    SlotDemand.hour.in_(horas),
+                )
+            ).scalars()
+        }
+        for hora in horas:
+            linha = existentes.get((dia_semana, hora))
+            if linha is None:
+                db.add(SlotDemand(
+                    court_id=court_id, day_of_week=dia_semana, hour=hora, views=1
+                ))
+            else:
+                linha.views = (linha.views or 0) + 1
+        db.commit()
+    except Exception:  # noqa: BLE001
+        db.rollback()
+
+
+def reviews_with_court(db: Session, arena_id, limit: int = 200):
+    """Avaliacoes da arena com a quadra, quando da para saber qual foi.
+
+    `reviews` guarda arena_id e, opcionalmente, booking_id — nao ha court_id.
+    A quadra sai da reserva avaliada; avaliacao sem reserva (as semeadas, e as
+    feitas sobre a arena em geral) fica sem quadra, e isso e devolvido como
+    None em vez de chutada para a primeira quadra da lista. Atribuir a quadra
+    errada a uma nota 2 seria pior que nao atribuir nenhuma.
+    """
+    from ..models import Review
+
+    arena_id = _uuid(arena_id)
+    if arena_id is None:
+        return []
+    autor = func.coalesce(User.name, "Cliente")
+    return list(
+        db.execute(
+            select(Review, autor, Court.id, Court.name)
+            .join(User, User.id == Review.user_id, isouter=True)
+            .join(Booking, Booking.id == Review.booking_id, isouter=True)
+            .join(Court, Court.id == Booking.court_id, isouter=True)
+            .where(Review.arena_id == arena_id)
+            .order_by(Review.created_at.desc())
+            .limit(limit)
+        ).all()
+    )
+
+
+def revenue_by_day(db: Session, arena_id, start: datetime, end: datetime):
+    """Faturamento por DIA no intervalo, para o grafico da semana.
+
+    O painel desenhava a semana a partir do total do mes dividido por sete e
+    multiplicado por pesos escolhidos a mao — um grafico que parecia dado e nao
+    era. Pior: as "oportunidades" ("terca e seu dia mais fraco") saiam dessa
+    invencao, entao o painel dava conselho comercial baseado em nada.
+
+    Aqui sai do ledger, agrupado por dia. Dia sem faturamento nao aparece na
+    consulta; quem chama preenche com zero, porque buraco no meio de uma serie
+    temporal desloca o grafico inteiro.
+    """
+    from ..models import Booking, PAYMENT_CONFIRMED, Payment
+
+    arena_id = _uuid(arena_id)
+    if arena_id is None:
+        return []
+    linhas = db.execute(
+        select(
+            func.date(Booking.start_at).label("dia"),
+            func.sum(Payment.amount_cents),
+            func.count(Payment.id),
+        )
+        .join(Booking, Booking.id == Payment.booking_id)
+        .where(
+            Booking.arena_id == arena_id,
+            Payment.status == PAYMENT_CONFIRMED,
+            Booking.start_at >= _utc_naive(start),
+            Booking.start_at < _utc_naive(end),
+        )
+        .group_by(func.date(Booking.start_at))
+        .order_by(func.date(Booking.start_at))
+    ).all()
+    return [(str(d), int(v or 0), int(c or 0)) for d, v, c in linhas]

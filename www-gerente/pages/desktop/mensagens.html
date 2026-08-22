@@ -34,7 +34,23 @@
         <strong>Matheus Rocha</strong>
         <div class="thread-sub">Reserva #PQ-1934 - Society 1</div>
       </div>
-      <button class="btn btn-soft th-act" data-toast="Ligacao preparada para a API"><svg class="ic sm"><use href="#i-phone"/></svg> Ligar</button>
+      <!-- LIGAR: removido, e para nao voltar.
+
+           Ele expunha o telefone do jogador para a arena com um clique. O
+           canal de contato do produto e esta conversa, que fica registrada,
+           tem prazo e pode ser encerrada ou bloqueada. Uma ligacao sai da
+           plataforma: nao ha registro do que foi combinado, e e por ali que a
+           proxima reserva passa a ser fechada por fora — sem horario travado,
+           sem pagamento, e com a agenda dos dois lados quebrada.
+
+           Alem disso o botao nem ligava: mostrava um toast dizendo "preparada
+           para a API". -->
+      <button class="btn btn-soft th-act" type="button" data-conv-bloquear hidden>
+        <svg class="ic sm"><use href="#i-ban"/></svg> Bloquear pessoa
+      </button>
+      <button class="btn btn-soft th-act" type="button" data-conv-encerrar hidden>
+        <svg class="ic sm"><use href="#i-check"/></svg> Encerrar atendimento
+      </button>
     </div>
     <div class="bubbles">
       <span class="day-sep">Hoje</span>
