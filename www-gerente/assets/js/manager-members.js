@@ -117,7 +117,7 @@ export async function renderManagerMembers(root) {
   let opcoesQuadras;
   if (API_BASE_URL) {
     todos = (await managerService.mensalistas()).map((m) => ({ ...m, origem: 'api' }));
-    opcoesQuadras = await loadCourts();
+    opcoesQuadras = (await loadCourts()).quadras;
   } else {
     const doApp = await planosDoApp();
     todos = [...doApp, ...manuais().map((m) => ({ ...m, origem: 'manual' }))];
@@ -216,7 +216,7 @@ export function initManagerMembers() {
       const diaPt = String(data.get('day') || 'quarta').toLowerCase();
       const hora = String(data.get('time') || '20:00');
       const quadra = String(data.get('court') || '');
-      const quadras = await loadCourts();
+      const quadras = (await loadCourts()).quadras;
       const courtId = quadras.find((c) => c.label === quadra)?.id || quadras[0]?.id;
       // O backend quer o indice do dia (0=segunda..6=domingo).
       const dia = DIA_INDICE[diaPt] ?? 2;

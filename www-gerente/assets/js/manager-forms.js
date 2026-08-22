@@ -63,7 +63,7 @@ export async function renderManagerBookingForm(root) {
   if (!form) return;
 
   const quadras = root.querySelector('[data-booking-courts]');
-  if (quadras) quadras.innerHTML = (API_BASE_URL ? await loadCourts() : courts()).map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
+  if (quadras) quadras.innerHTML = (API_BASE_URL ? (await loadCourts()).quadras : courts()).map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
 
   const inicio = root.querySelector('[data-booking-hours]');
   if (inicio) inicio.innerHTML = horas(6, 23, 19);
@@ -81,7 +81,7 @@ export async function renderManagerCourtForm(root) {
   if (!form) return;
 
   const id = courtIdFromHash();
-  const lista = API_BASE_URL ? await loadCourts() : courts();
+  const lista = API_BASE_URL ? (await loadCourts()).quadras : courts();
   const quadra = id ? lista.find((c) => String(c.id) === id) : null;
 
   setPageMeta(
@@ -192,7 +192,7 @@ export async function renderManagerSettings(root) {
 
   // Contagem real das quadras ativas — no template antigo era "2" fixo, e
   // desencontrava de Minhas quadras assim que a arena pausasse uma.
-  const listaQuadras = API_BASE_URL ? await loadCourts() : courts();
+  const listaQuadras = API_BASE_URL ? (await loadCourts()).quadras : courts();
   if (form.elements.quadrasAtivas) {
     form.elements.quadrasAtivas.value = listaQuadras.filter((c) => c.active).length;
   }
@@ -277,7 +277,7 @@ export function initManagerForms() {
 
       if (API_BASE_URL) {
         try {
-          const quadras = await loadCourts();
+          const quadras = (await loadCourts()).quadras;
           const quadra = String(d.get('quadra'));
           const courtId = quadras.find((c) => c.label === quadra)?.id || quadras[0]?.id;
           await managerService.criarReservaManual({

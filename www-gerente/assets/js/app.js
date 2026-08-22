@@ -8,6 +8,7 @@ import { renderManagerMembers, initManagerMembers } from './manager-members.js';
 import { renderManagerOverview } from './manager-overview.js';
 import { renderManagerAgenda, initManagerAgenda } from './manager-agenda.js';
 import { renderManagerReviews, initManagerReviews } from './manager-reviews.js';
+import { renderManagerMessages, initManagerMessages } from './manager-messages.js';
 import { renderManagerBookingDetail, initManagerBookingDetail } from './manager-booking-detail.js';
 import {
   renderManagerBookingForm, renderManagerCourtForm, renderManagerSettings, initManagerForms
@@ -225,6 +226,7 @@ async function renderDesktopRoute() {
   if (routeName === 'agenda') await renderManagerAgenda(view);
   if (routeName === 'financeiro') await renderManagerFinance(view);
   if (routeName === 'avaliacoes') await renderManagerReviews(view);
+  if (routeName === 'mensagens') await renderManagerMessages(view);
   if (routeName === 'config') {
     await renderManagerSettings(view);
     sincronizarInterruptorDeTema(view);
@@ -250,6 +252,7 @@ function initDesktopRouter() {
   initManagerAgenda();
   initManagerFinance();
   initManagerReviews();
+  initManagerMessages();
   initManagerBookingDetail();
   initManagerForms();
   window.addEventListener('hashchange', renderDesktopRoute);

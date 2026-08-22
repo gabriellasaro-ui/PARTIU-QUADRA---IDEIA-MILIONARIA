@@ -698,9 +698,36 @@ def generate_settlements(db: Session, *, now: datetime | None = None) -> int:
 # --- Quadras --------------------------------------------------------------
 
 def list_quadras(db: Session, manager) -> dict:
+    """Quadras da arena + os numeros REAIS da vitrine.
+
+    O painel mostrava "1.284 visualizacoes em 30 dias" e "9,8% de conversao" —
+    duas constantes escritas a mao em manager-data.js. Nao eram estimativa nem
+    aproximacao: eram invencao apresentada como medicao, e o dono decidiria
+    pagar por destaque olhando para elas.
+
+    Agora saem de `slot_demand` (quantas vezes alguem escolheu um horario desta
+    arena sem reservar) e das reservas de fato. E o rotulo mudou junto: nao ha
+    "em 30 dias" porque a tabela guarda acumulado por slot, sem data — dizer
+    30 dias seria trocar uma invencao por outra menor.
+    """
     arena = manager_arena_or_404(db, manager)
     courts = repo.list_courts_for_arena(db, arena.id)
-    return {"quadras": [serialize_court(c) for c in courts], "arena": arena.name}
+
+    procura = sum(v for _, _, v in repo.demand_by_slot(db, arena.id, now_local(), now_local()))
+    reservas = repo.active_bookings_count(db, arena.id, list(ACTIVE_STATUSES))
+    # Conversao so existe se houve procura: 0 procuras e 0 reservas nao dao
+    # "0%", dao "ainda nao da para dizer".
+    conversao = round(reservas * 100 / procura, 1) if procura else None
+
+    return {
+        "quadras": [serialize_court(c) for c in courts],
+        "arena": arena.name,
+        "vitrine": {
+            "procura": procura,
+            "reservas": reservas,
+            "conversao": conversao,
+        },
+    }
 
 
 def create_quadra(db: Session, manager, body) -> Court:

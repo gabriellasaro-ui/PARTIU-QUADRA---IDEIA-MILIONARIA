@@ -123,6 +123,7 @@ def _to_msg(viewer_id, m: Message) -> dict:
 
 def _to_conv(db: Session, viewer_id, row, messages: list[Message]) -> dict:
     conv, arena_name, court_id, booking_code = row
+    jogador = db.get(User, conv.player_id)
     return {
         "id": str(conv.id),
         "bookingId": str(conv.booking_id),
@@ -133,6 +134,15 @@ def _to_conv(db: Session, viewer_id, row, messages: list[Message]) -> dict:
         "unread": repo.count_newer_messages(db, conv.id, viewer_id) > 0,
         # Aditivo: o app antigo ignora e continua funcionando.
         "encerrada": conv.status != CONVERSATION_ACTIVE,
+        # QUEM E O CLIENTE.
+        #
+        # Faltava por completo. Para o jogador, `venue` (o nome da arena)
+        # identifica a conversa; para a ARENA, `venue` e o proprio nome — a
+        # lista do gerente saia com sete linhas identicas, todas dizendo "Arena
+        # Bola na Rede", e ele nao tinha como saber com quem estava falando.
+        "clienteId": str(conv.player_id),
+        "cliente": (jogador.name if jogador else "Cliente"),
+        "bloqueado": esta_bloqueado(db, conv.arena_id, conv.player_id),
     }
 
 

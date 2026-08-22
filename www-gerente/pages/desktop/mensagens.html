@@ -1,50 +1,41 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
-<div class="chat has-active">
+<!-- Mensagens — conversas REAIS da arena.
+
+     A tela era HTML estatico: tres conversas escritas a mao ("Matheus Rocha",
+     "Carol Souza", "Rafael Mendes"), um dialogo inventado, e um botao de
+     enviar que nao enviava para lugar nenhum. Montada agora por
+     assets/js/manager-messages.js a partir de /api/mensagens.
+
+     O BOTAO DE LIGAR foi removido e nao volta. Ele expunha o telefone do
+     jogador com um clique e tirava a conversa da plataforma: sem registro do
+     que foi combinado, e e por ali que a proxima reserva passa a ser fechada
+     por fora — sem horario travado, sem pagamento, com a agenda dos dois lados
+     quebrada. (Ele nem ligava, alias: mostrava um toast dizendo "preparada
+     para a API".) -->
+<div class="chat">
   <aside class="chat-list">
-    <div class="chat-list-head">Conversas</div>
-    <a class="conv on" href="./dashboard.html#mensagens">
-      <span class="conv-av">M</span>
-      <span class="conv-main">
-        <span class="conv-top"><strong>Matheus Rocha</strong><span class="conv-time">14:20</span></span>
-        <span class="conv-prev">Pode confirmar a quadra dàs 19h?</span>
-      </span>
-      <span class="conv-dot"></span>
-    </a>
-    <a class="conv unread" href="./dashboard.html#mensagens">
-      <span class="conv-av">C</span>
-      <span class="conv-main">
-        <span class="conv-top"><strong>Carol Souza</strong><span class="conv-time">13:48</span></span>
-        <span class="conv-prev">Tem raquete para alugar?</span>
-      </span>
-      <span class="conv-dot"></span>
-    </a>
-    <a class="conv" href="./dashboard.html#mensagens">
-      <span class="conv-av">R</span>
-      <span class="conv-main">
-        <span class="conv-top"><strong>Rafael Mendes</strong><span class="conv-time">Ontem</span></span>
-        <span class="conv-prev">Obrigado, ate a proxima.</span>
-      </span>
-    </a>
+    <div class="chat-list__head">
+      <span>Conversas</span>
+    </div>
+    <div data-conv-list></div>
   </aside>
 
-  <section class="chat-thread">
+  <section class="chat-thread" data-conv-thread hidden>
     <div class="thread-head">
-      <span class="conv-av">M</span>
+      <span class="conv-av" data-conv-ini>?</span>
       <div>
-        <strong>Matheus Rocha</strong>
-        <div class="thread-sub">Reserva #PQ-1934 - Society 1</div>
+        <strong data-conv-nome>—</strong>
+        <div class="thread-sub" data-conv-sub></div>
       </div>
-      <!-- LIGAR: removido, e para nao voltar.
 
-           Ele expunha o telefone do jogador para a arena com um clique. O
-           canal de contato do produto e esta conversa, que fica registrada,
-           tem prazo e pode ser encerrada ou bloqueada. Uma ligacao sai da
-           plataforma: nao ha registro do que foi combinado, e e por ali que a
-           proxima reserva passa a ser fechada por fora — sem horario travado,
-           sem pagamento, e com a agenda dos dois lados quebrada.
+      <!-- As duas acoes que o dono tem sobre um atendimento.
 
-           Alem disso o botao nem ligava: mostrava um toast dizendo "preparada
-           para a API". -->
+           ENCERRAR fecha AQUELE atendimento: o canal existe para resolver
+           aquela reserva, e nao para virar linha direta permanente.
+
+           BLOQUEAR e para quando o problema e a PESSOA — encerrada uma
+           conversa, a proxima reserva abre outra e a arena volta ao mesmo
+           lugar. Vale so para esta arena: banir da plataforma e decisao de
+           quem a opera. -->
       <button class="btn btn-soft th-act" type="button" data-conv-bloquear hidden>
         <svg class="ic sm"><use href="#i-ban"/></svg> Bloquear pessoa
       </button>
@@ -52,15 +43,26 @@
         <svg class="ic sm"><use href="#i-check"/></svg> Encerrar atendimento
       </button>
     </div>
-    <div class="bubbles">
-      <span class="day-sep">Hoje</span>
-      <div class="bubble them">Boa tarde! A reserva dàs 19h esta confirmada?<div class="bub-time">14:18</div></div>
-      <div class="bubble me">Esta sim. Chegue 10 minutos antes para liberar o acesso.<div class="bub-time">14:19</div></div>
-      <div class="bubble them">Fechado, obrigado!<div class="bub-time">14:20</div></div>
+
+    <div class="bubbles" data-conv-msgs></div>
+
+    <div class="composer" data-conv-composer hidden>
+      <input type="text" placeholder="Escrever mensagem" data-conv-texto>
+      <button class="btn btn-primary" type="button" data-conv-enviar>
+        <svg class="ic sm"><use href="#i-send"/></svg> Enviar
+      </button>
     </div>
-    <div class="composer">
-      <input type="text" placeholder="Escrever mensagem">
-      <button class="btn btn-primary" type="button" data-toast="Mensagem enviada"><svg class="ic sm"><use href="#i-send"/></svg> Enviar</button>
+
+    <!-- Encerrada, a conversa nao aceita mensagem: deixar o campo ali seria
+         oferecer uma acao que o servidor recusa. -->
+    <div class="conv-encerrada-aviso" data-conv-encerrada-aviso hidden>
+      <svg class="ic sm"><use href="#i-check"/></svg>
+      Atendimento encerrado. O histórico fica guardado, mas ninguém escreve mais aqui.
     </div>
   </section>
+
+  <div class="conv-vazio" data-conv-empty hidden>
+    <strong>Nenhuma conversa aberta</strong>
+    <span>O canal com o cliente abre sozinho quando uma reserva é paga.</span>
+  </div>
 </div>

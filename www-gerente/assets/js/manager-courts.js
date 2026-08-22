@@ -45,9 +45,18 @@ export function saveCourt(id, patch) {
   storage.set(COURTS_KEY, over);
 }
 
-/* Quadras vivas: /api/gerente/quadras quando houver API. */
+/* Quadras vivas: /api/gerente/quadras quando houver API.
+
+   ATENCAO ao formato: devolve {quadras, vitrine}, e nao um array.
+
+   A vitrine e o par de numeros do topo da tela (procura e conversao), que
+   antes era constante escrita a mao. Quando mudei o retorno para trazer os
+   dois juntos, DOIS consumidores continuaram tratando o resultado como array
+   e quebraram — Mensalistas com "opcoesQuadras.map is not a function" e
+   Configuracoes com "listaQuadras.filter is not a function". Quem chamar
+   daqui em diante precisa do `.quadras`. */
 export async function loadCourts() {
-  if (!API_BASE_URL) return courts();
+  if (!API_BASE_URL) return { quadras: courts(), vitrine: null };
   return managerService.quadras();
 }
 
@@ -62,7 +71,24 @@ function courtCard(court) {
   return `<article class="qcard" data-court="${court.id}">
     <div class="ph">
       <span class="pill tl status ${court.active ? 'pago' : 'pendente'}">${court.active ? 'Ativa' : 'Pausada'}</span>
-      <img src="${escapeHtml(court.photo)}" alt="${escapeHtml(court.label)}" loading="lazy">
+      <!-- CONTAGEM DE FOTOS, e o aviso quando faltam.
+
+           A vitrine exige cinco: uma foto so nao vende quadra, porque quem
+           escolhe onde jogar quer ver o piso, a iluminacao e o vestiario. O
+           selo diz quantas ha, e fica AMBAR quando falta — o dono descobre o
+           problema no catalogo, e nao quando percebe que ninguem reserva
+           aquela quadra.
+
+           (Este comentario vive DENTRO de um template literal: nada de crase
+           aqui. Uma crase no meio de um comentario fecha a string e derruba a
+           tela inteira com "Unexpected identifier" — foi o que aconteceu.) -->
+      <span class="pill tr qcard-fotos${(court.fotos || 0) >= 5 ? '' : ' falta'}">
+        <svg class="ic sm"><use href="#i-image"/></svg>${court.fotos || 0}/5
+      </span>
+      ${court.photo
+        ? `<img src="${escapeHtml(court.photo)}" alt="${escapeHtml(court.label)}" loading="lazy" data-foto-quadra>`
+        : ''}
+      <span class="ph-vazio"><svg class="ic"><use href="#i-image"/></svg>Sem foto</span>
     </div>
     <div class="bd">
       <h3>${escapeHtml(court.label)}</h3>
@@ -87,7 +113,9 @@ function courtCard(court) {
 }
 
 export async function renderManagerCourts(root) {
-  const lista = API_BASE_URL ? await loadCourts() : courts();
+  const carregado = API_BASE_URL ? await loadCourts() : { quadras: courts(), vitrine: null };
+  const lista = carregado.quadras;
+  const dadosVitrine = carregado.vitrine;
 
   const grid = root.querySelector('[data-court-list]');
   if (grid) {
@@ -105,24 +133,26 @@ export async function renderManagerCourts(root) {
     contador.textContent = `${lista.length} quadras cadastradas · ${ativas} ativas`;
   }
 
-  // Os numeros da vitrine existiam em ARENA e ninguem lia: estavam escritos
-  // na mao no HTML.
-  const views = root.querySelector('[data-showcase-views]');
-  if (views) views.textContent = ARENA.views30d.toLocaleString('pt-BR');
-  const conv = root.querySelector('[data-showcase-conversion]');
-  if (conv) conv.textContent = `${String(ARENA.conversion).replace('.', ',')}%`;
+  /* Numeros da vitrine: do SERVIDOR, e nao de constante escrita a mao.
 
-  // Turbinar: estado com prazo, nao booleano.
-  const boost = showcase();
-  const ativo = boost.featuredUntil && new Date(boost.featuredUntil) > new Date();
-  const status = root.querySelector('[data-boost-status]');
-  if (status) {
-    status.textContent = ativo
-      ? `Turbinada até ${new Date(boost.featuredUntil).toLocaleDateString('pt-BR')}.`
-      : 'Sua arena aparece na ordem normal, por avaliação.';
+     Eram ARENA.views30d e ARENA.conversion — invencao apresentada como
+     medicao, e o dono decidiria pagar por destaque olhando para elas.
+
+     Sem procura registrada a conversao sai como "—", e nao como "0%": zero
+     por cento afirma que ninguem converteu; travessao diz que ainda nao da
+     para saber, que e a verdade quando nao houve procura nenhuma. */
+  const vitrine = dadosVitrine || {};
+  const views = root.querySelector('[data-showcase-views]');
+  if (views) views.textContent = Number(vitrine.procura || 0).toLocaleString('pt-BR');
+  const conv = root.querySelector('[data-showcase-conversion]');
+  if (conv) {
+    conv.textContent = vitrine.conversao === null || vitrine.conversao === undefined
+      ? '—'
+      : `${String(vitrine.conversao).replace('.', ',')}%`;
   }
-  const btnBoost = root.querySelector('[data-boost-toggle]');
-  if (btnBoost) btnBoost.textContent = ativo ? 'Turbinada' : 'Turbinar';
+
+  // (O bloco de destaque regional saiu da tela: simulava uma COMPRA que
+  //  nao existia em lugar nenhum. Ver o comentario em quadras.html.)
   root.querySelector('[data-boost]')?.classList.toggle('is-on', Boolean(ativo));
 
   // Vitrine: os toggles refletem o estado salvo, nao a classe escrita no HTML.
@@ -134,6 +164,7 @@ export async function renderManagerCourts(root) {
   });
 
 
+  tratarFotosQuebradas(root);
   window.pqRefreshIcons?.(root);
 }
 
@@ -146,7 +177,7 @@ export function initManagerCourts() {
     // lista. O resto abre o formulario completo, que e uma pagina.
     const toggle = event.target.closest('[data-court-toggle]');
     if (toggle) {
-      const court = (API_BASE_URL ? await loadCourts() : courts())
+      const court = (API_BASE_URL ? (await loadCourts()).quadras : courts())
         .find((c) => String(c.id) === toggle.dataset.courtToggle);
       if (!court) return;
       if (API_BASE_URL) {
@@ -164,26 +195,6 @@ export function initManagerCourts() {
       return;
     }
 
-    if (event.target.closest('[data-boost-toggle]')) {
-      const estado = showcase();
-      const ativo = estado.featuredUntil && new Date(estado.featuredUntil) > new Date();
-      if (ativo) {
-        window.pqToast?.('Sua arena já está turbinada');
-        return;
-      }
-      const ate = new Date();
-      ate.setDate(ate.getDate() + 30);
-      /* Grava tambem no override da quadra: e por venue_overrides que o
-         Explorar do jogador enxerga, e sem isso "turbinar" nao mudaria
-         nada na busca — a arena pagaria por um selo. */
-      storage.set(SHOWCASE_KEY, { ...estado, featured: true, featuredUntil: ate.toISOString() });
-      const over = storage.get('venue_overrides', {});
-      over[ARENA.id] = { ...(over[ARENA.id] || {}), boosted: true, boostedUntil: ate.toISOString() };
-      storage.set('venue_overrides', over);
-      renderManagerCourts(root);
-      window.pqToast?.('Arena turbinada por 30 dias');
-      return;
-    }
 
     const setting = event.target.closest('[data-showcase-setting]');
     if (setting) {
@@ -192,5 +203,32 @@ export function initManagerCourts() {
       storage.set(SHOWCASE_KEY, { ...estado, [chave]: !estado[chave] });
       renderManagerCourts(root);
     }
+  });
+}
+
+
+/* Foto quebrada vira o estado "sem foto", e nao o icone de imagem partida.
+
+   Em JS e nao com onerror inline: atributo de evento dentro de HTML gerado
+   por template e exatamente onde uma aspa ou uma crase fora do lugar derruba
+   a tela — foi o que aconteceu na primeira versao disto. */
+export function tratarFotosQuebradas(root) {
+  root.querySelectorAll('[data-foto-quadra]').forEach((img) => {
+    if (img.dataset.tratada) return;
+    img.dataset.tratada = '1';
+    const falhou = () => {
+      /* ESCONDE o <img>, nao so tira o src.
+
+         Sem src o elemento continua no fluxo e o navegador desenha o TEXTO
+         ALTERNATIVO — "Society 2" flutuando no canto do cartao, por cima do
+         estado "Sem foto" que deveria estar ali. Duas mensagens sobrepostas
+         dizendo a mesma ausencia. */
+      img.hidden = true;
+      img.removeAttribute('src');
+      img.closest('.ph')?.classList.add('sem-foto');
+    };
+    img.addEventListener('error', falhou);
+    // Imagem que ja falhou antes do listener existir (cache, src invalido).
+    if (img.complete && img.naturalWidth === 0) falhou();
   });
 }

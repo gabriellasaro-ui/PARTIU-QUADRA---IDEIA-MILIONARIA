@@ -1,10 +1,9 @@
 /* Avaliações — porte de _legacy/.../g_avaliacoes.html.
 
    A tela tinha tres KPIs inventados e dois reviews escritos na mao. Aqui a
-   media e a distribuicao sao calculadas de REVIEW_DIST, entao a nota grande
+   media e a distribuicao vem do backend, entao a nota grande
    e as barras nao podem discordar entre si — que era o risco de manter as
    duas como texto fixo. */
-import { ARENA_REVIEWS, REVIEW_DIST } from '../../config/manager-data.js';
 import storage from '../../storage/storage.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import managerService from '../../services/manager-api.js';
@@ -21,6 +20,11 @@ const respostas = () => storage.get(KEY, {});
 const estrelas = (n) => Array.from({ length: 5 },
   (_, i) => `<svg class="ic${i < n ? ' on' : ''}"><use href="#i-star"/></svg>`).join('');
 
+/* Quadra escolhida no filtro. Modulo e nao DOM: a tela e remontada a cada
+   troca de rota, e guardar no elemento perderia a escolha ao responder uma
+   avaliacao. */
+let quadraFiltro = '';
+
 export async function renderManagerReviews(root) {
   const lista = root.querySelector('[data-reviews-list]');
   if (!lista) return;
@@ -30,23 +34,51 @@ export async function renderManagerReviews(root) {
   let dist;
   let total;
   let media;
+  let porQuadra = [];
   if (API_BASE_URL) {
-    const data = await managerService.avaliacoes();
+    const data = await managerService.avaliacoes(quadraFiltro || undefined);
     avaliacoes = data.avaliacoes;
     dist = data.dist;
     total = data.total;
     media = data.media;
+    porQuadra = data.quadras || [];
   } else {
-    avaliacoes = ARENA_REVIEWS.map((a, i) => ({ ...a, id: i, resposta: respostas()[i] || '' }));
-    dist = REVIEW_DIST;
-    total = REVIEW_DIST.reduce((t, d) => t + d.qtd, 0);
-    media = REVIEW_DIST.reduce((t, d) => t + d.n * d.qtd, 0) / total;
+    /* Sem API nao ha avaliacao nenhuma — e o painel nem chega aqui, porque o
+       login recusa sem backend. Mostrar as de exemplo (Matheus Rocha, Carol
+       Souza) era pior que mostrar nada: sao clientes que nao existem, com
+       notas que ninguem deu, e o dono tiraria conclusoes sobre a reputacao
+       dele a partir disso. */
+    avaliacoes = [];
+    dist = [5, 4, 3, 2, 1].map((n) => ({ n, qtd: 0 }));
+    total = 0;
+    media = 0;
   }
 
   const set = (sel, valor) => {
     const el = root.querySelector(sel);
     if (el) el.textContent = valor;
   };
+
+  /* NOTA POR QUADRA — da pior para a melhor.
+
+     A media da arena junta tudo: com quatro quadras, a que esta com problema
+     dilui nas outras e o dono ve 4,8 concluindo que esta tudo bem. Aqui cada
+     quadra tem a propria nota, e a que precisa de atencao fica em cima. */
+  const caixa = root.querySelector('[data-reviews-courts]');
+  if (caixa) {
+    caixa.innerHTML = porQuadra.length > 1
+      ? [`<button type="button" class="rev-quadra${quadraFiltro ? '' : ' on'}" data-rev-quadra="">
+           <span class="rev-quadra__nome">Todas as quadras</span>
+           <span class="rev-quadra__nota num">${String(media).replace('.', ',')}</span>
+         </button>`]
+        .concat(porQuadra.map((q) => `
+          <button type="button" class="rev-quadra${quadraFiltro === q.quadraId ? ' on' : ''}" data-rev-quadra="${q.quadraId}">
+            <span class="rev-quadra__nome">${escapeHtml(q.quadraNome)}<small>${q.total} ${q.total === 1 ? 'avaliação' : 'avaliações'}</small></span>
+            <span class="rev-quadra__nota num${q.media < 4 ? ' baixa' : ''}">${String(q.media).replace('.', ',')}</span>
+          </button>`))
+        .join('')
+      : '';
+  }
   set('[data-reviews-average]', Number(media).toFixed(1).replace('.', ','));
   set('[data-reviews-total]', total);
 
@@ -71,6 +103,9 @@ export async function renderManagerReviews(root) {
         <div>
           <strong>${escapeHtml(a.cliente)}</strong>
           <div class="review-stars">${estrelas(Number(a.nota))}<span class="review-when">${escapeHtml(a.quando)}</span></div>
+          <!-- QUAL QUADRA. Sem isto, "o vestiario estava sujo" nao diz qual
+               vestiario, e o dono nao tem o que fazer com a reclamacao. -->
+          ${a.quadraId ? `<div class="review-quadra"><svg class="ic sm"><use href="#i-grid"/></svg>${escapeHtml(a.quadraNome)}</div>` : ''}
         </div>
       </div>
       <p>${escapeHtml(a.texto)}</p>
@@ -91,6 +126,13 @@ export function initManagerReviews() {
   document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
+
+    const filtroQuadra = event.target.closest('[data-rev-quadra]');
+    if (filtroQuadra) {
+      quadraFiltro = filtroQuadra.dataset.revQuadra;
+      await renderManagerReviews(root);
+      return;
+    }
 
     const abrir = event.target.closest('[data-reply-toggle]');
     if (abrir) {

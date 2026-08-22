@@ -5,11 +5,10 @@
    Carol Souza — tres clientes que nao existem em nenhum outro lugar do
    sistema. Nenhum numero conversava com as reservas da arena.
 
-   Aqui tudo deriva de ARENA_BOOKINGS. Comissao nao aparece: por decisao do
+   Aqui tudo vem de /api/gerente/financeiro. Comissao nao aparece: por decisao do
    dono, o gerente ve faturamento, nao repasse.
    O app antigo tinha ainda o seletor de periodo, o card de proximo repasse,
    a rosca de destino da receita e as duas tabelas exportaveis. Voltaram. */
-import { ARENA_BOOKINGS, STATUS_CLASS } from '../../config/manager-data.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import managerService from '../../services/manager-api.js';
@@ -30,9 +29,10 @@ const set = (root, sel, valor) => {
 };
 
 function reservasDoPeriodo() {
-  if (periodo === 'hoje') return ARENA_BOOKINGS.filter((r) => r.data === 'Hoje');
-  if (periodo === '30d') return ARENA_BOOKINGS;
-  return ARENA_BOOKINGS;
+  /* Sem API nao ha faturamento. Devolver reservas de exemplo faria a tela
+     mostrar dinheiro que nao entrou — e financeiro e a ultima tela onde se
+     pode inventar numero. */
+  return [];
 }
 
 function renderChart(root, valores) {

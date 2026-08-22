@@ -71,6 +71,10 @@ const mapCourt = (c) => ({
   abre: Number(String(c.abertura).split(':')[0]),
   fecha: Number(String(c.fechamento).split(':')[0]),
   photo: (c.fotos && c.fotos[0]) || '',
+  /* Quantas fotos a quadra tem. A vitrine exige cinco, e o catalogo precisa
+     dizer quais quadras ainda nao chegaram la — senao o dono so descobre
+     quando percebe que aquela quadra nao recebe reserva. */
+  fotos: (c.fotos || []).length,
   occupancy: 0,
   amenities: c.comodidades || []
 });
@@ -92,7 +96,11 @@ const mapReview = (a) => ({
   nota: a.nota,
   quando: a.quando,
   texto: a.texto,
-  resposta: a.resposta
+  resposta: a.resposta,
+  /* Qual quadra foi avaliada. Sem isto "o vestiario estava sujo" nao diz QUAL
+     vestiario, e o dono nao tem o que fazer com a reclamacao. */
+  quadraId: a.quadraId || '',
+  quadraNome: a.quadraNome || ''
 });
 
 /* Dia da semana do servidor ("Tuesday") -> nome em portugues em minusculo,
@@ -232,9 +240,16 @@ export const managerService = {
     return api.get(`/api/gerente/financeiro?${q}`);
   },
 
+  /* Devolve as quadras E os numeros da vitrine.
+
+     A vitrine vinha de constantes escritas a mao no front; agora sai do mesmo
+     lugar que as quadras, porque e sobre elas que os numeros falam. */
   async quadras() {
     const data = await api.get('/api/gerente/quadras');
-    return (data.quadras || []).map(mapCourt);
+    return {
+      quadras: (data.quadras || []).map(mapCourt),
+      vitrine: data.vitrine || null
+    };
   },
 
   criarQuadra(body) {
@@ -252,7 +267,11 @@ export const managerService = {
       avaliacoes: (data.avaliacoes || []).map(mapReview),
       dist: data.dist || [],
       total: data.total || 0,
-      media: data.media || 0
+      media: data.media || 0,
+      /* A quebra POR QUADRA. A media da arena junta tudo: com quatro quadras,
+         a que esta com problema dilui nas outras e o dono ve 4,8 concluindo
+         que esta tudo bem. */
+      quadras: data.quadras || []
     };
   },
 
