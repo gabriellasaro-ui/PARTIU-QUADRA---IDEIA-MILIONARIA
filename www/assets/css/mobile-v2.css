@@ -7929,3 +7929,76 @@ html[data-theme="dark"] {
   left: 12px;
   right: auto;
 }
+
+/* Estados do horario no modo escuro.
+
+   Os cinzas de "indisponivel" (#a8b0aa, #b9c0ba, #9aa39d) foram escolhidos
+   para APAGAR sobre fundo branco. Sobre fundo escuro eles fazem o oposto:
+   ficam mais claros que o texto normal, e a hora reservada saltava mais que a
+   livre. E o bloco verde (#dcf3e5) era uma pastilha clara acesa no meio.
+
+   Aqui a hierarquia se inverte junto com o fundo: indisponivel escurece,
+   disponivel continua legivel, e o inicio escolhido segue sendo o unico
+   elemento cheio. */
+:root[data-theme="dark"] .slot {
+  border-color: var(--pq-line);
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+}
+
+:root[data-theme="dark"] .slot.busy {
+  border-color: var(--pq-line);
+  background: var(--pq-app-bg);
+  color: #5d6b64;
+}
+
+:root[data-theme="dark"] .slot.past,
+:root[data-theme="dark"] .slot.nofit {
+  border-color: var(--pq-line);
+  background: var(--pq-app-bg);
+  color: #64726b;
+}
+
+:root[data-theme="dark"] .avail-slots .slot.sel,
+:root[data-theme="dark"] .slots .slot.sel {
+  border-color: var(--pq-brand) !important;
+  background: var(--pq-brand) !important;
+  color: #0b1a12 !important;
+}
+
+:root[data-theme="dark"] .slot.bloco,
+:root[data-theme="dark"] .avail-slots .slot.bloco {
+  border-color: var(--pq-brand) !important;
+  background: #21402f !important;
+  color: #7ee3b4 !important;
+}
+
+/* Duracao: o selecionado tem fundo cheio, entao o texto precisa ser escuro. */
+:root[data-theme="dark"] .dur.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #0b1a12;
+}
+
+/* CONTROLES NATIVOS (select, input, barra de rolagem).
+
+   O <select> abre uma lista desenhada pelo SISTEMA, nao pela pagina: nenhum
+   CSS nosso a alcança. Sem declarar color-scheme, o Android desenha a lista
+   clara e escreve texto claro nela — era o "drop list nao da para ler" em
+   Preferencias de jogo. Uma linha resolve os selects, os campos de texto e a
+   barra de rolagem de uma vez. */
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea {
+  background: var(--pq-surface-2);
+  color: var(--pq-ink);
+  border-color: var(--pq-line);
+}

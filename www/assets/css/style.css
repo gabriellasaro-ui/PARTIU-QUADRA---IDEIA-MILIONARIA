@@ -546,3 +546,43 @@ h1, h2, h3, .brand, .price, .kpi .val, .day .n, .bb-total,
   .app-wrap { padding: 0; }
   .phone { width: 100%; height: 100vh; max-height: none; border-radius: 0; box-shadow: none; }
 }
+
+
+/* ─────────── A PALETA PARALELA DO style.css, no modo escuro ───────────
+   Este arquivo tem :root proprio, anterior aos tokens --pq-*: --ink, --line,
+   --green, --mint, --bg, --white. Ele e carregado pelo app e nunca foi
+   coberto pelo tema escuro — e dele que vinham os dois defeitos mais visiveis
+   da tela de horarios:
+
+     .slot { border: 1.5px solid var(--line); color: var(--ink); }
+
+   --line e #e7e3d9 (quase branco) e --ink e #0e2a1a (quase preto). No escuro
+   isso da exatamente o que se via: borda branca em volta e o horario ilegivel.
+
+   Nao unifiquei com os --pq-* agora porque sao 21 tokens usados em centenas de
+   regras, e trocar tudo de uma vez em cima de uma tela que ja esta funcionando
+   e como se troca uma coisa por duas quebradas. Aqui eles apenas RECEBEM os
+   valores do tema, que resolve o problema hoje; a unificacao fica para quando
+   houver motivo proprio.
+
+   Nota: os --shadow-* ficam mais fundos porque sombra clara nao existe sobre
+   fundo escuro — o que separa as camadas ali e a borda. */
+:root[data-theme="dark"] {
+  --green: #35c785;
+  --green-600: #4dd598;
+  --green-700: #7ee3b4;
+  --green-900: #a8eecd;
+  --mint: #1e2f26;
+  --mint-2: #263b30;
+  --lime: #c8f560;
+  --ink: #e8f2ec;
+  --ink-2: #b3c9bd;
+  --muted: #8ba396;
+  --line: #2a3831;
+  --bg: #0e1613;
+  --white: #18211d;
+  --amber: #f0b429;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .5);
+  --shadow: 0 6px 20px rgba(0, 0, 0, .55);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, .65);
+}
