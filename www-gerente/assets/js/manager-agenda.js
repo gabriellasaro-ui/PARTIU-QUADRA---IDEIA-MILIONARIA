@@ -17,9 +17,54 @@ import managerService from '../../services/manager-api.js';
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-const HORA_INICIAL = 8;
-const HORA_FINAL = 23;
-const ALTURA_HORA = 58;
+/* A GRADE SE AJUSTA AO EXPEDIENTE, e nao o contrario.
+
+   Era fixa em 08h-23h, 58px por hora: 928px de altura para caber num monitor
+   de 900. O dono nunca via o dia inteiro — rolava para cima e para baixo
+   procurando quatro reservas num campo vazio.
+
+   Agora o intervalo sai do expediente real da semana (quem abre so a noite ve
+   a noite) e a altura da hora se ajusta para o dia caber na tela. O piso de
+   34px existe porque abaixo disso o nome do cliente nao cabe no bloco. */
+const HORA_INICIAL_PADRAO = 8;
+const HORA_FINAL_PADRAO = 23;
+const ALTURA_HORA_MAX = 58;
+const ALTURA_HORA_MIN = 34;
+const ALTURA_GRADE_ALVO = 620;
+
+let HORA_INICIAL = HORA_INICIAL_PADRAO;
+let HORA_FINAL = HORA_FINAL_PADRAO;
+let ALTURA_HORA = ALTURA_HORA_MAX;
+
+/* Calcula a janela visivel a partir do expediente da semana + das reservas.
+
+   As reservas entram no calculo porque uma reserva pode existir fora do
+   expediente atual (o dono mudou o horario depois de vender). Corta-la da
+   grade seria esconder dinheiro ja recebido. */
+function ajustarJanela(eventos) {
+  const limites = [];
+  Object.values(expedienteCarregado).forEach((dias) => {
+    Object.values(dias).forEach((faixas) => {
+      (faixas || []).forEach(([abre, fecha]) => limites.push(abre, fecha));
+    });
+  });
+  eventos.forEach((e) => limites.push(e.inicio, e.fim));
+
+  if (limites.length) {
+    HORA_INICIAL = Math.max(0, Math.floor(Math.min(...limites)));
+    HORA_FINAL = Math.min(23, Math.ceil(Math.max(...limites)) - 1);
+  } else {
+    HORA_INICIAL = HORA_INICIAL_PADRAO;
+    HORA_FINAL = HORA_FINAL_PADRAO;
+  }
+  if (HORA_FINAL < HORA_INICIAL) HORA_FINAL = HORA_INICIAL;
+
+  const linhas = HORA_FINAL - HORA_INICIAL + 1;
+  ALTURA_HORA = Math.round(Math.min(
+    ALTURA_HORA_MAX,
+    Math.max(ALTURA_HORA_MIN, ALTURA_GRADE_ALVO / linhas)
+  ));
+}
 
 // Estado da tela: semana visivel e quadra filtrada. Vive no modulo porque a
 // pagina e remontada a cada render e nao pode esquecer onde a pessoa estava.
@@ -222,17 +267,28 @@ function renderDesktop(root, eventos, segunda) {
     const faixas = diaISO ? faixasDoDia(diaISO, quadraAtual) : null;
     let fechados = '';
     if (faixas) {
+      /* TODO bloco fechado leva rotulo, e nao so o dia inteiro.
+
+         Na primeira versao so o dia fechado inteiro dizia "Fechado"; um bloco
+         de 08h as 18h aparecia como hachura muda, e o dono ficava adivinhando
+         se aquilo era horario fechado, indisponivel ou um defeito da tela.
+
+         O rotulo so entra quando ha altura para ele (>= 46px); num bloco de
+         uma hora, texto empilhado polui mais do que informa. */
+      const rotular = (altura) => (altura >= 46 ? '<span>Fechado</span>' : '');
       if (!faixas.length) {
-        fechados = `<div class="cal-closed" style="top:0;height:${altura}px"><span>Fechado</span></div>`;
+        fechados = `<div class="cal-closed is-full" style="top:0;height:${altura}px"><span>Fechado</span></div>`;
       } else {
         const abre = Math.min(...faixas.map((f) => f[0]));
         const fecha = Math.max(...faixas.map((f) => f[1]));
         if (abre > HORA_INICIAL) {
-          fechados += `<div class="cal-closed" style="top:0;height:${(abre - HORA_INICIAL) * ALTURA_HORA}px"></div>`;
+          const h = (abre - HORA_INICIAL) * ALTURA_HORA;
+          fechados += `<div class="cal-closed" style="top:0;height:${h}px">${rotular(h)}</div>`;
         }
         if (fecha < HORA_FINAL + 1) {
           const topo = (fecha - HORA_INICIAL) * ALTURA_HORA;
-          fechados += `<div class="cal-closed" style="top:${topo}px;height:${altura - topo}px"></div>`;
+          const h = altura - topo;
+          fechados += `<div class="cal-closed" style="top:${topo}px;height:${h}px">${rotular(h)}</div>`;
         }
       }
     }
@@ -317,15 +373,23 @@ export async function renderManagerAgenda(root) {
       .join('');
   });
 
+  // A janela e a altura da hora saem do expediente + das reservas da semana.
+  ajustarJanela(eventos);
   renderDesktop(root, eventos, segunda);
   renderMobile(root, eventos, segunda);
 
-  // A grade abre as 08h, mas a arena enche a noite. Sem isto o gerente
-  // encontra o calendario vazio e precisa rolar para achar o movimento.
+  /* O scroll automatico so entra se a grade NAO couber.
+
+     Antes ele rolava sempre ate a primeira reserva — e com a grade agora
+     ajustada ao expediente, o dia costuma caber inteiro. Rolar uma grade que
+     ja cabe esconde as primeiras horas sem motivo. */
   const body = root.querySelector('[data-agenda-body]');
-  const primeira = Math.min(...eventos.map((e) => e.inicio), HORA_FINAL);
   if (body && eventos.length) {
-    body.scrollTop = Math.max(0, (primeira - HORA_INICIAL - 0.5) * ALTURA_HORA);
+    const cabe = body.scrollHeight <= body.clientHeight + 4;
+    if (!cabe) {
+      const primeira = Math.min(...eventos.map((e) => e.inicio), HORA_FINAL);
+      body.scrollTop = Math.max(0, (primeira - HORA_INICIAL - 0.5) * ALTURA_HORA);
+    }
   }
 
   window.pqRefreshIcons?.(root);

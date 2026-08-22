@@ -281,6 +281,17 @@ body {
    Hachura, e nao cor cheia: cor cheia competiria com os blocos de reserva, que
    sao o que importa na tela. A hachura le como "aqui nao ha o que acontecer"
    sem puxar o olho. */
+/* MUITO mais discreta que a primeira versao.
+
+   A hachura estava com listras de 5px em 55% de opacidade e virou o elemento
+   DOMINANTE da tela: numa semana com o domingo fechado e a segunda abrindo so
+   a noite, metade do calendario era listra, e as quatro reservas de verdade
+   sumiam no meio. O fechado e CONTEXTO — a resposta a "por que aqui esta
+   vazio?" — e nao conteudo.
+
+   Agora: fundo levemente rebaixado, listras finas e espacadas, quase um papel
+   de parede. Continua distinguindo fechado de livre sem disputar com o que
+   importa. */
 .cal-closed {
   position: absolute;
   z-index: 0;
@@ -289,26 +300,48 @@ body {
   display: grid;
   place-items: center;
   pointer-events: none;
+  background-color: color-mix(in srgb, var(--pq-app-bg) 55%, transparent);
   background-image: repeating-linear-gradient(
     -45deg,
-    color-mix(in srgb, var(--pq-line-strong) 55%, transparent) 0 5px,
-    transparent 5px 11px
+    color-mix(in srgb, var(--pq-line) 60%, transparent) 0 1px,
+    transparent 1px 9px
   );
 }
 
+/* Um rotulo por bloco, no alto e nao no centro: no centro de um bloco de dez
+   horas ele fica longe da borda que explica, e o olho nao liga uma coisa a
+   outra. */
+.cal-closed {
+  align-content: start;
+  padding-top: 8px;
+}
+
 .cal-closed > span {
-  padding: 3px 10px;
+  padding: 2px 9px;
   border-radius: 999px;
-  background: var(--pq-panel);
+  background: color-mix(in srgb, var(--pq-panel) 88%, transparent);
   color: var(--pq-muted);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: .02em;
 }
 
-/* Os eventos ficam ACIMA da hachura: ela e fundo, nao sobreposicao. */
+/* O dia inteiro fechado ganha o rotulo no meio: ali nao ha reserva nenhuma
+   para competir, e centralizado ele explica a coluna toda de uma vez. */
+.cal-closed.is-full {
+  align-content: center;
+  padding-top: 0;
+}
+
+/* Os eventos ficam ACIMA da hachura: ela e fundo, nao sobreposicao.
+
+   SO z-index. `position: relative` aqui — que foi o que escrevi primeiro —
+   sobrescreve o `position: absolute` de desktop.css, e e ele que coloca cada
+   reserva na sua hora. Com relative, os blocos voltavam ao fluxo normal e se
+   empilhavam um debaixo do outro: a primeira reserva do dia parecia certa (por
+   acaso, e a primeira do fluxo) e as seguintes escorregavam para fora da
+   coluna. z-index ja funciona porque o elemento ja tem posicao nao-estatica. */
 .cal-ev {
-  position: relative;
   z-index: 1;
 }
 
@@ -407,4 +440,38 @@ html[data-manager-app][data-theme="light"] .cal-ev.recusada,
 html[data-manager-app][data-theme="light"] .cal-ev.cancelada,
 html[data-manager-app][data-theme="light"] .cal-ev.expirada {
   color: var(--pq-ink-soft);
+}
+
+
+/* ═══════════ Agenda: a semana INTEIRA visivel, sem rolagem interna ═══════ */
+
+/* O calendario tinha barra de rolagem PROPRIA (max-height 680px, overflow
+   auto) dentro de uma pagina que tambem rola. Duas rolagens aninhadas na tela
+   cujo objetivo e "ver a semana de uma vez": o dono rolava a de dentro
+   procurando a reserva, e a de fora sumia com o cabecalho.
+
+   Agora a grade tem a altura que precisar. Ela se mantem curta porque
+   ajustarJanela() ja recorta o intervalo pelo expediente real e encolhe a hora
+   ate 34px — quem abre so das 18h as 23h ve cinco linhas, e nao dezesseis. */
+html[data-manager-app][data-manager-view="agenda"] .cal-body,
+html[data-manager-app] .cal-body {
+  max-height: none;
+  overflow-y: visible;
+}
+
+/* A regua das horas acompanha o fundo do painel: o rotulo tem fundo proprio
+   para "cortar" a linha da grade atras dele, e com o fundo errado ele virava
+   um retangulo claro sobre a coluna escura. */
+:root:not([data-theme="light"]) .cal-gutter .hr span {
+  background: var(--pq-panel);
+}
+
+/* O DIA DE HOJE precisa se destacar mais que uma bolinha no cabecalho.
+
+   Numa grade de sete colunas iguais, achar "onde estou" custa uma leitura de
+   datas. A coluna de hoje ganha um fundo levemente distinto e uma borda de
+   marca — o dono acha o dia sem ler numero nenhum. */
+html[data-manager-app][data-manager-view="agenda"] .cal-col.today {
+  background-color: color-mix(in srgb, var(--pq-brand) 7%, transparent);
+  box-shadow: inset 2px 0 0 var(--pq-brand), inset -2px 0 0 var(--pq-brand);
 }
