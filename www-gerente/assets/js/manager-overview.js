@@ -92,13 +92,28 @@ async function renderHeatmap(root, dados) {
   );
   const faixa = (v) => (v <= 0 ? 0 : Math.min(4, Math.ceil((v / pico) * 4)));
 
-  const DIAS_MAPA = dados.dias;
-  let html = '<span class="manager-heatmap__corner" aria-hidden="true"></span>';
-  html += DIAS_MAPA.map((d) => `<strong class="manager-heatmap__day">${d}</strong>`).join('');
+  /* TRANSPOSTO: hora nas COLUNAS, dia nas LINHAS.
 
-  for (let h = 8; h <= 23; h += 1) {
-    html += `<small class="manager-heatmap__hour">${String(h).padStart(2, '0')}h</small>`;
-    DIAS_MAPA.forEach((dia, col) => {
+     Antes era o contrario — 16 linhas de hora por 7 colunas de dia — porque o
+     cartao vivia numa coluna estreita ao lado da lista de reservas, e alto e
+     estreito era a unica forma que cabia. O cartao agora ocupa a largura
+     inteira, e nessa largura a forma se inverte: 16 colunas curtas e 7 linhas
+     e um retangulo deitado, que e como se le um mapa de calor de semana.
+
+     A comparacao que interessa tambem muda de eixo. A pergunta do dono e "que
+     HORA enche", e horas lado a lado se comparam varrendo a linha do dia; na
+     vertical, comparar 20h de sabado com 20h de domingo exigia pular de sete em
+     sete celulas. */
+  const DIAS_MAPA = dados.dias;
+  const HORAS = [];
+  for (let h = 8; h <= 23; h += 1) HORAS.push(h);
+
+  let html = '<span class="manager-heatmap__corner" aria-hidden="true"></span>';
+  html += HORAS.map((h) => `<small class="manager-heatmap__hour">${String(h).padStart(2, '0')}</small>`).join('');
+
+  DIAS_MAPA.forEach((dia, col) => {
+    html += `<strong class="manager-heatmap__day">${dia}</strong>`;
+    HORAS.forEach((h) => {
       const res = dados.reservas[col]?.[h] || 0;
       const pro = dados.procura[col]?.[h] || 0;
       const b = faixa(res + pro);
@@ -106,7 +121,8 @@ async function renderHeatmap(root, dados) {
         + (pro ? ` · ${pro} ${pro === 1 ? 'procura' : 'procuras'} sem reservar` : '');
       html += `<span class="manager-heatmap__cell b${b}" role="img" aria-label="${titulo}" title="${titulo}"></span>`;
     });
-  }
+  });
+
   grid.innerHTML = html;
 }
 
@@ -288,7 +304,7 @@ export async function renderManagerOverview(root) {
           </div>
         </article>`;
       }).join('')
-    : '<div class="manager-empty-inline"><svg class="ic"><use href="#i-calendar"/></svg><span>Nenhuma reserva próxima.</span></div>';
+    : '<div class="manager-empty-inline"><i class="ic" data-lucide="calendar"></i><span>Nenhuma reserva próxima.</span></div>';
 
   /* O ritmo e buscado UMA vez e serve aos dois blocos: as tres faixas e o
      mapa de calor. Duas chamadas para o mesmo dado dobrariam o trafego e

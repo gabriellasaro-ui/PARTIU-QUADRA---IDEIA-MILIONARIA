@@ -248,6 +248,18 @@ def agenda(db: Session, manager, semana: str | None = None) -> dict:
     rows = repo.bookings_between(db, arena.id, start, end)
     eventos = []
     for booking, court, arena_row, user in rows:
+        # A AGENDA MOSTRA O QUE OCUPA A QUADRA.
+        #
+        # A consulta traz a semana inteira sem filtrar status, entao recusada,
+        # cancelada e expirada vinham desenhadas como bloco na grade. O dono
+        # olhava sabado 17h, via um retangulo e concluia que estava vendido —
+        # quando o horario esta livre e ele pode vende-lo agora.
+        #
+        # Elas nao somem do sistema: continuam em Reservas, com o status, que e
+        # onde se pergunta "o que aconteceu com aquele pedido". Aqui a pergunta
+        # e outra — "o que a minha quadra esta fazendo nesta semana".
+        if booking.status not in ACTIVE_STATUSES:
+            continue
         local = _as_local(booking.start_at)
         eventos.append({
             "id": str(booking.id),
@@ -630,13 +642,21 @@ def financeiro(
         start, end = _intervalo(de, ate)
         periodo = "custom"
     else:
+        # DIAS INTEIROS, e nao uma janela rolante de 7x24h.
+        #
+        # `now - 7 dias` comeca no meio de um sabado e termina no meio do
+        # sabado seguinte: a serie diaria caia em OITO baldes, dois deles
+        # parciais, e o grafico desenhava "Sáb Dom Seg Ter Qua Qui Sex Sáb" —
+        # o mesmo dia da semana nas duas pontas, debaixo do rotulo "ultimos 7
+        # dias". Quem compara dias precisa de dias completos; meio sabado no
+        # inicio e meio no fim nao se comparam com nada.
         today = now_local().date()
         if periodo == "today":
             start = datetime.combine(today, time.min, tzinfo=TZ)
         elif periodo == "7d":
-            start = now_local() - timedelta(days=7)
+            start = datetime.combine(today - timedelta(days=6), time.min, tzinfo=TZ)
         else:
-            start = now_local() - timedelta(days=30)
+            start = datetime.combine(today - timedelta(days=29), time.min, tzinfo=TZ)
         end = now_local()
 
     gross, subtotal, com, cnt = repo.revenue_for_period(db, arena.id, start, end)
@@ -657,7 +677,11 @@ def financeiro(
         "comissao": com / 100,
         "liquido": liquido / 100,
         "reservas": cnt,
-        "ticket_medio": round(gross / cnt, 2) if cnt else 0,
+        # EM REAIS, como todos os campos ao lado. `gross` esta em CENTAVOS
+        # (os vizinhos dividem por 100 aqui mesmo) e este ficou sem a divisao:
+        # a tela mostrava "ticket medio R$ 23.184,00" ao lado de "faturamento
+        # R$ 695,52" — cem vezes maior, num painel onde o dono decide preco.
+        "ticket_medio": round(gross / cnt / 100, 2) if cnt else 0,
         "repasses": [_serialize_settlement(s) for s in settlements],
     }
 

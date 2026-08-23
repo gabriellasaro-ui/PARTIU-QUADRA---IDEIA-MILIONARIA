@@ -15,20 +15,20 @@
 -->
 <div class="toolbar">
   <div class="field grow">
-    <svg class="ic"><use href="#i-search"/></svg>
+    <i class="ic" data-lucide="search"></i>
     <input type="text" placeholder="Buscar por cliente, código ou quadra" data-booking-search>
   </div>
   <a class="btn btn-primary" href="./dashboard.html#reserva-nova">
-    <svg class="ic sm"><use href="#i-plus"/></svg> Nova reserva
+    <i class="ic sm" data-lucide="plus"></i> Nova reserva
   </a>
 </div>
 
 <!-- O banner some quando nao ha o que responder: aviso permanente vira
      decoracao e para de ser lido. -->
 <a class="req-banner" href="#solicitacoes" data-booking-banner hidden>
-  <span class="ico"><svg class="ic"><use href="#i-bell"/></svg></span>
+  <span class="ico"><i class="ic" data-lucide="bell"></i></span>
   <div><b data-booking-banner-count></b><small>Aprove ou recuse antes que o prazo termine.</small></div>
-  <svg class="ic sm"><use href="#i-right"/></svg>
+  <i class="ic sm" data-lucide="chevron-right"></i>
 </a>
 
 <!-- BARRA DE CONTROLE: escopo, periodo e status na mesma linha.
@@ -65,7 +65,7 @@
       <label for="res-ate">até</label>
       <input type="date" id="res-ate" data-booking-ate>
       <button type="button" class="btn-limpar" data-periodo-limpar hidden aria-label="Limpar período">
-        <svg class="ic sm"><use href="#i-x"/></svg>
+        <i class="ic sm" data-lucide="x"></i>
       </button>
     </div>
   </div>
@@ -74,9 +74,9 @@
 <!-- ══════════════════════════ AVULSAS ══════════════════════════ -->
 <div data-scope-panel="avulso">
   <section class="manager-reservation-overview" aria-label="Resumo das reservas">
-    <article><span><svg class="ic"><use href="#i-calendar"/></svg></span><div><strong class="num" data-booking-total>0</strong><small>Reservas no período</small></div></article>
-    <article><span><svg class="ic"><use href="#i-wallet"/></svg></span><div><strong class="num" data-booking-volume>R$ 0,00</strong><small>Valor movimentado</small></div></article>
-    <article data-booking-pending-card><span><svg class="ic"><use href="#i-clock"/></svg></span><div><strong class="num" data-booking-pending>0</strong><small>Aguardando aprovação</small></div></article>
+    <article><span><i class="ic" data-lucide="calendar"></i></span><div><strong class="num" data-booking-total>0</strong><small>Reservas no período</small></div></article>
+    <article><span><i class="ic" data-lucide="wallet"></i></span><div><strong class="num" data-booking-volume>R$ 0,00</strong><small>Valor movimentado</small></div></article>
+    <article data-booking-pending-card><span><i class="ic" data-lucide="clock"></i></span><div><strong class="num" data-booking-pending>0</strong><small>Aguardando aprovação</small></div></article>
   </section>
 
   <section class="manager-section" id="solicitacoes">
@@ -91,10 +91,29 @@
       </div>
     </div>
 
+    <!-- CABECALHO DA LISTA.
+
+         Cada linha repetia "Quadra", "Data e horário" e "Valor" em 9.5px
+         acima do proprio valor — dezoito vezes na mesma tela. Isso e um
+         cabecalho de tabela impresso em cada linha: triplica o texto, some com
+         a hierarquia (rotulo e dado quase do mesmo tamanho) e ainda assim se
+         le pior, porque a coluna nao tem titulo, tem dezoito titulos.
+
+         Ele aparece uma vez, e some abaixo de 900px — ali as colunas viram
+         empilhadas e cada valor precisa mesmo dizer o que e. -->
+    <div class="manager-booking-head" aria-hidden="true">
+      <span>Cliente</span>
+      <span>Quadra</span>
+      <span>Data e horário</span>
+      <span>Valor</span>
+      <span>Status</span>
+      <span></span>
+    </div>
+
     <div class="manager-bookings" data-manager-reservation-list></div>
 
     <div class="manager-empty-list" data-booking-empty hidden>
-      <svg class="ic"><use href="#i-calendar"/></svg>
+      <i class="ic" data-lucide="calendar"></i>
       <strong>Nenhuma reserva neste filtro</strong>
       <span>Escolha outro status para continuar.</span>
     </div>
@@ -115,10 +134,10 @@
       <span class="pager__info" data-pager-info></span>
       <span class="pager__nav">
         <button type="button" class="btn btn-soft btn-xs" data-pager-prev>
-          <svg class="ic sm"><use href="#i-left"/></svg> Anterior
+          <i class="ic sm" data-lucide="chevron-left"></i> Anterior
         </button>
         <button type="button" class="btn btn-soft btn-xs" data-pager-next>
-          Próxima <svg class="ic sm"><use href="#i-right"/></svg>
+          Próxima <i class="ic sm" data-lucide="chevron-right"></i>
         </button>
       </span>
     </nav>
@@ -134,11 +153,11 @@
         <h2>Mensalistas</h2>
         <p>Clientes com dia e horário fixos na sua grade · <b data-manager-mensal-count>0</b> planos.</p>
       </div>
-      <a class="btn btn-outline" href="./dashboard.html#mensalistas">Gerenciar <svg class="ic sm"><use href="#i-right"/></svg></a>
+      <a class="btn btn-outline" href="./dashboard.html#mensalistas">Gerenciar <i class="ic sm" data-lucide="chevron-right"></i></a>
     </div>
     <div class="mensal-grid" data-manager-mensal-list></div>
     <div class="manager-empty-list" data-mensal-empty hidden>
-      <svg class="ic"><use href="#i-repeat"/></svg>
+      <i class="ic" data-lucide="repeat"></i>
       <strong>Nenhum mensalista ainda</strong>
       <span>Quem assina um plano aparece aqui com o dia e o horário fixos.</span>
     </div>

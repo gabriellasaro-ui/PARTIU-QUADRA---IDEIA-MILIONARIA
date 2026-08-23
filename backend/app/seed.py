@@ -266,6 +266,22 @@ def _seed_blocks(db) -> int:
 
 
 def _seed_reviews(db) -> int:
+    """Avaliacoes semeadas AMARRADAS A UMA RESERVA, e por isso a uma quadra.
+
+    Antes elas nasciam com `booking_id` nulo, e `reviews` nao tem court_id — a
+    quadra sai da reserva avaliada. Resultado: as dez avaliacoes de cada arena
+    caiam todas em "Sem quadra identificada", e a nota por quadra do painel
+    ficava invisivel em desenvolvimento. A funcionalidade existia e nao dava
+    para ver que existia.
+
+    Nao e so cosmetica de seed: uma arena com quatro quadras precisa saber que
+    a nota 4,8 e media de uma quadra 5,0 e uma 3,2. As notas sao distribuidas
+    em ordem crescente entre as quadras justamente para que uma delas fique
+    visivelmente pior — que e o caso que a tela existe para mostrar.
+
+    Roda DEPOIS de _seed_bookings (veja a ordem em `seed()`): antes disso nao
+    havia reserva nenhuma a que se amarrar.
+    """
     if db.execute(select(Review.id).limit(1)).first():
         return 0
     arenas = list(db.execute(select(Arena)).scalars())
@@ -276,10 +292,22 @@ def _seed_reviews(db) -> int:
         data = next(a for a in ARENAS if a["name"] == arena.name)
         fives = _fives_for(data["rating"])
         ratings = [5] * fives + [4] * (10 - fives)
+
+        # Uma reserva por quadra da arena serve de ancora. Sem reserva, a
+        # avaliacao fica sem quadra — e continua sendo devolvida assim, em vez
+        # de chutada para a primeira quadra da lista.
+        ancora = {}
+        for booking in db.execute(
+            select(Booking).where(Booking.arena_id == arena.id).order_by(Booking.start_at)
+        ).scalars():
+            ancora.setdefault(booking.court_id, booking.id)
+        ancoras = list(ancora.values())
+
         for i, rating in enumerate(ratings):
             reviewer = reviewers[i % len(reviewers)]
             db.add(Review(
                 id=uuid.uuid4(),
+                booking_id=ancoras[i % len(ancoras)] if ancoras else None,
                 arena_id=arena.id,
                 user_id=reviewer.id,
                 rating=rating,
@@ -874,9 +902,11 @@ def seed() -> dict:
             "courts": _seed_courts(db),
             "availability": _seed_availability(db),
             "blocks": _seed_blocks(db),
-            "reviews": _seed_reviews(db),
             "favorites": _seed_favorites(db),
             "bookings": _seed_bookings(db),
+            # DEPOIS de bookings: a avaliacao se amarra a uma reserva, e e da
+            # reserva que sai a quadra avaliada.
+            "reviews": _seed_reviews(db),
             "conversations": _seed_conversations(db),
             "notifications": _seed_notifications(db),
             "devices": _seed_devices(db),

@@ -56,7 +56,7 @@
         <div class="inp"><label>Chave Pix</label><input type="text" name="pixChave"></div>
       </div>
       <div class="inp" style="margin-bottom:0;"><label>Titular da conta</label><input type="text" name="pixTitular"></div>
-      <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> O valor cai automaticamente, sem mensalidade.</div>
+      <div class="set-hint"><i class="ic" data-lucide="shield"></i> O valor cai automaticamente, sem mensalidade.</div>
     </div>
   </section>
 
@@ -104,7 +104,7 @@
     <div class="set-fields">
       <div class="manager-coupon-head">
         <div><strong>Campanhas ativas</strong><small>Aplicadas no checkout do jogador</small></div>
-        <button type="button" class="btn btn-outline" data-coupon-new><svg class="ic sm"><use href="#i-plus"/></svg> Novo cupom</button>
+        <button type="button" class="btn btn-outline" data-coupon-new><i class="ic sm" data-lucide="plus"></i> Novo cupom</button>
       </div>
       <div class="manager-coupons" data-coupon-list></div>
     </div>
@@ -120,24 +120,70 @@
         <span>Pausar arena <small style="color:var(--muted);display:block;font-weight:500;">Some da busca, sem novas reservas</small></span>
         <span class="switch" data-switch="pausada" role="switch" tabindex="0"></span>
       </label>
-      <div style="display:flex; gap:10px; margin-top:16px;">
-        <a href="./index.html" class="btn btn-soft">Sair da conta</a>
-        <button type="button" class="btn btn-danger" data-toast="Arena desativada (demo)">Desativar arena</button>
+      <!-- SAIR DA CONTA era um link cru para index.html. Ele trocava de pagina
+           e deixava o token onde estava: a proxima pessoa a abrir o painel
+           naquele computador continuava logada como o dono da arena. Num
+           balcao de arena, o computador e compartilhado — e esse era o caso
+           exato em que "sair" tem de significar sair. Agora chama o logout. -->
+      <div class="conta-acoes">
+        <button type="button" class="btn btn-soft" data-logout>
+          <i class="ic sm" data-lucide="log-out"></i> Sair da conta
+        </button>
+        <button type="button" class="btn btn-danger" data-deactivate>Desativar arena</button>
       </div>
     </div>
   </section>
 
   <div class="manager-form-actions">
-    <button type="submit" class="btn btn-primary"><svg class="ic sm"><use href="#i-check"/></svg> Salvar configurações</button>
+    <button type="submit" class="btn btn-primary"><i class="ic sm" data-lucide="check"></i> Salvar configurações</button>
   </div>
 </form>
+
+<!-- DESATIVAR A ARENA.
+
+     O botao antigo mostrava "Arena desativada (demo)" e nao fazia nada,
+     enquanto POST /api/gerente/desativacao existia e funcionava. Pior do que
+     nao ter: o dono clicava achando que tinha saido da plataforma e continuava
+     recebendo reservas.
+
+     A acao CANCELA todas as reservas futuras. Por isso ela pergunta o motivo
+     (o operador precisa saber se a arena fechou ou so parou por um mes) e
+     exige confirmacao explicita — nao ha desfazer para quem perdeu o horario. -->
+<div class="modal" data-deactivate-dialog hidden>
+  <div class="modal-backdrop" data-deactivate-cancel></div>
+  <form class="modal-box manager-sheet" data-deactivate-form>
+    <div class="modal-head">
+      <div><span class="manager-modal-eyebrow">Conta</span><h3>Desativar arena</h3></div>
+      <button class="modal-x" type="button" data-deactivate-cancel aria-label="Fechar"><i class="ic" data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="set-hint set-hint--alerta">
+        <i class="ic" data-lucide="triangle-alert"></i>
+        A arena sai da busca e <b>todas as reservas futuras sao canceladas</b>. Quem ja pagou recebe o valor de volta.
+      </div>
+      <div class="inp"><label for="desat-periodo">Por quanto tempo</label>
+        <select id="desat-periodo" name="periodo" required>
+          <option value="temporaria">Temporariamente — pretendo voltar</option>
+          <option value="definitiva">Definitivamente — encerrei a arena</option>
+        </select>
+      </div>
+      <div class="inp"><label for="desat-motivo">Motivo</label>
+        <input id="desat-motivo" name="motivo" type="text" maxlength="140" placeholder="Ex.: reforma da quadra" required>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-soft" type="button" data-deactivate-cancel>Cancelar</button>
+      <button class="btn btn-danger" type="submit">Desativar arena</button>
+    </div>
+  </form>
+</div>
 
 <div class="modal" data-coupon-dialog hidden>
   <div class="modal-backdrop" data-coupon-cancel></div>
   <form class="modal-box manager-sheet" data-coupon-form>
     <div class="modal-head">
       <div><span class="manager-modal-eyebrow">Promoção</span><h3>Novo cupom</h3></div>
-      <button class="modal-x" type="button" data-coupon-cancel aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+      <button class="modal-x" type="button" data-coupon-cancel aria-label="Fechar"><i class="ic" data-lucide="x"></i></button>
     </div>
     <div class="modal-body">
       <div class="inp"><label for="coupon-code">Código</label><input id="coupon-code" name="code" type="text" maxlength="20" placeholder="Ex.: JOGANATERCA" required></div>

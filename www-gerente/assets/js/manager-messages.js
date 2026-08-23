@@ -129,8 +129,8 @@ export async function renderManagerMessages(root) {
     btnBloquear.dataset.convBloquear = atual.clienteId || '';
     btnBloquear.classList.toggle('is-bloqueado', Boolean(atual.bloqueado));
     btnBloquear.innerHTML = atual.bloqueado
-      ? '<svg class="ic sm"><use href="#i-check"/></svg> Desbloquear'
-      : '<svg class="ic sm"><use href="#i-ban"/></svg> Bloquear pessoa';
+      ? '<i class="ic sm" data-lucide="check"></i> Desbloquear'
+      : '<i class="ic sm" data-lucide="ban"></i> Bloquear pessoa';
   }
 
   const composer = root.querySelector('[data-conv-composer]');

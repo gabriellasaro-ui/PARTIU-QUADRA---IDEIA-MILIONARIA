@@ -13,6 +13,7 @@ import { addBooking, setPageMeta } from './manager-bookings.js';
 import storage from '../../storage/storage.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import managerService from '../../services/manager-api.js';
+import authService from '../../services/auth.js';
 
 const PROFILE_KEY = 'manager-profile';
 const COUPONS_KEY = 'manager-coupons';
@@ -145,15 +146,45 @@ export async function renderManagerCourtForm(root) {
 
 // ------------------------------------------------------------------ configurações
 
+/* UM CUPOM, DUAS FORMAS.
+
+   O cartao lia `c.code`, `c.discount` e `c.expires` — os nomes que o
+   localStorage usa quando nao ha API. O servidor devolve `codigo`, `desconto`
+   e `expiraEm`, entao com o backend ligado (que e o caso real) TODO cupom
+   aparecia como "undefined% de desconto · válido até", sem codigo e sem data.
+   O aria-label do botao de remover saia vazio junto.
+
+   A normalizacao fica AQUI, num lugar so, e nao espalhada em `a ?? b` por
+   campo: quem escrever o proximo cartao le uma forma unica. */
+function normalizarCupom(c) {
+  return {
+    id: c.id,
+    codigo: c.codigo ?? c.code ?? '',
+    desconto: c.desconto ?? c.discount ?? 0,
+    expira: c.expiraEm ?? c.expires ?? '',
+    quadra: c.quadra ?? 'Todas as quadras',
+    usos: c.usos ?? 0,
+    ativo: c.ativo !== false
+  };
+}
+
 async function renderCupons(root) {
   const lista = root.querySelector('[data-coupon-list]');
   if (!lista) return;
-  const atuais = API_BASE_URL ? await managerService.cupons() : coupons();
+  const atuais = (API_BASE_URL ? await managerService.cupons() : coupons()).map(normalizarCupom);
   lista.innerHTML = atuais.length
-    ? atuais.map((c) => `<article class="manager-coupon" data-coupon-id="${escapeHtml(c.id)}">
-        <span><svg class="ic"><use href="#i-gift"/></svg></span>
-        <div><strong>${escapeHtml(c.code)}</strong><small>${c.discount}% de desconto · válido até ${escapeHtml(formatarData(c.expires))}</small></div>
-        <button type="button" data-coupon-remove="${escapeHtml(c.id)}" aria-label="Remover cupom ${escapeHtml(c.code)}"><svg class="ic sm"><use href="#i-x"/></svg></button>
+    ? atuais.map((c) => `<article class="manager-coupon${c.ativo ? '' : ' inativo'}" data-coupon-id="${escapeHtml(c.id)}">
+        <span><i class="ic" data-lucide="gift"></i></span>
+        <div>
+          <strong>${escapeHtml(c.codigo)}</strong>
+          <!-- QUANTAS VEZES FOI USADO: o servidor ja contava e a tela jogava
+               fora. E o unico numero que responde se a campanha funcionou —
+               sem ele o dono nao tem como decidir renovar ou encerrar. -->
+          <small>${escapeHtml(String(c.desconto))}% de desconto · ${escapeHtml(c.quadra)}${
+            c.expira ? ` · até ${escapeHtml(formatarData(c.expira))}` : ' · sem prazo'
+          } · ${c.usos} ${c.usos === 1 ? 'uso' : 'usos'}</small>
+        </div>
+        <button type="button" data-coupon-remove="${escapeHtml(c.id)}" aria-label="Remover cupom ${escapeHtml(c.codigo)}"><i class="ic sm" data-lucide="x"></i></button>
       </article>`).join('')
     : '<p class="panel-sub">Nenhuma campanha ativa. Um cupom ajuda a preencher os horários mais vazios.</p>';
   window.pqRefreshIcons?.(lista);
@@ -227,6 +258,38 @@ export function initManagerForms() {
   document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
+
+    /* SAIR DA CONTA precisa LIMPAR A SESSAO, e nao so trocar de pagina.
+
+       Era `<a href="./index.html">`: o token continuava no storage, e a
+       proxima pessoa a abrir o painel naquele computador entrava como o dono
+       da arena. O computador do balcao e compartilhado por definicao. */
+    if (event.target.closest('[data-logout]')) {
+      event.preventDefault();
+      try {
+        await authService.logout();
+      } finally {
+        // Mesmo se a rota de logout falhar, a sessao local ja saiu: ficar
+        // logado por causa de uma falha de rede e o pior dos dois resultados.
+        window.location.replace('./index.html');
+      }
+      return;
+    }
+
+    if (event.target.closest('[data-deactivate]')) {
+      event.preventDefault();
+      const dlg = root.querySelector('[data-deactivate-dialog]');
+      if (dlg) dlg.hidden = false;
+      window.pqRefreshIcons?.(dlg || root);
+      return;
+    }
+
+    if (event.target.closest('[data-deactivate-cancel]')) {
+      event.preventDefault();
+      const dlg = root.querySelector('[data-deactivate-dialog]');
+      if (dlg) dlg.hidden = true;
+      return;
+    }
 
     // Um switch alterna na hora; o valor so e gravado quando o form e salvo.
     const chave = event.target.closest('[data-switch]');
@@ -430,6 +493,30 @@ export function initManagerForms() {
       return;
     }
 
+    const desat = event.target.closest('[data-deactivate-form]');
+    if (desat) {
+      event.preventDefault();
+      if (!desat.reportValidity()) return;
+      const d = new FormData(desat);
+      try {
+        const r = await managerService.desativarArena(
+          String(d.get('motivo')).trim(),
+          String(d.get('periodo'))
+        );
+        root.querySelector('[data-deactivate-dialog]').hidden = true;
+        /* O NUMERO DE CANCELADAS aparece no aviso. O servidor ja devolvia e a
+           tela ia descartar: sao pessoas que perderam o horario, e o dono tem
+           de saber quantas para poder avisa-las. */
+        const n = r?.canceladas || 0;
+        window.pqToast?.(n
+          ? `Arena desativada · ${n} ${n === 1 ? 'reserva cancelada' : 'reservas canceladas'}`
+          : 'Arena desativada');
+      } catch (error) {
+        window.pqToast?.(error.message || 'Não foi possível desativar');
+      }
+      return;
+    }
+
     const cupom = event.target.closest('[data-coupon-form]');
     if (cupom) {
       event.preventDefault();
@@ -531,13 +618,13 @@ function pintarGaleria(root) {
       <img src="${src}" alt="Foto ${i + 1} da quadra">
       ${i === 0 ? '<figcaption>Capa</figcaption>' : ''}
       <button type="button" class="galeria__x" data-galeria-remove="${i}" aria-label="Remover foto ${i + 1}">
-        <svg class="ic sm"><use href="#i-trash"/></svg>
+        <i class="ic sm" data-lucide="trash-2"></i>
       </button>
     </figure>`).join('')
     // Os espacos que faltam aparecem VAZIOS, e nao ausentes: cinco caixas
     // desde o inicio mostram o tamanho da tarefa.
     + Array.from({ length: Math.max(0, MIN_FOTOS - fotosDaQuadra.length) }, () =>
-      '<div class="galeria__vaga"><svg class="ic"><use href="#i-image"/></svg></div>').join('');
+      '<div class="galeria__vaga"><i class="ic" data-lucide="image"></i></div>').join('');
 
   const conta = root.querySelector('[data-galeria-conta]');
   const faltam = MIN_FOTOS - fotosDaQuadra.length;

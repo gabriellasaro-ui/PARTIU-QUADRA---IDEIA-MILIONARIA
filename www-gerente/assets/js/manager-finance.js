@@ -35,40 +35,68 @@ function reservasDoPeriodo() {
   return [];
 }
 
-function renderChart(root, valores) {
+/* O GRAFICO RECEBE PONTOS ({rotulo, valor}), e nao um vetor de sete numeros
+   indexado por dia da semana.
+
+   Ele montava a serie no proprio front, somando as 100 ultimas reservas por
+   `getDay()` — sem filtrar status e sem filtrar periodo. Resultado: a soma dos
+   pontos dava R$ 2.928 no mesmo cartao onde "Faturamento bruto" dizia
+   R$ 695,52. Dois numeros contraditorios lado a lado, e o grafico e o que o
+   dono olha primeiro.
+
+   O backend ja devolve `serie` — um ponto por dia do intervalo, com os dias
+   zerados presentes, calculado sobre o MESMO recorte que gerou o bruto. Usar
+   outra fonte para o desenho era garantir a divergencia.
+
+   BARRAS, e nao linha: com dois dias de movimento numa semana, a linha ligava
+   os pontos e desenhava dois triangulos gigantes subindo do zero. Linha promete
+   continuidade, e faturamento diario nao e continuo — cada dia e um valor
+   independente. Foi o mesmo conserto ja feito no grafico do dashboard. */
+function renderChart(root, pontos) {
   const svg = root.querySelector('[data-finance-chart]');
   if (!svg) return;
   const W = 620;
   const H = 240;
-  const x0 = 46;
+  const x0 = 52;
   const x1 = W - 18;
-  const y0 = 30;
+  const y0 = 26;
   const y1 = H - 34;
-  const max = Math.max(...valores, 100) * 1.2;
 
-  const pontos = valores.map((v, i) => ({
-    x: x0 + (i * (x1 - x0)) / (valores.length - 1),
-    y: y1 - (v / max) * (y1 - y0),
-    lab: DIAS[i],
-    v
-  }));
-  const pico = valores.indexOf(Math.max(...valores));
+  // A linha e a area do desenho antigo saem de cena; as barras as substituem.
+  svg.querySelector('[data-finance-line]')?.setAttribute('d', '');
+  svg.querySelector('[data-finance-area]')?.setAttribute('d', '');
+  svg.querySelectorAll('.lc-grid, .lc-yl, .lc-dot, .lc-xl, .lc-val, .lc-bar, .lc-trilho').forEach((n) => n.remove());
 
-  const grade = [0, 0.25, 0.5, 0.75, 1].map((p) => {
+  if (!pontos.length) return;
+  const max = Math.max(...pontos.map((p) => p.valor), 0);
+  const teto = max > 0 ? max * 1.25 : 100;
+
+  const grade = [0, 0.5, 1].map((p) => {
     const y = y1 - p * (y1 - y0);
     return `<line class="lc-grid" x1="${x0}" y1="${y}" x2="${x1}" y2="${y}"/>
-            <text class="lc-yl" x="${x0 - 9}" y="${y + 3}">${Math.round(p * max)}</text>`;
+            <text class="lc-yl" x="${x0 - 9}" y="${y + 3}">${Math.round(p * teto)}</text>`;
   }).join('');
 
-  const linha = pontos.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const passo = (x1 - x0) / pontos.length;
+  const larg = Math.min(46, passo * 0.62);
+  const pico = pontos.reduce((m, p, i) => (p.valor > pontos[m].valor ? i : m), 0);
 
-  svg.querySelector('[data-finance-line]')?.setAttribute('d', linha);
-  svg.querySelector('[data-finance-area]')?.setAttribute('d', `${linha} L${x1} ${y1} L${x0} ${y1} Z`);
-  svg.querySelectorAll('.lc-grid, .lc-yl, .lc-dot, .lc-xl, .lc-val').forEach((n) => n.remove());
-  svg.insertAdjacentHTML('beforeend', grade + pontos.map((p, i) => `
-    <text class="lc-val ${i === pico ? 'peak' : ''}" x="${p.x.toFixed(1)}" y="${(p.y - 11).toFixed(1)}">${p.v}</text>
-    <circle class="lc-dot ${i === pico ? 'peak' : ''}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === pico ? 5 : 3.4}"/>
-    <text class="lc-xl" x="${p.x.toFixed(1)}" y="${H - 9}" style="text-anchor:${i === 0 ? 'start' : (i === pontos.length - 1 ? 'end' : 'middle')}">${p.lab}</text>`).join(''));
+  const barras = pontos.map((p, i) => {
+    const cx = x0 + passo * i + passo / 2;
+    const alt = teto > 0 ? (p.valor / teto) * (y1 - y0) : 0;
+    /* Dia zerado ganha um trilho fino em vez de nada: sem ele o eixo fica com
+       buracos e nao da para contar os dias. */
+    const barra = p.valor > 0
+      ? `<rect class="lc-bar${i === pico ? ' peak' : ''}" x="${(cx - larg / 2).toFixed(1)}" y="${(y1 - alt).toFixed(1)}" width="${larg.toFixed(1)}" height="${Math.max(2, alt).toFixed(1)}" rx="4"/>`
+      : `<rect class="lc-trilho" x="${(cx - larg / 2).toFixed(1)}" y="${(y1 - 3).toFixed(1)}" width="${larg.toFixed(1)}" height="3" rx="1.5"/>`;
+    const valor = p.valor > 0
+      ? `<text class="lc-val${i === pico ? ' peak' : ''}" x="${cx.toFixed(1)}" y="${(y1 - alt - 8).toFixed(1)}" style="text-anchor:middle">${formatCurrency(p.valor)}</text>`
+      : '';
+    return `${barra}${valor}
+      <text class="lc-xl" x="${cx.toFixed(1)}" y="${H - 9}" style="text-anchor:middle">${escapeHtml(p.rotulo)}</text>`;
+  }).join('');
+
+  svg.insertAdjacentHTML('beforeend', grade + barras);
 }
 
 export async function renderManagerFinance(root) {
@@ -92,46 +120,50 @@ export async function renderManagerFinance(root) {
   set(root, '[data-finance-ticket]', formatCurrency(ticket));
   set(root, '[data-finance-ticket-top]', formatCurrency(ticket));
 
-  // Ocupacao media das quadras ativas — o que sustenta o faturamento.
-  const ocupacao = reservas.length
-    ? Math.min(99, Math.round((reservas.length / (7 * 3)) * 100) + 40)
-    : 0;
+  /* OCUPACAO: do servidor, e nao de uma formula.
+
+     Era `min(99, round(reservas / 21 * 100) + 40)` — um "+40" escolhido a mao
+     para o numero parecer bom. Com 22 reservas na lista, dava 99%; o dashboard,
+     que usa a ocupacao REAL do backend, mostrava 1% na mesma hora. O dono via
+     dois numeros com o mesmo nome e valores opostos em duas telas do mesmo
+     painel, e nenhum dos dois lhe dizia o que fazer.
+
+     Mesma fonte do dashboard: uma so definicao de ocupacao no produto. */
+  const ocupacao = API_BASE_URL ? (await managerService.dashboard()).ocupacao : 0;
   set(root, '[data-finance-occ]', `${ocupacao}%`);
   set(root, '[data-finance-occ-top]', `${ocupacao}%`);
 
-  // Faturamento por dia da semana, a partir do dia real de cada reserva.
-  const porDia = DIAS.map(() => 0);
-  reservas.forEach((r, i) => {
-    const data = API_BASE_URL
-      ? r.dataValue
-        ? new Date(`${r.dataValue}T12:00:00`)
-        : null
-      : r.data === 'Hoje' ? new Date()
-      : r.data === 'Amanhã' ? new Date(Date.now() + 86400000)
-      : null;
-    let dia;
-    if (data) {
-      dia = (data.getDay() + 6) % 7;
-    } else {
-      dia = r.data === 'Hoje' ? (new Date().getDay() + 6) % 7
-        : r.data === 'Amanhã' ? ((new Date().getDay() + 6) % 7 + 1) % 7
-        : { Seg: 0, Ter: 1, Qua: 2, Qui: 3, Sex: 4, Sáb: 5, Dom: 6 }[String(r.data).split(',')[0]] ?? i % 7;
-    }
-    porDia[dia] += Number(r.valor || 0);
-  });
-  set(root, '[data-finance-peak]', formatCurrency(Math.max(...porDia, 0)));
-  renderChart(root, porDia);
+  /* A SERIE do backend, calculada sobre o mesmo recorte que gerou o bruto.
+     O calculo que existia aqui somava as 100 ultimas reservas por dia da
+     semana, ignorando periodo e status — por isso o grafico contradizia o
+     cartao de faturamento logo acima dele. */
+  const serie = API_BASE_URL ? (dados.serie || []) : [];
+  set(root, '[data-finance-peak]', formatCurrency(Math.max(0, ...serie.map((p) => p.valor))));
+  renderChart(root, serie);
 
   const ledger = root.querySelector('[data-finance-ledger]');
   if (ledger) {
-    ledger.innerHTML = reservas.map((r) => {
+    /* FATURADA quer dizer faturada.
+
+       A tabela listava TODAS as reservas do periodo, recusadas inclusive —
+       vinte linhas "Recusada" debaixo do titulo "RECEITAS · Reservas
+       faturadas". Reserva recusada nao entrou dinheiro nenhum, e some dos
+       totalizadores logo acima, entao a tabela contradizia o proprio cabecalho
+       da tela.
+
+       Ela continua em Reservas, com o status, que e onde se pergunta "o que
+       aconteceu com aquele pedido". */
+    const FATURADAS = new Set(['pago', 'confirmado', 'concluido']);
+    const faturadas = reservas.filter((r) => FATURADAS.has(String(r.cls || '').toLowerCase()));
+    ledger.innerHTML = faturadas.length ? faturadas.map((r) => {
       return `<tr>
         <td data-label="Cliente"><strong>${escapeHtml(r.cliente)}</strong></td>
         <td data-label="Data">${escapeHtml(r.data)} · <span class="num">${escapeHtml(r.hora)}</span></td>
         <td data-label="Bruto" class="val num">${formatCurrency(r.valor)}</td>
-        <td data-label="Status"><span class="status ${escapeHtml(r.cls || STATUS_CLASS[r.status] || 'pendente')}">${escapeHtml(r.status)}</span></td>
+        <td data-label="Status"><span class="status ${escapeHtml(r.cls || 'pendente')}">${escapeHtml(r.status)}</span></td>
       </tr>`;
-    }).join('');
+    }).join('')
+      : '<tr><td colspan="4" class="lista-vazia">Nenhuma reserva faturada neste período.</td></tr>';
   }
 
 

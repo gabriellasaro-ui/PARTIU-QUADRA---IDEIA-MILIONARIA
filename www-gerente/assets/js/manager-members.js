@@ -62,8 +62,8 @@ function linha({ id, name, court, day, time, price, status, origem }) {
     <div class="manager-row-actions">
       ${doApp
         ? '<span class="manager-locked" title="Este plano vem de uma reserva do app">—</span>'
-        : `${editavel ? `<button type="button" class="manager-row-menu" data-member-edit="${escapeHtml(id)}" aria-label="Editar ${escapeHtml(name)}"><svg class="ic"><use href="#i-pencil"/></svg></button>` : ''}
-           <button type="button" class="manager-row-menu is-danger" data-member-remove="${escapeHtml(id)}" aria-label="Remover ${escapeHtml(name)}"><svg class="ic"><use href="#i-x"/></svg></button>`}
+        : `${editavel ? `<button type="button" class="manager-row-menu" data-member-edit="${escapeHtml(id)}" aria-label="Editar ${escapeHtml(name)}"><i class="ic" data-lucide="pencil"></i></button>` : ''}
+           <button type="button" class="manager-row-menu is-danger" data-member-remove="${escapeHtml(id)}" aria-label="Remover ${escapeHtml(name)}"><i class="ic" data-lucide="x"></i></button>`}
     </div>
   </article>`;
 }

@@ -13,7 +13,7 @@
      para a API".) -->
 <div class="chat">
   <aside class="chat-list">
-    <div class="chat-list__head">
+    <div class="chat-list-head">
       <span>Conversas</span>
     </div>
     <div data-conv-list></div>
@@ -37,10 +37,10 @@
            lugar. Vale so para esta arena: banir da plataforma e decisao de
            quem a opera. -->
       <button class="btn btn-soft th-act" type="button" data-conv-bloquear hidden>
-        <svg class="ic sm"><use href="#i-ban"/></svg> Bloquear pessoa
+        <i class="ic sm" data-lucide="ban"></i> Bloquear pessoa
       </button>
       <button class="btn btn-soft th-act" type="button" data-conv-encerrar hidden>
-        <svg class="ic sm"><use href="#i-check"/></svg> Encerrar atendimento
+        <i class="ic sm" data-lucide="check"></i> Encerrar atendimento
       </button>
     </div>
 
@@ -49,14 +49,14 @@
     <div class="composer" data-conv-composer hidden>
       <input type="text" placeholder="Escrever mensagem" data-conv-texto>
       <button class="btn btn-primary" type="button" data-conv-enviar>
-        <svg class="ic sm"><use href="#i-send"/></svg> Enviar
+        <i class="ic sm" data-lucide="send"></i> Enviar
       </button>
     </div>
 
     <!-- Encerrada, a conversa nao aceita mensagem: deixar o campo ali seria
          oferecer uma acao que o servidor recusa. -->
     <div class="conv-encerrada-aviso" data-conv-encerrada-aviso hidden>
-      <svg class="ic sm"><use href="#i-check"/></svg>
+      <i class="ic sm" data-lucide="check"></i>
       Atendimento encerrado. O histórico fica guardado, mas ninguém escreve mais aqui.
     </div>
   </section>

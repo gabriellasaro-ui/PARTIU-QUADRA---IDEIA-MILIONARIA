@@ -18,7 +18,7 @@ function escapeHtml(value) {
 
 const respostas = () => storage.get(KEY, {});
 const estrelas = (n) => Array.from({ length: 5 },
-  (_, i) => `<svg class="ic${i < n ? ' on' : ''}"><use href="#i-star"/></svg>`).join('');
+  (_, i) => `<i class="ic${i < n ? ' on' : ''}" data-lucide="star"></i>`).join('');
 
 /* Quadra escolhida no filtro. Modulo e nao DOM: a tela e remontada a cada
    troca de rota, e guardar no elemento perderia a escolha ao responder uma
@@ -88,7 +88,7 @@ export async function renderManagerReviews(root) {
   const distBox = root.querySelector('[data-reviews-dist]');
   if (distBox) {
     distBox.innerHTML = dist.map((d) => `<div class="dist-row">
-      <span class="dist-n num">${d.n}<svg class="ic sm"><use href="#i-star"/></svg></span>
+      <span class="dist-n num">${d.n}<i class="ic sm" data-lucide="star"></i></span>
       <div class="faixa-bar"><span style="width:${total ? Math.round(d.qtd / total * 100) : 0}%"></span></div>
       <span class="dist-q num">${d.qtd}</span>
     </div>`).join('');
@@ -105,7 +105,7 @@ export async function renderManagerReviews(root) {
           <div class="review-stars">${estrelas(Number(a.nota))}<span class="review-when">${escapeHtml(a.quando)}</span></div>
           <!-- QUAL QUADRA. Sem isto, "o vestiario estava sujo" nao diz qual
                vestiario, e o dono nao tem o que fazer com a reclamacao. -->
-          ${a.quadraId ? `<div class="review-quadra"><svg class="ic sm"><use href="#i-grid"/></svg>${escapeHtml(a.quadraNome)}</div>` : ''}
+          ${a.quadraId ? `<div class="review-quadra"><i class="ic sm" data-lucide="layout-grid"></i>${escapeHtml(a.quadraNome)}</div>` : ''}
         </div>
       </div>
       <p>${escapeHtml(a.texto)}</p>

@@ -15,6 +15,6 @@
    contrario). Sao contas de papeis diferentes; nao devem disputar a mesma
    chave. */
 window.__PQ_CONFIG__ = {
-  API_BASE_URL: 'http://192.168.0.18:8000',
+  API_BASE_URL: 'http://192.168.100.173:8000',
   STORAGE_PREFIX: 'pqg'
 };

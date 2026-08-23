@@ -429,9 +429,9 @@ function renderMobile(root, eventos, segunda) {
             <span class="num">${escapeHtml(e.horaCurta)}</span>
             <div><strong>${escapeHtml(e.cliente)}</strong><small>${escapeHtml(e.quadra)} · ${escapeHtml(e.duracao)}</small></div>
             <span class="status ${e.cls}">${escapeHtml(e.status)}</span>
-            <svg class="ic sm manager-day-booking__chevron"><use href="#i-right"/></svg>
+            <i class="ic sm manager-day-booking__chevron" data-lucide="chevron-right"></i>
           </button>`).join('')
-        : '<div class="manager-agenda-empty"><span><svg class="ic"><use href="#i-clock"/></svg></span><strong>Dia livre</strong><small>Você ainda pode abrir horários para este dia.</small></div>'
+        : '<div class="manager-agenda-empty"><span><i class="ic" data-lucide="clock"></i></span><strong>Dia livre</strong><small>Você ainda pode abrir horários para este dia.</small></div>'
       }</div>
     </section>`;
   }).join('');

@@ -123,8 +123,8 @@
       '<div><span>Mensalidade</span><strong class="num">' + escapeHtml(formatMoney(member.price)) + '</strong></div>' +
       '<span class="status pago">Ativo</span>' +
       '<div class="manager-row-actions">' +
-        '<button type="button" class="manager-row-menu" data-manager-member-edit aria-label="Editar mensalista"><svg class="ic"><use href="#i-pencil"></use></svg></button>' +
-        '<button type="button" class="manager-row-menu is-danger" data-manager-member-remove aria-label="Remover mensalista"><svg class="ic"><use href="#i-x"></use></svg></button>' +
+        '<button type="button" class="manager-row-menu" data-manager-member-edit aria-label="Editar mensalista"><i class="ic" data-lucide="pencil"></i></button>' +
+        '<button type="button" class="manager-row-menu is-danger" data-manager-member-remove aria-label="Remover mensalista"><i class="ic" data-lucide="x"></i></button>' +
       '</div>';
   }
 
@@ -237,9 +237,9 @@
     article.className = 'manager-coupon';
     article.setAttribute('data-coupon-id', coupon.id);
     article.innerHTML = '' +
-      '<span><svg class="ic"><use href="#i-gift"></use></svg></span>' +
+      '<span><i class="ic" data-lucide="gift"></i></span>' +
       '<div><strong>' + escapeHtml(coupon.code) + '</strong><small>' + escapeHtml(couponDescription(coupon)) + '</small></div>' +
-      '<button type="button" data-manager-coupon-remove aria-label="Remover cupom"><svg class="ic sm"><use href="#i-x"></use></svg></button>';
+      '<button type="button" data-manager-coupon-remove aria-label="Remover cupom"><i class="ic sm" data-lucide="x"></i></button>';
     couponList.appendChild(article);
   }
 

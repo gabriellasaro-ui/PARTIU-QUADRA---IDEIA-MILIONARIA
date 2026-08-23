@@ -309,6 +309,17 @@ export const managerService = {
 
   atualizarConfiguracoes(body) {
     return api.patch('/api/gerente/configuracoes', body);
+  },
+
+  /* DESATIVAR A ARENA. A rota existe desde a fase 2 e o painel nunca a chamou:
+     o botao mostrava um toast "Arena desativada (demo)" e nao desativava nada.
+
+     Ela nao e so um interruptor de visibilidade — CANCELA todas as reservas
+     futuras e devolve quantas foram. Por isso a tela pergunta antes e mostra o
+     numero depois: o dono precisa saber quantas pessoas acabaram de perder o
+     horario que tinham. */
+  desativarArena(motivo, periodo) {
+    return api.post('/api/gerente/desativacao', { motivo, periodo });
   }
 };
 

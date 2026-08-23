@@ -20,12 +20,12 @@ export const bookingIdFromHash = () => (location.hash.split('/')[1] || '').trim(
 
 function acoes(r) {
   if (r.status === 'Solicitada') {
-    return `<div class="set-hint" style="margin:0 0 14px;"><svg class="ic"><use href="#i-bell"/></svg> Este cliente está aguardando sua aprovação.</div>
-      <button type="button" class="btn btn-primary btn-block" style="margin-bottom:10px;" data-bd-action="Confirmado"><svg class="ic sm"><use href="#i-check-circle"/></svg> Aprovar reserva</button>
-      <button type="button" class="btn btn-danger btn-block" data-bd-action="Recusada"><svg class="ic sm"><use href="#i-x-circle"/></svg> Recusar</button>`;
+    return `<div class="set-hint" style="margin:0 0 14px;"><i class="ic" data-lucide="bell"></i> Este cliente está aguardando sua aprovação.</div>
+      <button type="button" class="btn btn-primary btn-block" style="margin-bottom:10px;" data-bd-action="Confirmado"><i class="ic sm" data-lucide="circle-check"></i> Aprovar reserva</button>
+      <button type="button" class="btn btn-danger btn-block" data-bd-action="Recusada"><i class="ic sm" data-lucide="circle-x"></i> Recusar</button>`;
   }
   if (encerrada(r)) {
-    return `<div class="set-hint" style="margin:0;"><svg class="ic"><use href="#i-x-circle"/></svg> Reserva ${escapeHtml(r.status.toLowerCase())}. Não há mais ações disponíveis.</div>
+    return `<div class="set-hint" style="margin:0;"><i class="ic" data-lucide="circle-x"></i> Reserva ${escapeHtml(r.status.toLowerCase())}. Não há mais ações disponíveis.</div>
       <a href="./dashboard.html#reservas" class="btn btn-soft btn-block" style="margin-top:14px;">Voltar para reservas</a>`;
   }
   // Com API o pagamento pendente nao se confirma na mao: quem move a reserva
@@ -46,7 +46,7 @@ export async function renderManagerBookingDetail(root) {
   const r = (API_BASE_URL ? await loadBooking(id) : null) || getBooking(id);
   if (!r) {
     wrap.innerHTML = `<div class="manager-empty-list">
-      <svg class="ic"><use href="#i-calendar"/></svg>
+      <i class="ic" data-lucide="calendar"></i>
       <strong>Reserva não encontrada</strong>
       <span>Ela pode ter sido removida.</span>
       <a href="./dashboard.html#reservas" class="btn btn-soft btn-xs" style="margin-top:12px;">Voltar para reservas</a>

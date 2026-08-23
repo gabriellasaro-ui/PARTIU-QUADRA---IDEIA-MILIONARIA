@@ -1,0 +1,751 @@
+/* =========================================================================
+   SISTEMA VISUAL DO PAINEL — não são correções pontuais.
+
+   O painel foi montado tela a tela: cada uma escolheu o próprio espaçamento, o
+   próprio raio de canto, o próprio tamanho de título. O resultado é que duas
+   telas do MESMO produto parecem de produtos diferentes — e nenhuma correção
+   isolada resolve isso, porque o problema não está em nenhuma delas
+   separadamente, está na falta de uma regra comum.
+
+   Aqui ficam os fundamentos, e eles valem para tudo o que vier depois:
+
+     ESPAÇO      uma escala de 4px. Nada de 13px, 17px, 22px escolhidos no olho.
+     TIPO        uma escala com papéis (título de tela, de seção, corpo, apoio).
+     SUPERFÍCIE  um cartão só. Mesmo raio, mesma borda, mesma sombra.
+     ÍCONE       Lucide, o mesmo do app do jogador, num tamanho por contexto.
+
+   Carregado por ÚLTIMO, depois de tema.css: onde a regra de tela e a do
+   sistema discordarem, o sistema ganha. É esse o ponto.
+   ========================================================================= */
+
+:root {
+  /* ── Espaço: escala de 4 ──────────────────────────────────────────────
+     Os valores no meio (10, 14, 18) existem porque cabem no ritmo; o que não
+     existe é escolher 13 porque "ficou melhor". */
+  --e1: 4px;
+  --e2: 8px;
+  --e3: 12px;
+  --e4: 16px;
+  --e5: 24px;
+  --e6: 32px;
+  --e7: 48px;
+
+  /* ── Tipo: papel, e não tamanho solto ────────────────────────────────
+     Quem escreve uma tela nova escolhe o PAPEL do texto, e o tamanho vem
+     junto. É o que impede o quarto título de nascer com um quarto tamanho. */
+  --t-tela: 26px;      /* nome da tela, uma vez por página */
+  --t-secao: 18px;     /* título de bloco */
+  --t-cartao: 15px;    /* título dentro de cartão */
+  --t-corpo: 13.5px;
+  --t-apoio: 12px;     /* legenda, meta, rodapé de card */
+  --t-micro: 11px;     /* rótulo em caixa alta, contador */
+
+  /* ── Superfície: um cartão só ───────────────────────────────────────── */
+  --r-card: 14px;
+  --r-controle: 10px;
+  --r-pilula: 999px;
+}
+
+/* ─────────────────────────── TIPOGRAFIA ──────────────────────────────── */
+
+/* O nome da tela aparece uma vez. Tudo abaixo dele é menor — hierarquia é o
+   que diz "isto contém aquilo", e sem ela a página vira uma lista de coisas
+   do mesmo tamanho. */
+html[data-manager-app] .page-title,
+html[data-manager-app] .topbar h1 {
+  font-size: var(--t-tela);
+  font-weight: 800;
+  letter-spacing: -.02em;
+  line-height: 1.15;
+}
+
+html[data-manager-app] .manager-panel__head h2,
+html[data-manager-app] .manager-section__head h2,
+html[data-manager-app] .set-aside h2,
+html[data-manager-app] .card > h2 {
+  font-size: var(--t-secao);
+  font-weight: 700;
+  letter-spacing: -.015em;
+  line-height: 1.2;
+}
+
+/* O RÓTULO em caixa alta ("MOVIMENTO", "DISPONIBILIDADE") é etiqueta, e não
+   título: ele diz de que seção se trata e some da leitura. Estava com o mesmo
+   peso do título abaixo, então o olho lia duas linhas de cabeçalho. */
+html[data-manager-app] .manager-panel__head > div > span,
+html[data-manager-app] .manager-section__head > div > span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .set-aside p,
+html[data-manager-app] .manager-panel__head p,
+html[data-manager-app] .manager-section__head p {
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  line-height: 1.45;
+}
+
+/* NÚMERO é dado, e dado se compara. Tabular impede que "1.284" e "1.111"
+   tenham larguras diferentes e a coluna dance. */
+html[data-manager-app] .num,
+html[data-manager-app] input[type="date"],
+html[data-manager-app] input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ──────────────────────────── SUPERFÍCIE ─────────────────────────────── */
+
+/* UM cartão. Antes: .card com 12px, .manager-panel com 20px, .set-card com
+   16px e .qcard com 18px — quatro raios diferentes na mesma tela, e o olho
+   percebe mesmo sem saber nomear. */
+html[data-manager-app] .card,
+html[data-manager-app] .manager-panel,
+html[data-manager-app] .manager-section,
+html[data-manager-app] .set-card,
+html[data-manager-app] .qcard,
+/* `.chat` e UM cartao com dois paineis dentro. Listar `.chat-list` e
+   `.chat-thread` aqui dava a cada painel a propria borda e o proprio raio,
+   desenhando dois cartoes dentro de um terceiro. */
+html[data-manager-app] .chat {
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-card);
+  background: var(--pq-panel);
+  box-shadow: none;
+}
+
+/* Sombra some do padrão: com borda visível ela vira ruído, e num painel com
+   dez cartões por tela o empilhamento de sombras suja tudo. Fica reservada ao
+   que FLUTUA de verdade (folha, menu, toast). */
+html[data-manager-app] .modal-box,
+html[data-manager-app] .toast,
+html[data-manager-app] .map-filter-list {
+  box-shadow: var(--pq-shadow-2);
+}
+
+html[data-manager-app] .manager-panel__head,
+html[data-manager-app] .manager-section__head {
+  margin-bottom: var(--e4);
+}
+
+/* ───────────────────────────── CONTROLES ─────────────────────────────── */
+
+/* Um botão tem UMA altura. Havia 34, 38, 40 e 44px na mesma barra — e botões
+   de alturas diferentes lado a lado leem como importâncias diferentes, mesmo
+   quando fazem coisas equivalentes. */
+html[data-manager-app] .btn {
+  min-height: 40px;
+  padding: 0 var(--e4);
+  border-radius: var(--r-controle);
+  font-size: var(--t-corpo);
+  font-weight: 600;
+}
+
+html[data-manager-app] .btn-xs {
+  min-height: 32px;
+  padding: 0 var(--e3);
+  font-size: var(--t-apoio);
+}
+
+html[data-manager-app] input[type="text"],
+html[data-manager-app] input[type="number"],
+html[data-manager-app] input[type="date"],
+html[data-manager-app] select,
+html[data-manager-app] textarea {
+  min-height: 40px;
+  border-radius: var(--r-controle);
+  font-size: var(--t-corpo);
+}
+
+/* ─────────────────────────────── ÍCONES ──────────────────────────────── */
+
+/* Lucide, o mesmo do app do jogador — era o pedido de "identidade visual do
+   sistema". O sprite anterior era desenhado à mão, com espessuras de traço
+   diferentes entre um ícone e outro: numa fileira, uns pareciam mais escuros
+   que os outros sem motivo.
+
+   Três tamanhos, e não um por lugar. `currentColor` sempre: ícone acompanha o
+   texto ao lado, e não tem cor própria. */
+html[data-manager-app] .ic {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: currentColor;
+  stroke-width: 1.9;
+}
+
+html[data-manager-app] .ic.sm { width: 15px; height: 15px; }
+html[data-manager-app] .ic.lg { width: 22px; height: 22px; }
+
+/* Dentro de botão o ícone nunca captura o clique — senão o alvo do toque vira
+   a área do texto apenas. */
+html[data-manager-app] button .ic,
+html[data-manager-app] a .ic {
+  pointer-events: none;
+}
+
+/* ───────────────────────────── STATUS ────────────────────────────────── */
+
+/* Uma pastilha de status, e não uma por tela. O estado é a mesma informação
+   em Reservas, na Agenda e no Financeiro; ler diferente em cada lugar obriga
+   a reaprender a tela. */
+html[data-manager-app] .status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--e2);
+  border-radius: var(--r-pilula);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .status.pago,
+html[data-manager-app] .status.confirmado {
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+html[data-manager-app] .status.pendente,
+html[data-manager-app] .status.solicitada {
+  background: var(--pq-amber-soft);
+  color: var(--pq-gold);
+}
+
+html[data-manager-app] .status.recusada,
+html[data-manager-app] .status.cancelada,
+html[data-manager-app] .status.expirada {
+  background: var(--pq-danger-soft);
+  color: var(--pq-danger);
+}
+
+
+/* ══════════ DISPONIBILIDADE: o bloco que responde "como esta a semana" ═════
+
+   Ele estava desenhado como rodape: barras de 6px, celulas de mapa de 10px, e
+   tudo espremido numa coluna de 300px ao lado de uma lista de tres linhas que
+   ocupava o dobro.
+
+   Mas e ELE que responde a pergunta que o dono faz ao abrir o painel — "como
+   esta minha semana, onde tenho buraco?". "Proximas reservas" e uma lista que
+   ele confere; este e onde ele DECIDE. O peso visual passa a seguir isso. */
+
+/* O painel inteiro ganha presenca: borda de marca no topo, como o cartao de
+   faturamento ja tem. E o unico marcado assim nesta coluna, entao a marcacao
+   significa alguma coisa. */
+html[data-manager-app] .manager-panel--occupancy {
+  padding: var(--e5);
+  border-top: 3px solid var(--pq-brand);
+}
+
+html[data-manager-app] .manager-panel--occupancy .manager-panel__head h2 {
+  font-size: 22px;
+}
+
+/* AS TRES FAIXAS: barras grossas, numero grande.
+
+   Era 6px de altura e o percentual em 12px — a informacao mais acionavel da
+   tela, com o menor peso dela. Barra grossa se le de longe, e "92%" em 20px e
+   um numero que se decide em cima. */
+html[data-manager-app] .manager-panel--occupancy [data-overview-occupancy] p {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--e2);
+  font-size: var(--t-cartao);
+  font-weight: 700;
+}
+
+html[data-manager-app] .manager-panel--occupancy [data-overview-occupancy] p small {
+  margin-left: var(--e1);
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  font-weight: 500;
+}
+
+html[data-manager-app] .manager-panel--occupancy [data-overview-occupancy] p strong {
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-manager-app] .manager-progress {
+  display: block;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--r-pilula);
+  background: var(--pq-tint-strong);
+}
+
+html[data-manager-app] .manager-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pilula);
+  background: var(--pq-brand);
+  transition: width .3s ease;
+}
+
+/* O MAPA DE CALOR ganha o espaco que a coluna passou a ter. Celulas de 10px
+   nao mostram diferenca de intensidade: o olho precisa de area para comparar
+   tom. */
+html[data-manager-app] .manager-heatmap {
+  gap: 3px;
+}
+
+html[data-manager-app] .manager-heatmap__cell {
+  min-height: 22px;
+  border-radius: 5px;
+}
+
+html[data-manager-app] .manager-heatmap__day {
+  font-size: var(--t-micro);
+  font-weight: 700;
+}
+
+html[data-manager-app] .manager-heatmap__hour {
+  color: var(--pq-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A escala de cor precisa ter DEGRAUS visiveis. Estavam tao proximos que o
+   mapa parecia uniforme — e um mapa de calor sem contraste entre niveis nao
+   informa nada, so ocupa espaco. */
+html[data-manager-app] .manager-heatmap__cell.b0 { background: var(--pq-tint); }
+html[data-manager-app] .manager-heatmap__cell.b1 { background: color-mix(in srgb, var(--pq-brand) 22%, var(--pq-tint)); }
+html[data-manager-app] .manager-heatmap__cell.b2 { background: color-mix(in srgb, var(--pq-brand) 45%, var(--pq-tint)); }
+html[data-manager-app] .manager-heatmap__cell.b3 { background: color-mix(in srgb, var(--pq-brand) 72%, var(--pq-tint)); }
+html[data-manager-app] .manager-heatmap__cell.b4 { background: var(--pq-brand); }
+
+
+/* ─────────── A GRADE DO PAINEL: quem responde primeiro fica em cima ───────
+
+   Era duas colunas — "Proximas reservas" a esquerda e "Disponibilidade" espremida
+   numa faixa de 340px a direita — e o grafico da semana morava FORA da grade, o
+   que deixava a regra `grid-area: intelligence` sem efeito nenhum.
+
+   A ordem agora segue a pergunta que o dono faz ao abrir o painel:
+
+     1. DISPONIBILIDADE, largura inteira. "Como esta minha semana, onde tenho
+        buraco?" — e a unica coisa aqui em cima da qual ele AGE hoje.
+     2. Faturamento e proximas reservas embaixo, lado a lado: as duas sao
+        conferencia, e conferencia divide espaco sem prejuizo.
+
+   Largura inteira nao e so destaque: o mapa de calor tem 7 dias x 16 horas, e
+   112 celulas numa coluna de 340px nao mostram diferenca de tom nenhuma. */
+html[data-manager-app][data-manager-view="dashboard"] .manager-dashboard-grid {
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+  grid-template-areas:
+    "occupancy    occupancy"
+    "intelligence bookings";
+  gap: var(--e4);
+}
+
+@media (max-width: 1080px) {
+  html[data-manager-app][data-manager-view="dashboard"] .manager-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "occupancy" "intelligence" "bookings";
+  }
+}
+
+/* AS TRES FAIXAS lado a lado. Empilhadas elas eram tres linhas de leitura; em
+   colunas viram uma comparacao — manha, tarde e noite se leem de uma vez, que
+   e a forma como a pergunta e feita. */
+html[data-manager-app] .manager-panel--occupancy [data-overview-occupancy] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e4);
+  margin-bottom: var(--e5);
+}
+
+@media (max-width: 720px) {
+  html[data-manager-app] .manager-panel--occupancy [data-overview-occupancy] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--e3);
+  }
+}
+
+/* ── O MAPA DEITADO ────────────────────────────────────────────────────────
+   16 colunas de hora e 7 linhas de dia. A coluna da esquerda guarda o nome do
+   dia e ficou alinhada a esquerda: rotulo de linha se le no comeco dela, nao
+   centralizado. */
+html[data-manager-app] .manager-heatmap__grid {
+  grid-template-columns: 42px repeat(16, minmax(0, 1fr));
+  gap: 3px;
+}
+
+html[data-manager-app] .manager-heatmap__day {
+  justify-content: flex-start;
+  padding-right: var(--e2);
+  place-items: center start;
+}
+
+html[data-manager-app] .manager-heatmap__hour {
+  align-items: end;
+  padding-bottom: 2px;
+}
+
+/* O GRAFICO tinha 318px de altura cravados — medida escolhida quando ele
+   ocupava a largura inteira da tela. Meia largura com a mesma altura vira um
+   retangulo em pe para sete barras, e sobra um vazio enorme ao lado de
+   "Proximas reservas". Altura proporcional a largura nova. */
+html[data-manager-app][data-manager-view="dashboard"] .manager-panel--intelligence .manager-chart {
+  min-height: 0;
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-panel--intelligence .lc {
+  height: 240px;
+}
+
+/* Cada painel com a altura do proprio conteudo: esticar "Proximas reservas"
+   ate a altura do grafico so cria um campo vazio embaixo da lista. */
+html[data-manager-app][data-manager-view="dashboard"] .manager-dashboard-grid {
+  align-items: start;
+}
+
+
+/* ══════════════════ MINHAS QUADRAS ═══════════════════════════════════════ */
+
+/* ── A VITRINE ────────────────────────────────────────────────────────────
+   Era uma faixa horizontal de quatro colunas espremidas: o interruptor
+   "Visivel no Explorar" cabia em 200px, entao o rotulo estava em 10.5px, a
+   descricao em 8.5px, e AINDA assim os dois saiam cortados com reticencia —
+   "Visivel no..." / "Jogadores p...". Um controle que liga e desliga a arena
+   inteira no Explorar, ilegivel.
+
+   Duas linhas resolvem: texto e numeros em cima, o interruptor sozinho
+   embaixo com a largura toda. */
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "copy     stats"
+    "settings settings";
+  align-items: center;
+  gap: var(--e5);
+  padding: var(--e5);
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-card);
+  background: var(--pq-panel);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__copy { grid-area: copy; }
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__copy > h2 {
+  margin-top: var(--e1);
+  color: var(--pq-ink);
+  font-size: var(--t-secao);
+  letter-spacing: -.015em;
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__copy > p {
+  margin-top: var(--e1);
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+}
+
+/* Os dois numeros lado a lado, separados por um filete: sao a MESMA medida
+   vista de dois angulos (quantos procuraram, quantos reservaram), e ler um
+   sem o outro nao diz nada. */
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats {
+  display: flex;
+  grid-area: stats;
+  gap: var(--e5);
+  margin: 0;
+  padding-left: var(--e5);
+  border-left: 1px solid var(--pq-line);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats strong {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--pq-brand);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats small {
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__settings {
+  display: block;
+  grid-area: settings;
+  margin: 0;
+  padding-top: var(--e4);
+  border-top: 1px solid var(--pq-line);
+}
+
+/* O INTERRUPTOR ocupa a linha. Texto no tamanho do sistema, sem corte:
+   quem le "Jogadores podem encontrar sua arena" entende o que desliga. */
+html[data-manager-app] .manager-setting-toggle {
+  width: 100%;
+  padding: var(--e3);
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-controle);
+  background: var(--pq-tint);
+  color: var(--pq-ink);
+}
+
+html[data-manager-app] .manager-setting-toggle strong,
+html[data-manager-app] .manager-setting-toggle small {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+html[data-manager-app] .manager-setting-toggle strong { font-size: var(--t-cartao); }
+html[data-manager-app] .manager-setting-toggle small { color: var(--pq-muted); font-size: var(--t-apoio); }
+
+@media (max-width: 900px) {
+  html[data-manager-app][data-manager-view="quadras"] .manager-showcase {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "copy" "stats" "settings";
+  }
+  html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+/* ── O CARTAO DE QUADRA: foto EM CIMA ─────────────────────────────────────
+
+   Era foto a esquerda numa coluna de 164px e o resto a direita. Duas coisas
+   quebravam:
+
+   1. Quadra sem foto virava um retangulo cinza de 164x224 — quase um terco do
+      cartao gasto para dizer "sem foto".
+   2. O cartao "Adicionar quadra" herdava a mesma grade de duas colunas, entao
+      o "+" ficava numa coluna e o texto na outra, desalinhados.
+
+   Foto em cima em 16:9 e a forma que o proprio app do jogador usa para quadra
+   — mesma identidade — e sobrevive a ausencia de foto sem deformar nada. */
+html[data-manager-app][data-manager-view="quadras"] .qcard {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--r-card);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .qcard .ph {
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+}
+
+html[data-manager-app][data-manager-view="quadras"] .qcard .ph img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+html[data-manager-app][data-manager-view="quadras"] .qcard .bd {
+  display: grid;
+  align-content: start;
+  gap: var(--e3);
+  padding: var(--e4);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .qcard .bd h3 {
+  font-size: var(--t-cartao);
+  font-weight: 700;
+}
+
+/* O rodape gruda no fim do cartao: com tres cartoes lado a lado de alturas
+   diferentes, botoes em alturas diferentes leem como linhas tortas. */
+html[data-manager-app][data-manager-view="quadras"] .qcard .foot {
+  margin-top: auto;
+  padding-top: var(--e1);
+}
+
+/* ADICIONAR QUADRA e um alvo, e nao um cartao de dados: uma coluna so,
+   centrada, sem herdar a grade do cartao de quadra. */
+html[data-manager-app][data-manager-view="quadras"] .add-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e2);
+  min-height: 0;
+  padding: var(--e6) var(--e4);
+  border: 1px dashed var(--pq-line-strong);
+  border-radius: var(--r-card);
+  background: transparent;
+  text-align: center;
+}
+
+html[data-manager-app][data-manager-view="quadras"] .add-card .add-ic {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-pilula);
+  background: var(--pq-tint);
+  color: var(--pq-brand);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .add-card strong { font-size: var(--t-cartao); }
+html[data-manager-app][data-manager-view="quadras"] .add-card small { color: var(--pq-muted); font-size: var(--t-apoio); }
+
+
+/* ══════════════════ CONFIGURACOES ════════════════════════════════════════ */
+
+/* A BARRA DE SALVAR flutua sobre o formulario (sticky), mas era um botao solto
+   com fundo de painel: o texto do cartao de baixo aparecia POR FORA da caixa
+   do botao, e "O valor cai automaticamente, sem mensalidade" saia cortado ao
+   meio. Uma barra que flutua precisa de fundo proprio e de sombra, senao ela
+   nao se separa do que passa por baixo.
+
+   Vale para os TRES formularios (configuracoes, cadastrar quadra, nova
+   reserva): os tres usam a mesma barra e os tres tinham o mesmo problema. */
+html[data-manager-app] .manager-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  bottom: var(--e4);
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-card);
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-2);
+}
+
+html[data-manager-app] .conta-acoes {
+  display: flex;
+  gap: var(--e3);
+  margin-top: var(--e4);
+}
+
+/* O AVISO DE RISCO nao pode usar a mesma pastilha verde do aviso comum: verde
+   e a cor de "esta tudo certo" no resto do painel, e este diz que reservas
+   pagas vao ser canceladas. */
+html[data-manager-app] .set-hint--alerta {
+  align-items: flex-start;
+  margin-bottom: var(--e4);
+  border: 1px solid var(--pq-danger);
+  background: var(--pq-danger-soft);
+  color: var(--pq-danger);
+  line-height: 1.45;
+}
+
+html[data-manager-app] .set-hint--alerta .ic { color: var(--pq-danger); }
+
+/* O CARTAO DE CUPOM ganhou quadra e usos: duas linhas de apoio onde antes
+   cabia uma. */
+html[data-manager-app] .manager-coupon small {
+  display: block;
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  line-height: 1.4;
+}
+
+html[data-manager-app] .manager-coupon strong { font-size: var(--t-cartao); }
+
+html[data-manager-app] .manager-coupon.inativo { opacity: .55; }
+
+/* O CATALOGO em cartoes de largura minima, e nao em N colunas cravadas. Com
+   duas quadras e tres colunas declaradas, o navegador entregava dois cartoes
+   de 560px — uma foto de 315px de altura para dizer "Society 2, R$ 120/h".
+   Cartao de catalogo se le em grade: o tamanho vem do conteudo e o numero de
+   colunas vem da largura disponivel. */
+html[data-manager-app][data-manager-view="quadras"] .grid[data-court-list] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--e4);
+}
+
+
+/* ══════════════════ LISTA DE RESERVAS ════════════════════════════════════ */
+
+/* O valor da linha estava em 11.5px e o rotulo em 9.5px — dois passos abaixo
+   de qualquer coisa no sistema, e a diferenca entre eles pequena demais para
+   separar dado de etiqueta. Nome do cliente e a chave da linha e sobe junto. */
+html[data-manager-app] .manager-booking-person strong { font-size: var(--t-cartao); }
+html[data-manager-app] .manager-booking-fact strong { font-size: var(--t-corpo); }
+html[data-manager-app] .manager-booking-person small { font-size: var(--t-apoio); }
+
+/* O cabecalho usa EXATAMENTE a grade da linha: qualquer divergencia entre as
+   duas e uma coluna desalinhada, que e pior do que nao ter cabecalho. */
+html[data-manager-app] .manager-booking-head {
+  display: none;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(120px, .8fr) minmax(160px, 1fr) minmax(90px, .55fr) auto minmax(120px, auto);
+  align-items: center;
+  gap: var(--e4);
+  padding: var(--e2) var(--e4);
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 900px) {
+  html[data-manager-app] .manager-booking-head { display: grid; }
+  /* Com o cabecalho de pe, o rotulo de cada linha vira repeticao. */
+  html[data-manager-app] .manager-booking-fact > span { display: none; }
+}
+
+
+/* ══════════════════ MENSAGENS ════════════════════════════════════════════ */
+
+/* Conversa vazia centrava o texto na horizontal e o deixava colado no topo de
+   um campo de 700px. Um aviso curto sozinho na beirada de uma area enorme le
+   como conteudo que nao carregou. */
+html[data-manager-app] .bubbles:has(.conv-sem-msg) {
+  display: grid;
+  place-content: center;
+}
+
+html[data-manager-app] .conv-sem-msg { font-size: var(--t-corpo); }
+
+/* O RODAPE de conversa encerrada e informacao de estado, e nao acao: fica
+   centrado onde o campo de escrever estaria, com a mesma altura, para a tela
+   nao pular quando o dono troca de uma conversa aberta para uma fechada. */
+html[data-manager-app] .conv-encerrada-aviso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e2);
+  min-height: 64px;
+  padding: var(--e3) var(--e4);
+  border-top: 1px solid var(--pq-line);
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+}
+
+
+/* ══════════════════ AGENDA ═══════════════════════════════════════════════ */
+
+/* O rotulo da hora fica 8px ACIMA da propria linha (`.cal-gutter .hr span`),
+   que e como um calendario se le — o texto marca o inicio da faixa. So que o
+   primeiro deles ficava 8px acima do topo do container, e o `overflow` cortava
+   "08:00" ao meio. Uma folga no topo devolve o espaco; o padding vale para a
+   calha E para as colunas, entao nada sai de alinhamento. */
+html[data-manager-app] .cal-body { padding-top: 10px; }
+
+
+/* ══════════════════ FINANCEIRO ═══════════════════════════════════════════ */
+
+/* "Reservas faturadas" passou a filtrar por status, entao ela pode ficar vazia
+   num periodo sem faturamento. Vazio precisa DIZER que esta vazio: uma tabela
+   com cabecalho e nenhuma linha le como carregamento que travou. */
+html[data-manager-app] .lista-vazia {
+  padding: var(--e6) var(--e4);
+  color: var(--pq-muted);
+  font-size: var(--t-corpo);
+  text-align: center;
+}
+
+/* O rotulo de valor sobre a barra agora traz o valor formatado ("R$ 1.080,00")
+   e nao mais o inteiro solto — precisa caber sem encostar no vizinho. */
+html[data-manager-app] .lc-val {
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--pq-muted);
+}
+
+html[data-manager-app] .lc-val.peak { fill: var(--pq-ink); font-size: 11.5px; }

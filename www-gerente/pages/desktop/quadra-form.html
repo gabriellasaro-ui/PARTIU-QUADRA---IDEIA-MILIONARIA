@@ -4,7 +4,7 @@
      modal com dois campos de preco; o formulario de verdade tem foto,
      esporte, bairro, descricao, janela de funcionamento, comodidades e
      status. Preenchido por assets/js/manager-court-form.js. -->
-<a href="./dashboard.html#quadras" class="back-link"><svg class="ic sm"><use href="#i-left"/></svg> Voltar para minhas quadras</a>
+<a href="./dashboard.html#quadras" class="back-link"><i class="ic sm" data-lucide="chevron-left"></i> Voltar para minhas quadras</a>
 
 <form id="quadra-form" class="settings" data-court-form>
   <input type="hidden" name="id">
@@ -34,7 +34,7 @@
             <small data-galeria-conta>0 de 5 — mínimo para publicar</small>
           </div>
           <button type="button" class="btn btn-outline btn-xs" data-file-trigger="#foto-file">
-            <svg class="ic sm"><use href="#i-image"/></svg> Adicionar fotos
+            <i class="ic sm" data-lucide="image"></i> Adicionar fotos
           </button>
           <input type="file" id="foto-file" accept="image/*" multiple hidden data-galeria-input>
         </div>
@@ -44,7 +44,7 @@
         <div class="galeria__grade" data-galeria-grade></div>
 
         <p class="galeria__dica">
-          <svg class="ic sm"><use href="#i-info"/></svg>
+          <i class="ic sm" data-lucide="info"></i>
           A primeira foto é a capa. Mostre o piso, a iluminação acesa, o vestiário
           e a vista de fora — quadras com mais de 5 fotos recebem mais reservas.
         </p>
@@ -72,7 +72,7 @@
         <div class="inp"><label>Duração mínima</label><select name="duracaoMin">
           <option>1 hora</option><option>1h30</option><option>2 horas</option>
         </select></div>
-        <div class="inp"><label>&nbsp;</label><div class="set-hint" style="margin:0;"><svg class="ic"><use href="#i-shield"/></svg> Mensalidade abaixo de 4× o avulso compensa para o jogador.</div></div>
+        <div class="inp"><label>&nbsp;</label><div class="set-hint" style="margin:0;"><i class="ic" data-lucide="shield"></i> Mensalidade abaixo de 4× o avulso compensa para o jogador.</div></div>
       </div>
       <div class="input-row" style="margin-bottom:0;">
         <div class="inp" style="margin-bottom:0;"><label>Abre às</label><select name="abre" data-court-open></select></div>
@@ -99,12 +99,12 @@
         <span>Quadra ativa</span>
         <span class="switch on" data-switch="active" role="switch" tabindex="0" aria-checked="true"></span>
       </label>
-      <div class="set-hint"><svg class="ic"><use href="#i-shield"/></svg> Quadras pausadas não aparecem na busca e não recebem reservas.</div>
+      <div class="set-hint"><i class="ic" data-lucide="shield"></i> Quadras pausadas não aparecem na busca e não recebem reservas.</div>
     </div>
   </section>
 
   <div class="manager-form-actions">
     <a href="./dashboard.html#quadras" class="btn btn-soft">Cancelar</a>
-    <button type="submit" class="btn btn-primary"><svg class="ic sm"><use href="#i-check"/></svg> <span data-court-submit>Cadastrar quadra</span></button>
+    <button type="submit" class="btn btn-primary"><i class="ic sm" data-lucide="check"></i> <span data-court-submit>Cadastrar quadra</span></button>
   </div>
 </form>

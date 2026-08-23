@@ -83,16 +83,16 @@ function courtCard(court) {
            aqui. Uma crase no meio de um comentario fecha a string e derruba a
            tela inteira com "Unexpected identifier" — foi o que aconteceu.) -->
       <span class="pill tr qcard-fotos${(court.fotos || 0) >= 5 ? '' : ' falta'}">
-        <svg class="ic sm"><use href="#i-image"/></svg>${court.fotos || 0}/5
+        <i class="ic sm" data-lucide="image"></i>${court.fotos || 0}/5
       </span>
       ${court.photo
         ? `<img src="${escapeHtml(court.photo)}" alt="${escapeHtml(court.label)}" loading="lazy" data-foto-quadra>`
         : ''}
-      <span class="ph-vazio"><svg class="ic"><use href="#i-image"/></svg>Sem foto</span>
+      <span class="ph-vazio"><i class="ic" data-lucide="image"></i>Sem foto</span>
     </div>
     <div class="bd">
       <h3>${escapeHtml(court.label)}</h3>
-      <p class="meta"><svg class="ic"><use href="#i-grid"/></svg>${escapeHtml(court.sport)} · ${formatCurrency(court.price)}/h</p>
+      <p class="meta"><i class="ic" data-lucide="layout-grid"></i>${escapeHtml(court.sport)} · ${formatCurrency(court.price)}/h</p>
 
       <div class="qcard-prices">
         <div><small>Avulso</small><strong>${formatCurrency(court.price)}<span> /hora</span></strong></div>
@@ -121,7 +121,7 @@ export async function renderManagerCourts(root) {
   if (grid) {
     grid.innerHTML = lista.map(courtCard).join('')
       + `<a class="qcard add-card" href="./dashboard.html#quadra">
-           <span class="add-ic"><svg class="ic lg"><use href="#i-plus"/></svg></span>
+           <span class="add-ic"><i class="ic lg" data-lucide="plus"></i></span>
            <strong>Adicionar quadra</strong>
            <small>Cadastre mais um espaço da sua arena</small>
          </a>`;

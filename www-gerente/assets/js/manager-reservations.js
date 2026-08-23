@@ -39,7 +39,7 @@ const inicial = (nome) => String(nome || '?').charAt(0).toUpperCase();
 function linha(r) {
   const acoes = r.status === 'Solicitada'
     ? `<button type="button" class="btn btn-danger btn-xs" data-booking-refuse="${r.id}">Recusar</button>
-       <button type="button" class="btn btn-primary btn-xs" data-booking-approve="${r.id}"><svg class="ic sm"><use href="#i-check"/></svg> Aprovar</button>`
+       <button type="button" class="btn btn-primary btn-xs" data-booking-approve="${r.id}"><i class="ic sm" data-lucide="check"></i> Aprovar</button>`
     : `<a href="./dashboard.html#reserva/${r.id}" class="btn btn-soft btn-xs">Ver detalhes</a>`;
 
   return `<article class="manager-booking-row${r.status === 'Solicitada' ? ' is-request' : ''}" data-status="${escapeHtml(r.cls)}">
