@@ -193,6 +193,14 @@ function renderChart(root, pontosSerie) {
             <text class="lc-yl" x="${x0 - 10}" y="${y + 3.5}">${Math.round(f * max)}</text>`;
   }).join('');
 
+  /* Com 30 dias, "Seg/Ter/Qua" se repetem quatro vezes e colidem: o eixo vira
+     uma tira preta. Acima de 10 pontos o rotulo vira a data, de N em N. */
+  const cadaN = pontosSerie.length <= 10 ? 1 : Math.ceil(pontosSerie.length / 8);
+  const comoData = (p) => {
+    const partes = String(p.dia || '').split('-');
+    return partes.length === 3 ? `${partes[2]}/${partes[1]}` : p.rotulo;
+  };
+
   const barras = pontosSerie.map((p, i) => {
     const v = Number(p.valor) || 0;
     const cx = x0 + vao * i + vao / 2;
@@ -210,8 +218,11 @@ function renderChart(root, pontosSerie) {
     const rotuloValor = destaque
       ? `<text class="lc-val" x="${cx}" y="${y - 7}" text-anchor="middle">R$ ${v.toFixed(2).replace('.', ',')}</text>`
       : '';
-    return `${trilho}${barra}${rotuloValor}
-      <text class="lc-xl" x="${cx}" y="${H - 10}" text-anchor="middle">${p.rotulo}</text>`;
+    const ehUltimo = i === pontosSerie.length - 1;
+    const rotulo = (i % cadaN === 0 || (ehUltimo && (i % cadaN) >= cadaN / 2))
+      ? `<text class="lc-xl" x="${cx}" y="${H - 10}" text-anchor="middle">${cadaN === 1 ? p.rotulo : comoData(p)}</text>`
+      : '';
+    return `${trilho}${barra}${rotuloValor}${rotulo}`;
   }).join('');
 
   svg.insertAdjacentHTML('beforeend', grade + barras);

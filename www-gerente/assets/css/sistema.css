@@ -670,12 +670,29 @@ html[data-manager-app] .manager-booking-person small { font-size: var(--t-apoio)
 
 /* O cabecalho usa EXATAMENTE a grade da linha: qualquer divergencia entre as
    duas e uma coluna desalinhada, que e pior do que nao ter cabecalho. */
+/* A GRADE E A MESMA nos dois, e sem coluna `auto`.
+
+   O cabecalho e as linhas declaravam `auto` nas duas ultimas colunas — status e
+   acoes. Coluna `auto` se dimensiona pelo CONTEUDO, e o conteudo e diferente:
+   no cabecalho e a palavra "Status" e uma celula vazia; nas linhas e uma
+   pastilha e um botao "Ver detalhes". Larguras diferentes nas ultimas colunas
+   empurram as anteriores, e o desalinhamento cresce da esquerda para a direita
+   — era por isso que "CLIENTE" batia e "STATUS" estava 25px fora.
+
+   Com largura fixa nas duas ultimas, as grades nao tem mais como divergir. */
+html[data-manager-app] .manager-booking-head,
+html[data-manager-app] .manager-booking-row {
+  grid-template-columns:
+    minmax(180px, 1.2fr) minmax(120px, .8fr) minmax(160px, 1fr) minmax(90px, .55fr) 120px 132px;
+}
+
 html[data-manager-app] .manager-booking-head {
   display: none;
-  grid-template-columns: minmax(180px, 1.2fr) minmax(120px, .8fr) minmax(160px, 1fr) minmax(90px, .55fr) auto minmax(120px, auto);
   align-items: center;
   gap: var(--e4);
-  padding: var(--e2) var(--e4);
+  /* +1px horizontal: a lista abaixo tem borda de 1px e o cabecalho nao, entao
+     sem isto as colunas ficam deslocadas por essa borda. */
+  padding: var(--e2) calc(var(--e4) + 1px);
   color: var(--pq-muted);
   font-size: var(--t-micro);
   font-weight: 700;
@@ -753,6 +770,12 @@ html[data-manager-app] .lc-val.peak { fill: var(--pq-ink); font-size: 11.5px; }
 
 /* ══════════════════ TELA DE CARREGAMENTO ═════════════════════════════════ */
 
+/* Cobre a tela INTEIRA e usa a cor de fundo do sistema.
+
+   Estava com `background: var(--pq-bg)` — token que NAO EXISTE (o certo e
+   `--pq-app-bg`). Variavel invalida cai em transparente, entao a tela de
+   carregamento ficava por cima do painel deixando tudo aparecer atras: parecia
+   um adesivo solto no meio da pagina em vez de uma tela. */
 html[data-manager-app] .loader {
   position: fixed;
   inset: 0;
@@ -761,7 +784,7 @@ html[data-manager-app] .loader {
   align-content: center;
   justify-items: center;
   gap: var(--e5);
-  background: var(--pq-bg);
+  background: var(--pq-app-bg);
   opacity: 1;
   transition: opacity .32s ease;
 }
@@ -771,30 +794,22 @@ html[data-manager-app] .loader.is-saindo {
   pointer-events: none;
 }
 
-/* O TILE CLARO existe por causa do formato do arquivo: H.264 nao tem canal
-   alfa, entao o MP4 chega com fundo branco. Em vez de tentar apagar o branco
-   com blend — que no tema escuro exigiria inverter o video e trocaria o ciano
-   da marca por laranja — o branco vira parte de uma peca deliberada, do
-   tamanho e do raio de um icone de app. Funciona igual nos dois temas. */
+/* A ANIMACAO PINTADA COM A COR DA MARCA, e nao um quadrado branco.
+
+   O arquivo original e H.264, que nao tem canal alfa: o video chega com fundo
+   branco solido, e a unica saida com <video> era encaixotar tudo num tile
+   claro — o quadrado branco que destoava do resto do painel.
+
+   Agora o branco e removido na origem (ffmpeg colorkey) e a animacao vira um
+   WebP com transparencia, usado como MASCARA. A cor nao vem mais do arquivo:
+   vem de `--pq-brand`, entao ela acompanha o tema junto com o resto da tela.
+   Perde-se o ciano do desenho, e e o certo — ciano nao e cor do sistema. */
 html[data-manager-app] .loader__marca {
-  display: grid;
-  place-items: center;
   width: 132px;
   height: 132px;
-  overflow: hidden;
-  border-radius: 30px;
-  background: #fff;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .18);
-}
-
-/* O arquivo tem margem branca larga em volta do desenho — cerca de 20% de
-   cada lado. Sem a escala, a mao aparece pequena no meio de um quadrado
-   branco; a escala corta a margem e nao o desenho. */
-html[data-manager-app] .loader__marca video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.35);
+  background: var(--pq-brand);
+  -webkit-mask: url("../video/carregando.webp") center / contain no-repeat;
+  mask: url("../video/carregando.webp") center / contain no-repeat;
 }
 
 html[data-manager-app] .loader__texto {
@@ -804,10 +819,8 @@ html[data-manager-app] .loader__texto {
   letter-spacing: .01em;
 }
 
-/* Quem pediu menos movimento ve o primeiro quadro parado, e nao o loop. */
 @media (prefers-reduced-motion: reduce) {
   html[data-manager-app] .loader { transition: none; }
-  html[data-manager-app] .loader__marca video { animation: none; }
 }
 
 
@@ -1437,3 +1450,46 @@ html[data-manager-app][data-manager-view="quadras"] .qcard .ph-vazio small { col
 
 /* Com foto, o convite some. */
 html[data-manager-app][data-manager-view="quadras"] .qcard .ph:has(img) .ph-vazio { display: none; }
+
+
+/* ══════════════════ SIDEBAR ══════════════════════════════════════════════ */
+
+/* Os itens usavam `--pq-brand-deep` como cor de TEXTO — verde de marca para
+   nove links empilhados. Verde sobre fundo claro esverdeado da pouca separacao,
+   e o menu inteiro lia apagado; pior, verde e a cor que marca o item ATIVO,
+   entao ativo e inativo diferiam quase so pelo fundo.
+
+   Texto em tinta normal, marca reservada para o ativo. Assim "onde eu estou"
+   se ve de relance, que e a unica pergunta que uma sidebar responde. */
+html[data-manager-app] .sb-link {
+  color: var(--pq-ink-soft);
+  font-size: var(--t-corpo);
+  font-weight: 600;
+}
+
+html[data-manager-app] .sb-link .ic { color: var(--pq-muted); }
+
+html[data-manager-app] .sb-link:hover {
+  background: var(--pq-tint);
+  color: var(--pq-ink);
+}
+
+html[data-manager-app] .sb-link:hover .ic { color: var(--pq-ink); }
+
+html[data-manager-app] .sb-link.on {
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-weight: 750;
+  box-shadow: none;
+}
+
+html[data-manager-app] .sb-link.on .ic { color: var(--pq-brand); }
+
+/* O rotulo de grupo estava em 9.5px — abaixo de tudo no sistema, e ilegivel. */
+html[data-manager-app] .sb-group {
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}

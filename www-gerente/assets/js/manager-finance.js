@@ -52,6 +52,29 @@ function reservasDoPeriodo() {
    os pontos e desenhava dois triangulos gigantes subindo do zero. Linha promete
    continuidade, e faturamento diario nao e continuo — cada dia e um valor
    independente. Foi o mesmo conserto ja feito no grafico do dashboard. */
+/* QUANTOS ROTULOS CABEM DEPENDE DE QUANTAS BARRAS HA.
+
+   Com 7 dias, um rotulo por barra. Com 30, os mesmos "Seg/Ter/Qua" se repetem
+   quatro vezes e colidem uns nos outros — vira uma tira preta ilegivel embaixo
+   do eixo, que foi exatamente o que apareceu ao trocar para "30 dias".
+
+   Acima de 10 pontos o rotulo passa a ser a DATA (dia/mes), impressa de N em N
+   para caber. Dia da semana repetido nao identifica nada numa serie longa: em
+   trinta dias ha quatro quartas, e "Qua" nao diz qual.
+
+   O valor em cima da barra idem: com 30 barras so o pico recebe texto. */
+function rotulosVisiveis(pontos) {
+  if (pontos.length <= 10) return { passo: 1, usarData: false };
+  return { passo: Math.ceil(pontos.length / 8), usarData: true };
+}
+
+function rotuloDoPonto(p, usarData) {
+  if (!usarData) return p.rotulo;
+  // `dia` vem "YYYY-MM-DD" do backend; vira "23/08".
+  const partes = String(p.dia || '').split('-');
+  return partes.length === 3 ? `${partes[2]}/${partes[1]}` : p.rotulo;
+}
+
 function renderChart(root, pontos) {
   const svg = root.querySelector('[data-finance-chart]');
   if (!svg) return;
@@ -80,6 +103,7 @@ function renderChart(root, pontos) {
   const passo = (x1 - x0) / pontos.length;
   const larg = Math.min(46, passo * 0.62);
   const pico = pontos.reduce((m, p, i) => (p.valor > pontos[m].valor ? i : m), 0);
+  const { passo: cadaN, usarData } = rotulosVisiveis(pontos);
 
   const barras = pontos.map((p, i) => {
     const cx = x0 + passo * i + passo / 2;
@@ -89,11 +113,19 @@ function renderChart(root, pontos) {
     const barra = p.valor > 0
       ? `<rect class="lc-bar${i === pico ? ' peak' : ''}" x="${(cx - larg / 2).toFixed(1)}" y="${(y1 - alt).toFixed(1)}" width="${larg.toFixed(1)}" height="${Math.max(2, alt).toFixed(1)}" rx="4"/>`
       : `<rect class="lc-trilho" x="${(cx - larg / 2).toFixed(1)}" y="${(y1 - 3).toFixed(1)}" width="${larg.toFixed(1)}" height="3" rx="1.5"/>`;
-    const valor = p.valor > 0
+    // Serie longa: so o pico ganha valor escrito, senao os numeros colidem.
+    const mostraValor = p.valor > 0 && (cadaN === 1 || i === pico);
+    const valor = mostraValor
       ? `<text class="lc-val${i === pico ? ' peak' : ''}" x="${cx.toFixed(1)}" y="${(y1 - alt - 8).toFixed(1)}" style="text-anchor:middle">${formatCurrency(p.valor)}</text>`
       : '';
-    return `${barra}${valor}
-      <text class="lc-xl" x="${cx.toFixed(1)}" y="${H - 9}" style="text-anchor:middle">${escapeHtml(p.rotulo)}</text>`;
+    /* O ultimo ponto so ganha rotulo se estiver longe do anterior impresso.
+       Forcar sempre colava "22/08" em "23/08" no fim do eixo. */
+    const ehUltimo = i === pontos.length - 1;
+    const distanciaDoAnterior = i - Math.floor(i / cadaN) * cadaN;
+    const rotulo = (i % cadaN === 0 || (ehUltimo && distanciaDoAnterior >= cadaN / 2))
+      ? `<text class="lc-xl" x="${cx.toFixed(1)}" y="${H - 9}" style="text-anchor:middle">${escapeHtml(rotuloDoPonto(p, usarData))}</text>`
+      : '';
+    return `${barra}${valor}${rotulo}`;
   }).join('');
 
   svg.insertAdjacentHTML('beforeend', grade + barras);
@@ -130,6 +162,14 @@ export async function renderManagerFinance(root) {
 
      Mesma fonte do dashboard: uma so definicao de ocupacao no produto. */
   const ocupacao = API_BASE_URL ? (await managerService.dashboard()).ocupacao : 0;
+  /* A LEGENDA SEGUE O PERIODO. Ela dizia "Últimos 7 dias" fixo, e continuava
+     dizendo isso com "30 dias" selecionado — o grafico mostrando um mes e o
+     rodape jurando que era uma semana. */
+  set(root, '[data-finance-legenda]',
+    periodo === 'hoje' ? 'Hoje' : (periodo === '30d' ? 'Últimos 30 dias' : 'Últimos 7 dias'));
+  const tituloGraf = root.querySelector('[data-finance-titulo]');
+  if (tituloGraf) tituloGraf.textContent = periodo === '30d' ? 'Faturamento no mês' : 'Faturamento na semana';
+
   set(root, '[data-finance-occ]', `${ocupacao}%`);
   set(root, '[data-finance-occ-top]', `${ocupacao}%`);
 
