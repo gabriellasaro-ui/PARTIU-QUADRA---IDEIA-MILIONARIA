@@ -1635,3 +1635,106 @@ html[data-manager-app] .conv-row .conv-sub { color: var(--pq-muted); }
 
 /* A barra de filtros ficou so com o periodo depois da saida das abas. */
 html[data-manager-app] .filtro-barra { justify-content: flex-end; }
+
+
+/* ══════════════════ MENOS FILETE ═════════════════════════════════════════ */
+
+/* A VITRINE tinha quatro linhas num bloco de duas informacoes: a borda do
+   cartao, o filete vertical antes dos numeros, outro entre os dois numeros, e
+   mais um horizontal separando o interruptor. Filete demais fragmenta o bloco
+   em pedacos que nao precisavam ser separados — dois numeros lado a lado ja se
+   leem como dois numeros, o espaco basta.
+
+   Fica UM: o que separa o interruptor (que e acao) do resto (que e leitura). */
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats {
+  padding-left: 0;
+  border-left: 0;
+  gap: var(--e6);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats div + div {
+  padding-left: 0;
+  border-left: 0;
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__settings {
+  padding-top: var(--e4);
+}
+
+/* O interruptor tambem perde a moldura propria: ele ja esta dentro do cartao,
+   e uma caixa dentro da caixa e mais uma linha sem funcao. */
+html[data-manager-app][data-manager-view="quadras"] .manager-setting-toggle {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+
+/* ══════════════════ CARTAO DA QUADRA: bloco de precos ════════════════════ */
+
+/* Era duas colunas soltas dentro de uma caixa tintada, com o rotulo em caixa
+   alta grudado no valor e o "/hora" na mesma linha do numero brigando por
+   espaco. Em cartao de 280px o "R$ 408,00 /mês" quebrava.
+
+   Grade de duas colunas com o rotulo em cima, valor embaixo e a unidade
+   descendo para a propria linha: os dois precos passam a se comparar na
+   vertical, que e o que o dono faz — "meu mensalista compensa?". */
+html[data-manager-app][data-manager-view="quadras"] .qcard-prices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e3);
+  margin: 0;
+  padding: var(--e3);
+  border: 0;
+  border-radius: var(--r-controle);
+  background: var(--pq-tint);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .qcard-prices > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+html[data-manager-app][data-manager-view="quadras"] .qcard-prices small {
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+html[data-manager-app][data-manager-view="quadras"] .qcard-prices strong {
+  display: block;
+  color: var(--pq-ink);
+  font-size: var(--t-cartao);
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* A unidade desce de linha: em 280px ela nao cabe ao lado de "R$ 408,00". */
+html[data-manager-app][data-manager-view="quadras"] .qcard-prices strong span {
+  display: block;
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  font-weight: 600;
+}
+
+
+/* ══════════════════ MENSAGENS: a caixa volta a encher a tela ═════════════ */
+
+/* Encolhi demais na rodada anterior. Uma tela de conversa e para ficar aberta
+   enquanto se atende, e caixa baixa obriga a rolar a cada duas mensagens — o
+   vazio de antes vinha da conversa sem mensagem, e nao da altura. */
+html[data-manager-app][data-manager-view="mensagens"] .chat {
+  height: calc(100vh - 138px);
+  min-height: 560px;
+  max-height: none;
+}
+
+html[data-manager-app] .bubbles { min-height: 0; }
+
+/* O formulario reserva o espaco da barra no fim: assim o ultimo cartao nunca
+   fica inalcancavel atras dela. */
+html[data-manager-app] form.settings { padding-bottom: var(--e6); }

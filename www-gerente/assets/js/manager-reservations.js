@@ -197,15 +197,26 @@ export function initManagerReservations() {
        qual dos dois vale. */
     const atalho = event.target.closest('[data-periodo]');
     if (atalho) {
+      /* O ATALHO OLHA PARA A FRENTE, e nao para tras.
+
+         Ele fazia `hoje - N dias`, e nesta tela isso esta errado duas vezes.
+         Primeiro porque reserva e compromisso FUTURO: as da arena estao em
+         setembro, e "ultimos 30 dias" devolvia quase nada — o dono clicava em
+         "30 dias" e a lista esvaziava. Segundo porque quem abre Reservas quer
+         saber o que vem, nao o que passou; olhar para tras e o Financeiro.
+
+         E a data e montada em HORA LOCAL. `toISOString()` converte para UTC, e
+         em Brasilia (UTC-3) qualquer clique depois das 21h ja caia no dia
+         seguinte — o intervalo inteiro deslocado em um dia. */
       const dias = Number(atalho.dataset.periodo);
       if (!dias) { de = ''; ate = ''; }
       else {
+        const local = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const hoje = new Date();
-        const inicio = new Date(hoje);
-        inicio.setDate(inicio.getDate() - (dias - 1));
-        const iso = (d) => d.toISOString().slice(0, 10);
-        de = iso(inicio);
-        ate = iso(hoje);
+        const fim = new Date(hoje);
+        fim.setDate(fim.getDate() + (dias - 1));
+        de = local(hoje);
+        ate = local(fim);
       }
       root.querySelectorAll('[data-periodo]').forEach((b) => {
         b.classList.toggle('on', b === atalho);

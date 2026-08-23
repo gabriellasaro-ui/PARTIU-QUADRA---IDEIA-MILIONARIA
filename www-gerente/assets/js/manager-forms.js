@@ -115,7 +115,15 @@ export async function renderManagerCourtForm(root) {
      padrao aparecem sempre, e qualquer comodidade gravada que nao esteja entre
      elas entra como pastilha propria — senao editar uma quadra com
      "churrasqueira" perderia o item calado. */
-  marcadas = new Set((quadra?.comodidades || []).map(String));
+  /* `amenities` E O NOME NO FRONT.
+
+     `loadCourts()` devolve a quadra ja mapeada, e ali o campo se chama
+     `amenities` — `comodidades` e o nome do lado do servidor. Lendo a chave
+     errada, o Set nascia vazio e as pastilhas apareciam todas desmarcadas numa
+     quadra que TEM comodidades; salvar em seguida apagaria as que existiam.
+
+     Aceita os dois nomes: o caminho sem API usa o outro. */
+  marcadas = new Set((quadra?.amenities || quadra?.comodidades || []).map(String));
   pintarComodidades(root);
 
   // O expediente pertence a uma quadra que ja existe: sem id nao ha onde
@@ -384,8 +392,10 @@ export function initManagerForms() {
 
      `change` alem de `input`: select e input[type=file] nao emitem `input` em
      todos os navegadores. */
+  /* Vale para os TRES formularios (configuracoes, cadastrar quadra, nova
+     reserva): procura o <form> mais proximo, e nao um formulario especifico. */
   const sujar = (event) => {
-    const form = event.target.closest?.('[data-settings-form]');
+    const form = event.target.closest?.('form');
     if (!form) return;
     const barra = form.querySelector('[data-form-actions]');
     if (barra) barra.hidden = false;
@@ -426,7 +436,7 @@ export function initManagerForms() {
      que falta confirmar algo que ja aconteceu. */
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-cfg-tema]')) return;
-    if (event.target.closest('[data-settings-form] .switch')) sujar(event);
+    if (event.target.closest('form .switch')) sujar(event);
   }, true);
 
   document.addEventListener('click', async (event) => {

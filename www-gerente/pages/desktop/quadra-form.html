@@ -142,7 +142,11 @@
     </div>
   </section>
 
-  <div class="manager-form-actions">
+  <!-- A barra so aparece quando ha o que salvar: sendo sticky, ela flutuava
+       sobre o formulario e cobria a linha que estivesse embaixo dela — no
+       cadastro de quadra escondia um dia inteiro do expediente. -->
+  <div class="manager-form-actions" data-form-actions hidden>
+    <span class="form-actions__aviso">Alterações não salvas</span>
     <a href="./dashboard.html#quadras" class="btn btn-soft">Cancelar</a>
     <button type="submit" class="btn btn-primary"><i class="ic sm" data-lucide="check"></i> <span data-court-submit>Cadastrar quadra</span></button>
   </div>

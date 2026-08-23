@@ -241,7 +241,9 @@ async function renderChartReal(root) {
   const hoje = new Date();
   const inicio = new Date(hoje);
   inicio.setDate(inicio.getDate() - (janelaDias - 1));
-  const iso = (d) => d.toISOString().slice(0, 10);
+  // Data em HORA LOCAL: `toISOString()` converte para UTC e, em Brasilia,
+  // depois das 21h a janela inteira desliza um dia.
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   try {
     const dados = await managerService.financeiro({ de: iso(inicio), ate: iso(hoje) });
     renderChart(root, dados?.serie || []);
