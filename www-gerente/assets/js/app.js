@@ -356,6 +356,23 @@ function initRedirectToast() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  /* O LOADER SAI MESMO SE O BOOT FALHAR.
+
+     `esconderLoader()` estava na ultima linha deste bloco: qualquer excecao no
+     meio — uma rota que nao carrega, a API fora do ar — pulava a chamada e
+     deixava a tela de carregamento presa. O painel podia estar inteiro atras
+     dela e ninguem veria.
+
+     Com try/finally ela sai nos dois casos. O erro continua subindo para o
+     console; o que muda e que o dono ve a tela em vez de um vazio. */
+  try {
+    await iniciarPainel();
+  } finally {
+    esconderLoader();
+  }
+});
+
+async function iniciarPainel() {
   window.pqRefreshIcons = refreshIcons;
   await loadComponents();
   window.pqSyncAuthControls?.();
@@ -366,8 +383,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAppShell();
   initModals();
   initRedirectToast();
-  esconderLoader();
-});
+}
 
 /* A TELA DE CARREGAMENTO SAI QUANDO HA O QUE MOSTRAR.
 

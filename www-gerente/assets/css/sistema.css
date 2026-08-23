@@ -787,6 +787,30 @@ html[data-manager-app] .loader {
   background: var(--pq-app-bg);
   opacity: 1;
   transition: opacity .32s ease;
+
+  /* RELOGIO DE SEGURANCA, em CSS.
+
+     A tela de carregamento so saia por JavaScript. Isso a torna uma armadilha:
+     basta o app.js vir velho do cache, falhar ao baixar ou lancar erro antes do
+     fim do boot, e ela fica para sempre — o painel vira uma tela morta, que e
+     pior do que nao ter tela de carregamento nenhuma.
+
+     Foi o que aconteceu: com o HTML novo e o JS antigo em cache, nada removia o
+     elemento. A animacao abaixo nao depende de nada — passados 6s ela apaga a
+     tela sozinha, e o dono ve o painel mesmo que o resto tenha dado errado.
+
+     6s e folgado para um boot normal (que leva menos de 1s) e curto o bastante
+     para nao parecer travado. No caminho feliz o JS remove o elemento antes
+     disso e a animacao nunca chega a rodar. */
+  animation: pq-loader-watchdog .35s ease 6s forwards;
+}
+
+@keyframes pq-loader-watchdog {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
 html[data-manager-app] .loader.is-saindo {
