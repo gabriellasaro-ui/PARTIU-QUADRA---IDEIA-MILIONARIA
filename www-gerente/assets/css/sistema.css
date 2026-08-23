@@ -1533,3 +1533,105 @@ html[data-manager-app] .manager-bookings .manager-booking-row:last-child {
   border-bottom: 0;
   padding-bottom: 0;
 }
+
+
+/* ══════════════════ SIDEBAR: superficie propria ══════════════════════════ */
+
+/* Ela usava `--pq-tint` de fundo. No tema claro, tint e #edf6f0 e o fundo da
+   aplicacao e #f3f8f4 — dois verdes palidos a seis pontos de distancia. Na
+   pratica a sidebar nao tinha superficie: era o mesmo plano do conteudo, com
+   nove links soltos em cima. Nao ha separacao para o olho encontrar.
+
+   Painel + filete: a sidebar passa a ser uma superficie, como qualquer cartao
+   do sistema, e a marca fica livre para significar "voce esta aqui".
+
+   E ela vai ate embaixo. Sem altura propria, a coluna terminava onde o
+   conteudo terminava, e sobrava um retalho de fundo diferente no pe da tela. */
+html[data-manager-app] .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid var(--pq-line);
+  background: var(--pq-panel);
+}
+
+/* ITEM ATIVO com barra de marca: a cor de fundo sozinha e sutil demais num
+   menu de nove linhas, e "onde eu estou" e a unica pergunta da sidebar. */
+html[data-manager-app] .sb-link {
+  position: relative;
+  border-radius: var(--r-controle);
+}
+
+html[data-manager-app] .sb-link.on::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--pq-brand);
+}
+
+/* ══════════════════ ICONES com presenca ═════════════════════════════════ */
+
+/* Traco de 1.9 em icone de 18px quase desaparece sobre fundo claro — era por
+   isso que a troca do sprite para o Lucide "nao mudou nada": o desenho mudou,
+   o PESO nao. Traco mais firme e tamanho um degrau acima nos lugares onde o
+   icone acompanha um titulo. */
+html[data-manager-app] .ic {
+  stroke-width: 2.1;
+}
+
+html[data-manager-app] .sb-link .ic {
+  width: 19px;
+  height: 19px;
+  stroke-width: 2.2;
+}
+
+/* ══════════════════ MENSAGENS: sem o vazio ══════════════════════════════ */
+
+/* A altura era fixa em 820px. Com sete conversas (que terminam em ~510px) e
+   uma conversa sem mensagem, sobravam 300px de moldura vazia embaixo da lista
+   e um campo verde gigante ao lado.
+
+   Agora a caixa tem a altura do conteudo, com um piso para nao pular a cada
+   troca de conversa e um teto para nao passar da tela quando houver muita
+   mensagem. */
+html[data-manager-app][data-manager-view="mensagens"] .chat {
+  height: auto;
+  min-height: 420px;
+  max-height: calc(100vh - 154px);
+}
+
+html[data-manager-app] .chat-list { overflow-y: auto; }
+
+/* Conversa vazia nao precisa de 700px de altura para dizer uma frase. */
+html[data-manager-app] .bubbles { min-height: 220px; }
+
+
+/* ── Interruptor no cartao da quadra ──────────────────────────────────────
+   Substitui o botao "Pausar"/"Ativar", que mostrava a ACAO e nao o ESTADO:
+   com dois cartoes lado a lado, um dizendo "Pausar" e outro "Ativar", saber
+   qual quadra esta no ar exigia inverter cada rotulo na cabeca. */
+html[data-manager-app] .qcard-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  margin-left: auto;
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  font-weight: 700;
+}
+
+html[data-manager-app] .qcard-switch:has(.switch.on) { color: var(--pq-brand-deep); }
+
+/* ── Nomes na lista de conversas ──────────────────────────────────────────
+   Estavam em tom de apoio, e o nome do cliente e a chave da linha: e por ele
+   que o dono acha a conversa. */
+html[data-manager-app] .conv-row strong { color: var(--pq-ink); }
+html[data-manager-app] .conv-row .conv-sub { color: var(--pq-muted); }
+
+/* A barra de filtros ficou so com o periodo depois da saida das abas. */
+html[data-manager-app] .filtro-barra { justify-content: flex-end; }

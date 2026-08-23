@@ -7,14 +7,11 @@
 
    Banner, resumo e filtros vem junto porque sao o que responde "o que
    precisa de mim agora". */
-import { ARENA_MEMBERS } from '../../config/manager-data.js';
 import { loadBookings, applyBookingAction } from './manager-bookings.js';
-import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import managerService from '../../services/manager-api.js';
 
-const MEMBERS_KEY = 'manager-members';
 
 let filtro = '';
 let busca = '';
@@ -22,7 +19,6 @@ let busca = '';
 /* Estado da tela. Modulo e nao DOM porque a tela e remontada a cada troca de
    rota: guardar no elemento faria a pagina voltar para a 1 toda vez que o dono
    abrisse uma reserva e voltasse. */
-let escopo = 'avulso';
 let pagina = 1;
 let de = '';
 let ate = '';
@@ -52,27 +48,6 @@ function linha(r) {
     <div class="manager-booking-fact"><span>Valor</span><strong class="num">${formatCurrency(r.valor)}</strong></div>
     <div class="manager-booking-status"><span class="status ${escapeHtml(r.cls)}">${escapeHtml(r.status)}</span></div>
     <div class="manager-booking-actions">${acoes}</div>
-  </article>`;
-}
-
-function cardMensalista(m) {
-  return `<article class="mensal-card">
-    <div class="mensal-card__top">
-      <span class="av">${escapeHtml(inicial(m.name))}</span>
-      <div><strong>${escapeHtml(m.name)}</strong><small>${escapeHtml(m.court)}</small></div>
-      <span class="status ${m.status === 'renovando' ? 'pendente' : 'pago'}">${m.status === 'renovando' ? 'Renovando' : 'Mensalista'}</span>
-    </div>
-    <div class="mensal-card__grid">
-      <div><small>Compromisso</small><strong>Toda ${escapeHtml(m.day)}</strong></div>
-      <div><small>Horário</small><strong>${escapeHtml(m.time)}</strong></div>
-      <div><small>Sessões no mês</small><strong>4</strong></div>
-      <div><small>Receita do mês</small><strong>${formatCurrency(m.price)}</strong></div>
-    </div>
-    <div class="mensal-card__foot">
-      <a class="btn btn-soft btn-xs" href="./dashboard.html#mensalistas">
-        <i class="ic sm" data-lucide="chevron-right"></i> Gerenciar
-      </a>
-    </div>
   </article>`;
 }
 
@@ -159,34 +134,11 @@ export async function renderManagerReservations(root) {
     b.classList.toggle('on', b.dataset.bookingFilter === filtro);
   });
 
-  let mensalistas = storage.get(MEMBERS_KEY, ARENA_MEMBERS);
-  if (API_BASE_URL) {
-    try {
-      mensalistas = await managerService.mensalistas();
-    } catch (error) {}
-  }
-  const box = root.querySelector('[data-manager-mensal-list]');
-  if (box) box.innerHTML = mensalistas.map(cardMensalista).join('');
-  const vazioMensal = root.querySelector('[data-mensal-empty]');
-  if (vazioMensal) vazioMensal.hidden = mensalistas.length > 0;
-  set('[data-manager-mensal-count]', mensalistas.length);
+  /* A LISTA DE MENSALISTAS SAIU DAQUI junto com a aba.
 
-  /* ABAS DE ESCOPO. Avulsa e mensalista sao operacoes diferentes: uma e
-     decisao com prazo, a outra e acompanhamento. Empilhadas na mesma pagina, a
-     pendencia de hoje se perdia no meio das recorrencias. */
-  set('[data-scope-count-avulso]', resumo.total);
-  set('[data-scope-count-mensalista]', mensalistas.length);
-  root.querySelectorAll('[data-booking-scope]').forEach((b) => {
-    b.classList.toggle('on', b.dataset.bookingScope === escopo);
-  });
-  root.querySelectorAll('[data-scope-panel]').forEach((p) => {
-    p.hidden = p.dataset.scopePanel !== escopo;
-  });
-  // O periodo so vale para avulsas: mensalista e compromisso fixo, e filtrar
-  // por data ali nao responde nada.
-  root.querySelectorAll('[data-scope-only]').forEach((p) => {
-    p.hidden = p.dataset.scopeOnly !== escopo;
-  });
+     Ela custava uma chamada a /api/gerente/mensalistas em toda abertura de
+     Reservas — para preencher um painel que a tela nao tem mais. */
+
 
   const campoDe = root.querySelector('[data-booking-de]');
   const campoAte = root.querySelector('[data-booking-ate]');
@@ -272,13 +224,6 @@ export function initManagerReservations() {
       return;
     }
 
-    const troca = event.target.closest('[data-booking-scope]');
-    if (troca) {
-      escopo = troca.dataset.bookingScope;
-      pagina = 1;
-      await renderManagerReservations(root);
-      return;
-    }
 
     const anterior = event.target.closest('[data-pager-prev]');
     if (anterior && !anterior.disabled) {

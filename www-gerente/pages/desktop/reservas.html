@@ -3,15 +3,18 @@
      Refeita em torno de uma pergunta: "o que precisa de mim AGORA?". Tudo o
      mais na tela e consulta, e consulta pode esperar.
 
-     AVULSAS E MENSALISTAS VIRARAM ABAS.
+     SO AVULSAS. Mensalista tem tela propria no menu.
 
-     Antes mensalistas era uma secao no rodape da mesma pagina. Sao operacoes
-     diferentes e nao competem pela mesma atencao: a avulsa e uma decisao
-     PONTUAL com prazo — aprova ou recusa em 15 minutos, senao expira. O
-     mensalista e compromisso recorrente que ja esta na grade; o dono olha para
-     acompanhar, nao para decidir. Empilhados, a pendencia de hoje se perdia no
-     meio das recorrencias, e rolar ate o fim para ver mensalista era pior
-     ainda.
+     Ele ja passou por tres formas aqui: secao no rodape desta pagina, depois
+     aba ao lado de "Avulsas", e agora nenhuma. As duas primeiras erravam pela
+     mesma razao — sao operacoes diferentes e nao competem pela mesma atencao.
+     A avulsa e decisao PONTUAL com prazo: aprova ou recusa em 15 minutos,
+     senao expira. O mensalista e compromisso recorrente que ja esta na grade,
+     e o dono olha para acompanhar, nao para decidir.
+
+     A aba ainda deixava o painel com dois lugares para a mesma coisa, e o
+     daqui era o incompleto: mostrava a lista sem a receita recorrente nem os
+     horarios travados no mes, que sao o motivo de olhar para mensalista.
 -->
 <div class="toolbar">
   <div class="field grow">
@@ -41,14 +44,15 @@
      "que recorte da agenda eu quero ver agora?". Separados, o dono mudava um e
      procurava os outros. -->
 <div class="filtro-barra">
-  <div class="seg-escopo" role="tablist" aria-label="Tipo de reserva">
-    <button type="button" class="on" data-booking-scope="avulso">
-      Avulsas <span class="seg-num" data-scope-count-avulso>0</span>
-    </button>
-    <button type="button" data-booking-scope="mensalista">
-      Mensalistas <span class="seg-num" data-scope-count-mensalista>0</span>
-    </button>
-  </div>
+  <!-- AS ABAS "Avulsas / Mensalistas" SAIRAM.
+
+       Mensalista tem tela propria no menu, com resumo de receita recorrente e
+       os cartoes de plano. Duplicar aqui dava dois lugares para a mesma coisa,
+       e nenhum dos dois completo: esta aba mostrava so a lista, sem os numeros
+       da outra tela.
+
+       Reservas passa a ser o que o nome diz — a fila de reservas avulsas, que
+       e onde o dono aprova e recusa. -->
 
   <div class="filtro-periodo" data-scope-only="avulso">
     <!-- ATALHOS + INTERVALO PROPRIO. Os atalhos servem ao dia a dia; quem
@@ -141,25 +145,5 @@
         </button>
       </span>
     </nav>
-  </section>
-</div>
-
-<!-- ═════════════════════════ MENSALISTAS ═════════════════════════ -->
-<div data-scope-panel="mensalista" hidden>
-  <section class="manager-section manager-members-section" id="mensalistas">
-    <div class="manager-section__head">
-      <div>
-        <span>Recorrência</span>
-        <h2>Mensalistas</h2>
-        <p>Clientes com dia e horário fixos na sua grade · <b data-manager-mensal-count>0</b> planos.</p>
-      </div>
-      <a class="btn btn-outline" href="./dashboard.html#mensalistas">Gerenciar <i class="ic sm" data-lucide="chevron-right"></i></a>
-    </div>
-    <div class="mensal-grid" data-manager-mensal-list></div>
-    <div class="manager-empty-list" data-mensal-empty hidden>
-      <i class="ic" data-lucide="repeat"></i>
-      <strong>Nenhum mensalista ainda</strong>
-      <span>Quem assina um plano aparece aqui com o dia e o horário fixos.</span>
-    </div>
   </section>
 </div>

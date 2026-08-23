@@ -116,7 +116,24 @@ function courtCard(court) {
 
       <div class="foot">
         <a class="btn btn-soft" href="./dashboard.html#quadra/${court.id}">Editar</a>
-        <button class="btn btn-outline" type="button" data-court-toggle="${court.id}">${court.active ? 'Pausar' : 'Ativar'}</button>
+        <!-- INTERRUPTOR, e nao botao.
+
+             "Pausar" e um botao que diz o que VAI acontecer; o dono precisa
+             saber o que ESTA acontecendo. Com dois cartoes lado a lado, um
+             dizendo "Pausar" e outro "Ativar", ler qual das duas quadras esta
+             no ar exige inverter cada rotulo na cabeca — o botao mostra o
+             oposto do estado.
+
+             O interruptor mostra o estado e muda no mesmo gesto. E a quadra
+             pausada some da busca e do mapa do jogador (Court.is_active entra
+             no filtro VISIBLE), por isso o rotulo diz o efeito. -->
+        <label class="qcard-switch">
+          <span>${court.active ? 'Ativa' : 'Pausada'}</span>
+          <span class="switch${court.active ? ' on' : ''}" role="switch"
+                aria-checked="${court.active}" tabindex="0"
+                data-court-toggle="${court.id}"
+                aria-label="${court.active ? 'Pausar' : 'Ativar'} ${escapeHtml(court.label)}"></span>
+        </label>
       </div>
     </div>
   </article>`;
