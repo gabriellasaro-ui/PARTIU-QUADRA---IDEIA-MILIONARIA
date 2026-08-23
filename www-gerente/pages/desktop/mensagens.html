@@ -27,21 +27,35 @@
         <div class="thread-sub" data-conv-sub></div>
       </div>
 
-      <!-- As duas acoes que o dono tem sobre um atendimento.
+      <!-- ENCERRAR e a UNICA acao sobre um atendimento.
 
-           ENCERRAR fecha AQUELE atendimento: o canal existe para resolver
-           aquela reserva, e nao para virar linha direta permanente.
+           "Bloquear pessoa" saiu por decisao do Gabriel: nao existe banir
+           cliente no produto. E coerente — a arena vive de quem reserva, e um
+           banimento permanente decidido num botao, sem recurso e sem quem
+           revise, e poder demais para um painel de agendamento.
 
-           BLOQUEAR e para quando o problema e a PESSOA — encerrada uma
-           conversa, a proxima reserva abre outra e a arena volta ao mesmo
-           lugar. Vale so para esta arena: banir da plataforma e decisao de
-           quem a opera. -->
-      <button class="btn btn-soft th-act" type="button" data-conv-bloquear hidden>
-        <i class="ic sm" data-lucide="ban"></i> Bloquear pessoa
-      </button>
+           Encerrar resolve o que precisava ser resolvido: o canal existe para
+           combinar AQUELE jogo — chegada, atraso, acesso — e nao para virar
+           linha direta permanente por onde a proxima reserva e fechada por
+           fora, sem horario travado e sem pagamento. -->
       <button class="btn btn-soft th-act" type="button" data-conv-encerrar hidden>
         <i class="ic sm" data-lucide="check"></i> Encerrar atendimento
       </button>
+    </div>
+
+    <!-- O JOGO DE QUE A CONVERSA TRATA.
+
+         O cabecalho dizia so "Reserva PQ-40751". Quando o cliente pergunta
+         "posso chegar 21h15?", o dono precisava sair da tela, abrir Reservas e
+         procurar o codigo para saber de que horario se tratava. Agora quadra,
+         dia, hora e valor ficam na propria conversa — e de quebra a faixa
+         ocupa o vao morto entre o cabecalho e as bolhas. -->
+    <div class="thread-reserva" data-conv-reserva hidden>
+      <span><i class="ic sm" data-lucide="layout-grid"></i><b data-conv-quadra></b></span>
+      <span><i class="ic sm" data-lucide="calendar"></i><b data-conv-dia></b></span>
+      <span><i class="ic sm" data-lucide="clock"></i><b data-conv-hora></b></span>
+      <span><i class="ic sm" data-lucide="wallet"></i><b data-conv-valor></b></span>
+      <span class="status" data-conv-status></span>
     </div>
 
     <div class="bubbles" data-conv-msgs></div>

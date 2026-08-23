@@ -1,4 +1,26 @@
-<!-- TODO: substituir renderizacao Jinja por dados da API -->
+<!-- O HEADER DO PAINEL.
+
+     Saiu a BUSCA. Ela ocupava o meio da barra em todas as telas e nao buscava
+     nada: era um input sem handler. E mesmo funcionando teria pouco uso — o
+     dono chega pelo menu lateral, e cada tela ja tem a propria busca no
+     contexto certo (cliente em Reservas, quadra em Minhas quadras). Busca
+     global num painel de nove telas e um campo a mais para ignorar.
+
+     "NOVO HORARIO" virou "NOVA RESERVA", e a diferenca nao e de nome.
+
+     O botao antigo abria um modal com selects escritos a mao — "Hoje / Amanha
+     / Seg...", horas de 06:00 a 21:00 escolhidas na fonte, tres duracoes — e
+     "abria um horario" que nao existia em lugar nenhum do banco.
+
+     O caso real e outro, e e o que o Gabriel descreveu: alguem fecha por
+     TELEFONE ou aparece na porta. Se isso nao entra no sistema, a quadra
+     continua aparecendo livre no app do jogador e alguem reserva por cima —
+     duas pessoas no mesmo horario, e a arena descobre no sabado a noite.
+
+     "Nova reserva" registra esse jogo como reserva de verdade: ocupa o slot,
+     some da disponibilidade do app na hora, entra na agenda e no faturamento.
+     E por isso que ela fica no header, alcancavel de qualquer tela — e a acao
+     que o dono faz com o telefone no ouvido. -->
 <header class="topbar">
   <button class="icon-btn hamb" data-nav-open aria-label="Abrir menu">
     <i class="ic" data-lucide="menu"></i>
@@ -7,14 +29,12 @@
     <h1 data-page-title>Dashboard</h1>
     <div class="sub" data-page-sub>Arena Bola na Rede</div>
   </div>
-  <div class="search">
-    <i class="ic" data-lucide="search"></i>
-    <input type="text" placeholder="Buscar cliente, reserva, quadra...">
-  </div>
   <div class="actions">
-    <button type="button" class="btn btn-primary" data-open-modal="modal-horario">
-      <i class="ic sm" data-lucide="plus"></i> Novo horario
+    <a class="btn btn-primary" href="./dashboard.html#reserva-nova">
+      <i class="ic sm" data-lucide="plus"></i> Nova reserva
+    </a>
+    <button type="button" class="icon-btn" data-abrir-notificacoes aria-label="Notificações">
+      <i class="ic" data-lucide="bell"></i><span class="ndot"></span>
     </button>
-    <span class="icon-btn"><i class="ic" data-lucide="bell"></i><span class="ndot"></span></span>
   </div>
 </header>

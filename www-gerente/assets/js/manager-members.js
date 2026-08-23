@@ -45,25 +45,52 @@ function manuais() {
   return salvo;
 }
 
+/* UM CARTAO DE MENSALISTA, e nao dois desenhos para a mesma coisa.
+
+   Esta tela desenhava uma LINHA achatada (`manager-member`) e a aba
+   Mensalistas dentro de Reservas desenhava um CARTAO (`mensal-card`) — mesmo
+   dado, duas formas, e quem passa de uma para a outra reaprende a leitura.
+
+   Fica o cartao. A linha nao servia aqui: mensalista tem quatro fatos que so
+   fazem sentido juntos (que dia, que hora, quantas sessoes, quanto entra no
+   mes), e espremidos numa linha eles viravam quatro colunas estreitas com
+   rotulo de 9px. Num cartao, os quatro cabem numa grade 2x2 legivel.
+
+   E o cartao tem RODAPE de acoes, com texto. O botao de remover era um "x"
+   vermelho solto de 20px: apagar a recorrencia de um cliente e destrutivo e
+   nao pode ser um icone sem nome ao lado de um lapis igualmente sem nome. */
 function linha({ id, name, court, day, time, price, status, origem }) {
   const doApp = origem === 'app';
   const editavel = origem === 'manual';
-  return `<article class="manager-member" data-member-id="${escapeHtml(id)}">
-    <span class="manager-avatar">${escapeHtml(String(name).charAt(0).toUpperCase())}</span>
-    <div class="manager-member__person">
-      <strong>${escapeHtml(name)}</strong>
-      <small>${escapeHtml(court)}</small>
+  const selo = doApp
+    ? { cls: 'pago', txt: 'Pelo app' }
+    : (status === 'renovando' ? { cls: 'pendente', txt: 'Renovando' } : { cls: 'confirmado', txt: 'Ativo' });
+
+  return `<article class="mensal-card" data-member-id="${escapeHtml(id)}">
+    <div class="mensal-card__top">
+      <span class="av">${escapeHtml(String(name).charAt(0).toUpperCase())}</span>
+      <div><strong>${escapeHtml(name)}</strong><small>${escapeHtml(court)}</small></div>
+      <span class="status ${selo.cls}">${selo.txt}</span>
     </div>
-    <div><span>Recorrência</span><strong>Toda ${escapeHtml(day)} · ${escapeHtml(time)}</strong></div>
-    <div><span>Mensalidade</span><strong class="num">${formatCurrency(price)}</strong></div>
-    <span class="status ${doApp ? 'pago' : (status === 'renovando' ? 'pendente' : 'confirmado')}">${
-      doApp ? 'Pelo app' : (status === 'renovando' ? 'Renovando' : 'Ativo')
-    }</span>
-    <div class="manager-row-actions">
+    <div class="mensal-card__grid">
+      <div><small>Compromisso</small><strong>Toda ${escapeHtml(day)}</strong></div>
+      <div><small>Horário</small><strong class="num">${escapeHtml(time)}</strong></div>
+      <div><small>Sessões no mês</small><strong class="num">4</strong></div>
+      <div><small>Receita do mês</small><strong class="num">${formatCurrency(price)}</strong></div>
+    </div>
+    <div class="mensal-card__foot">
       ${doApp
-        ? '<span class="manager-locked" title="Este plano vem de uma reserva do app">—</span>'
-        : `${editavel ? `<button type="button" class="manager-row-menu" data-member-edit="${escapeHtml(id)}" aria-label="Editar ${escapeHtml(name)}"><i class="ic" data-lucide="pencil"></i></button>` : ''}
-           <button type="button" class="manager-row-menu is-danger" data-member-remove="${escapeHtml(id)}" aria-label="Remover ${escapeHtml(name)}"><i class="ic" data-lucide="x"></i></button>`}
+        /* Plano nascido de uma reserva do app: a arena nao edita nem cancela
+           por aqui. Quem contratou foi o jogador, e o cancelamento passa pela
+           reserva — mudar isso por fora deixaria os dois lados discordando
+           sobre o que foi combinado. */
+        ? '<span class="mensal-card__origem"><i class="ic sm" data-lucide="smartphone"></i> Assinado pelo jogador no app</span>'
+        : `${editavel ? `<button type="button" class="btn btn-soft btn-xs" data-member-edit="${escapeHtml(id)}">
+               <i class="ic sm" data-lucide="pencil"></i> Editar
+             </button>` : ''}
+           <button type="button" class="btn btn-soft btn-xs is-danger" data-member-remove="${escapeHtml(id)}">
+             <i class="ic sm" data-lucide="x"></i> Encerrar plano
+           </button>`}
     </div>
   </article>`;
 }

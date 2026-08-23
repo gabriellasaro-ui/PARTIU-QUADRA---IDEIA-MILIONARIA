@@ -10,6 +10,7 @@ from ..models import (
     Booking,
     Conversation,
     ConversationParticipant,
+    Court,
     Message,
 )
 from .venues import _uuid
@@ -33,9 +34,21 @@ def get_by_booking(db: Session, booking_id) -> Conversation | None:
 
 def _conversation_rows(db: Session, where) -> list:
     return db.execute(
-        select(Conversation, Arena.name, Booking.court_id, Booking.code)
+        # O CONTEXTO DA RESERVA vem junto, e nao por consulta extra depois.
+        #
+        # A conversa da arena existe por causa de UM jogo, e a pergunta que
+        # chega e sempre sobre ele ("posso chegar 15 min atrasado?"). Sem
+        # quadra, dia e hora ao lado, o dono tinha de abrir Reservas e procurar
+        # o codigo para responder. Carregar aqui evita um N+1 no `_to_conv`,
+        # que roda uma vez por conversa da lista.
+        select(
+            Conversation, Arena.name, Booking.court_id, Booking.code,
+            Booking.start_at, Booking.end_at, Booking.status,
+            Booking.subtotal_cents, Court.name,
+        )
         .join(Arena, Arena.id == Conversation.arena_id)
         .join(Booking, Booking.id == Conversation.booking_id)
+        .join(Court, Court.id == Booking.court_id)
         .where(where)
         .order_by(Conversation.updated_at.desc())
     ).all()

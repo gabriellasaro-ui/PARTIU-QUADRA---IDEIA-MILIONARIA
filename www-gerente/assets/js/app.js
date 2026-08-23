@@ -365,7 +365,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAppShell();
   initModals();
   initRedirectToast();
+  esconderLoader();
 });
+
+/* A TELA DE CARREGAMENTO SAI QUANDO HA O QUE MOSTRAR.
+
+   Ela e inline no dashboard.html para estar pintada no primeiro frame; o
+   trabalho que ela cobre e o `loadComponents()` + a primeira rota, que chegam
+   por fetch.
+
+   Uma pausa minima de 900ms: a animacao tem 2s e, num painel que ja respondeu
+   do cache, ela apareceria e sumiria em 80ms — um flash que le como defeito.
+   Uma tela de carregamento que pisca e pior do que nenhuma.
+
+   `remove()` depois da transicao, e nao so `hidden`: o video continuaria
+   decodificando 120 frames em loop atras da tela, para sempre. */
+function esconderLoader() {
+  const el = document.querySelector('[data-loader]');
+  if (!el) return;
+  const sair = () => {
+    el.classList.add('is-saindo');
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
+    // Rede de seguranca: sem transicao (prefers-reduced-motion, aba em
+    // segundo plano) o transitionend nunca dispara e a tela ficaria travada.
+    setTimeout(() => el.remove(), 600);
+  };
+  const decorrido = performance.now();
+  setTimeout(sair, Math.max(0, 900 - decorrido));
+}
 
 /* Interruptor de tema em Configuracoes.
 

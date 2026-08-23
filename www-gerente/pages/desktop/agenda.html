@@ -4,24 +4,32 @@
      inventados e sem filtro de quadra, navegacao de semana, lista por dia no
      mobile ou detalhe do agendamento. Tudo isso volta aqui, preenchido por
      assets/js/manager-agenda.js a partir das reservas da arena. -->
+<!-- CABECALHO DA AGENDA.
+
+     Era um cartao verde alto com "agosto 2026" em 24px como titulo — e o mes
+     nao e o que se olha aqui. A grade abaixo mostra UMA SEMANA; o mes sozinho
+     nao diz qual delas, e a informacao que dizia ("17 a 23 de agosto") estava
+     em 13px do outro lado da tela, dentro do controle de navegacao.
+
+     Inverti: a SEMANA e o titulo, o mes vira a etiqueta acima. E as tres
+     metricas viram pastilhas com o numero em destaque, no lugar de tres pares
+     de texto solto separados por um filete. -->
 <section class="manager-agenda-command">
   <div class="manager-agenda-title">
     <div>
-      <span>Central de horarios</span>
-      <h2 data-agenda-month>Agenda da arena</h2>
+      <span data-agenda-month>Agenda da arena</span>
+      <h2 data-agenda-range>Semana atual</h2>
     </div>
-  </div>
-  <div class="manager-agenda-command__right">
     <div class="cal-range">
       <button class="cal-nav" type="button" data-agenda-week="-1" aria-label="Semana anterior"><i class="ic sm" data-lucide="chevron-left"></i></button>
-      <div><small>Semana</small><strong data-agenda-range>Semana atual</strong></div>
-      <button class="cal-nav" type="button" data-agenda-week="1" aria-label="Proxima semana"><i class="ic sm" data-lucide="chevron-right"></i></button>
+      <button class="cal-nav cal-nav--hoje" type="button" data-agenda-hoje>Hoje</button>
+      <button class="cal-nav" type="button" data-agenda-week="1" aria-label="Próxima semana"><i class="ic sm" data-lucide="chevron-right"></i></button>
     </div>
-    <div class="manager-agenda-stats" aria-label="Resumo da semana">
-      <article><strong data-agenda-stat-total>0</strong><span>Reservas</span></article>
-      <article><strong data-agenda-stat-pending>0</strong><span>Para aprovar</span></article>
-      <article><strong data-agenda-stat-revenue>R$ 0</strong><span>Previsto</span></article>
-    </div>
+  </div>
+  <div class="manager-agenda-stats" aria-label="Resumo da semana">
+    <article><span><i class="ic sm" data-lucide="calendar"></i></span><div><strong class="num" data-agenda-stat-total>0</strong><small>Reservas</small></div></article>
+    <article><span><i class="ic sm" data-lucide="bell"></i></span><div><strong class="num" data-agenda-stat-pending>0</strong><small>Para aprovar</small></div></article>
+    <article><span><i class="ic sm" data-lucide="wallet"></i></span><div><strong class="num" data-agenda-stat-revenue>R$ 0</strong><small>Previsto</small></div></article>
   </div>
 </section>
 

@@ -4,8 +4,8 @@
    "Carol Souza", "Rafael Mendes") e um dialogo inventado. Nao havia render, nao
    havia API, e o botao de enviar nao enviava para lugar nenhum.
 
-   Aqui ela passa a ler /api/mensagens e a fazer as tres coisas que o dono
-   precisa: responder, ENCERRAR o atendimento e BLOQUEAR a pessoa.
+   Aqui ela passa a ler /api/mensagens e a fazer as duas coisas que o dono
+   precisa: responder e ENCERRAR o atendimento.
 
    Por que encerrar existe: o canal serve para resolver AQUELA reserva —
    combinar chegada, avisar atraso, tirar duvida de acesso. Deixa-lo aberto o
@@ -13,9 +13,8 @@
    fora, sem horario travado e sem pagamento. Quem faz isso quebra a agenda dos
    dois lados.
 
-   Por que bloquear existe: encerrar resolve UM atendimento. Quando o problema
-   e a pessoa, a proxima reserva abre outra conversa e a arena volta ao mesmo
-   lugar. */
+   NAO existe bloquear pessoa: o Gabriel decidiu que o produto nao bane
+   cliente. Encerrar e a unica acao, e resolve o caso que importava. */
 import managerService from '../../services/manager-api.js';
 import venueService from '../../services/venues.js';
 import { API_BASE_URL } from '../../config/constants.js';
@@ -105,6 +104,30 @@ export async function renderManagerMessages(root) {
   set('[data-conv-sub]', atual.subject || '');
   set('[data-conv-ini]', inicial(atual.cliente));
 
+  /* CONTEXTO DA RESERVA.
+
+     Lido de forma defensiva (`atual.reserva?`): o campo e novo no backend e um
+     servidor ainda nao reiniciado nao o manda. Sem a guarda, a tela inteira
+     quebraria em vez de so nao mostrar a faixa. */
+  const res = atual.reserva;
+  const faixa = root.querySelector('[data-conv-reserva]');
+  if (faixa) {
+    faixa.hidden = !res;
+    if (res) {
+      set('[data-conv-quadra]', res.quadra || '—');
+      set('[data-conv-dia]', res.dia || '—');
+      set('[data-conv-hora]', res.hora || '—');
+      set('[data-conv-valor]', typeof res.valor === 'number'
+        ? res.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+        : '—');
+      const st = root.querySelector('[data-conv-status]');
+      if (st) {
+        st.textContent = res.status || '';
+        st.className = `status ${res.statusClass || 'pendente'}`;
+      }
+    }
+  }
+
   const bolhas = root.querySelector('[data-conv-msgs]');
   if (bolhas) {
     bolhas.innerHTML = atual.messages?.length
@@ -117,21 +140,9 @@ export async function renderManagerMessages(root) {
   /* AS ACOES MUDAM COM O ESTADO.
 
      Encerrada, a conversa nao aceita mensagem — deixar o campo de escrever ali
-     seria oferecer uma acao que o servidor recusa. Bloquear continua
-     disponivel: encerrar e bloquear resolvem coisas diferentes, e o dono pode
-     querer o segundo depois do primeiro. */
+     seria oferecer uma acao que o servidor recusa. */
   const btnEncerrar = root.querySelector('[data-conv-encerrar]');
   if (btnEncerrar) btnEncerrar.hidden = Boolean(atual.encerrada);
-
-  const btnBloquear = root.querySelector('[data-conv-bloquear]');
-  if (btnBloquear) {
-    btnBloquear.hidden = false;
-    btnBloquear.dataset.convBloquear = atual.clienteId || '';
-    btnBloquear.classList.toggle('is-bloqueado', Boolean(atual.bloqueado));
-    btnBloquear.innerHTML = atual.bloqueado
-      ? '<i class="ic sm" data-lucide="check"></i> Desbloquear'
-      : '<i class="ic sm" data-lucide="ban"></i> Bloquear pessoa';
-  }
 
   const composer = root.querySelector('[data-conv-composer]');
   if (composer) composer.hidden = Boolean(atual.encerrada);
@@ -187,23 +198,6 @@ export function initManagerMessages() {
       return;
     }
 
-    const bloquear = event.target.closest('[data-conv-bloquear]');
-    if (bloquear) {
-      const id = bloquear.dataset.convBloquear;
-      if (!id) return;
-      const desbloqueando = bloquear.classList.contains('is-bloqueado');
-      if (!desbloqueando) {
-        if (!window.confirm('Bloquear esta pessoa? Ela não poderá abrir conversa nova com a sua arena. As reservas já pagas continuam valendo.')) return;
-      }
-      try {
-        if (desbloqueando) await venueService.desbloquearPessoa(id);
-        else await venueService.bloquearPessoa(id);
-        await renderManagerMessages(root);
-        window.pqToast?.(desbloqueando ? 'Pessoa desbloqueada' : 'Pessoa bloqueada');
-      } catch (error) {
-        window.pqToast?.(error.message || 'Não foi possível concluir');
-      }
-    }
   });
 
   /* Enter envia; Shift+Enter quebra linha. Sem isso, responder exige tirar a

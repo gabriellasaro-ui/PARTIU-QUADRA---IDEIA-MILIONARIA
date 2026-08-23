@@ -68,6 +68,11 @@ function cardMensalista(m) {
       <div><small>Sessões no mês</small><strong>4</strong></div>
       <div><small>Receita do mês</small><strong>${formatCurrency(m.price)}</strong></div>
     </div>
+    <div class="mensal-card__foot">
+      <a class="btn btn-soft btn-xs" href="./dashboard.html#mensalistas">
+        <i class="ic sm" data-lucide="chevron-right"></i> Gerenciar
+      </a>
+    </div>
   </article>`;
 }
 

@@ -378,10 +378,28 @@ function renderDesktop(root, eventos, segunda) {
            abre o detalhe — numa tira estreita, hora e a unica informacao que
            cabe inteira e que orienta o olho na vertical. */
         const apertado = de >= 3;
+
+        /* O CONTEUDO ACOMPANHA A ALTURA DO BLOCO.
+
+           Uma reserva de 3h desenha um retangulo de ~120px e o bloco mostrava
+           duas linhas de texto no topo — nome e hora — deixando dois tercos da
+           area em branco. Um bloco grande e vazio parece defeito, e ainda por
+           cima desperdica o unico lugar da agenda onde ha espaco de sobra.
+
+           A altura ja e proporcional a duracao, entao ela mesma diz quanto
+           cabe: acima de ~78px (reserva de 2h ou mais) entram tambem a quadra
+           e o valor, que sao o que o dono confere antes de confirmar por
+           telefone. Abaixo disso, nada muda — espremer texto em bloco curto e
+           o defeito oposto. */
+        const alto = h >= 78;
         const corpo = apertado
           ? `<div class="t so-hora">${escapeHtml(e.horaCurta)}</div>`
           : `<div class="t">${escapeHtml(e.cliente)}</div>
-             <div class="h">${escapeHtml(e.horaCurta)}${de > 1 ? '' : ` · ${escapeHtml(e.quadra)}`}</div>`;
+             <div class="h">${escapeHtml(e.hora)}${de > 1 ? '' : ` · ${escapeHtml(e.quadra)}`}</div>
+             ${alto && de <= 1 ? `<div class="ev-extra">
+               <span>${escapeHtml(e.quadra)}</span>
+               <span class="ev-valor">${formatCurrency(e.valor)}</span>
+             </div>` : ''}`;
 
         return `<div class="cal-ev ${e.cls}${apertado ? ' is-tight' : ''}" role="button" tabindex="0"
           style="top:${top}px;height:${h}px;left:calc(${esq}% + 3px);width:calc(${larg}% - 5px)"
@@ -550,6 +568,18 @@ export function initManagerAgenda() {
   document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
+
+    /* "Hoje" tem atributo proprio, e nao `data-agenda-week="0"`.
+
+       O passo e SOMADO ao offset (`+=`), entao zero somaria zero e o botao
+       nao faria nada — quem estivesse quatro semanas a frente continuaria
+       quatro semanas a frente. Voltar para a semana corrente e um destino, e
+       nao um passo. */
+    if (event.target.closest('[data-agenda-hoje]')) {
+      offsetSemana = 0;
+      await renderManagerAgenda(root);
+      return;
+    }
 
     const passo = event.target.closest('[data-agenda-week]');
     if (passo) {

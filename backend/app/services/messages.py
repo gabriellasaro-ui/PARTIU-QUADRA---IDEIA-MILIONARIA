@@ -20,18 +20,19 @@ from sqlalchemy.orm import Session
 from ..core.timezone import utc_now
 from ..core.ws import publish_user_event
 from ..models import (
-    ROLE_ADMIN,
-    ROLE_GERENTE,
-    ROLE_JOGADOR,
-    CONVERSATION_ACTIVE,
-    CONVERSATION_ARCHIVED,
-    CONVERSATION_KIND_ARENA,
-    MESSAGE_TYPE_TEXT,
     Arena,
     ArenaBlock,
     Booking,
     Conversation,
+    CONVERSATION_ACTIVE,
+    CONVERSATION_ARCHIVED,
+    CONVERSATION_KIND_ARENA,
+    Court,
     Message,
+    MESSAGE_TYPE_TEXT,
+    ROLE_ADMIN,
+    ROLE_GERENTE,
+    ROLE_JOGADOR,
     User,
 )
 from ..repositories import messages as repo
@@ -122,8 +123,15 @@ def _to_msg(viewer_id, m: Message) -> dict:
 
 
 def _to_conv(db: Session, viewer_id, row, messages: list[Message]) -> dict:
-    conv, arena_name, court_id, booking_code = row
+    # Import local: `bookings` ja importa deste modulo (ensure_conversation_for
+    # _booking), entao um import de topo fecharia o ciclo. Mesmo padrao que
+    # gerente.py usa para _transition_booking.
+    from .bookings import _STATUS_CLASS, _STATUS_LABEL
+
+    (conv, arena_name, court_id, booking_code,
+     inicio, fim, booking_status, subtotal_cents, quadra_nome) = row
     jogador = db.get(User, conv.player_id)
+    ini_local = _as_local(inicio)
     return {
         "id": str(conv.id),
         "bookingId": str(conv.booking_id),
@@ -143,14 +151,36 @@ def _to_conv(db: Session, viewer_id, row, messages: list[Message]) -> dict:
         "clienteId": str(conv.player_id),
         "cliente": (jogador.name if jogador else "Cliente"),
         "bloqueado": esta_bloqueado(db, conv.arena_id, conv.player_id),
+        # O JOGO DE QUE A CONVERSA TRATA.
+        #
+        # Sem isto o cabecalho da conversa dizia so "Reserva PQ-40751", e para
+        # responder "pode chegar 21h15?" o dono tinha de sair da tela, abrir
+        # Reservas e procurar o codigo. A conversa existe por causa do jogo;
+        # o jogo tem de estar nela.
+        "reserva": {
+            "quadra": quadra_nome,
+            "dia": ini_local.strftime("%d/%m/%Y"),
+            "hora": f"{ini_local.strftime('%H:%M')} – {_as_local(fim).strftime('%H:%M')}",
+            "valor": (subtotal_cents or 0) / 100,
+            "status": _STATUS_LABEL.get(booking_status, booking_status),
+            "statusClass": _STATUS_CLASS.get(booking_status, "pendente"),
+        },
     }
 
 
 def _serialize_conversation(db: Session, user, conv: Conversation) -> dict:
     row = db.execute(
-        select(Conversation, Arena.name, Booking.court_id, Booking.code)
+        # MESMO SHAPE da consulta do repositorio: `_to_conv` desempacota a
+        # tupla por posicao, entao as duas tem de andar juntas. Divergir aqui
+        # daria uma conversa aberta sem o contexto que a lista mostra.
+        select(
+            Conversation, Arena.name, Booking.court_id, Booking.code,
+            Booking.start_at, Booking.end_at, Booking.status,
+            Booking.subtotal_cents, Court.name,
+        )
         .join(Arena, Arena.id == Conversation.arena_id)
         .join(Booking, Booking.id == Conversation.booking_id)
+        .join(Court, Court.id == Booking.court_id)
         .where(Conversation.id == conv.id)
     ).first()
     if row is None:

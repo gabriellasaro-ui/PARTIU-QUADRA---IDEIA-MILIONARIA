@@ -20,7 +20,22 @@
   <script src="./assets/vendor/lucide/lucide.min.js" defer></script>
 </head>
 <body>
-  <div data-component="./components/icons/sprite.html"></div>
+  <!-- TELA DE CARREGAMENTO — inline, e nao um data-component.
+
+       Ela precisa estar pintada no primeiro frame. Um componente so entra
+       depois que `loadComponents()` roda, que e exatamente o tempo que esta
+       tela existe para cobrir: sidebar, header e a rota do painel chegam por
+       fetch, e ate chegarem a pagina e um retangulo vazio.
+
+       Sai em assets/js/app.js, quando o roteador termina de montar a primeira
+       tela. -->
+  <div class="loader" data-loader aria-live="polite" aria-busy="true">
+    <div class="loader__marca">
+      <video src="./assets/video/carregando.mp4" autoplay loop muted playsinline aria-hidden="true"></video>
+    </div>
+    <span class="loader__texto">Carregando o painel</span>
+  </div>
+
   <div class="app" id="app">
     <div class="sb-backdrop" data-nav-close></div>
     <div data-component="./components/sidebar/manager-sidebar.html"></div>
@@ -34,7 +49,6 @@
       <div data-component="./components/navbar/manager-tabbar.html"></div>
     </div>
   </div>
-  <div data-component="./components/modal/schedule-modal.html"></div>
   <div data-component="./components/toast/toast.html"></div>
   <script src="./config/app.config.js"></script>
   <script src="./assets/js/ui.js" defer></script>

@@ -331,26 +331,26 @@ html[data-manager-app] .manager-heatmap__cell.b4 { background: var(--pq-brand); 
 
    A ordem agora segue a pergunta que o dono faz ao abrir o painel:
 
-     1. DISPONIBILIDADE, largura inteira. "Como esta minha semana, onde tenho
-        buraco?" — e a unica coisa aqui em cima da qual ele AGE hoje.
-     2. Faturamento e proximas reservas embaixo, lado a lado: as duas sao
-        conferencia, e conferencia divide espaco sem prejuizo.
+     1. DISPONIBILIDADE. "Como esta minha semana, onde tenho buraco?" — e a
+        unica coisa aqui em cima da qual ele AGE hoje.
+     2. FATURAMENTO DA SEMANA.
+     3. PROXIMAS RESERVAS.
+
+   EMPILHADOS, e nao lado a lado. Meia largura obrigava o grafico a espremer
+   sete barras em 560px e deixava "Proximas reservas" com um vazio enorme
+   embaixo, porque a lista tem tres linhas e o grafico tem 240px de altura:
+   duas colunas so se equilibram quando os dois conteudos tem porte parecido, e
+   aqui nunca tiveram.
 
    Largura inteira nao e so destaque: o mapa de calor tem 7 dias x 16 horas, e
    112 celulas numa coluna de 340px nao mostram diferenca de tom nenhuma. */
 html[data-manager-app][data-manager-view="dashboard"] .manager-dashboard-grid {
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    "occupancy    occupancy"
-    "intelligence bookings";
+    "occupancy"
+    "intelligence"
+    "bookings";
   gap: var(--e4);
-}
-
-@media (max-width: 1080px) {
-  html[data-manager-app][data-manager-view="dashboard"] .manager-dashboard-grid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "occupancy" "intelligence" "bookings";
-  }
 }
 
 /* AS TRES FAIXAS lado a lado. Empilhadas elas eram tres linhas de leitura; em
@@ -749,3 +749,440 @@ html[data-manager-app] .lc-val {
 }
 
 html[data-manager-app] .lc-val.peak { fill: var(--pq-ink); font-size: 11.5px; }
+
+
+/* ══════════════════ TELA DE CARREGAMENTO ═════════════════════════════════ */
+
+html[data-manager-app] .loader {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--e5);
+  background: var(--pq-bg);
+  opacity: 1;
+  transition: opacity .32s ease;
+}
+
+html[data-manager-app] .loader.is-saindo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* O TILE CLARO existe por causa do formato do arquivo: H.264 nao tem canal
+   alfa, entao o MP4 chega com fundo branco. Em vez de tentar apagar o branco
+   com blend — que no tema escuro exigiria inverter o video e trocaria o ciano
+   da marca por laranja — o branco vira parte de uma peca deliberada, do
+   tamanho e do raio de um icone de app. Funciona igual nos dois temas. */
+html[data-manager-app] .loader__marca {
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  overflow: hidden;
+  border-radius: 30px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .18);
+}
+
+/* O arquivo tem margem branca larga em volta do desenho — cerca de 20% de
+   cada lado. Sem a escala, a mao aparece pequena no meio de um quadrado
+   branco; a escala corta a margem e nao o desenho. */
+html[data-manager-app] .loader__marca video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.35);
+}
+
+html[data-manager-app] .loader__texto {
+  color: var(--pq-muted);
+  font-size: var(--t-corpo);
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+/* Quem pediu menos movimento ve o primeiro quadro parado, e nao o loop. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-manager-app] .loader { transition: none; }
+  html[data-manager-app] .loader__marca video { animation: none; }
+}
+
+
+/* ══════════════════ HEADER ═══════════════════════════════════════════════ */
+
+/* Sem a busca no meio, o titulo da tela fica com a barra inteira e as duas
+   acoes vao para a direita. `margin-left:auto` no lugar do vao que a busca
+   ocupava — sem ele os botoes ficam colados no titulo. */
+html[data-manager-app] .topbar .actions {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  margin-left: auto;
+}
+
+html[data-manager-app] .topbar .pt { min-width: 0; }
+
+
+/* ── Secao sem moldura ─────────────────────────────────────────────────────
+   Para blocos cujo conteudo JA sao cartoes. Cartao dentro de cartao duplica a
+   borda e o padding, e o olho le a moldura de fora como um erro mesmo sem
+   saber nomear o motivo. */
+html[data-manager-app] .manager-section--plain {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ATALHOS: quatro tiles iguais, com a descricao de volta. */
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--e3);
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--e3);
+  min-height: 0;
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-card);
+  background: var(--pq-panel);
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a:hover {
+  border-color: var(--pq-brand);
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-controle);
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a > div { min-width: 0; }
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a strong {
+  display: block;
+  font-size: var(--t-cartao);
+  font-weight: 700;
+}
+
+/* A descricao volta a aparecer: era `display:none` e o tile ficava com um
+   icone, uma palavra e uma seta dentro de uma caixa alta. */
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a small {
+  display: block;
+  overflow: hidden;
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  html[data-manager-app][data-manager-view="dashboard"] .manager-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── Faturamento da semana com o mesmo destaque de Disponibilidade ─────────
+   As duas sao as leituras que sustentam a tela; marcar so uma dizia que a
+   outra e secundaria. O grafico ganha altura junto, agora que tem a largura
+   inteira. */
+html[data-manager-app] .manager-panel--intelligence {
+  padding: var(--e5);
+  border-top: 3px solid var(--pq-brand);
+}
+
+html[data-manager-app] .manager-panel--intelligence .manager-panel__head h2 {
+  font-size: 22px;
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-panel--intelligence .lc {
+  height: 280px;
+}
+
+
+/* ══════════════════ MENSALISTAS ══════════════════════════════════════════ */
+
+/* Grade de cartoes com largura minima: com um mensalista so, uma grade de tres
+   colunas fixas entregava um cartao de 1100px de largura para mostrar quatro
+   numeros. O cartao tem o tamanho do conteudo; a coluna e que se ajusta. */
+html[data-manager-app] .mensal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--e4);
+}
+
+html[data-manager-app] .mensal-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  padding: var(--e4);
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-card);
+  background: var(--pq-panel);
+}
+
+html[data-manager-app] .mensal-card__top {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--e3);
+}
+
+html[data-manager-app] .mensal-card__top .av {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-controle);
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-weight: 800;
+}
+
+html[data-manager-app] .mensal-card__top strong {
+  display: block;
+  overflow: hidden;
+  font-size: var(--t-cartao);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .mensal-card__top small {
+  display: block;
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+}
+
+/* OS QUATRO FATOS em 2x2. Numa linha unica eles viravam colunas de 80px com
+   rotulo ilegivel; empilhados viravam oito linhas. 2x2 e o unico arranjo em
+   que "Toda quarta" e "R$ 408,00" cabem inteiros. */
+html[data-manager-app] .mensal-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e3) var(--e4);
+  padding: var(--e4) 0;
+  border-top: 1px solid var(--pq-line);
+  border-bottom: 1px solid var(--pq-line);
+}
+
+html[data-manager-app] .mensal-card__grid small {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .mensal-card__grid strong {
+  font-size: var(--t-corpo);
+  font-weight: 700;
+}
+
+html[data-manager-app] .mensal-card__foot {
+  display: flex;
+  gap: var(--e2);
+  margin-top: auto;
+}
+
+html[data-manager-app] .mensal-card__foot .btn.is-danger {
+  color: var(--pq-danger);
+  border-color: var(--pq-danger-soft);
+}
+
+html[data-manager-app] .mensal-card__origem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+}
+
+/* ── Faixa de contexto da conversa ────────────────────────────────────────
+   Ocupa a zona morta entre o cabecalho e as bolhas, e responde a pergunta que
+   toda mensagem de cliente faz nas entrelinhas: "de que jogo estamos
+   falando?". */
+html[data-manager-app] .thread-reserva {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2) var(--e5);
+  padding: var(--e3) var(--e4);
+  border-bottom: 1px solid var(--pq-line);
+  background: var(--pq-tint);
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+}
+
+html[data-manager-app] .thread-reserva > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+}
+
+html[data-manager-app] .thread-reserva b {
+  color: var(--pq-ink);
+  font-weight: 700;
+}
+
+html[data-manager-app] .thread-reserva .status { margin-left: auto; }
+
+/* A lista de conversas nao precisa de altura de tela inteira quando o painel
+   esta numa janela alta: 820px ja mostra doze conversas, e o resto seria
+   moldura vazia. */
+html[data-manager-app][data-manager-view="mensagens"] .chat {
+  height: min(calc(100vh - 154px), 820px);
+}
+
+
+/* ══════════════════ AGENDA — cabecalho e evento ══════════════════════════ */
+
+html[data-manager-app][data-manager-view="agenda"] .manager-agenda-command {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin-bottom: var(--e4);
+  padding: 0 0 var(--e4);
+  border: 0;
+  border-bottom: 1px solid var(--pq-line);
+  border-radius: 0;
+  background: transparent;
+  min-height: 0;
+}
+
+/* SELETOR com [data-manager-view="agenda"]: o manager-app.css declara a faixa
+   verde com esse mesmo atributo (especificidade 0,3,1), e um seletor de 0,2,1
+   aqui perderia mesmo vindo depois. Foi a mesma armadilha do tema.css. */
+html[data-manager-app] .manager-agenda-title {
+  display: flex;
+  align-items: center;
+  gap: var(--e5);
+}
+
+/* A SEMANA e o titulo; o mes vira etiqueta. Era o contrario: "agosto 2026" em
+   24px e "17 a 23 de agosto" em 13px do outro lado da tela — o dado grande era
+   o que menos identificava a grade desenhada embaixo. */
+html[data-manager-app] .manager-agenda-title > div > span {
+  display: block;
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .manager-agenda-title h2 {
+  margin-top: 2px;
+  font-size: var(--t-tela);
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+html[data-manager-app] .cal-range {
+  display: flex;
+  align-items: center;
+  gap: var(--e1);
+  min-width: 0;
+  padding: var(--e1);
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-controle);
+  background: var(--pq-panel);
+}
+
+html[data-manager-app] .cal-nav {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--r-controle);
+  background: transparent;
+  color: var(--pq-ink);
+}
+
+html[data-manager-app] .cal-nav--hoje {
+  width: auto;
+  padding: 0 var(--e3);
+  font-size: var(--t-apoio);
+  font-weight: 700;
+}
+
+html[data-manager-app] .cal-nav:hover { background: var(--pq-tint); }
+
+/* AS TRES METRICAS viram pastilhas com icone. Eram tres pares de texto solto
+   separados por um filete de 1px, na mesma altura do titulo: liam como
+   continuacao do cabecalho, e nao como numeros. */
+html[data-manager-app] .manager-agenda-stats {
+  display: flex;
+  gap: var(--e2);
+  border: 0;
+}
+
+html[data-manager-app] .manager-agenda-stats article {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--e2) var(--e4) var(--e2) var(--e3);
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-card);
+  background: var(--pq-panel);
+}
+
+html[data-manager-app] .manager-agenda-stats article > span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-controle);
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+html[data-manager-app] .manager-agenda-stats strong {
+  display: block;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+html[data-manager-app] .manager-agenda-stats small {
+  display: block;
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Bloco alto ganha a terceira linha, empurrada para o rodape do proprio bloco:
+   o vazio some e o valor fica onde o olho ja procura. */
+html[data-manager-app] .cal-ev { display: flex; flex-direction: column; }
+
+html[data-manager-app] .cal-ev .ev-extra {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e2);
+  margin-top: auto;
+  padding-top: var(--e1);
+  font-size: 10.5px;
+  opacity: .9;
+}
+
+html[data-manager-app] .cal-ev .ev-valor { font-weight: 800; }
