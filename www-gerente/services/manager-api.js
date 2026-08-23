@@ -318,6 +318,19 @@ export const managerService = {
      futuras e devolve quantas foram. Por isso a tela pergunta antes e mostra o
      numero depois: o dono precisa saber quantas pessoas acabaram de perder o
      horario que tinham. */
+  /* EXPEDIENTE DA QUADRA — os sete dias.
+
+     PUT e nao PATCH: o editor manda a semana inteira e o servidor reescreve os
+     sete dias. PATCH sugeriria que dia omitido fica como estava, e o que
+     acontece e o contrario. */
+  expediente(quadraId) {
+    return api.get(`/api/gerente/quadras/${encodeURIComponent(quadraId)}/expediente`);
+  },
+
+  salvarExpediente(quadraId, dias) {
+    return api.put(`/api/gerente/quadras/${encodeURIComponent(quadraId)}/expediente`, { dias });
+  },
+
   desativarArena(motivo, periodo) {
     return api.post('/api/gerente/desativacao', { motivo, periodo });
   }

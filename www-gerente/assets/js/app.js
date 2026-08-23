@@ -5,7 +5,7 @@ import { ROUTES } from '../../config/routes.js';
 import { renderManagerCourts, initManagerCourts } from './manager-courts.js';
 import { renderManagerReservations, initManagerReservations } from './manager-reservations.js';
 import { renderManagerMembers, initManagerMembers } from './manager-members.js';
-import { renderManagerOverview } from './manager-overview.js';
+import { renderManagerOverview, initGraficoDashboard } from './manager-overview.js';
 import { renderManagerAgenda, initManagerAgenda } from './manager-agenda.js';
 import { renderManagerReviews, initManagerReviews } from './manager-reviews.js';
 import { renderManagerMessages, initManagerMessages } from './manager-messages.js';
@@ -251,6 +251,7 @@ function initDesktopRouter() {
   initManagerMembers();
   initManagerAgenda();
   initManagerFinance();
+  initGraficoDashboard();
   initManagerReviews();
   initManagerMessages();
   initManagerBookingDetail();

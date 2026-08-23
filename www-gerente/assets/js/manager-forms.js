@@ -14,6 +14,7 @@ import storage from '../../storage/storage.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import managerService from '../../services/manager-api.js';
 import authService from '../../services/auth.js';
+import { ligarParEstadoCidade } from '../../services/localidades.js';
 
 const PROFILE_KEY = 'manager-profile';
 const COUPONS_KEY = 'manager-coupons';
@@ -108,19 +109,36 @@ export async function renderManagerCourtForm(root) {
   const fecha = root.querySelector('[data-court-close]');
   if (fecha) fecha.innerHTML = horas(16, 23, quadra?.fecha ?? 23);
 
-  const comodidades = storage.get(AMENITIES_KEY, null) || AMENITIES;
-  const caixa = root.querySelector('[data-court-amenities]');
-  if (caixa) {
-    caixa.innerHTML = comodidades.map((a, i) =>
-      `<label class="switch-row"${i === comodidades.length - 1 ? ' style="border-bottom:none; padding-bottom:0;"' : ''}>
-        <span>${escapeHtml(a.label)}</span>
-        <span class="switch${a.on ? ' on' : ''}" data-switch="amenity:${escapeHtml(a.id)}" role="switch" tabindex="0" aria-checked="${a.on}"></span>
-      </label>`).join('');
-  }
+  /* COMODIDADES DESTA QUADRA, e nao as da arena inteira.
+
+     A lista marcada vem de `quadra.comodidades` (servidor). As sugestoes
+     padrao aparecem sempre, e qualquer comodidade gravada que nao esteja entre
+     elas entra como pastilha propria — senao editar uma quadra com
+     "churrasqueira" perderia o item calado. */
+  marcadas = new Set((quadra?.comodidades || []).map(String));
+  pintarComodidades(root);
+
+  // O expediente pertence a uma quadra que ja existe: sem id nao ha onde
+  // pendurar os sete dias, e o editor diz isso em vez de fingir que salva.
+  await carregarExpediente(root, quadra?.id);
 
   form.elements.id.value = quadra?.id || '';
   form.elements.label.value = quadra?.label || '';
-  form.elements.bairro.value = quadra?.bairro || '';
+  /* O LOCAL vem do cadastro da arena, e e so leitura.
+
+     O formulario pedia "Bairro" por quadra. As quadras de uma arena ficam no
+     mesmo endereco, entao o campo so criava divergencia. Aqui ele mostra o que
+     esta em Configuracoes, para o dono conferir sem poder desencontrar. */
+  const local = root.querySelector('[data-local-arena]');
+  if (local) {
+    try {
+      const perfil = API_BASE_URL ? await managerService.perfil() : ARENA_PROFILE;
+      const partes = [perfil.bairro, perfil.cidade, perfil.estado].filter(Boolean);
+      local.value = partes.length ? partes.join(' · ') : 'Defina em Configurações';
+    } catch (error) {
+      local.value = 'Defina em Configurações';
+    }
+  }
   form.elements.descricao.value = quadra?.descricao || '';
   form.elements.price.value = quadra?.price ?? 120;
   form.elements.priceMonthly.value = quadra?.priceMonthly ?? 408;
@@ -142,6 +160,92 @@ export async function renderManagerCourtForm(root) {
   if (enviar) enviar.textContent = quadra ? 'Salvar alterações' : 'Cadastrar quadra';
 
   window.pqRefreshIcons?.(root);
+}
+
+/* AS COMODIDADES MARCADAS da quadra em edicao.
+
+   Modulo e nao DOM: o formulario e remontado a cada visita de rota, e guardar
+   no elemento faria a selecao sumir na primeira re-renderizacao. */
+let marcadas = new Set();
+
+function pintarComodidades(root) {
+  const caixa = root.querySelector('[data-court-amenities]');
+  if (!caixa) return;
+  // Sugestoes + o que ja estava gravado, sem repetir.
+  const todas = [...new Set([...AMENITIES.map((a) => a.label), ...marcadas])];
+  caixa.innerHTML = todas.map((label) => `
+    <button type="button" class="comodidade${marcadas.has(label) ? ' on' : ''}" data-amenity="${escapeHtml(label)}">
+      <i class="ic sm" data-lucide="${marcadas.has(label) ? 'check' : 'plus'}"></i>${escapeHtml(label)}
+    </button>`).join('');
+  window.pqRefreshIcons?.(caixa);
+}
+
+function comodidadesDoFormulario() {
+  return [...marcadas];
+}
+
+/* ═══════════════ EXPEDIENTE DA QUADRA — sete dias ════════════════════════
+
+   O formulario tinha UM par "abre as / fecha as" para a semana inteira. Arena
+   que so abre a noite na segunda ou nao abre domingo nao tinha como dizer — e
+   a tabela por dia da semana existia no banco desde a fase 1, sem rota que a
+   alcancasse. */
+
+/* Estado do editor. Modulo e nao DOM, pelo mesmo motivo das comodidades: a
+   tela e remontada a cada visita de rota. */
+let expedienteDias = [];
+
+const HORAS_DIA = Array.from({ length: 25 }, (_, h) => String(h).padStart(2, '0') + ':00');
+
+function opcoesHora(selecionada) {
+  return HORAS_DIA.map((h) =>
+    `<option value="${h}"${h === selecionada ? ' selected' : ''}>${h}</option>`).join('');
+}
+
+function pintarExpediente(root) {
+  const caixa = root.querySelector('[data-expediente]');
+  if (!caixa) return;
+
+  if (!expedienteDias.length) {
+    /* Quadra ainda nao criada nao tem expediente: nao ha id para pendurar os
+       dias. Dizer isso e melhor do que mostrar sete linhas que nao salvam. */
+    caixa.innerHTML = '<p class="expediente__aviso">Cadastre a quadra primeiro. Depois você define o horário de cada dia da semana aqui.</p>';
+    return;
+  }
+
+  caixa.innerHTML = expedienteDias.map((d) => `
+    <div class="exp-dia${d.fechado ? ' is-fechado' : ''}" data-exp-dia="${d.dia}">
+      <label class="exp-dia__nome">
+        <input type="checkbox" data-exp-aberto ${d.fechado ? '' : 'checked'}>
+        <span>${escapeHtml(d.rotulo)}</span>
+      </label>
+      ${d.fechado
+        ? '<span class="exp-dia__fechado">Fechado</span>'
+        : `<div class="exp-dia__horas">
+             <select data-exp-abre aria-label="Abre">${opcoesHora(d.abre)}</select>
+             <span>até</span>
+             <select data-exp-fecha aria-label="Fecha">${opcoesHora(d.fecha)}</select>
+           </div>`}
+      <button type="button" class="exp-dia__copiar" data-exp-copiar title="Aplicar este horário aos outros dias abertos">
+        <i class="ic sm" data-lucide="copy"></i>
+      </button>
+    </div>`).join('');
+  window.pqRefreshIcons?.(caixa);
+}
+
+async function carregarExpediente(root, quadraId) {
+  if (!API_BASE_URL || !quadraId) {
+    expedienteDias = [];
+    pintarExpediente(root);
+    return;
+  }
+  try {
+    const dados = await managerService.expediente(quadraId);
+    expedienteDias = dados.dias || [];
+  } catch (error) {
+    expedienteDias = [];
+  }
+  pintarExpediente(root);
 }
 
 // ------------------------------------------------------------------ configurações
@@ -212,7 +316,10 @@ export async function renderManagerSettings(root) {
       notificaReserva: configApi.notificaReserva,
       notificaPagamento: configApi.notificaPagamento,
       notificaAvaliacao: configApi.notificaAvaliacao,
-      notificaResumo: configApi.notificaResumo
+      notificaResumo: configApi.notificaResumo,
+      // O interruptor da arena sai de `is_active` no servidor. Sem ler de
+      // volta, quem pausasse veria o botao ligado de novo na proxima visita.
+      pausada: configApi.pausada
     };
   } else {
     dados = profile();
@@ -248,6 +355,20 @@ export async function renderManagerSettings(root) {
       + listaQuadras.map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
   }
 
+  /* ESTADO E CIDADE encadeados, com os valores ja gravados selecionados.
+
+     Roda depois de preencher o resto do formulario: `ligarParEstadoCidade`
+     monta as 27 UFs, carrega os municipios da UF atual e religa o onchange.
+     Chamar antes deixaria a cidade certa apagada pelo preenchimento. */
+  const selUf = root.querySelector('[data-uf]');
+  const selCidade = root.querySelector('[data-cidade]');
+  if (selUf && selCidade) {
+    await ligarParEstadoCidade(selUf, selCidade, {
+      uf: dados.estado || '',
+      cidade: dados.cidade || ''
+    });
+  }
+
   await renderCupons(root);
   window.pqRefreshIcons?.(root);
 }
@@ -255,6 +376,59 @@ export async function renderManagerSettings(root) {
 // ------------------------------------------------------------------------ eventos
 
 export function initManagerForms() {
+  /* A BARRA DE SALVAR aparece quando o formulario fica sujo.
+
+     Delegado no documento porque a tela e remontada a cada visita de rota:
+     um listener preso ao <form> morreria junto com ele. `capture: true` para
+     pegar tambem os switches, que chamam preventDefault no clique.
+
+     `change` alem de `input`: select e input[type=file] nao emitem `input` em
+     todos os navegadores. */
+  const sujar = (event) => {
+    const form = event.target.closest?.('[data-settings-form]');
+    if (!form) return;
+    const barra = form.querySelector('[data-form-actions]');
+    if (barra) barra.hidden = false;
+  };
+  /* Enter no campo de comodidade adiciona em vez de submeter o formulario.
+     Sem isso, digitar "churrasqueira" e apertar Enter salvaria a quadra sem a
+     comodidade — o gesto mais natural fazendo a coisa errada. */
+  document.addEventListener('keydown', (event) => {
+    const campo = event.target.closest?.('[data-amenity-novo]');
+    if (!campo || event.key !== 'Enter') return;
+    event.preventDefault();
+    document.querySelector('[data-amenity-add]')?.click();
+  });
+
+  /* O editor de expediente guarda no estado do modulo a cada mexida: a lista
+     e reimpressa em varios momentos (copiar, fechar dia), e ler do DOM na hora
+     de salvar perderia o que tivesse sido reimpresso no meio. */
+  document.addEventListener('change', (event) => {
+    const linha = event.target.closest?.('[data-exp-dia]');
+    if (!linha) return;
+    const dia = expedienteDias.find((d) => String(d.dia) === linha.dataset.expDia);
+    if (!dia) return;
+    const root = document.querySelector('[data-desktop-route-view]');
+    if (event.target.matches('[data-exp-aberto]')) {
+      dia.fechado = !event.target.checked;
+      pintarExpediente(root);
+    } else if (event.target.matches('[data-exp-abre]')) {
+      dia.abre = event.target.value;
+    } else if (event.target.matches('[data-exp-fecha]')) {
+      dia.fecha = event.target.value;
+    }
+  });
+
+  document.addEventListener('input', sujar);
+  document.addEventListener('change', sujar);
+  /* O interruptor de tema NAO suja o formulario: ele grava sozinho, no toque,
+     e ficou fora do "Salvar" de proposito. Mostrar a barra depois dele diria
+     que falta confirmar algo que ja aconteceu. */
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('[data-cfg-tema]')) return;
+    if (event.target.closest('[data-settings-form] .switch')) sujar(event);
+  }, true);
+
   document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root) return;
@@ -264,6 +438,56 @@ export function initManagerForms() {
        Era `<a href="./index.html">`: o token continuava no storage, e a
        proxima pessoa a abrir o painel naquele computador entrava como o dono
        da arena. O computador do balcao e compartilhado por definicao. */
+    /* COPIAR HORARIO para os outros dias abertos.
+
+       Quem abre 8h-23h todo dia teria de mexer em catorze selects. O botao
+       existe porque o caso comum e "a semana e igual, menos domingo": define
+       um dia, copia, e ajusta a excecao. Nao mexe em dia FECHADO — copiar
+       horario para um dia que o dono desligou seria reabrir a quadra sem ele
+       pedir. */
+    const copiar = event.target.closest('[data-exp-copiar]');
+    if (copiar) {
+      event.preventDefault();
+      const linha = copiar.closest('[data-exp-dia]');
+      const origem = expedienteDias.find((d) => String(d.dia) === linha.dataset.expDia);
+      if (!origem || origem.fechado) return;
+      expedienteDias = expedienteDias.map((d) =>
+        d.fechado ? d : { ...d, abre: origem.abre, fecha: origem.fecha });
+      pintarExpediente(root);
+      root.querySelector('[data-form-actions]')?.removeAttribute('hidden');
+      window.pqToast?.('Horário aplicado aos dias abertos');
+      return;
+    }
+
+    const pastilha = event.target.closest('[data-amenity]');
+    if (pastilha) {
+      event.preventDefault();
+      const label = pastilha.dataset.amenity;
+      if (marcadas.has(label)) marcadas.delete(label);
+      else marcadas.add(label);
+      pintarComodidades(root);
+      // Marcar comodidade e alteracao: a barra de salvar tem de aparecer.
+      root.querySelector('[data-form-actions]')?.removeAttribute('hidden');
+      return;
+    }
+
+    if (event.target.closest('[data-amenity-add]')) {
+      event.preventDefault();
+      const campo = root.querySelector('[data-amenity-novo]');
+      const texto = (campo?.value || '').trim();
+      if (!texto) return;
+      /* Comparacao sem diferenciar caixa: sem isso "Vestiario" e "vestiario"
+         viram duas pastilhas e o app do jogador mostra a mesma coisa duas
+         vezes. Mantem o que a pessoa digitou, mas nao duplica o que ja existe. */
+      const existente = [...marcadas, ...AMENITIES.map((a) => a.label)]
+        .find((l) => l.toLowerCase() === texto.toLowerCase());
+      marcadas.add(existente || texto);
+      if (campo) campo.value = '';
+      pintarComodidades(root);
+      root.querySelector('[data-form-actions]')?.removeAttribute('hidden');
+      return;
+    }
+
     if (event.target.closest('[data-logout]')) {
       event.preventDefault();
       try {
@@ -408,11 +632,33 @@ export function initManagerForms() {
              enviava — nem uma. A regra existia dos dois lados e nao se
              encontrava no meio: o campo mandava tudo menos justamente o que
              era obrigatorio. */
-          fotos: fotosDoFormulario()
+          fotos: fotosDoFormulario(),
+          /* COMODIDADES tambem faltavam no corpo. O backend guarda a lista por
+             quadra desde a fase 2 e o formulario nunca a mandou — os cinco
+             interruptores gravavam no localStorage e morriam ali. */
+          comodidades: comodidadesDoFormulario()
         };
         try {
           if (id) {
             await managerService.atualizarQuadra(id, body);
+            /* O EXPEDIENTE E OUTRA ROTA, salva junto do resto.
+
+               Duas chamadas e nao uma porque sao dois recursos: a quadra e uma
+               linha em `courts`, o expediente sao sete em
+               `court_recurring_availability`. Pendurar a semana no PATCH da
+               quadra misturaria os dois e faria o corpo carregar dado que a
+               maioria dos salvamentos nao mexe.
+
+               Salvo DEPOIS da quadra: se o PATCH falhar, nao adianta ter
+               gravado horario para uma quadra que nao aceitou a alteracao. */
+            if (expedienteDias.length) {
+              await managerService.salvarExpediente(id, expedienteDias.map((d) => ({
+                dia: d.dia,
+                fechado: d.fechado,
+                abre: d.abre,
+                fecha: d.fecha
+              })));
+            }
           } else {
             await managerService.criarQuadra(body);
           }
@@ -431,7 +677,6 @@ export function initManagerForms() {
         id,
         label: String(d.get('label')).trim(),
         sport: String(d.get('sport')),
-        bairro: String(d.get('bairro')).trim(),
         descricao: String(d.get('descricao')).trim(),
         price: Number(d.get('price')),
         priceMonthly: Number(d.get('priceMonthly')),
@@ -461,9 +706,13 @@ export function initManagerForms() {
             nome: String(d.get('nome') ?? ''),
             descricao: String(d.get('descricao') ?? ''),
             endereco: String(d.get('endereco') ?? ''),
+            bairro: String(d.get('bairro') ?? ''),
+            cidade: String(d.get('cidade') ?? ''),
+            estado: String(d.get('estado') ?? ''),
             telefone: String(d.get('telefone') ?? ''),
-            email: String(d.get('email') ?? ''),
-            pixChave: String(d.get('pixChave') ?? '')
+            email: String(d.get('email') ?? '')
+            // `pixChave` saiu junto com o cartao de Recebimento: mandar um
+            // campo que a tela nao coleta apagaria a chave ja gravada.
           });
           const configs = {};
           root.querySelectorAll('[data-switch]').forEach((el) => {
@@ -476,6 +725,7 @@ export function initManagerForms() {
           window.pqToast?.(error.message || 'Não foi possível salvar');
           return;
         }
+        root.querySelector('[data-form-actions]')?.setAttribute('hidden', '');
         window.pqToast?.('Configurações salvas');
         return;
       }

@@ -35,30 +35,41 @@
       <p>Onde os jogadores encontram sua arena e como falam com você.</p>
     </div>
     <div class="set-fields">
-      <div class="inp"><label>Endereço</label><input type="text" name="endereco"></div>
+      <!-- ENDERECO EM CAMPOS, e nao numa linha de texto livre.
+
+           Era um input so chamado "Endereço", e o que entrava ali era
+           "Savassi" — um bairro no campo da rua. Assim nao da para filtrar por
+           cidade, agrupar por bairro nem mostrar "Savassi · Belo Horizonte" no
+           cartao da quadra, que e como a pessoa procura.
+
+           Estado e cidade sao ENCADEADOS e saem da mesma base do app do
+           jogador: digitado a mao, "BH", "Belo Horizonte" e "belo horizonte"
+           viram tres cidades diferentes e nenhum filtro fecha. -->
+      <div class="input-row">
+        <div class="inp"><label for="cfg-uf">Estado</label><select id="cfg-uf" name="estado" data-uf></select></div>
+        <div class="inp"><label for="cfg-cidade">Cidade</label><select id="cfg-cidade" name="cidade" data-cidade></select></div>
+      </div>
+      <div class="input-row">
+        <div class="inp"><label>Bairro</label><input type="text" name="bairro" placeholder="Ex.: Savassi"></div>
+        <div class="inp"><label>Rua e número</label><input type="text" name="endereco" placeholder="Ex.: Rua Pernambuco, 1200"></div>
+      </div>
       <div class="input-row" style="margin-bottom:0;">
-        <div class="inp" style="margin-bottom:0;"><label>Telefone / WhatsApp</label><input type="text" name="telefone"></div>
-        <div class="inp" style="margin-bottom:0;"><label>E-mail</label><input type="text" name="email"></div>
+        <div class="inp" style="margin-bottom:0;"><label>Telefone / WhatsApp</label><input type="text" name="telefone" placeholder="(31) 90000-0000"></div>
+        <div class="inp" style="margin-bottom:0;"><label>E-mail</label><input type="text" name="email" placeholder="contato@arena.com.br"></div>
       </div>
     </div>
   </section>
 
-  <section class="set-card">
-    <div class="set-aside">
-      <h2>Recebimento (Pix)</h2>
-      <p>Conta que recebe o valor das reservas.</p>
-    </div>
-    <div class="set-fields">
-      <div class="input-row">
-        <div class="inp"><label>Tipo de chave</label><select name="pixTipo">
-          <option>CNPJ</option><option>CPF</option><option>E-mail</option><option>Celular</option><option>Aleatória</option>
-        </select></div>
-        <div class="inp"><label>Chave Pix</label><input type="text" name="pixChave"></div>
-      </div>
-      <div class="inp" style="margin-bottom:0;"><label>Titular da conta</label><input type="text" name="pixTitular"></div>
-      <div class="set-hint"><i class="ic" data-lucide="shield"></i> O valor cai automaticamente, sem mensalidade.</div>
-    </div>
-  </section>
+  <!-- RECEBIMENTO (PIX) SAIU DAQUI.
+
+       Chave Pix, tipo de chave e titular sao dados de RECEBEDOR, e o lugar
+       deles e junto do resto do financeiro — nao no meio de nome da arena,
+       telefone e notificacoes. Pior: os tres campos gravavam soltos, sem
+       validar a chave e sem nenhum vinculo com o adquirente, entao a tela
+       sugeria que o dinheiro ja caia naquela conta.
+
+       Volta quando existir o fluxo de recebimento de verdade, na tela de
+       Financeiro, com validacao da chave e confirmacao do titular. -->
 
   <!-- APARENCIA.
 
@@ -79,6 +90,34 @@
       <label class="switch-row" data-cfg-tema style="border-bottom:none; padding-bottom:0;">
         <span>Modo claro<small>O padrão do painel é escuro</small></span>
         <span class="switch" role="switch" tabindex="0"></span>
+      </label>
+    </div>
+  </section>
+
+  <!-- ARENA ABERTA / PAUSADA.
+
+       Estava enterrado dentro do cartao "Conta", ao lado de "Sair" e
+       "Desativar arena" — tres coisas de peso muito diferente na mesma caixa.
+       Pausar e operacao do DIA A DIA ("hoje nao abro", "quadra em reforma"),
+       nao e assunto de conta, e o dono precisa achar isso rapido.
+
+       E ele agora FUNCIONA. O interruptor gravava no localStorage do
+       navegador: o dono desligava, via o botao virar, e a arena continuava
+       aparecendo no app para todo mundo. Passa a escrever em `is_active`, a
+       mesma coluna que a busca e o mapa consultam.
+
+       Pausar NAO cancela reserva. Quem ja pagou mantem o horario — cancelar
+       dinheiro recebido e o que "Desativar arena" faz, com aviso e
+       confirmacao. -->
+  <section class="set-card set-card--destaque">
+    <div class="set-aside">
+      <h2>Arena aberta</h2>
+      <p>Enquanto estiver aberta, sua arena aparece no mapa e na busca do app.</p>
+    </div>
+    <div class="set-fields">
+      <label class="switch-row" style="border-bottom:none; padding-bottom:0;">
+        <span>Pausar arena<small>Some do mapa e da busca e para de receber reservas novas. As já pagas continuam valendo.</small></span>
+        <span class="switch" data-switch="pausada" role="switch" tabindex="0"></span>
       </label>
     </div>
   </section>
@@ -116,10 +155,6 @@
       <p>Encerrar a sessão ou desativar a arena na plataforma.</p>
     </div>
     <div class="set-fields">
-      <label class="switch-row">
-        <span>Pausar arena <small style="color:var(--muted);display:block;font-weight:500;">Some da busca, sem novas reservas</small></span>
-        <span class="switch" data-switch="pausada" role="switch" tabindex="0"></span>
-      </label>
       <!-- SAIR DA CONTA era um link cru para index.html. Ele trocava de pagina
            e deixava o token onde estava: a proxima pessoa a abrir o painel
            naquele computador continuava logada como o dono da arena. Num
@@ -134,7 +169,16 @@
     </div>
   </section>
 
-  <div class="manager-form-actions">
+  <!-- A BARRA SO APARECE QUANDO HA O QUE SALVAR.
+
+       Ela e sticky, entao flutuava sobre o formulario o tempo todo e cobria o
+       cartao que estivesse embaixo dela — no tema claro dava para ler metade
+       de "Arena aberta" atras do botao. Um botao permanente tambem nao informa
+       nada: "salvar" so faz sentido depois de mexer em alguma coisa.
+
+       Marcada por assets/js/manager-forms.js no primeiro input/change. -->
+  <div class="manager-form-actions" data-form-actions hidden>
+    <span class="form-actions__aviso">Alterações não salvas</span>
     <button type="submit" class="btn btn-primary"><i class="ic sm" data-lucide="check"></i> Salvar configurações</button>
   </div>
 </form>

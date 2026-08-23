@@ -27,5 +27,23 @@
     <div class="rev-quadras" data-reviews-courts></div>
   </div>
 
-  <div data-reviews-list></div>
+  <div>
+    <!-- FILTRO POR NOTA. A nota baixa e o unico caso em que o dono precisa
+         AGIR, e ela estava perdida no meio dos elogios. -->
+    <div class="rev-filtros" data-rev-filtros aria-label="Filtrar por nota"></div>
+
+    <div data-reviews-list></div>
+
+    <nav class="pager" data-rev-pager hidden aria-label="Páginas de avaliações">
+      <span class="pager__info" data-rev-pager-info></span>
+      <span class="pager__nav">
+        <button type="button" class="btn btn-soft btn-xs" data-rev-prev>
+          <i class="ic sm" data-lucide="chevron-left"></i> Anterior
+        </button>
+        <button type="button" class="btn btn-soft btn-xs" data-rev-next>
+          Próxima <i class="ic sm" data-lucide="chevron-right"></i>
+        </button>
+      </span>
+    </nav>
+  </div>
 </div>

@@ -229,7 +229,7 @@ async function renderChartReal(root) {
   }
   const hoje = new Date();
   const inicio = new Date(hoje);
-  inicio.setDate(inicio.getDate() - 6);
+  inicio.setDate(inicio.getDate() - (janelaDias - 1));
   const iso = (d) => d.toISOString().slice(0, 10);
   try {
     const dados = await managerService.financeiro({ de: iso(inicio), ate: iso(hoje) });
@@ -237,6 +237,31 @@ async function renderChartReal(root) {
   } catch (error) {
     renderChart(root, []);
   }
+  root.querySelectorAll('[data-chart-janela]').forEach((b) => {
+    b.classList.toggle('on', Number(b.dataset.chartJanela) === janelaDias);
+  });
+}
+
+/* A JANELA DO GRAFICO.
+
+   Ele era fixo em sete dias — "Faturamento da semana" e so isso. Mas a semana
+   nao responde tudo: um mes mostra se o movimento esta subindo ou se aquela
+   quarta cheia foi acaso. Trinta dias em barras ainda se le; mais do que isso
+   viraria um pente e ai o lugar e o Financeiro, que tem a tabela.
+
+   Modulo e nao DOM: o dashboard e remontado a cada volta de rota. */
+let janelaDias = 7;
+
+export function initGraficoDashboard() {
+  document.addEventListener('click', async (event) => {
+    const botao = event.target.closest('[data-chart-janela]');
+    if (!botao) return;
+    janelaDias = Number(botao.dataset.chartJanela);
+    const root = document.querySelector('[data-desktop-route-view]');
+    const titulo = root?.querySelector('[data-chart-titulo]');
+    if (titulo) titulo.textContent = janelaDias === 7 ? 'Faturamento da semana' : 'Faturamento do mês';
+    await renderChartReal(root);
+  });
 }
 
 export async function renderManagerOverview(root) {

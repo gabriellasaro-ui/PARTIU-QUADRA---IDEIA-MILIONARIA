@@ -88,7 +88,17 @@ function courtCard(court) {
       ${court.photo
         ? `<img src="${escapeHtml(court.photo)}" alt="${escapeHtml(court.label)}" loading="lazy" data-foto-quadra>`
         : ''}
-      <span class="ph-vazio"><i class="ic" data-lucide="image"></i>Sem foto</span>
+      <!-- QUADRA SEM FOTO nao vira um retangulo cinza morto.
+
+           A vitrine exige cinco fotos, entao "sem foto" nao e um estado
+           neutro: e a razao pela qual aquela quadra nao esta sendo reservada.
+           O vazio vira convite, com o caminho para resolver — e nao um aviso
+           de que falta algo, sem dizer onde. -->
+      <a class="ph-vazio" href="./dashboard.html#quadra/${escapeHtml(String(court.id))}">
+        <i class="ic lg" data-lucide="image-plus"></i>
+        <strong>Adicionar fotos</strong>
+        <small>Quadras com foto recebem mais reservas</small>
+      </a>
     </div>
     <div class="bd">
       <h3>${escapeHtml(court.label)}</h3>
@@ -112,7 +122,34 @@ function courtCard(court) {
   </article>`;
 }
 
+/* FOTO QUEBRADA NAO DEIXA O CARTAO EM BRANCO.
+
+   O estado "sem foto" e escolhido por CSS (`.ph:not(:has(img))`), entao basta o
+   <img> existir para ele sumir — mesmo que a imagem nao carregue. Resultado:
+   quadra com URL morta virava um retangulo vazio, sem foto e sem o convite
+   para adicionar uma, e nada na tela dizia o que estava errado.
+
+   Acontece de verdade: link de hospedagem que expira, arquivo removido,
+   celular offline. Tirando o <img> do DOM, o seletor volta a casar e o cartao
+   mostra "Adicionar fotos", que e o que o dono precisa fazer.
+
+   `capture: true` porque o evento `error` de <img> NAO borbulha — sem isso o
+   listener no documento nunca seria chamado. */
+function tratarFotoQuebrada(root) {
+  root.addEventListener('error', (event) => {
+    const img = event.target;
+    if (img?.tagName === 'IMG' && img.closest('.qcard')) img.remove();
+  }, { capture: true });
+}
+
+let fotoQuebradaLigada = false;
+
 export async function renderManagerCourts(root) {
+  if (!fotoQuebradaLigada) {
+    tratarFotoQuebrada(document);
+    fotoQuebradaLigada = true;
+  }
+
   const carregado = API_BASE_URL ? await loadCourts() : { quadras: courts(), vitrine: null };
   const lista = carregado.quadras;
   const dadosVitrine = carregado.vitrine;

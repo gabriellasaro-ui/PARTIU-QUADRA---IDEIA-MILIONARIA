@@ -35,6 +35,11 @@ class Arena(Base):
     pix_key: Mapped[str | None] = mapped_column(String(200))
 
     address: Mapped[str | None] = mapped_column(String(255))
+    # BAIRRO. Faltava, e e o campo que mais aparece quando alguem procura
+    # quadra: ninguem diz "quero jogar em Belo Horizonte", diz "quero jogar no
+    # Savassi". Sem ele o endereco caia inteiro em `address` como texto livre e
+    # nao dava para filtrar nem agrupar.
+    neighborhood: Mapped[str | None] = mapped_column(String(120), index=True)
     city: Mapped[str | None] = mapped_column(String(120), index=True)
     state: Mapped[str | None] = mapped_column(String(2))
     lat: Mapped[float | None] = mapped_column(Float)

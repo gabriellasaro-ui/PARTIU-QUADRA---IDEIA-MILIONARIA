@@ -19,6 +19,7 @@ from ..schemas.gerente import (
     CouponCreate,
     CourtCreate,
     CourtUpdate,
+    ExpedienteBody,
     DesativacaoBody,
     MensalistaCreate,
 )
@@ -187,6 +188,35 @@ def atualizar_quadra(
 ):
     court = svc.update_quadra(db, user, cid, body)
     return {"quadra": svc.serialize_court(court)}
+
+
+# ── Expediente da quadra ───────────────────────────────────────────────────
+#
+# ORDEM IMPORTA. Estas rotas tem um segmento fixo depois do {cid}, entao nao
+# competem com /quadras/{cid} — mas a de coleta ("/quadras/expediente") competiria,
+# e por isso ela nao existe: o expediente e sempre de UMA quadra.
+
+
+@router.get("/quadras/{cid}/expediente")
+def expediente(
+    cid: str,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    return svc.expediente_quadra(db, user, cid)
+
+
+@router.put("/quadras/{cid}/expediente")
+def salvar_expediente(
+    cid: str,
+    body: ExpedienteBody,
+    user: User = Depends(get_current_manager),
+    db: Session = Depends(get_db),
+):
+    # PUT e nao PATCH: o editor manda a semana inteira e o servidor reescreve os
+    # sete dias. Um PATCH sugeriria que dia omitido fica como estava, e o que
+    # acontece e o contrario — dia ausente perde a configuracao.
+    return svc.salvar_expediente(db, user, cid, [d.model_dump() for d in body.dias])
 
 
 @router.get("/avaliacoes")

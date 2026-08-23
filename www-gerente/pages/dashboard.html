@@ -95,7 +95,13 @@
 
   <section class="manager-panel manager-panel--intelligence">
     <div class="manager-panel__head">
-      <div><span>Inteligência da arena</span><h2>Faturamento da semana</h2></div>
+      <div><span>Inteligência da arena</span><h2 data-chart-titulo>Faturamento da semana</h2></div>
+      <!-- FILTRO DO GRAFICO. Sete dias diz como foi a semana; trinta diz se o
+           movimento esta subindo ou se aquela quarta cheia foi acaso. -->
+      <div class="chips-periodo chips-periodo--grafico">
+        <button type="button" class="on" data-chart-janela="7">7 dias</button>
+        <button type="button" data-chart-janela="30">30 dias</button>
+      </div>
       <a href="./dashboard.html#financeiro">Abrir financeiro</a>
     </div>
     <div class="manager-chart">

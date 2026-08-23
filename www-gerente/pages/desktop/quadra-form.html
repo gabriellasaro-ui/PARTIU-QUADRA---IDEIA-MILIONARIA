@@ -52,7 +52,12 @@
       <div class="inp"><label>Nome / apelido da quadra</label><input type="text" name="label" placeholder="Ex.: Society 1" required></div>
       <div class="input-row">
         <div class="inp"><label>Esporte</label><select name="sport" data-court-sports></select></div>
-        <div class="inp"><label>Bairro</label><input type="text" name="bairro" placeholder="Ex.: Jardim Goiás"></div>
+        <!-- BAIRRO SAIU. Ele e da ARENA, e nao da quadra: as quadras de uma
+             arena ficam todas no mesmo endereco. Pedir de novo aqui era
+             convidar a divergencia — a mesma arena com "Savassi" numa quadra e
+             "savassi" na outra, e nenhum filtro por bairro fechando depois.
+             Estado, cidade, bairro e rua ficam em Configuracoes > Endereco. -->
+        <div class="inp"><label>Local</label><input type="text" value="" data-local-arena readonly></div>
       </div>
       <div class="inp" style="margin-bottom:0;"><label>Descrição</label><input type="text" name="descricao" placeholder="Fale sobre o piso, iluminação, estrutura..."></div>
     </div>
@@ -74,19 +79,53 @@
         </select></div>
         <div class="inp"><label>&nbsp;</label><div class="set-hint" style="margin:0;"><i class="ic" data-lucide="shield"></i> Mensalidade abaixo de 4× o avulso compensa para o jogador.</div></div>
       </div>
-      <div class="input-row" style="margin-bottom:0;">
-        <div class="inp" style="margin-bottom:0;"><label>Abre às</label><select name="abre" data-court-open></select></div>
-        <div class="inp" style="margin-bottom:0;"><label>Fecha às</label><select name="fecha" data-court-close></select></div>
+      <!-- HORARIO POR DIA DA SEMANA — a referencia que o Gabriel deu foi o
+           Google Meu Negocio, e o formato e o mesmo por um bom motivo.
+
+           Havia UM par "abre as / fecha as" valendo para os sete dias. Arena
+           que so abre a noite na segunda, fecha mais cedo no domingo ou nao
+           abre no feriado simplesmente nao tinha como dizer — e a tabela
+           `court_recurring_availability` ja guardava isso desde a fase 1, com
+           dia da semana e a coluna `closed`. O dado existia, a tela e que nao
+           deixava mexer.
+
+           "Fechado" e um interruptor, e nao apagar a linha: linha ausente cai
+           no horario padrao e o dia volta a aparecer ABERTO, o oposto do que o
+           dono pediu — e ele so descobriria quando alguem reservasse. -->
+      <div class="expediente" data-expediente>
+        <p class="expediente__aviso">Salve a quadra primeiro para definir os horários de cada dia.</p>
       </div>
     </div>
   </section>
 
+  <!-- COMODIDADES: pastilhas, e livres.
+
+       Eram cinco interruptores de uma lista fechada, gravados no localStorage
+       do navegador — as mesmas cinco para TODAS as quadras da arena, e nenhuma
+       delas chegava ao servidor, que guarda `comodidades` como lista livre POR
+       QUADRA desde a fase 2.
+
+       Duas consequencias: a quadra coberta e a descoberta apareciam iguais no
+       app, e quem tem churrasqueira, arquibancada ou wi-fi nao tinha onde
+       dizer. O "+" resolve o segundo caso — a lista de qualquer arena e mais
+       comprida do que cinco itens que alguem adivinhou.
+
+       Pastilha e nao interruptor: escolher varias coisas de uma lista se le
+       melhor lado a lado do que numa pilha de linhas com um botao no fim. -->
   <section class="set-card">
     <div class="set-aside">
       <h2>Comodidades</h2>
-      <p>O que sua quadra oferece.</p>
+      <p>O que esta quadra oferece. Toque para marcar.</p>
     </div>
-    <div class="set-fields" data-court-amenities></div>
+    <div class="set-fields">
+      <div class="comodidades" data-court-amenities></div>
+      <div class="comodidade-nova">
+        <input type="text" data-amenity-novo maxlength="28" placeholder="Outra comodidade (ex.: churrasqueira)">
+        <button type="button" class="btn btn-soft btn-xs" data-amenity-add>
+          <i class="ic sm" data-lucide="plus"></i> Adicionar
+        </button>
+      </div>
+    </div>
   </section>
 
   <section class="set-card">

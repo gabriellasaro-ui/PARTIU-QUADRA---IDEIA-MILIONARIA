@@ -19,6 +19,24 @@ async function fromApiOrLocal(path, localValue) {
 }
 
 export const venueService = {
+  /* Estados e municipios (IBGE, embarcados no backend). Copiados do app do
+     jogador porque o painel passou a pedir estado e cidade no perfil da arena
+     — e campo livre produz "BH", "Belo Horizonte" e "belo horizonte" como tres
+     cidades, com nenhum filtro fechando depois.
+
+     Passa pelo mesmo `api` do resto: um fetch('/api/...') cru ignoraria o
+     API_BASE_URL e quebraria no dia em que a API sair para outro dominio. */
+  async estados() {
+    if (!API_BASE_URL) return [];
+    const data = await api.get('/api/localidades/estados', { auth: false });
+    return data?.estados || [];
+  },
+
+  async cidadesDe(uf) {
+    if (!API_BASE_URL || !uf) return [];
+    const data = await api.get(`/api/localidades/estados/${encodeURIComponent(uf)}/cidades`, { auth: false });
+    return data?.cidades || [];
+  },
   async list(filters = {}) {
     const data = await fromApiOrLocal('/api/quadras', { quadras: VENUES });
     const venues = Array.isArray(data) ? data : (data?.quadras || []);

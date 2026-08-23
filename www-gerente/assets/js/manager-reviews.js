@@ -25,6 +25,22 @@ const estrelas = (n) => Array.from({ length: 5 },
    avaliacao. */
 let quadraFiltro = '';
 
+/* FILTRO POR NOTA e PAGINACAO.
+
+   A lista vinha inteira e sem recorte. Numa arena com 200 avaliacoes, quem
+   quer achar as reclamacoes rolava a pagina inteira procurando estrela
+   vermelha no meio de elogios — e a nota baixa e o unico caso em que o dono
+   PRECISA agir. Filtrar por nota resolve isso melhor do que qualquer ordenacao.
+
+   Ambos no cliente de proposito: a rota devolve no maximo 200 avaliacoes e a
+   media/distribuicao ja vem calculada do servidor sobre o conjunto inteiro.
+   Paginar no servidor aqui trocaria uma tela simples por dois lugares onde o
+   recorte pode divergir, sem ganho — e a media NAO pode mudar com o filtro,
+   senao "4,8" viraria "2,0" ao clicar em "1 estrela". */
+let notaFiltro = 0;
+let paginaRev = 1;
+const POR_PAGINA_REV = 8;
+
 export async function renderManagerReviews(root) {
   const lista = root.querySelector('[data-reviews-list]');
   if (!lista) return;
@@ -94,7 +110,54 @@ export async function renderManagerReviews(root) {
     </div>`).join('');
   }
 
-  lista.innerHTML = avaliacoes.map((a) => {
+  /* O filtro de nota corta a LISTA, e nunca os indicadores do topo. */
+  const filtradas = notaFiltro
+    ? avaliacoes.filter((a) => Number(a.nota) === notaFiltro)
+    : avaliacoes;
+
+  const paginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA_REV));
+  // Trocar de filtro pode deixar a pagina atual fora do intervalo: quem estava
+  // na 4 e filtra "1 estrela" veria uma tela vazia com o paginador em 4 de 1.
+  if (paginaRev > paginas) paginaRev = 1;
+  const inicio = (paginaRev - 1) * POR_PAGINA_REV;
+  const daPagina = filtradas.slice(inicio, inicio + POR_PAGINA_REV);
+
+  const barra = root.querySelector('[data-rev-filtros]');
+  if (barra) {
+    const chip = (valor, texto) =>
+      `<button type="button" class="chip-nota${notaFiltro === valor ? ' on' : ''}" data-rev-nota="${valor}">${texto}</button>`;
+    barra.innerHTML = [chip(0, 'Todas')]
+      .concat([5, 4, 3, 2, 1].map((n) => {
+        const qtd = avaliacoes.filter((a) => Number(a.nota) === n).length;
+        // Nota sem nenhuma avaliacao vira chip desabilitado em vez de sumir: a
+        // ausencia de "1 estrela" e informacao boa, e a barra para de dancar de
+        // largura a cada filtro.
+        return `<button type="button" class="chip-nota${notaFiltro === n ? ' on' : ''}${qtd ? '' : ' vazio'}"
+                  data-rev-nota="${n}"${qtd ? '' : ' disabled'}>${n} <i class="ic sm" data-lucide="star"></i> <b>${qtd}</b></button>`;
+      })).join('');
+  }
+
+  const pager = root.querySelector('[data-rev-pager]');
+  if (pager) {
+    pager.hidden = !filtradas.length;
+    const fim = Math.min(inicio + POR_PAGINA_REV, filtradas.length);
+    const info = pager.querySelector('[data-rev-pager-info]');
+    if (info) info.textContent = filtradas.length
+      ? `${inicio + 1}-${fim} de ${filtradas.length}`
+      : '';
+    const ant = pager.querySelector('[data-rev-prev]');
+    const prox = pager.querySelector('[data-rev-next]');
+    if (ant) ant.disabled = paginaRev <= 1;
+    if (prox) prox.disabled = paginaRev >= paginas;
+  }
+
+  if (!daPagina.length) {
+    lista.innerHTML = '<p class="lista-vazia">Nenhuma avaliação com esse filtro.</p>';
+    window.pqRefreshIcons?.(root);
+    return;
+  }
+
+  lista.innerHTML = daPagina.map((a) => {
     const id = a.id ?? a.cliente;
     const resposta = a.resposta;
     return `<div class="review" data-review="${escapeHtml(id)}">
@@ -130,6 +193,27 @@ export function initManagerReviews() {
     const filtroQuadra = event.target.closest('[data-rev-quadra]');
     if (filtroQuadra) {
       quadraFiltro = filtroQuadra.dataset.revQuadra;
+      paginaRev = 1;
+      await renderManagerReviews(root);
+      return;
+    }
+
+    const chipNota = event.target.closest('[data-rev-nota]');
+    if (chipNota) {
+      notaFiltro = Number(chipNota.dataset.revNota);
+      paginaRev = 1;
+      await renderManagerReviews(root);
+      return;
+    }
+
+    const revAnt = event.target.closest('[data-rev-prev]');
+    if (revAnt) {
+      if (paginaRev > 1) { paginaRev -= 1; await renderManagerReviews(root); }
+      return;
+    }
+    const revProx = event.target.closest('[data-rev-next]');
+    if (revProx) {
+      paginaRev += 1;
       await renderManagerReviews(root);
       return;
     }

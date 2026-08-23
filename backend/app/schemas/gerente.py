@@ -123,6 +123,7 @@ class ArenaProfileUpdate(BaseModel):
     email: Optional[str] = None
     pixChave: Optional[str] = None
     endereco: Optional[str] = None
+    bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
     #: Data URL ou URL http. String vazia remove a logo e volta para a inicial
@@ -130,11 +131,30 @@ class ArenaProfileUpdate(BaseModel):
     logo: Optional[str] = None
 
 
+class ExpedienteDia(BaseModel):
+    """Um dia da semana da quadra.
+
+    `fechado` e o que separa "nao abre" de "nao configurado": sem ele, a unica
+    forma de dizer que a quadra nao abre domingo era apagar a linha — e linha
+    ausente cai no horario padrao, deixando o dia ABERTO.
+    """
+    dia: int = Field(ge=0, le=6)  # 0 = segunda
+    fechado: bool = False
+    abre: Optional[str] = None  # "HH:MM"
+    fecha: Optional[str] = None
+
+
+class ExpedienteBody(BaseModel):
+    dias: list[ExpedienteDia]
+
+
 class ArenaConfigUpdate(BaseModel):
     notificaReserva: Optional[bool] = None
     notificaPagamento: Optional[bool] = None
     notificaAvaliacao: Optional[bool] = None
     notificaResumo: Optional[bool] = None
+    # Escreve em Arena.is_active — a mesma coluna que a busca e o mapa leem.
+    pausada: Optional[bool] = None
 
 
 class DesativacaoBody(BaseModel):

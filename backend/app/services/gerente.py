@@ -9,15 +9,26 @@ import uuid
 from datetime import datetime, time, timedelta, timezone
 
 from fastapi import HTTPException, status
+from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 from ..core.config import settings
+from ..core.cache import bump_catalog_version
 from ..core.timezone import TZ, now_local, utc_now
 from ..models import (
     ACTIVE_STATUSES,
+    Arena,
+    Booking,
+    BookingStatusEvent,
+    Coupon,
+    Court,
+    CourtRecurringAvailability,
+    Payment,
     PLAN_AVULSO,
     PLAN_MENSALISTA,
+    Review,
     ROLE_GERENTE,
+    Settlement,
     SETTLEMENT_PENDING,
     STATUS_CANCELLED,
     STATUS_COMPLETED,
@@ -27,14 +38,6 @@ from ..models import (
     STATUS_PENDING_PAYMENT,
     STATUS_REJECTED,
     STATUS_REQUESTED,
-    Arena,
-    Booking,
-    BookingStatusEvent,
-    Coupon,
-    Court,
-    Payment,
-    Review,
-    Settlement,
 )
 from ..repositories import bookings as bookings_repo
 from ..repositories import gerente as repo
@@ -812,6 +815,116 @@ def update_quadra(db: Session, manager, court_id, body) -> Court:
     return court
 
 
+def _court_da_arena(db: Session, arena, court_id) -> Court:
+    """A quadra tem de ser DESTA arena. Sem a checagem, o id no caminho da URL
+    deixaria um gerente ler e reescrever o expediente da quadra de outro."""
+    court = repo.get_court_in_arena(db, court_id, arena.id)
+    if court is None:
+        raise HTTPException(status_code=404, detail="Quadra não encontrada")
+    return court
+
+
+# --- Expediente da quadra -------------------------------------------------
+
+DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+
+
+def expediente_quadra(db: Session, manager, court_id) -> dict:
+    """Os sete dias da quadra, sempre os sete.
+
+    `court_recurring_availability` existe desde a fase 1 com dia da semana,
+    faixa e a coluna `closed` — e nunca teve rota no painel. O gerente tinha um
+    unico par "abre as / fecha as" valendo para a semana inteira, entao arena
+    que fecha mais cedo no domingo ou nao abre segunda nao tinha como dizer.
+    Era o que o Gabriel pediu com "pegue de referencia o Google Meu Negocio".
+
+    Devolve os SETE dias mesmo quando nao ha linha nenhuma no banco, com o
+    horario padrao da quadra preenchido: um editor que comeca vazio obriga o
+    dono a digitar catorze horarios antes de mudar um. E `configurado` diz se
+    aquele dia ja foi decidido ou se ainda esta herdando o padrao — a diferenca
+    entre "nao abre" e "ninguem configurou" foi justamente o que a coluna
+    `closed` veio resolver.
+    """
+    arena = manager_arena_or_404(db, manager)
+    court = _court_da_arena(db, arena, court_id)
+
+    dias = []
+    for dow in range(7):
+        linhas = venues_repo.recurring_for_court(db, court.id, dow)
+        fechado = any(getattr(r, "closed", False) for r in linhas)
+        faixa = next((r for r in linhas if not getattr(r, "closed", False)), None)
+        dias.append({
+            "dia": dow,
+            "rotulo": DIAS_SEMANA[dow],
+            "configurado": bool(linhas),
+            "fechado": fechado,
+            "abre": (faixa.start_time if faixa else court.opening_time).strftime("%H:%M"),
+            "fecha": (faixa.end_time if faixa else court.closing_time).strftime("%H:%M"),
+        })
+    return {"quadraId": str(court.id), "quadra": court.name, "dias": dias}
+
+
+def salvar_expediente(db: Session, manager, court_id, dias: list) -> dict:
+    """Reescreve a semana inteira da quadra.
+
+    Apaga e regrava em vez de casar linha a linha: o editor manda sempre os
+    sete dias, entao um diff aqui seria trabalho para chegar ao mesmo estado
+    com mais chance de erro.
+
+    FECHADO GRAVA LINHA, e nao apaga. Sem linha, `_day_window` cai no horario
+    padrao da quadra e o dia volta a aparecer ABERTO — o oposto do que o dono
+    acabou de pedir, e ele so descobriria quando alguem reservasse.
+    """
+    arena = manager_arena_or_404(db, manager)
+    court = _court_da_arena(db, arena, court_id)
+
+    vistos = set()
+    novos = []
+    for item in dias:
+        dow = int(item.get("dia", -1))
+        if dow < 0 or dow > 6:
+            raise HTTPException(status_code=422, detail="Dia da semana inválido")
+        if dow in vistos:
+            raise HTTPException(status_code=422, detail="Dia da semana repetido")
+        vistos.add(dow)
+
+        fechado = bool(item.get("fechado"))
+        if fechado:
+            novos.append((dow, time(0, 0), time(0, 0), True))
+            continue
+        try:
+            abre = datetime.strptime(str(item.get("abre", "")), "%H:%M").time()
+            fecha = datetime.strptime(str(item.get("fecha", "")), "%H:%M").time()
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Horário inválido (use HH:MM)")
+        # Fecha antes de abrir nao e virada de dia: e engano de digitacao. Aceitar
+        # produziria um dia sem nenhum horario reservavel, sem dizer por que.
+        if fecha <= abre:
+            raise HTTPException(
+                status_code=422,
+                detail=f"{DIAS_SEMANA[dow]}: o fechamento precisa ser depois da abertura",
+            )
+        novos.append((dow, abre, fecha, False))
+
+    db.execute(
+        delete(CourtRecurringAvailability).where(
+            CourtRecurringAvailability.court_id == court.id
+        )
+    )
+    for dow, abre, fecha, fechado in novos:
+        db.add(CourtRecurringAvailability(
+            id=uuid.uuid4(),
+            court_id=court.id,
+            day_of_week=dow,
+            start_time=abre,
+            end_time=fecha,
+            closed=fechado,
+        ))
+    db.commit()
+    bump_catalog_version()
+    return expediente_quadra(db, manager, court_id)
+
+
 # --- Avaliacoes -----------------------------------------------------------
 
 def list_avaliacoes(db: Session, manager, *, quadra: str | None = None) -> dict:
@@ -973,6 +1086,7 @@ def arena_profile(db: Session, manager) -> dict:
         "nome": arena.name,
         "descricao": arena.description or "",
         "endereco": arena.address or "",
+        "bairro": arena.neighborhood or "",
         "cidade": arena.city or "",
         "estado": arena.state or "",
         "telefone": arena.phone or "",
@@ -994,6 +1108,8 @@ def update_arena_profile(db: Session, manager, body) -> dict:
         arena.description = body.descricao
     if body.endereco is not None:
         arena.address = body.endereco
+    if body.bairro is not None:
+        arena.neighborhood = body.bairro
     if body.cidade is not None:
         arena.city = body.cidade
     if body.estado is not None:
@@ -1018,6 +1134,11 @@ def arena_config(db: Session, manager) -> dict:
         "notificaPagamento": notif.get("pagamento", True),
         "notificaAvaliacao": notif.get("avaliacao", False),
         "notificaResumo": notif.get("resumo", True),
+        # ARENA PAUSADA sai de `is_active`, a MESMA coluna que a busca e o mapa
+        # ja consultam (repositories/venues.VISIBLE). O interruptor existia na
+        # tela e gravava so no localStorage do navegador: o dono desligava, via
+        # o botao virar, e a arena continuava aparecendo no app para todo mundo.
+        "pausada": not arena.is_active,
     }
 
 
@@ -1035,6 +1156,15 @@ def update_arena_config(db: Session, manager, body) -> dict:
         notif["resumo"] = body.notificaResumo
     settings_["notifications"] = notif
     arena.settings = settings_
+
+    if body.pausada is not None:
+        # PAUSAR nao cancela nada. E o interruptor do dia a dia — "hoje nao
+        # abro" — e tem de ser reversivel sem consequencia: a arena some da
+        # busca e do mapa, e para de receber reserva nova, mas quem ja pagou
+        # continua com o horario. Cancelar reserva paga e o que DESATIVAR faz,
+        # com aviso e confirmacao, e sao coisas diferentes de proposito.
+        arena.is_active = not body.pausada
+
     db.commit()
     return arena_config(db, manager)
 
