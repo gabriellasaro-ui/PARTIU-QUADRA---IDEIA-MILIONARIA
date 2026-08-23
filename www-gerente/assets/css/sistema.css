@@ -1493,3 +1493,43 @@ html[data-manager-app] .sb-group {
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+
+
+/* ══════════════════ LISTA DE RESERVAS: UM CARTAO SO ══════════════════════ */
+
+/* Eram DOIS cartoes encaixados. A `<section>` e cartao (borda 1px, raio 14px,
+   fundo branco) e a `.manager-bookings` dentro dela era outro — 1px mais
+   estreita, tambem branca, tambem com borda, e com raio de 20px. Duas bordas
+   quase coladas e dois raios diferentes discutindo no mesmo canto: e isso que
+   se ve como "card bugado", mesmo sem conseguir nomear.
+
+   A lista nao e um cartao. Ela e o conteudo do cartao. */
+html[data-manager-app] .manager-bookings,
+html[data-manager-app] .manager-members {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+/* A secao passa a ter o respiro que nao tinha (padding computava 0), e o
+   cabecalho, as linhas e o paginador se alinham por ele. Sem padding
+   horizontal proprio nas linhas: quem define o recuo e o cartao, num lugar so
+   — foi a divergencia entre esses recuos que desalinhou o cabecalho antes. */
+html[data-manager-app] .manager-section {
+  padding: var(--e5);
+}
+
+html[data-manager-app] .manager-booking-head {
+  padding: var(--e2) 0;
+}
+
+html[data-manager-app] .manager-booking-row {
+  padding: var(--e3) 0;
+}
+
+/* A ultima linha nao precisa de filete: o fim do cartao ja termina a lista. */
+html[data-manager-app] .manager-bookings .manager-booking-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
