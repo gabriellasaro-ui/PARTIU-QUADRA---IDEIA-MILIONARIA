@@ -26,11 +26,15 @@
       <button class="cal-nav" type="button" data-agenda-week="1" aria-label="Próxima semana"><i class="ic sm" data-lucide="chevron-right"></i></button>
     </div>
   </div>
-  <div class="manager-agenda-stats" aria-label="Resumo da semana">
-    <article><span><i class="ic sm" data-lucide="calendar"></i></span><div><strong class="num" data-agenda-stat-total>0</strong><small>Reservas</small></div></article>
-    <article><span><i class="ic sm" data-lucide="bell"></i></span><div><strong class="num" data-agenda-stat-pending>0</strong><small>Para aprovar</small></div></article>
-    <article><span><i class="ic sm" data-lucide="wallet"></i></span><div><strong class="num" data-agenda-stat-revenue>R$ 0</strong><small>Previsto</small></div></article>
-  </div>
+  <!-- OS TRES NUMEROS SAIRAM.
+
+       "Reservas", "Para aprovar" e "Previsto" ja estao no Dashboard, que e a
+       tela de resumo. Aqui a pergunta e outra e e visual: onde tem buraco na
+       semana. A propria grade responde — contar os blocos e ler o total dao a
+       mesma coisa, e o cabecalho com tres cartoes empurrava o calendario para
+       baixo justamente na tela em que a altura e o que falta.
+
+       Agenda simples: a semana, a navegacao e a grade. -->
 </section>
 
 <section class="manager-agenda-workspace">

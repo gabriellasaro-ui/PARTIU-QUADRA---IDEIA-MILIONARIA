@@ -218,28 +218,51 @@ async function renderDesktopRoute() {
   // O manager-app.css tem regras por tela penduradas neste atributo.
   document.documentElement.dataset.managerView = routeName;
   updateDesktopMeta(routeName, route);
-  await setFragment(view, route.page);
-  if (routeName === 'dashboard') await renderManagerOverview(view);
-  if (routeName === 'quadras') await renderManagerCourts(view);
-  if (routeName === 'reservas') await renderManagerReservations(view);
-  if (routeName === 'mensalistas') await renderManagerMembers(view);
-  if (routeName === 'agenda') await renderManagerAgenda(view);
-  if (routeName === 'financeiro') await renderManagerFinance(view);
-  if (routeName === 'avaliacoes') await renderManagerReviews(view);
-  if (routeName === 'mensagens') await renderManagerMessages(view);
-  if (routeName === 'config') {
-    await renderManagerSettings(view);
-    sincronizarInterruptorDeTema(view);
-  }
-  if (routeName === 'reservaNova') {
-    await renderManagerBookingForm(view);
+
+  /* A SIDEBAR MARCA A TELA ANTES DE ELA CARREGAR.
+
+     `markActiveNav()` era a ultima linha desta funcao, depois de todos os
+     `await`: buscar o fragmento e chamar a API leva de meio segundo a dois, e
+     nesse tempo o menu continuava marcando a tela ANTERIOR. Clicava em Agenda,
+     o titulo mudava, o endereco mudava, e a sidebar seguia dizendo Mensagens —
+     parecia que o clique nao pegou, e a reacao natural e clicar de novo.
+
+     Marcar a navegacao e instantaneo e nao depende de dado nenhum: e uma
+     comparacao de string. So o CONTEUDO precisa esperar. */
+  markActiveNav();
+
+  /* E a tela avisa que esta carregando, em vez de ficar com o desenho da
+     anterior. Sem isto, trocar de rota deixava a tela velha parada na frente e
+     depois ela era substituida de uma vez — o que o Gabriel leu como "demora
+     demais para aparecer". */
+  view.setAttribute('aria-busy', 'true');
+  try {
+    await setFragment(view, route.page);
+    if (routeName === 'dashboard') await renderManagerOverview(view);
+    if (routeName === 'quadras') await renderManagerCourts(view);
+    if (routeName === 'reservas') await renderManagerReservations(view);
+    if (routeName === 'mensalistas') await renderManagerMembers(view);
+    if (routeName === 'agenda') await renderManagerAgenda(view);
+    if (routeName === 'financeiro') await renderManagerFinance(view);
+    if (routeName === 'avaliacoes') await renderManagerReviews(view);
+    if (routeName === 'mensagens') await renderManagerMessages(view);
+    if (routeName === 'config') {
+      await renderManagerSettings(view);
+      sincronizarInterruptorDeTema(view);
+    }
+    if (routeName === 'reservaNova') {
+      await renderManagerBookingForm(view);
     // Depois do render: o select de horas so existe quando o formulario ja foi
     // montado, e preencher antes escreveria num campo que sera reescrito.
-    prefillReservaNova(view);
+      prefillReservaNova(view);
+    }
+    if (routeName === 'reservaDetalhe') await renderManagerBookingDetail(view);
+    if (routeName === 'quadraForm') await renderManagerCourtForm(view);
+  } finally {
+    /* `finally`: uma rota que falha ao carregar nao pode deixar a tela marcada
+       como ocupada para sempre. */
+    view.removeAttribute('aria-busy');
   }
-  if (routeName === 'reservaDetalhe') await renderManagerBookingDetail(view);
-  if (routeName === 'quadraForm') await renderManagerCourtForm(view);
-  markActiveNav();
   document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'auto' });
   window.scrollTo({ top: 0, behavior: 'auto' });
 }

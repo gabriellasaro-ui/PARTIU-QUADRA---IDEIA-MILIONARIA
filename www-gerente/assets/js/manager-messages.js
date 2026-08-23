@@ -152,7 +152,74 @@ export async function renderManagerMessages(root) {
   window.pqRefreshIcons?.(root);
 }
 
+/* ══════════ AVISO DE MENSAGEM NOVA ═══════════════════════════════════════
+
+   O backend publica `message.new` no WebSocket desde a fase 18, e o painel
+   escutava so `reserva.solicitada`. Ou seja: o cliente escrevia "cheguei, o
+   portao esta fechado" e o dono so descobria abrindo Mensagens por acaso.
+
+   Tres avisos, porque respondem coisas diferentes:
+
+     TOAST     — algo aconteceu AGORA. Persistente: se ele sumisse em 2,6s, uma
+                 mensagem que chega enquanto o dono atende alguem no balcao
+                 estaria perdida.
+     BADGE     — quantas esperam resposta, visivel de qualquer tela.
+     SINO      — o ponto no header, que e onde o olho procura aviso.
+
+   A contagem vem de /api/mensagens/nav/badges, e nao de somar no cliente: a
+   tela de mensagens pode nem estar montada quando o evento chega. */
+async function atualizarAvisos() {
+  if (!API_BASE_URL) return;
+  let badges;
+  try {
+    badges = await venueService.badges('gerente');
+  } catch (error) {
+    return;
+  }
+  const naoLidas = Number(badges?.msg_ger || 0);
+
+  const item = document.querySelector('[data-nav-page="mensagens"]');
+  if (item) {
+    let selo = item.querySelector('.badge');
+    if (naoLidas > 0) {
+      if (!selo) {
+        selo = document.createElement('span');
+        selo.className = 'badge';
+        item.appendChild(selo);
+      }
+      selo.textContent = String(naoLidas);
+    } else if (selo) {
+      selo.remove();
+    }
+  }
+
+  // O ponto do sino soma tudo o que espera o dono, e nao so mensagem.
+  const pendencias = naoLidas + Number(badges?.solicitacoes || 0);
+  document.querySelector('.ndot')?.classList.toggle('on', pendencias > 0);
+}
+
 export function initManagerMessages() {
+  atualizarAvisos();
+
+  window.addEventListener('pq:ws:event', async (evento) => {
+    const dado = evento.detail || {};
+    if (dado.type !== 'message.new') return;
+
+    const conversa = dado.conversation || {};
+    const ultima = conversa.messages?.[conversa.messages.length - 1];
+    window.pqToast?.(`Nova mensagem de ${conversa.cliente || 'um cliente'}`, {
+      persistente: true,
+      texto: ultima?.text || conversa.subject || ''
+    });
+
+    await atualizarAvisos();
+
+    /* Se a tela de mensagens estiver aberta, ela se redesenha junto: ver o
+       toast e a lista continuar velha e pior do que nao avisar. */
+    const root = document.querySelector('[data-desktop-route-view]');
+    if (root?.querySelector('[data-conv-list]')) await renderManagerMessages(root);
+  });
+
   document.addEventListener('click', async (event) => {
     const root = document.querySelector('[data-desktop-route-view]');
     if (!root || !root.querySelector('[data-conv-list]')) return;
@@ -161,6 +228,9 @@ export function initManagerMessages() {
     if (linha) {
       abertaId = linha.dataset.conv;
       await renderManagerMessages(root);
+      // Abrir a conversa e o gesto que zera o aviso — o dono ja viu.
+      try { await venueService.marcarLida?.(abertaId); } catch (error) {}
+      await atualizarAvisos();
       return;
     }
 

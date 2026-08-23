@@ -102,20 +102,14 @@ function rotuloMes(segunda) {
   return `${MESES[quinta.getMonth()]} ${quinta.getFullYear()}`;
 }
 
+/* O RESUMO DA SEMANA SAIU da agenda — os tres numeros vivem no Dashboard.
+
+   Sobrou so o rotulo do mes, que ainda titula a tela. Os `querySelector` dos
+   contadores ficariam devolvendo null para sempre; era codigo procurando
+   elemento que nao existe mais. */
 function atualizarResumo(root, eventos, segunda) {
-  const total = eventos.length;
-  const pendentes = eventos.filter((e) => e.status === 'Solicitada' || e.status === 'Pendente').length;
-  const receita = eventos.reduce((sum, e) => sum + Number(e.valor || 0), 0);
-
   const month = root.querySelector('[data-agenda-month]');
-  const statTotal = root.querySelector('[data-agenda-stat-total]');
-  const statPending = root.querySelector('[data-agenda-stat-pending]');
-  const statRevenue = root.querySelector('[data-agenda-stat-revenue]');
-
   if (month) month.textContent = rotuloMes(segunda);
-  if (statTotal) statTotal.textContent = String(total);
-  if (statPending) statPending.textContent = String(pendentes);
-  if (statRevenue) statRevenue.textContent = formatCurrency(receita);
 }
 
 /* Eventos posicionados por DATA, nao por indice de dia da semana. Cada

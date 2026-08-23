@@ -1762,3 +1762,117 @@ html[data-manager-app] .bubbles { min-height: 0; }
 /* O formulario reserva o espaco da barra no fim: assim o ultimo cartao nunca
    fica inalcancavel atras dela. */
 html[data-manager-app] form.settings { padding-bottom: var(--e6); }
+
+
+/* ══════════════════ MENSAGENS EM TELA CHEIA ══════════════════════════════ */
+
+/* O chat vivia dentro do padding da area de conteudo, com moldura, canto
+   arredondado e uma faixa de fundo em volta — e sobrava tudo isso de espaco
+   morto ao redor de uma tela cuja unica funcao e caber conversa.
+
+   Aqui ele ocupa a area inteira: encosta no header e na sidebar, e nao passa
+   por baixo de nenhum dos dois (quem limita e a propria area de conteudo).
+   O padding sai com margem negativa em vez de zerar `.content`, porque
+   `.content` e compartilhado com as outras oito telas. */
+html[data-manager-app][data-manager-view="mensagens"] .chat {
+  height: calc(100vh - 68px);
+  min-height: 0;
+  max-height: none;
+  /* Medidos no navegador: a topbar tem 68px e o `.content` tem padding
+     26px/28px/56px. As margens negativas cancelam exatamente esse padding, e
+     nao um valor escolhido no olho — errar aqui deixa uma fresta ou faz o chat
+     passar por baixo da sidebar. */
+  margin: -26px -28px -56px;
+  border: 0;
+  border-radius: 0;
+}
+
+/* A divisoria entre a lista e a conversa e a unica linha que sobra. */
+html[data-manager-app][data-manager-view="mensagens"] .chat-list {
+  border-right: 1px solid var(--pq-line);
+}
+
+/* Sem moldura por fora, o cabecalho da lista precisa do proprio respiro. */
+html[data-manager-app][data-manager-view="mensagens"] .chat-list-head {
+  padding: var(--e4) var(--e4) var(--e3);
+}
+
+
+/* ══════════════════ CADASTRAR QUADRA: aproveitar a largura ═══════════════ */
+
+/* A coluna da esquerda tinha 280px so para "Dados da quadra" e uma frase, e
+   ficava vazia dali para baixo — em "Preco & disponibilidade" eram 400px de
+   branco ao lado do formulario. A da direita, com o dobro de conteudo, se
+   espremia.
+
+   O titulo passa para CIMA do bloco e os campos usam a largura toda. Some a
+   coluna morta, e cabe mais em cada tela — que era o pedido. */
+html[data-manager-app][data-manager-view="quadraForm"] .set-card,
+html[data-manager-app][data-manager-view="reservaNova"] .set-card {
+  display: block;
+  padding: var(--e5);
+}
+
+html[data-manager-app][data-manager-view="quadraForm"] .set-aside,
+html[data-manager-app][data-manager-view="reservaNova"] .set-aside {
+  margin-bottom: var(--e4);
+  padding-bottom: var(--e3);
+  border-bottom: 1px solid var(--pq-line);
+}
+
+html[data-manager-app][data-manager-view="quadraForm"] .set-aside h2,
+html[data-manager-app][data-manager-view="reservaNova"] .set-aside h2 {
+  font-size: var(--t-secao);
+}
+
+/* A descricao vai para o lado do titulo: ela explica o bloco, nao merece
+   linha propria empurrando os campos para baixo. */
+html[data-manager-app][data-manager-view="quadraForm"] .set-aside p,
+html[data-manager-app][data-manager-view="reservaNova"] .set-aside p {
+  margin-top: 2px;
+}
+
+/* Tres colunas onde antes cabiam duas: preco, mensalista e duracao sao campos
+   curtos e se liam melhor juntos do que um por linha. */
+html[data-manager-app][data-manager-view="quadraForm"] .input-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--e4);
+}
+
+/* O expediente ganha duas colunas na largura cheia: sete dias empilhados
+   faziam a tela rolar sem necessidade. */
+html[data-manager-app][data-manager-view="quadraForm"] .expediente {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0 var(--e6);
+}
+
+html[data-manager-app][data-manager-view="quadraForm"] .expediente__aviso {
+  grid-column: 1 / -1;
+}
+
+
+/* ══════════════════ AVISOS ═══════════════════════════════════════════════ */
+
+/* O ponto do sino nascia sempre visivel no HTML — um aviso permanente nao
+   avisa nada. Aparece so quando ha o que responder. */
+html[data-manager-app] .topbar .ndot { display: none; }
+html[data-manager-app] .topbar .ndot.on { display: block; }
+
+html[data-manager-app] .sb-link .badge {
+  margin-left: auto;
+  border-radius: var(--r-pilula);
+  font-size: var(--t-micro);
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+/* Enquanto a rota carrega, a tela anterior fica esmaecida em vez de parada
+   como se nada tivesse acontecido — o clique tem resposta imediata mesmo
+   quando o dado demora. */
+html[data-manager-app] [data-desktop-route-view][aria-busy="true"] {
+  opacity: .45;
+  transition: opacity .12s ease;
+  pointer-events: none;
+}

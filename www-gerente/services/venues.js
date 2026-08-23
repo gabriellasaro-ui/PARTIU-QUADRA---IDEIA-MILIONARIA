@@ -115,6 +115,18 @@ export const venueService = {
     return !active;
   },
 
+  /* CONTADORES da navegacao (solicitacoes e mensagens nao lidas). */
+  async badges(papel = 'gerente') {
+    if (!API_BASE_URL) return null;
+    return api.get(`/api/mensagens/nav/badges?role=${encodeURIComponent(papel)}`);
+  },
+
+  /* Abrir a conversa e o gesto que a marca como lida. */
+  async marcarLida(conversaId) {
+    if (!API_BASE_URL || !conversaId) return null;
+    return api.post(`/api/mensagens/${encodeURIComponent(conversaId)}/read`, {});
+  },
+
   async conversations() {
     if (API_BASE_URL) {
       const data = await api.get('/api/mensagens?role=jogador');
