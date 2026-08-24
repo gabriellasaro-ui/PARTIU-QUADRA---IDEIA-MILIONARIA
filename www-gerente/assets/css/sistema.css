@@ -2557,9 +2557,28 @@ html[data-manager-app] .app.collapsed .sb-perfil .ic { display: none; }
     margin: 0;
   }
 
-  /* Os oito indicadores do financeiro em duas colunas, e nao quatro. */
-  html[data-manager-app] .manager-finance-metrics {
+  /* OS OITO INDICADORES em duas colunas.
+
+     O seletor leva `[data-manager-view="financeiro"]` porque o manager-app.css
+     forca uma coluna com essa mesma especificidade (0,3,1) no breakpoint mais
+     estreito — empilhados, os oito comiam duas telas de rolagem antes do
+     grafico aparecer. */
+  html[data-manager-app][data-manager-view="financeiro"] .manager-finance-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--e2);
+  }
+
+  html[data-manager-app][data-manager-view="financeiro"] .manager-finance-metrics article {
+    padding: var(--e3);
+  }
+
+  /* Legenda em duas linhas no maximo: "R$ 480,00 expirou sem resposta" em meia
+     largura viraria quatro linhas e o cartao dobraria de altura. */
+  html[data-manager-app][data-manager-view="financeiro"] .manager-finance-metrics small {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   html[data-manager-app] .manager-finance-metrics strong { font-size: var(--t-secao); }
@@ -2944,12 +2963,39 @@ html[data-manager-app] .notif {
   border-radius: var(--r-controle);
 }
 
-/* NAO LIDA com fundo e barra: sem marca, a lista vira historico e o dono tem
-   de reler tudo para achar o que chegou depois da ultima visita. */
-html[data-manager-app] .notif.nova {
-  background: var(--pq-tint);
-  box-shadow: inset 3px 0 0 var(--pq-brand);
+/* NAO LIDA marcada por um PONTO, e nao por um cartao verde inteiro.
+
+   Com todas as 17 sem ler, a lista virava uma pilha de blocos verdes iguais —
+   quando tudo esta destacado, nada esta. O ponto marca sem tingir: as linhas
+   voltam a se ler como lista, e a diferenca entre lida e nao lida continua
+   visivel de relance. */
+html[data-manager-app] .notif { position: relative; }
+
+html[data-manager-app] .notif + .notif {
+  border-top: 1px solid var(--pq-line);
+  border-radius: 0;
 }
+
+html[data-manager-app] .notif.nova::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  right: var(--e2);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pq-brand);
+}
+
+/* O titulo da nao lida vem em peso cheio; o da lida recua para o tom de apoio.
+   E a mesma hierarquia da lista de conversas — o que espera resposta antes do
+   que ja foi visto. */
+html[data-manager-app] .notif.nova strong { color: var(--pq-ink); }
+html[data-manager-app] .notif:not(.nova) strong { color: var(--pq-ink-soft); font-weight: 600; }
+html[data-manager-app] .notif:not(.nova) .notif__ic { opacity: .6; }
+
+/* Espaco para o ponto nao encostar no texto. */
+html[data-manager-app] .notif > div { padding-right: var(--e4); }
 
 html[data-manager-app] .notif__ic {
   display: grid;
@@ -3134,4 +3180,91 @@ html[data-manager-app] .campo-data .btn-limpar {
   html[data-manager-app] .filtro-barra { flex-wrap: wrap; gap: var(--e3); }
   html[data-manager-app] .campo-data { width: 100%; }
   html[data-manager-app] .campo-data input[type="date"] { flex: 1; min-width: 0; }
+}
+
+
+/* ══════════════════ CELULAR: menos rolagem, um controle por coisa ════════ */
+
+@media (max-width: 820px) and (pointer: coarse) {
+  /* O GRAFICO ESPREMIDO. A regra de mobile diz `grid-template-columns: 1fr`,
+     mas com especificidade (0,2,1) — e o bloco por tela do manager-app.css
+     declara duas colunas com `[data-manager-view="financeiro"]` (0,3,1) e
+     vence. O grafico ficava com uma tira de 60px ao lado do painel de detalhe.
+     Mesma armadilha de especificidade que essa folha ja me pregou tres vezes:
+     tudo no fim dela carrega o atributo da tela. */
+  html[data-manager-app][data-manager-view="financeiro"] .manager-finance-analytics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* UM SELETOR DE PERIODO, e nao dois. Existem duas caixas no HTML — uma para o
+     desktop, dentro do cabecalho, e outra pensada para o celular. As duas
+     apareciam juntas: dois controles identicos, um em cima do outro, mudando a
+     mesma coisa. Fica o de baixo, que ja e o desenhado para o toque. */
+  html[data-manager-app][data-manager-view="financeiro"] .manager-finance-command .period {
+    display: none;
+  }
+
+  /* CARTOES DE NUMERO EM DUAS COLUNAS.
+
+     Empilhados, tres indicadores comiam meia tela de rolagem antes do conteudo
+     comecar — e sao numeros curtos, que cabem lado a lado. Vale para todas as
+     telas que os usam (mensalistas, reservas, agenda), e nao so uma: o problema
+     e o mesmo em todas. */
+  html[data-manager-app] .manager-metrics,
+  html[data-manager-app] .manager-reservation-overview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--e2);
+  }
+
+  /* Numero em cima do rotulo, e nao ao lado: em meia largura o icone redondo
+     mais o texto em linha nao cabem, e o valor quebrava por cima do rotulo. */
+  html[data-manager-app] .manager-metrics article,
+  html[data-manager-app] .manager-reservation-overview article {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: var(--e2);
+    align-items: center;
+    min-height: 0;
+    margin: 0;
+    padding: var(--e3);
+  }
+
+  html[data-manager-app] .manager-metrics article > span,
+  html[data-manager-app] .manager-reservation-overview article > span {
+    width: 32px;
+    height: 32px;
+  }
+
+  html[data-manager-app] .manager-metrics strong,
+  html[data-manager-app] .manager-reservation-overview strong {
+    font-size: var(--t-secao);
+    line-height: 1.1;
+  }
+
+  html[data-manager-app] .manager-metrics small,
+  html[data-manager-app] .manager-reservation-overview small {
+    display: block;
+    overflow: hidden;
+    font-size: var(--t-micro);
+    line-height: 1.25;
+  }
+
+  /* O terceiro cartao, sozinho na ultima fileira, ocupa a linha inteira em vez
+     de deixar um buraco do lado. */
+  html[data-manager-app] .manager-metrics article:nth-child(3):last-child,
+  html[data-manager-app] .manager-reservation-overview article:nth-child(3):last-child {
+    grid-column: span 2;
+  }
+
+  /* A BUSCA E O BOTAO na mesma linha: empilhados, gastavam duas alturas antes
+     dos numeros — e "Adicionar mensalista" e um botao, nao um bloco. */
+  html[data-manager-app] .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+  }
+
+  html[data-manager-app] .toolbar .field.grow { flex: 1 1 100%; }
+  html[data-manager-app] .toolbar .btn { flex: 1 1 auto; }
 }
