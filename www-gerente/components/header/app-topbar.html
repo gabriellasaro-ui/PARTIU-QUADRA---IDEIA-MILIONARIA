@@ -22,7 +22,10 @@
      E por isso que ela fica no header, alcancavel de qualquer tela — e a acao
      que o dono faz com o telefone no ouvido. -->
 <header class="topbar">
-  <button class="icon-btn hamb" data-nav-open aria-label="Abrir menu">
+  <!-- O hamburguer abre a MESMA folha da barra de baixo, e nao a gaveta
+       lateral: dois gestos diferentes para o mesmo menu obrigam a pessoa a
+       aprender os dois. -->
+  <button class="icon-btn hamb" data-sheet-open="menu-sheet" aria-expanded="false" aria-haspopup="dialog" aria-label="Abrir menu">
     <i class="ic" data-lucide="menu"></i>
   </button>
   <div class="pt">

@@ -1,0 +1,71 @@
+<!-- MENU EM FOLHA, como no app do jogador.
+
+     Antes, tanto o hamburguer do topo quanto o "Menu" da barra abriam a GAVETA
+     lateral — a mesma sidebar do desktop deslizando por cima da tela. Funciona,
+     mas nao e o gesto do aparelho: no celular a mao esta embaixo, e uma gaveta
+     que vem da esquerda obriga o polegar a atravessar a tela para escolher e de
+     novo para fechar.
+
+     A folha sobe de onde o dedo ja esta. E ela mostra o que a barra NAO tem: os
+     cinco destinos que sobraram, mais a conta. A gaveta duplicava os nove
+     itens, metade deles ja alcancaveis a um toque na propria barra.
+
+     Mensagens fica no topo porque e a unica com contador — o que espera
+     resposta vem antes do que so se consulta. -->
+<div class="mgr-sheet" id="menu-sheet" data-mgr-sheet hidden>
+  <button class="mgr-sheet__fundo" type="button" data-sheet-close aria-label="Fechar menu"></button>
+  <section class="mgr-sheet__painel" role="dialog" aria-modal="true" aria-labelledby="menu-sheet-titulo">
+    <header class="mgr-sheet__topo">
+      <div>
+        <span>Sua arena</span>
+        <h2 id="menu-sheet-titulo">Menu</h2>
+      </div>
+      <button class="mgr-sheet__x" type="button" data-sheet-close aria-label="Fechar">
+        <i class="ic" data-lucide="x"></i>
+      </button>
+    </header>
+
+    <nav class="mgr-menu" aria-label="Mais destinos">
+      <a href="./dashboard.html#mensagens" data-sheet-close data-nav-page="mensagens">
+        <span class="mgr-menu__ic"><i class="ic" data-lucide="messages-square"></i></span>
+        <span class="mgr-menu__tx"><strong>Mensagens</strong><small>Conversas com jogadores</small></span>
+        <span class="badge" data-menu-badge hidden></span>
+        <i class="ic sm" data-lucide="chevron-right"></i>
+      </a>
+      <a href="./dashboard.html#financeiro" data-sheet-close data-nav-page="financeiro">
+        <span class="mgr-menu__ic"><i class="ic" data-lucide="banknote"></i></span>
+        <span class="mgr-menu__tx"><strong>Financeiro</strong><small>Receitas e indicadores</small></span>
+        <i class="ic sm" data-lucide="chevron-right"></i>
+      </a>
+      <a href="./dashboard.html#mensalistas" data-sheet-close data-nav-page="mensalistas">
+        <span class="mgr-menu__ic"><i class="ic" data-lucide="repeat"></i></span>
+        <span class="mgr-menu__tx"><strong>Mensalistas</strong><small>Recorrências e vencimentos</small></span>
+        <i class="ic sm" data-lucide="chevron-right"></i>
+      </a>
+      <a href="./dashboard.html#avaliacoes" data-sheet-close data-nav-page="avaliacoes">
+        <span class="mgr-menu__ic"><i class="ic" data-lucide="star"></i></span>
+        <span class="mgr-menu__tx"><strong>Avaliações</strong><small>Notas e respostas</small></span>
+        <i class="ic sm" data-lucide="chevron-right"></i>
+      </a>
+      <a href="./dashboard.html#config" data-sheet-close data-nav-page="config">
+        <span class="mgr-menu__ic"><i class="ic" data-lucide="settings"></i></span>
+        <span class="mgr-menu__tx"><strong>Configurações</strong><small>Perfil, endereço e avisos</small></span>
+        <i class="ic sm" data-lucide="chevron-right"></i>
+      </a>
+    </nav>
+
+    <!-- A CONTA no rodape da folha, como no pe da sidebar do desktop: no
+         celular a sidebar nao aparece, e sem isto nao ha onde ver com qual
+         conta se esta logado nem por onde sair. -->
+    <div class="mgr-sheet__conta">
+      <span class="mgr-sheet__av" data-sheet-inicial>—</span>
+      <span class="mgr-sheet__txt">
+        <strong data-sheet-nome>Minha conta</strong>
+        <small data-sheet-arena></small>
+      </span>
+      <button type="button" class="btn btn-soft btn-xs" data-logout>
+        <i class="ic sm" data-lucide="log-out"></i> Sair
+      </button>
+    </div>
+  </section>
+</div>

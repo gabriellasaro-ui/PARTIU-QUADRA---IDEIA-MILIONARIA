@@ -2710,3 +2710,181 @@ html[data-manager-app] .app.collapsed .sb-perfil .ic { display: none; }
   html[data-manager-app] .manager-tabbar-fab.on > span { background: var(--pq-brand); }
   html[data-manager-app] .manager-tabbar-fab.on em { color: var(--pq-brand-deep); }
 }
+
+
+/* ══════════════════ FOLHA DE MENU ════════════════════════════════════════
+
+   Sobe de baixo, de onde o dedo ja esta — a gaveta lateral obrigava o polegar
+   a atravessar a tela para escolher e de novo para fechar. Mesma largura
+   travada da barra (430px), pelo mesmo motivo: em tablet uma folha de ponta a
+   ponta poe os itens fora de alcance. */
+html[data-manager-app] .mgr-sheet {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  width: min(100vw, 430px);
+  margin: 0 auto;
+}
+
+html[data-manager-app] .mgr-sheet[hidden] { display: none; }
+
+html[data-manager-app] .mgr-sheet__fundo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(7, 52, 31, .34);
+}
+
+html[data-manager-app] .mgr-sheet__painel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: min(82dvh, 720px);
+  overflow-y: auto;
+  padding: var(--e5) var(--e4) calc(var(--e5) + var(--manager-safe-bottom));
+  border-radius: 28px 28px 0 0;
+  background: var(--pq-panel);
+  box-shadow: 0 -18px 46px rgba(8, 15, 10, .22);
+  animation: mgr-sheet-entra .2s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes mgr-sheet-entra {
+  from { transform: translateY(28px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Quem pediu menos movimento recebe a folha ja posicionada. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-manager-app] .mgr-sheet__painel { animation: none; }
+}
+
+html[data-manager-app] .mgr-sheet__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  padding-bottom: var(--e3);
+  border-bottom: 1px solid var(--pq-line);
+}
+
+html[data-manager-app] .mgr-sheet__topo > div > span {
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+html[data-manager-app] .mgr-sheet__topo h2 { margin-top: 2px; font-size: 21px; }
+
+html[data-manager-app] .mgr-sheet__x {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+}
+
+html[data-manager-app] .mgr-menu { display: grid; padding: var(--e2) 0; }
+
+html[data-manager-app] .mgr-menu > a {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--e3);
+  padding: var(--e3) var(--e1);
+  border-bottom: 1px solid var(--pq-line);
+  color: var(--pq-ink);
+}
+
+html[data-manager-app] .mgr-menu > a:last-child { border-bottom: 0; }
+
+html[data-manager-app] .mgr-menu__ic {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-controle);
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+html[data-manager-app] .mgr-menu__tx { min-width: 0; }
+
+html[data-manager-app] .mgr-menu strong {
+  display: block;
+  font-size: var(--t-cartao);
+  font-weight: 700;
+}
+
+html[data-manager-app] .mgr-menu small {
+  display: block;
+  overflow: hidden;
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .mgr-menu .badge {
+  min-width: 22px;
+  padding: 2px 7px;
+  border-radius: var(--r-pilula);
+  background: var(--pq-brand);
+  color: #06231a;
+  font-size: var(--t-micro);
+  font-weight: 800;
+  text-align: center;
+}
+
+html[data-manager-app] .mgr-menu .ic.sm { color: var(--pq-muted); }
+
+html[data-manager-app] .mgr-sheet__conta {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--e3);
+  margin-top: var(--e3);
+  padding-top: var(--e4);
+  border-top: 1px solid var(--pq-line);
+}
+
+html[data-manager-app] .mgr-sheet__av {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-pilula);
+  background: var(--pq-tint-strong);
+  color: var(--pq-brand-deep);
+  font-weight: 800;
+}
+
+html[data-manager-app] .mgr-sheet__txt { min-width: 0; }
+
+html[data-manager-app] .mgr-sheet__txt strong,
+html[data-manager-app] .mgr-sheet__txt small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .mgr-sheet__txt strong { font-size: var(--t-corpo); }
+html[data-manager-app] .mgr-sheet__txt small { color: var(--pq-muted); font-size: var(--t-apoio); }
+
+/* A pagina nao rola atras da folha aberta. */
+body.mgr-sheet-aberta { overflow: hidden; }
+
+/* No desktop a folha nunca abre: quem navega ali e a sidebar, e o hamburguer
+   nem aparece. */
+@media (min-width: 821px) and (pointer: fine) {
+  html[data-manager-app] .mgr-sheet { display: none; }
+}

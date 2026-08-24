@@ -193,6 +193,15 @@ async function atualizarAvisos() {
     }
   }
 
+  /* O MESMO contador na folha de menu do celular. Ali a sidebar nao existe, e
+     Mensagens so aparece dentro da folha — sem o numero, a unica pista de que
+     alguem escreveu seria abrir o menu e entrar na tela. */
+  const seloFolha = document.querySelector('[data-menu-badge]');
+  if (seloFolha) {
+    seloFolha.hidden = naoLidas === 0;
+    seloFolha.textContent = String(naoLidas);
+  }
+
   // O ponto do sino soma tudo o que espera o dono, e nao so mensagem.
   const pendencias = naoLidas + Number(badges?.solicitacoes || 0);
   document.querySelector('.ndot')?.classList.toggle('on', pendencias > 0);

@@ -309,6 +309,16 @@ async function renderPerfilSidebar() {
   set('[data-sb-perfil-inicial]', nome.trim().charAt(0).toUpperCase() || '?');
   set('[data-sb-perfil-arena]', usuario?.email || '');
 
+  /* A MESMA conta no rodape da folha de menu: no celular a sidebar nao
+     aparece, e sem isto nao ha onde ver com qual conta se esta logado. */
+  const naFolha = (sel, valor) => {
+    const el = document.querySelector(sel);
+    if (el) el.textContent = valor;
+  };
+  naFolha('[data-sheet-nome]', nome);
+  naFolha('[data-sheet-inicial]', nome.trim().charAt(0).toUpperCase() || '?');
+  naFolha('[data-sheet-arena]', usuario?.email || '');
+
   /* O NOME CABE EM ~150px e "Dono Arena Bola na Rede" vira "Dono Arena Bo...".
      O `title` guarda o texto inteiro, junto do e-mail: com a barra recolhida
      sobra so o avatar, e ai ele e a unica forma de saber de quem e a conta. */
@@ -317,7 +327,11 @@ async function renderPerfilSidebar() {
   if (!API_BASE_URL) return;
   try {
     const perfil = await managerService.perfil();
-    if (perfil?.nome) set('[data-sb-perfil-arena]', perfil.nome);
+    if (perfil?.nome) {
+      set('[data-sb-perfil-arena]', perfil.nome);
+      const arenaFolha = document.querySelector('[data-sheet-arena]');
+      if (arenaFolha) arenaFolha.textContent = perfil.nome;
+    }
     /* A LOGO DA ARENA no lugar da inicial, quando houver. O avatar vira uma
        imagem de fundo em vez de <img> para nao mexer no markup do componente
        — e porque a logo chega como data URL, que num <img> exigiria o mesmo
@@ -330,6 +344,65 @@ async function renderPerfilSidebar() {
   } catch (error) {
     // Sem rede fica o nome da sessao, que ja esta na tela.
   }
+}
+
+/* ══════════ FOLHA DE MENU (celular) ══════════════════════════════════════
+
+   Abre pelo "Menu" da barra de baixo e pelo hamburguer do topo — os dois
+   apontam para a mesma folha, porque dois gestos diferentes para o mesmo menu
+   obrigam a pessoa a aprender os dois.
+
+   Delegado no documento: a folha e um componente carregado por fetch, entao
+   prender o listener nela no boot correria o risco de ela ainda nao existir. */
+function abrirFolha(id) {
+  const folha = document.getElementById(id);
+  if (!folha) return;
+  folha.hidden = false;
+  document.body.classList.add('mgr-sheet-aberta');
+  document.querySelectorAll(`[data-sheet-open="${id}"]`).forEach((b) => {
+    b.setAttribute('aria-expanded', 'true');
+  });
+  window.pqRefreshIcons?.(folha);
+  // O foco vai para o fechar: quem navega por teclado ou leitor de tela cai
+  // dentro da folha, e nao continua no botao que ficou atras dela.
+  folha.querySelector('[data-sheet-close]')?.focus?.();
+}
+
+function fecharFolha(folha) {
+  if (!folha) return;
+  folha.hidden = true;
+  document.body.classList.remove('mgr-sheet-aberta');
+  document.querySelectorAll(`[data-sheet-open="${folha.id}"]`).forEach((b) => {
+    b.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function initFolhaMenu() {
+  document.addEventListener('click', (event) => {
+    const abrir = event.target.closest('[data-sheet-open]');
+    if (abrir) {
+      event.preventDefault();
+      abrirFolha(abrir.dataset.sheetOpen);
+      return;
+    }
+    const fechar = event.target.closest('[data-sheet-close]');
+    if (fechar) {
+      fecharFolha(fechar.closest('[data-mgr-sheet]'));
+    }
+  });
+
+  // Esc fecha, como qualquer dialogo.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll('[data-mgr-sheet]:not([hidden])').forEach(fecharFolha);
+  });
+
+  /* Trocar de rota fecha a folha. Os links dentro dela ja tem
+     `data-sheet-close`, mas o botao fisico de voltar do Android nao passa por
+     eles — e a folha ficaria aberta sobre a tela nova. */
+  window.addEventListener('hashchange', () => {
+    document.querySelectorAll('[data-mgr-sheet]:not([hidden])').forEach(fecharFolha);
+  });
 }
 
 function initAppShell() {
@@ -452,6 +525,7 @@ async function iniciarPainel() {
   await initDesktopRouter();
   markActiveNav();
   initAppShell();
+  initFolhaMenu();
   renderPerfilSidebar();
   initModals();
   initRedirectToast();

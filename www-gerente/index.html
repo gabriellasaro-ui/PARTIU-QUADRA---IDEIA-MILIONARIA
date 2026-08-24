@@ -43,6 +43,30 @@
       font-size: 13px;
     }
   </style>
+  <!-- TEMA ANTES DA PRIMEIRA PINTURA.
+
+       `app.js` e `type="module"`, entao roda DEPOIS de o HTML ser lido: a
+       pagina pintava sem atributo de tema — que o CSS trata como escuro, o
+       padrao do painel — e so entao o JS aplicava o claro. Dava o flash preto
+       a cada F5 para quem escolheu claro.
+
+       Bloqueante e inline de proposito: qualquer coisa assincrona aqui volta a
+       pintar antes. Le direto do localStorage porque `storage.js` e modulo, e
+       importar um modulo teria o mesmo atraso que se esta corrigindo.
+
+       O `try` cobre navegador com armazenamento bloqueado: sem tema aplicado a
+       pagina abre escura, que e o padrao — nunca sem estilo. -->
+  <script src="./config/app.config.js"></script>
+  <script>
+    (function () {
+      try {
+        var p = (window.__PQ_CONFIG__ && window.__PQ_CONFIG__.STORAGE_PREFIX) || 'pqg';
+        if (JSON.parse(localStorage.getItem(p + ':tema')) === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <!--
