@@ -32,6 +32,33 @@ export const venueService = {
     return data?.estados || [];
   },
 
+  /* NOTIFICACOES. A rota existe desde a fase 2 e o sino do painel nunca a
+     chamou — era um botao sem handler nenhum, com 17 avisos guardados atras
+     dele. */
+  async notificacoes() {
+    if (!API_BASE_URL) return [];
+    const data = await api.get('/api/notifications');
+    return data?.notificacoes || [];
+  },
+
+  async marcarNotificacoesLidas() {
+    if (!API_BASE_URL) return null;
+    return api.post('/api/notifications/read-all', {});
+  },
+
+  /* HORARIOS DE UMA QUADRA NUM DIA — a mesma rota que o app do jogador chama.
+
+     Usar a rota do jogador aqui e o ponto: as duas telas passam a ver a mesma
+     disponibilidade. Uma lista propria do painel voltaria a divergir na
+     primeira reserva feita pelo app. */
+  async horariosDaQuadra(quadraId, dia) {
+    if (!API_BASE_URL || !quadraId || !dia) return [];
+    const data = await api.get(
+      `/api/quadras/${encodeURIComponent(quadraId)}/horarios?data=${encodeURIComponent(dia)}`
+    );
+    return data?.horarios || [];
+  },
+
   async cidadesDe(uf) {
     if (!API_BASE_URL || !uf) return [];
     const data = await api.get(`/api/localidades/estados/${encodeURIComponent(uf)}/cidades`, { auth: false });

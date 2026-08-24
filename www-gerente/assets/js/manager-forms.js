@@ -14,6 +14,7 @@ import storage from '../../storage/storage.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import managerService from '../../services/manager-api.js';
 import authService from '../../services/auth.js';
+import venueService from '../../services/venues.js';
 import { ligarParEstadoCidade } from '../../services/localidades.js';
 
 const PROFILE_KEY = 'manager-profile';
@@ -60,16 +61,94 @@ function pintarSwitch(el, ligado) {
 
 // ---------------------------------------------------------------- nova reserva
 
+/* Quadras da nova reserva, guardadas para casar o NOME escolhido no select com
+   o ID que a rota de horarios pede. */
+let quadrasDaReserva = [];
+
+const isoLocal = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/* OS HORARIOS SAEM DA MESMA ROTA QUE O APP DO JOGADOR USA.
+
+   O select era fixo de 6h as 23h. Isso oferecia horario que a quadra nao abre e,
+   pior, horario JA RESERVADO: o dono marcava por telefone em cima de um jogo
+   existente e so descobria no dia, com duas turmas na porta.
+
+   Slot ocupado aparece DESABILITADO em vez de sumir. Sumindo, a lista fica com
+   buracos e o dono nao sabe se o horario nao existe ou se ja foi vendido — e a
+   segunda resposta e a que faz ele oferecer outro dia ao cliente que esta no
+   telefone. */
+async function carregarHorarios(root) {
+  const sel = root.querySelector('[data-booking-hours]');
+  const campoData = root.querySelector('[data-booking-data]');
+  const aviso = root.querySelector('[data-booking-aviso]');
+  if (!sel || !campoData) return;
+
+  const nome = root.querySelector('[data-booking-courts]')?.value;
+  const quadra = quadrasDaReserva.find((c) => c.label === nome);
+  const dia = campoData.value;
+
+  const dizer = (texto) => {
+    if (!aviso) return;
+    aviso.hidden = !texto;
+    aviso.textContent = texto || '';
+  };
+
+  if (!API_BASE_URL || !quadra || !dia) {
+    sel.innerHTML = horas(6, 23, 19);
+    dizer('');
+    return;
+  }
+
+  sel.innerHTML = '<option value="">Carregando…</option>';
+  let slots;
+  try {
+    slots = await venueService.horariosDaQuadra(quadra.id, dia);
+  } catch (error) {
+    sel.innerHTML = horas(6, 23, 19);
+    dizer('Não foi possível carregar os horários — a lista abaixo é a padrão.');
+    return;
+  }
+
+  if (!slots.length) {
+    sel.innerHTML = '<option value="">—</option>';
+    dizer('A quadra não abre neste dia.');
+    return;
+  }
+
+  const livres = slots.filter((h) => h.status === 'free');
+  sel.innerHTML = slots.map((h) =>
+    `<option value="${escapeHtml(h.hour)}"${h.status === 'free' ? '' : ' disabled'}>${
+      escapeHtml(h.hour)}${h.status === 'free' ? '' : ' · ocupado'}</option>`).join('');
+  const primeiroLivre = livres[0];
+  if (primeiroLivre) sel.value = primeiroLivre.hour;
+
+  dizer(livres.length
+    ? `${livres.length} de ${slots.length} horários livres neste dia.`
+    : 'Todos os horários deste dia já estão ocupados.');
+}
+
 export async function renderManagerBookingForm(root) {
   const form = root.querySelector('[data-booking-form]');
   if (!form) return;
 
+  quadrasDaReserva = API_BASE_URL ? (await loadCourts()).quadras : courts();
   const quadras = root.querySelector('[data-booking-courts]');
-  if (quadras) quadras.innerHTML = (API_BASE_URL ? (await loadCourts()).quadras : courts()).map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
+  if (quadras) {
+    quadras.innerHTML = quadrasDaReserva
+      .map((c) => `<option>${escapeHtml(c.label)}</option>`).join('');
+  }
 
-  const inicio = root.querySelector('[data-booking-hours]');
-  if (inicio) inicio.innerHTML = horas(6, 23, 19);
+  /* A data abre em HOJE e nao aceita passado: reserva e compromisso futuro, e
+     `min` evita a digitacao errada antes de ela virar um 409 do servidor. */
+  const campoData = root.querySelector('[data-booking-data]');
+  if (campoData) {
+    const hoje = isoLocal(new Date());
+    campoData.min = hoje;
+    if (!campoData.value) campoData.value = hoje;
+  }
 
+  await carregarHorarios(root);
   window.pqRefreshIcons?.(root);
 }
 
@@ -234,8 +313,15 @@ function pintarExpediente(root) {
              <span>até</span>
              <select data-exp-fecha aria-label="Fecha">${opcoesHora(d.fecha)}</select>
            </div>`}
+      <!-- COM TEXTO, e nao so o icone.
+
+           Era um simbolo de "copiar" solto no fim da linha, sem rotulo: nao ha
+           como adivinhar que ele aplica AQUELE horario aos outros dias. Icone
+           sozinho so funciona quando o desenho ja e convencao (lixeira, lupa) —
+           "copiar horario para a semana" nao e. -->
       <button type="button" class="exp-dia__copiar" data-exp-copiar title="Aplicar este horário aos outros dias abertos">
         <i class="ic sm" data-lucide="copy"></i>
+        <span>Repetir na semana</span>
       </button>
     </div>`).join('');
   window.pqRefreshIcons?.(caixa);
@@ -427,6 +513,14 @@ export function initManagerForms() {
     } else if (event.target.matches('[data-exp-fecha]')) {
       dia.fecha = event.target.value;
     }
+  });
+
+  /* Trocar a quadra ou o dia refaz a lista de horarios: sao os dois unicos
+     dados de que a disponibilidade depende. */
+  document.addEventListener('change', async (event) => {
+    if (!event.target.closest('[data-booking-data], [data-booking-courts]')) return;
+    const root = document.querySelector('[data-desktop-route-view]');
+    if (root) await carregarHorarios(root);
   });
 
   document.addEventListener('input', sujar);
@@ -832,13 +926,10 @@ export function prefillReservaNova(root) {
   const hora = params.get('hora');
 
   if (dia) {
+    // O campo virou `type="date"`, que so aceita ISO — antes era texto livre e
+    // recebia "24/08/2026".
     const campo = root.querySelector('[name="data"]');
-    if (campo) {
-      // O campo e texto livre ("Hoje", "24/08"): a data vai no formato que a
-      // pessoa reconhece, e nao em ISO.
-      const [a, m, d] = dia.split('-');
-      campo.value = `${d}/${m}/${a}`;
-    }
+    if (campo) campo.value = dia;
   }
   if (hora) {
     const sel = root.querySelector('[name="inicio"]');

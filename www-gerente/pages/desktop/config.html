@@ -6,59 +6,6 @@
      salva persiste (assets/js/manager-settings.js). -->
 <form id="gconfig-form" class="settings" data-settings-form>
 
-  <section class="set-card">
-    <div class="set-aside">
-      <h2>Perfil da arena</h2>
-      <p>É assim que sua arena aparece para os jogadores na busca.</p>
-    </div>
-    <div class="set-fields">
-      <div class="set-avatar">
-        <span class="ava" id="arena-logo">A</span>
-        <div>
-          <button type="button" class="btn btn-outline" data-file-trigger="#logo-file">Trocar logo</button>
-          <input type="file" id="logo-file" accept="image/*" data-preview="#arena-logo" hidden>
-          <div class="av-meta">PNG ou JPG, até 2&nbsp;MB</div>
-        </div>
-      </div>
-      <div class="inp"><label>Nome da arena</label><input type="text" name="nome"></div>
-      <div class="input-row">
-        <div class="inp"><label>Esporte principal</label><select name="esporte" data-settings-sports></select></div>
-        <div class="inp"><label>Quadras ativas</label><input type="number" name="quadrasAtivas" min="0" readonly></div>
-      </div>
-      <div class="inp" style="margin-bottom:0;"><label>Descrição</label><input type="text" name="descricao"></div>
-    </div>
-  </section>
-
-  <section class="set-card">
-    <div class="set-aside">
-      <h2>Endereço &amp; contato</h2>
-      <p>Onde os jogadores encontram sua arena e como falam com você.</p>
-    </div>
-    <div class="set-fields">
-      <!-- ENDERECO EM CAMPOS, e nao numa linha de texto livre.
-
-           Era um input so chamado "Endereço", e o que entrava ali era
-           "Savassi" — um bairro no campo da rua. Assim nao da para filtrar por
-           cidade, agrupar por bairro nem mostrar "Savassi · Belo Horizonte" no
-           cartao da quadra, que e como a pessoa procura.
-
-           Estado e cidade sao ENCADEADOS e saem da mesma base do app do
-           jogador: digitado a mao, "BH", "Belo Horizonte" e "belo horizonte"
-           viram tres cidades diferentes e nenhum filtro fecha. -->
-      <div class="input-row">
-        <div class="inp"><label for="cfg-uf">Estado</label><select id="cfg-uf" name="estado" data-uf></select></div>
-        <div class="inp"><label for="cfg-cidade">Cidade</label><select id="cfg-cidade" name="cidade" data-cidade></select></div>
-      </div>
-      <div class="input-row">
-        <div class="inp"><label>Bairro</label><input type="text" name="bairro" placeholder="Ex.: Savassi"></div>
-        <div class="inp"><label>Rua e número</label><input type="text" name="endereco" placeholder="Ex.: Rua Pernambuco, 1200"></div>
-      </div>
-      <div class="input-row" style="margin-bottom:0;">
-        <div class="inp" style="margin-bottom:0;"><label>Telefone / WhatsApp</label><input type="text" name="telefone" placeholder="(31) 90000-0000"></div>
-        <div class="inp" style="margin-bottom:0;"><label>E-mail</label><input type="text" name="email" placeholder="contato@arena.com.br"></div>
-      </div>
-    </div>
-  </section>
 
   <!-- RECEBIMENTO (PIX) SAIU DAQUI.
 

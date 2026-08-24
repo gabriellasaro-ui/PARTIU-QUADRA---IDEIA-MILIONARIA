@@ -18,6 +18,7 @@ import { aplicarTema, definirTema, claroLigado } from '../../services/tema.js';
 import { connectWS, disconnectWS } from '../../services/ws.js';
 import storage from '../../storage/storage.js';
 import managerService from '../../services/manager-api.js';
+import venueService from '../../services/venues.js';
 import { API_BASE_URL } from '../../config/constants.js';
 
 /* Antes de qualquer rota: sem isto o painel abre claro e SALTA para
@@ -113,6 +114,13 @@ const DESKTOP_ROUTES = {
     title: 'Avaliações - Qadras',
     heading: 'Avaliações',
     sub: 'Notas e respostas aos jogadores'
+  },
+  perfil: {
+    aliases: ['perfil'],
+    page: './pages/desktop/perfil.html',
+    title: 'Perfil da arena - Qadras',
+    heading: 'Perfil da arena',
+    sub: 'Como sua arena aparece para os jogadores'
   },
   config: {
     aliases: ['config', 'configuracoes'],
@@ -248,7 +256,9 @@ async function renderDesktopRoute() {
     if (routeName === 'financeiro') await renderManagerFinance(view);
     if (routeName === 'avaliacoes') await renderManagerReviews(view);
     if (routeName === 'mensagens') await renderManagerMessages(view);
-    if (routeName === 'config') {
+    /* As duas telas usam o MESMO render: o formulario e um so
+       (`data-settings-form`), so os cartoes e que foram repartidos. */
+    if (routeName === 'config' || routeName === 'perfil') {
       await renderManagerSettings(view);
       sincronizarInterruptorDeTema(view);
     }
@@ -377,12 +387,94 @@ function fecharFolha(folha) {
   });
 }
 
+/* ══════════ NOTIFICACOES ═════════════════════════════════════════════════
+
+   Carregadas ao ABRIR, e nao no boot: sao 17 linhas que a maioria das visitas
+   nunca olha, e buscar sempre pagaria a chamada em toda abertura do painel. */
+function tempoRelativo(iso) {
+  const quando = new Date(iso);
+  const min = Math.round((Date.now() - quando.getTime()) / 60000);
+  if (min < 1) return 'agora';
+  if (min < 60) return `há ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `há ${h}h`;
+  const d = Math.round(h / 24);
+  return d === 1 ? 'ontem' : `há ${d} dias`;
+}
+
+/* Um icone por familia de evento. O tipo vem como "booking.cancelled",
+   "message.new" — a familia e o que vem antes do ponto, e ela basta: o dono nao
+   precisa distinguir doze icones, precisa saber se e reserva, dinheiro ou
+   conversa. */
+const ICONE_NOTIF = {
+  booking: 'clipboard-check',
+  payment: 'banknote',
+  message: 'messages-square',
+  review: 'star',
+  club: 'users'
+};
+
+function escaparTexto(v) {
+  return String(v ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+async function carregarNotificacoes() {
+  const lista = document.querySelector('[data-notif-lista]');
+  const rodape = document.querySelector('[data-notif-rodape]');
+  if (!lista) return;
+
+  let itens = [];
+  try {
+    itens = await venueService.notificacoes();
+  } catch (error) {
+    lista.innerHTML = '<p class="lista-vazia">Não foi possível carregar os avisos.</p>';
+    return;
+  }
+
+  if (!itens.length) {
+    lista.innerHTML = '<p class="lista-vazia">Nenhum aviso por aqui.</p>';
+    if (rodape) rodape.hidden = true;
+    return;
+  }
+  if (rodape) rodape.hidden = false;
+
+  lista.innerHTML = itens.map((n) => {
+    const familia = String(n.type || '').split('.')[0];
+    /* NAO LIDA ganha marca propria. Sem isso a lista e um historico e o dono
+       reler tudo para achar o que chegou depois da ultima visita. */
+    const naoLida = !n.readAt;
+    return `<article class="notif${naoLida ? ' nova' : ''}">
+      <span class="notif__ic"><i class="ic sm" data-lucide="${ICONE_NOTIF[familia] || 'bell'}"></i></span>
+      <div>
+        <strong>${escaparTexto(n.title)}</strong>
+        <small>${escaparTexto(n.body)}</small>
+        <time>${escaparTexto(tempoRelativo(n.createdAt))}</time>
+      </div>
+    </article>`;
+  }).join('');
+  window.pqRefreshIcons?.(lista);
+}
+
 function initFolhaMenu() {
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const abrir = event.target.closest('[data-sheet-open]');
     if (abrir) {
       event.preventDefault();
       abrirFolha(abrir.dataset.sheetOpen);
+      if (abrir.dataset.sheetOpen === 'notif-sheet') carregarNotificacoes();
+      return;
+    }
+
+    if (event.target.closest('[data-notif-ler-todas]')) {
+      event.preventDefault();
+      try {
+        await venueService.marcarNotificacoesLidas();
+      } catch (error) {}
+      await carregarNotificacoes();
+      // O ponto do sino segue os contadores de mensagem/solicitacao, que sao
+      // outra coisa — mas as marcas de "nova" da lista somem agora.
       return;
     }
     const fechar = event.target.closest('[data-sheet-close]');

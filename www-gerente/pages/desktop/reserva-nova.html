@@ -28,11 +28,25 @@
     </div>
     <div class="set-fields">
       <div class="input-row">
-        <div class="inp"><label>Quadra</label><select name="quadra" data-booking-courts></select></div>
-        <div class="inp"><label>Data</label><input type="text" name="data" placeholder="Hoje" value="Hoje" required></div>
+        <div class="inp"><label for="rn-quadra">Quadra</label><select id="rn-quadra" name="quadra" data-booking-courts></select></div>
+        <!-- DATA EM CALENDARIO, e nao texto livre.
+
+             O campo era `type="text"` com "Hoje" escrito dentro. Duas coisas
+             quebravam: nao havia como marcar para a proxima terca sem digitar
+             algo que o servidor teria de adivinhar, e a lista de horarios
+             abaixo era fixa de 6h as 23h — mostrava horario que a quadra nao
+             abre e horario JA RESERVADO, entao o dono marcava por telefone em
+             cima de um jogo existente e so descobria no dia.
+
+             Agora a data e um calendario e os horarios saem de
+             /api/quadras/{id}/horarios?data=..., a MESMA rota que o app do
+             jogador usa. Os dois passam a ver a mesma disponibilidade. -->
+        <div class="inp"><label for="rn-data">Data</label><input id="rn-data" type="date" name="data" data-booking-data required></div>
       </div>
       <div class="input-row" style="margin-bottom:0;">
-        <div class="inp" style="margin-bottom:0;"><label>Início</label><select name="inicio" data-booking-hours></select></div>
+        <div class="inp" style="margin-bottom:0;"><label for="rn-inicio">Início</label><select id="rn-inicio" name="inicio" data-booking-hours></select>
+          <small class="inp__aviso" data-booking-aviso hidden></small>
+        </div>
         <div class="inp" style="margin-bottom:0;"><label>Duração</label><select name="duracao">
           <option value="1">1 hora</option><option value="1.5">1h30</option><option value="2">2 horas</option>
         </select></div>

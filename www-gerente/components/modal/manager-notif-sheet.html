@@ -1,0 +1,37 @@
+<!-- NOTIFICACOES.
+
+     O sino existia com um ponto verde piscando e NENHUM handler: 17 avisos
+     guardados atras de um botao que nao abria nada. A rota /api/notifications
+     esta de pe desde a fase 2.
+
+     Mesma mecanica da folha de menu — no celular ela sobe de baixo, no desktop
+     o CSS a ancora no canto do sino. Uma mecanica so para os dois evita duas
+     implementacoes de abrir/fechar que divergem na primeira mudanca.
+
+     "Marcar todas como lidas" existe porque a lista acumula: sem uma forma de
+     zerar, o ponto do sino fica aceso para sempre e para de significar
+     "chegou coisa nova". -->
+<div class="mgr-sheet mgr-sheet--notif" id="notif-sheet" data-mgr-sheet hidden>
+  <button class="mgr-sheet__fundo" type="button" data-sheet-close aria-label="Fechar"></button>
+  <section class="mgr-sheet__painel" role="dialog" aria-modal="true" aria-labelledby="notif-sheet-titulo">
+    <header class="mgr-sheet__topo">
+      <div>
+        <span>Avisos</span>
+        <h2 id="notif-sheet-titulo">Notificações</h2>
+      </div>
+      <button class="mgr-sheet__x" type="button" data-sheet-close aria-label="Fechar">
+        <i class="ic" data-lucide="x"></i>
+      </button>
+    </header>
+
+    <div class="notif-lista" data-notif-lista>
+      <p class="lista-vazia">Carregando…</p>
+    </div>
+
+    <div class="mgr-sheet__conta notif-rodape" data-notif-rodape hidden>
+      <button type="button" class="btn btn-soft btn-xs" data-notif-ler-todas>
+        <i class="ic sm" data-lucide="check"></i> Marcar todas como lidas
+      </button>
+    </div>
+  </section>
+</div>

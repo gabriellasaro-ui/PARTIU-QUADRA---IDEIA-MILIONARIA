@@ -683,11 +683,13 @@ function renderMobile(root, eventos, segunda) {
     </button>`;
   }).join('');
 
-  const paineis = DIAS.map((dia, i) => {
+  const paineisDoDia = (i, opcoes = {}) => {
+    const dia = DIAS[i];
     const doDia = eventos.filter((e) => e.dow === i);
     const receitaDia = doDia.reduce((sum, e) => sum + Number(e.valor || 0), 0);
+    const escondido = opcoes.aberto ? '' : (i === ativo ? '' : 'hidden');
     return `<section class="manager-agenda-day-panel" id="agenda-panel-${i}" data-agenda-panel="${i}"
-      role="tabpanel" aria-labelledby="agenda-tab-${i}" ${i === ativo ? '' : 'hidden'}>
+      role="tabpanel" aria-labelledby="agenda-tab-${i}" ${escondido}>
       <header>
         <div><span>${dia}, dia ${String(diaDe(i).getDate()).padStart(2, '0')}</span><strong>Agenda do dia</strong></div>
         <span>${doDia.length} ${doDia.length === 1 ? 'reserva' : 'reservas'} - ${escapeHtml(formatCurrency(receitaDia))}</span>
@@ -702,7 +704,36 @@ function renderMobile(root, eventos, segunda) {
         : '<div class="manager-agenda-empty"><span><i class="ic" data-lucide="clock"></i></span><strong>Dia livre</strong><small>Você ainda pode abrir horários para este dia.</small></div>'
       }</div>
     </section>`;
-  }).join('');
+  };
+
+  const paineis = DIAS.map((_, i) => paineisDoDia(i)).join('');
+
+  /* OS MODOS PRECISAM DIFERIR NO CELULAR.
+
+     Ate aqui "Dia" e "Semana" desenhavam a MESMA tela — as sete abas com um dia
+     aberto — e clicar de um para o outro nao mudava nada. Um seletor com tres
+     opcoes em que duas fazem a mesma coisa e pior do que nao ter seletor: a
+     pessoa clica, nada acontece, e ela para de confiar no controle.
+
+     DIA  — as abas somem e fica o dia escolhido, inteiro. E o modo de quem esta
+            operando hoje: menos escolha na tela, mais espaco para as reservas.
+     SEMANA — os sete dias EMPILHADOS, um atras do outro, sem abas. E o modo de
+            quem esta olhando a semana: da para rolar e ver os buracos sem tocar
+            em nada. As abas existiam justamente por nao haver esse modo. */
+  if (modo === 'semana') {
+    wrap.innerHTML = DIAS.map((_, i) => paineisDoDia(i, { aberto: true })).join('');
+    return;
+  }
+
+  if (modo === 'dia') {
+    /* O dia escolhido pelas SETAS, e nao pelas abas: no modo dia quem navega e
+       o controle de cima, e ter dois jeitos de trocar de dia na mesma tela faz
+       um deles parecer quebrado quando o outro e usado. */
+    const alvo = diaAtual();
+    const i = DIAS.findIndex((_, k) => diaDe(k).toDateString() === alvo.toDateString());
+    wrap.innerHTML = paineisDoDia(i >= 0 ? i : 0, { aberto: true });
+    return;
+  }
 
   wrap.innerHTML = `<div class="manager-agenda-days" role="tablist" aria-label="Dias da semana">${abas}</div>${paineis}`;
 }
@@ -751,8 +782,15 @@ export async function renderManagerAgenda(root) {
   if (modo === 'dia') renderDia(root, eventos);
   else if (modo === 'mes') renderMes(root, eventos);
   else renderDesktop(root, eventos, segunda);
-  // A lista do celular acompanha o dia/semana; no mes ela nao se aplica.
-  if (modo !== 'mes') renderMobile(root, eventos, segunda);
+  /* A lista do celular acompanha o dia/semana; no mes ela nao se aplica — e e
+     LIMPA, senao a semana anterior fica no DOM atras da grade do mes e reaparece
+     por um quadro ao voltar. */
+  if (modo === 'mes') {
+    const mob = root.querySelector('[data-agenda-mobile]');
+    if (mob) mob.innerHTML = '';
+  } else {
+    renderMobile(root, eventos, segunda);
+  }
 
   /* O scroll automatico so entra se a grade NAO couber.
 
