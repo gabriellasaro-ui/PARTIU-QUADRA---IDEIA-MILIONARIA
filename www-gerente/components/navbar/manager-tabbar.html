@@ -10,19 +10,29 @@
      acender os dois de uma vez. O quinto abre a gaveta com o resto. -->
 <nav class="manager-tabbar" aria-label="Navegação do painel">
   <a data-nav-page="dashboard" href="./dashboard.html">
-    <span class="manager-tabbar-icon"><i class="ic" data-lucide="chart-column"></i></span>
+    <span class="manager-tabbar-icon"><i class="ic" data-lucide="layout-dashboard"></i></span>
     <span>Início</span>
   </a>
-  <a data-nav-page="reservas" href="./dashboard.html#reservas">
-    <span class="manager-tabbar-icon"><i class="ic" data-lucide="calendar"></i></span>
-    <span>Reservas</span>
-  </a>
   <a data-nav-page="agenda" href="./dashboard.html#agenda">
-    <span class="manager-tabbar-icon"><i class="ic" data-lucide="clock"></i></span>
+    <span class="manager-tabbar-icon"><i class="ic" data-lucide="calendar-days"></i></span>
     <span>Agenda</span>
   </a>
+
+  <!-- RESERVAS no centro, elevado — igual ao botao do Mapa no app do jogador.
+
+       Ela e a acao principal do painel no celular: e onde o dono aprova, recusa
+       e confere o que vem. Ate agora tinha o mesmo peso de Quadras, que ele
+       abre uma vez por mes.
+
+       A ordem mudou para isso: em cinco colunas, "centro" e a terceira, entao
+       Agenda subiu para a segunda. O dedo alcanca o meio da barra sem esticar,
+       e e la que fica o que mais se toca. -->
+  <a class="manager-tabbar-fab" data-nav-page="reservas" href="./dashboard.html#reservas">
+    <span><i class="ic" data-lucide="clipboard-check"></i></span><em>Reservas</em>
+  </a>
+
   <a data-nav-page="quadras" href="./dashboard.html#quadras">
-    <span class="manager-tabbar-icon"><i class="ic" data-lucide="layout-grid"></i></span>
+    <span class="manager-tabbar-icon"><i class="ic" data-lucide="land-plot"></i></span>
     <span>Quadras</span>
   </a>
   <button type="button" data-nav-open aria-label="Abrir menu">

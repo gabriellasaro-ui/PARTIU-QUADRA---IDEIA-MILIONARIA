@@ -2617,3 +2617,96 @@ html[data-manager-app] .app.collapsed .sb-perfil .ic { display: none; }
   html[data-manager-app] .cal-dia-mes .v { display: none; }
   html[data-manager-app] .cal-dia-mes .q { font-size: var(--t-micro); }
 }
+
+
+/* ══════════════════ TABBAR IGUAL A DO APP DO JOGADOR ═════════════════════
+
+   A barra do painel era mais alta (76px contra 60), com cantos arredondados no
+   topo e os cinco itens de mesmo peso. A do jogador e mais baixa, reta, e tem
+   UM item elevado no centro — o botao verde. A diferenca de altura nao e
+   estetica: e ela que faz o circulo do meio se destacar por CONTRASTE, e nao so
+   por cor, e sobra mais tela para o conteudo.
+
+   Aqui o botao central e RESERVAS, que e onde o dono aprova, recusa e confere o
+   que vem — a acao que ele mais toca no celular. */
+@media (max-width: 820px) and (pointer: coarse) {
+  html[data-manager-app] .manager-tabbar {
+    /* Largura travada e centrada, como no app: em tablet a barra esticada de
+       ponta a ponta deixa os itens longe demais do polegar. */
+    right: auto;
+    left: 50%;
+    width: min(100vw, 430px);
+    min-height: calc(60px + var(--manager-safe-bottom));
+    padding: 4px 12px max(4px, var(--manager-safe-bottom));
+    transform: translateX(-50%);
+    border-radius: 0;
+    box-shadow: 0 -8px 26px rgba(17, 17, 17, .08);
+    backdrop-filter: blur(18px) saturate(160%);
+  }
+
+  html[data-manager-app] .manager-tabbar > a,
+  html[data-manager-app] .manager-tabbar > button {
+    gap: 2px;
+    border-radius: 10px;
+  }
+
+  html[data-manager-app] .manager-tabbar > a > span:last-child,
+  html[data-manager-app] .manager-tabbar > button > span:last-child {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* O item ativo engrossa o traco alem de mudar de cor: no tamanho de 21px, cor
+     sozinha se perde contra o fundo translucido. */
+  html[data-manager-app] .manager-tabbar > .on .ic { stroke-width: 2.4; }
+
+  /* ── O BOTAO CENTRAL ────────────────────────────────────────────────────
+     Sobe 22px, mais do que a metade da propria altura: o circulo ROMPE a borda
+     de cima da barra e ganha relevo de verdade. Subir menos o deixaria so
+     encostado; subir muito o faria virar um botao solto boiando acima dela.
+
+     A borda de 3px na cor do fundo da pagina e o que separa o circulo da barra
+     — sem ela os dois verdes se encostam e o relevo some. */
+  html[data-manager-app] .manager-tabbar-fab {
+    position: relative;
+    z-index: 2;
+    min-height: 54px;
+    color: var(--pq-muted);
+  }
+
+  html[data-manager-app] .manager-tabbar-fab > span {
+    display: grid;
+    place-items: center;
+    overflow: visible;
+    width: 54px;
+    height: 54px;
+    margin-top: -22px;
+    border: 3px solid var(--pq-app-bg);
+    border-radius: 50%;
+    background: var(--pq-brand-strong);
+    box-shadow: 0 8px 18px rgba(0, 168, 90, .30);
+    color: #fff;
+  }
+
+  html[data-manager-app] .manager-tabbar-fab > span .ic {
+    width: 24px;
+    height: 24px;
+    color: #fff;
+  }
+
+  html[data-manager-app] .manager-tabbar-fab em {
+    color: var(--pq-muted);
+    font-size: 9.5px;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  /* Em Reservas o circulo fica na marca cheia e o rotulo acende — o realce
+     normal do item ativo (mudar a cor do icone) nao vale aqui, porque o icone
+     ja e branco sobre verde. */
+  html[data-manager-app] .manager-tabbar-fab.on > span { background: var(--pq-brand); }
+  html[data-manager-app] .manager-tabbar-fab.on em { color: var(--pq-brand-deep); }
+}
