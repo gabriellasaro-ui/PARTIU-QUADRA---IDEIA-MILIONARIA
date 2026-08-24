@@ -2416,3 +2416,58 @@ html[data-manager-app][data-manager-view="quadraForm"] .galeria__grade {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--e3);
 }
+
+
+/* ══════════════════ PERFIL NO PE DA SIDEBAR ══════════════════════════════ */
+
+html[data-manager-app] .sb-perfil {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--e3);
+  margin-top: auto;
+  padding: var(--e3);
+  border-top: 1px solid var(--pq-line);
+  border-radius: 0;
+  color: var(--pq-ink);
+}
+
+html[data-manager-app] .sb-perfil:hover { background: var(--pq-tint); }
+
+html[data-manager-app] .sb-perfil__av {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-pilula);
+  background: var(--pq-tint-strong) center / cover no-repeat;
+  color: var(--pq-brand-deep);
+  font-size: var(--t-corpo);
+  font-weight: 800;
+}
+
+/* Com logo, a inicial some — senao a letra fica por cima da imagem. */
+html[data-manager-app] .sb-perfil__av.tem-logo { color: transparent; }
+
+html[data-manager-app] .sb-perfil__txt { min-width: 0; }
+
+html[data-manager-app] .sb-perfil strong,
+html[data-manager-app] .sb-perfil small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] .sb-perfil strong { font-size: var(--t-corpo); font-weight: 700; }
+html[data-manager-app] .sb-perfil small { color: var(--pq-muted); font-size: var(--t-apoio); }
+html[data-manager-app] .sb-perfil .ic { color: var(--pq-muted); }
+
+/* COM A BARRA RECOLHIDA sobra so o avatar, como nos itens do menu. */
+html[data-manager-app] .app.collapsed .sb-perfil {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+
+html[data-manager-app] .app.collapsed .sb-perfil__txt,
+html[data-manager-app] .app.collapsed .sb-perfil .ic { display: none; }

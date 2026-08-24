@@ -22,4 +22,26 @@
   <a class="sb-link" data-nav-page="mensalistas" href="./dashboard.html#mensalistas" title="Mensalistas"><i class="ic" data-lucide="repeat"></i> <span class="sb-tx">Mensalistas</span></a>
   <a class="sb-link" data-nav-page="avaliacoes" href="./dashboard.html#avaliacoes" title="Avaliacoes"><i class="ic" data-lucide="star"></i> <span class="sb-tx">Avaliacoes</span></a>
   <a class="sb-link" data-nav-page="config" href="./dashboard.html#config" title="Configurações"><i class="ic" data-lucide="settings"></i> <span class="sb-tx">Configurações</span></a>
+
+  <!-- O DONO, no pe da barra.
+
+       Faltava a resposta para "de quem e esta sessao". Num painel que decide
+       dinheiro e cancela reserva de gente, saber com qual conta se esta logado
+       nao e vaidade: a arena tem funcionario, o computador do balcao e
+       compartilhado, e nada na tela dizia quem estava ali — so abrindo
+       Configuracoes.
+
+       Leva ao perfil, que e onde se edita, e fica no rodape porque e ali que
+       se procura conta em qualquer painel. `margin-top: auto` empurra para
+       baixo sem depender de quantos itens o menu tem acima.
+
+       Preenchido por assets/js/manager-app.js. -->
+  <a class="sb-foot sb-perfil" href="./dashboard.html#config" data-sb-perfil title="Abrir configurações da conta">
+    <span class="sb-perfil__av" data-sb-perfil-inicial>—</span>
+    <span class="sb-perfil__txt">
+      <strong data-sb-perfil-nome>Carregando…</strong>
+      <small data-sb-perfil-arena></small>
+    </span>
+    <i class="ic sm" data-lucide="chevron-right"></i>
+  </a>
 </aside>

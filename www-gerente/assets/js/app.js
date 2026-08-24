@@ -17,6 +17,8 @@ import { renderManagerFinance, initManagerFinance } from './manager-finance.js';
 import { aplicarTema, definirTema, claroLigado } from '../../services/tema.js';
 import { connectWS, disconnectWS } from '../../services/ws.js';
 import storage from '../../storage/storage.js';
+import managerService from '../../services/manager-api.js';
+import { API_BASE_URL } from '../../config/constants.js';
 
 /* Antes de qualquer rota: sem isto o painel abre claro e SALTA para
    escuro quando o tema for aplicado — um flash branco a cada abertura. */
@@ -284,6 +286,52 @@ function initDesktopRouter() {
   return renderDesktopRoute();
 }
 
+/* O DONO NO PE DA SIDEBAR.
+
+   O nome sai do usuario da SESSAO (quem esta logado), e a arena do perfil. Sao
+   duas coisas diferentes de proposito: quem opera pode nao ser o dono do nome
+   da arena, e e justamente essa distincao que o rodape existe para mostrar.
+
+   A sessao ja esta em memoria, entao o nome aparece na hora; so a arena espera
+   a rede. Se a chamada falhar, fica o nome — meia informacao verdadeira e
+   melhor do que "Carregando..." para sempre. */
+async function renderPerfilSidebar() {
+  const caixa = document.querySelector('[data-sb-perfil]');
+  if (!caixa) return;
+
+  const usuario = storage.getAuthUser?.() || null;
+  const nome = usuario?.name || 'Minha conta';
+  const set = (sel, valor) => {
+    const el = caixa.querySelector(sel);
+    if (el) el.textContent = valor;
+  };
+  set('[data-sb-perfil-nome]', nome);
+  set('[data-sb-perfil-inicial]', nome.trim().charAt(0).toUpperCase() || '?');
+  set('[data-sb-perfil-arena]', usuario?.email || '');
+
+  /* O NOME CABE EM ~150px e "Dono Arena Bola na Rede" vira "Dono Arena Bo...".
+     O `title` guarda o texto inteiro, junto do e-mail: com a barra recolhida
+     sobra so o avatar, e ai ele e a unica forma de saber de quem e a conta. */
+  caixa.title = usuario?.email ? `${nome} · ${usuario.email}` : nome;
+
+  if (!API_BASE_URL) return;
+  try {
+    const perfil = await managerService.perfil();
+    if (perfil?.nome) set('[data-sb-perfil-arena]', perfil.nome);
+    /* A LOGO DA ARENA no lugar da inicial, quando houver. O avatar vira uma
+       imagem de fundo em vez de <img> para nao mexer no markup do componente
+       — e porque a logo chega como data URL, que num <img> exigiria o mesmo
+       tratamento de erro que os cartoes de quadra ja precisaram. */
+    const av = caixa.querySelector('[data-sb-perfil-inicial]');
+    if (av && perfil?.logo) {
+      av.style.backgroundImage = `url("${perfil.logo}")`;
+      av.classList.add('tem-logo');
+    }
+  } catch (error) {
+    // Sem rede fica o nome da sessao, que ja esta na tela.
+  }
+}
+
 function initAppShell() {
   const app = document.getElementById('app');
   if (!app) return;
@@ -404,6 +452,7 @@ async function iniciarPainel() {
   await initDesktopRouter();
   markActiveNav();
   initAppShell();
+  renderPerfilSidebar();
   initModals();
   initRedirectToast();
 }
