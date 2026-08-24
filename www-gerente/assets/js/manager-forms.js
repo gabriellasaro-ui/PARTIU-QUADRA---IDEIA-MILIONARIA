@@ -205,8 +205,11 @@ export async function renderManagerCourtForm(root) {
   marcadas = new Set((quadra?.amenities || quadra?.comodidades || []).map(String));
   pintarComodidades(root);
 
-  // O expediente pertence a uma quadra que ja existe: sem id nao ha onde
-  // pendurar os sete dias, e o editor diz isso em vez de fingir que salva.
+  /* O expediente aparece TAMBEM na quadra nova, com os sete dias ja
+     preenchidos. Antes ele dizia "cadastre a quadra primeiro" — e o dono
+     terminava o cadastro sem nunca ver que existia horario por dia, ou via e
+     precisava voltar. A hora de dizer que dia a quadra abre e a hora em que
+     ele esta descrevendo a quadra. */
   await carregarExpediente(root, quadra?.id);
 
   form.elements.id.value = quadra?.id || '';
@@ -300,7 +303,15 @@ function pintarExpediente(root) {
     return;
   }
 
-  caixa.innerHTML = expedienteDias.map((d) => `
+  /* UMA frase explica os sete botoes.
+
+     No celular cada botao mostra "Repetir na semana"; no desktop nao ha
+     largura para isso ao lado de dois selects, e sobrava o simbolo de copiar
+     sozinho — que foi justamente o que o dono disse nao entender. `title` nao
+     resolve: so aparece depois de parar o cursor em cima, e quem nao sabe que
+     ha algo ali nao para. */
+  caixa.innerHTML = '<p class="expediente__dica">Use <i class="ic sm" data-lucide="copy"></i> para repetir o horário de um dia nos outros dias abertos.</p>'
+    + expedienteDias.map((d) => `
     <div class="exp-dia${d.fechado ? ' is-fechado' : ''}" data-exp-dia="${d.dia}">
       <label class="exp-dia__nome">
         <input type="checkbox" data-exp-aberto ${d.fechado ? '' : 'checked'}>
@@ -327,9 +338,31 @@ function pintarExpediente(root) {
   window.pqRefreshIcons?.(caixa);
 }
 
+/* A ordem e a do servidor: dia 0 e segunda, nao domingo. Se as duas listas
+   discordarem, o expediente de segunda vai gravado como domingo e ninguem
+   percebe ate uma reserva cair no dia errado. */
+const DIAS_SEMANA = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+
+function expedientePadrao() {
+  return DIAS_SEMANA.map((rotulo, dia) => ({
+    dia, rotulo, configurado: false, fechado: false, abre: '08:00', fecha: '23:00'
+  }));
+}
+
 async function carregarExpediente(root, quadraId) {
-  if (!API_BASE_URL || !quadraId) {
-    expedienteDias = [];
+  /* QUADRA NOVA COMECA COM A SEMANA INTEIRA ABERTA, e nao vazia.
+
+     Nao ha id para consultar, mas isso e razao para preencher no cliente e
+     mandar junto no cadastro — nao para esconder o editor. Sete dias iguais
+     sao o caso comum; quem fecha na segunda muda uma linha, em vez de digitar
+     catorze horarios do zero. */
+  if (!quadraId) {
+    expedienteDias = expedientePadrao();
+    pintarExpediente(root);
+    return;
+  }
+  if (!API_BASE_URL) {
+    expedienteDias = expedientePadrao();
     pintarExpediente(root);
     return;
   }
@@ -337,9 +370,27 @@ async function carregarExpediente(root, quadraId) {
     const dados = await managerService.expediente(quadraId);
     expedienteDias = dados.dias || [];
   } catch (error) {
-    expedienteDias = [];
+    // Falha de rede nao pode apagar o editor: os padroes deixam a tela usavel.
+    expedienteDias = expedientePadrao();
   }
   pintarExpediente(root);
+}
+
+/* A janela da quadra (`abertura`/`fechamento`) sai do expediente: o dia que
+   abre mais cedo e o que fecha mais tarde.
+
+   O formulario tinha um par "abre as / fecha as" que SAIU quando o editor por
+   dia entrou, mas o corpo do submit continuou lendo os campos — mandava
+   `abertura: "null"` a cada salvamento, e o backend caia no padrao 08:00 sem
+   avisar ninguem. Derivar dos sete dias mantem os dois coerentes: a janela da
+   quadra passa a ser exatamente o que a semana diz. */
+function janelaDoExpediente() {
+  const abertos = expedienteDias.filter((d) => !d.fechado);
+  if (!abertos.length) return { abertura: '08:00', fechamento: '23:00' };
+  return {
+    abertura: abertos.map((d) => d.abre).sort()[0],
+    fechamento: abertos.map((d) => d.fecha).sort().slice(-1)[0]
+  };
 }
 
 // ------------------------------------------------------------------ configurações
@@ -817,8 +868,7 @@ export function initManagerForms() {
           esporte: String(d.get('sport')),
           descricao: String(d.get('descricao')).trim(),
           preco: Number(d.get('price')),
-          abertura: String(d.get('abre')),
-          fechamento: String(d.get('fecha')),
+          ...janelaDoExpediente(),
           ativa: root.querySelector('[data-switch="active"]')?.classList.contains('on') ?? true,
           /* AS FOTOS FALTAVAM NO CORPO.
 
@@ -854,7 +904,23 @@ export function initManagerForms() {
               })));
             }
           } else {
-            await managerService.criarQuadra(body);
+            /* AO CRIAR, o expediente vai na sequencia — com o id que o POST
+               acabou de devolver.
+
+               Sem isto o dono preenchia os sete dias na tela de cadastro e
+               eles morriam no envio: a quadra nascia com a janela unica e ele
+               so descobriria abrindo a quadra de novo para editar. Era esse o
+               "nao aparece quando cria, so quando edita". */
+            const criada = await managerService.criarQuadra(body);
+            const novoId = criada?.quadra?.id;
+            if (novoId && expedienteDias.length) {
+              await managerService.salvarExpediente(novoId, expedienteDias.map((dia) => ({
+                dia: dia.dia,
+                fechado: dia.fechado,
+                abre: dia.abre,
+                fecha: dia.fecha
+              })));
+            }
           }
         } catch (error) {
           window.pqToast?.(error.message || 'Não foi possível salvar');
@@ -1062,10 +1128,19 @@ function pintarGaleria(root) {
         <i class="ic sm" data-lucide="trash-2"></i>
       </button>
     </figure>`).join('')
-    // Os espacos que faltam aparecem VAZIOS, e nao ausentes: cinco caixas
-    // desde o inicio mostram o tamanho da tarefa.
-    + Array.from({ length: Math.max(0, MIN_FOTOS - fotosDaQuadra.length) }, () =>
-      '<div class="galeria__vaga"><i class="ic" data-lucide="image"></i></div>').join('');
+    /* CADA VAGA E UM "+", e nao uma caixa morta com icone de imagem.
+
+       Antes as vagas eram <div> decorativos e o unico jeito de enviar foto era
+       um botao "Adicionar fotos" no canto do cabecalho — longe justamente do
+       lugar que mostra o que falta. A pessoa via cinco quadrados vazios e
+       clicava neles, que era o gesto certo e o unico que nao funcionava.
+
+       Continua existindo UMA vaga depois de completar as cinco: o minimo da
+       vitrine e cinco, nao o maximo, e sem ela nao haveria como enviar a sexta
+       foto depois que o botao do cabecalho saiu. */
+    + Array.from({ length: Math.max(1, MIN_FOTOS - fotosDaQuadra.length) }, () =>
+      `<button type="button" class="galeria__vaga" data-file-trigger="#foto-file"
+               aria-label="Adicionar foto"><i class="ic" data-lucide="plus"></i></button>`).join('');
 
   const conta = root.querySelector('[data-galeria-conta]');
   const faltam = MIN_FOTOS - fotosDaQuadra.length;

@@ -3555,3 +3555,153 @@ html[data-manager-app] .inp__aviso.is-erro { color: var(--pq-gold); }
     white-space: normal;
   }
 }
+
+
+/* ═════════════════════════════════════════════════════════════════════════
+   AJUSTES DE RESPIRO — a rodada em que o dono apontou "ta tudo junto"
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── VITRINE SEM OS FILETES VERTICAIS ─────────────────────────────────────
+   Duas linhas cortavam a faixa: uma antes de "12 horarios procurados", outra
+   antes do interruptor. Separador so paga o proprio custo quando os blocos
+   correm risco de se confundir — aqui eles ja estao a 40px um do outro, com
+   tamanhos e cores diferentes. A linha vira grade de tabela num lugar que nao
+   e tabela. O espaco separa igual e nao desenha nada. */
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats div,
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__settings {
+  border-left: 0;
+}
+
+/* ── "QUANDO A ARENA FATURA" OCUPANDO A LARGURA INTEIRA ───────────────────
+   O bloco caia numa das duas colunas do painel: sobravam 120px para nome,
+   barra e porcentagem. A barra virava um risco de 30px — largura fixa demais
+   para comparar proporcao, que e a unica coisa que ela existe para fazer — e
+   o "100%" transbordava por cima da borda do cartao.
+
+   Ele nao e um numero como os outros: sao tres medidas que se comparam entre
+   si, entao ocupa a fileira inteira em vez de dividir espaco com um numero
+   solto ao lado. */
+html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health > .faixa-dia {
+  grid-column: 1 / -1;
+}
+
+/* As tres faixas descem um pouco do rotulo: coladas, "Quando a arena fatura"
+   parecia titulo da linha "Manha" em vez de titulo do grupo. */
+html[data-manager-app][data-manager-view="financeiro"] .faixa-dia > div {
+  margin-top: var(--e3);
+  gap: var(--e3);
+}
+
+/* O numero da faixa herdava os 24px dos indicadores vizinhos — legenda de uma
+   barra com o corpo de um KPI, competindo com os numeros de verdade do painel.
+   A especificidade acompanha a do bloco que ele precisa vencer (0,3,1). */
+html[data-manager-app][data-manager-view="financeiro"] .faixa-dia__linha strong {
+  margin-top: 0;
+  font-size: var(--t-apoio);
+  text-align: right;
+}
+
+html[data-manager-app][data-manager-view="financeiro"] .faixa-dia__linha > span:first-child {
+  font-size: var(--t-apoio);
+}
+
+/* ── PERFIL DA ARENA: OS DOIS CARTOES PARAM DE SE ENCOSTAR ────────────────
+   16px entre dois cartoes de 700px, cada um com 23px de recheio interno — a
+   distancia entre as duas SECOES era menor que a distancia entre dois campos
+   dentro de uma delas. Somado a um fundo quase igual ao da pagina, "Perfil da
+   arena" e "Endereco & contato" liam como um bloco so.
+
+   O vao entre secoes precisa ser maior que o vao entre campos, senao a
+   hierarquia da tela desaparece. */
+html[data-manager-app][data-manager-view="perfil"] .set-card + .set-card {
+  margin-top: var(--e6);
+}
+
+html[data-manager-app][data-manager-view="perfil"] .inp {
+  margin-bottom: var(--e4);
+}
+
+html[data-manager-app][data-manager-view="perfil"] .input-row {
+  gap: var(--e4);
+}
+
+/* ── CEP: UMA MOLDURA, E NAO DUAS ─────────────────────────────────────────
+   Ao focar, o input acendia o proprio anel verde (box-shadow de 4px) DENTRO da
+   moldura do campo — cartao dentro de cartao, e o de dentro aceso. Ficava com
+   cara de selecionado mesmo depois de clicar em "Buscar", porque o brilho
+   pertencia ao input e nao ao conjunto.
+
+   Campo e botao sao UM controle: quem toma o foco visual e a moldura de fora.
+   A especificidade sobe para (0,3,2) porque e isso que .inp input:focus pede. */
+html[data-manager-app] .inp .campo-cep input,
+html[data-manager-app] .inp .campo-cep input:focus {
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
+
+html[data-manager-app] .campo-cep:focus-within {
+  border-color: var(--pq-brand);
+}
+
+/* ── OS TRES NUMEROS DO INICIO COM AR ENTRE ELES ──────────────────────────
+   8px entre cartoes que ja tem borda propria: eles se tocavam quase como um
+   controle segmentado, sugerindo que sao partes de uma coisa so quando sao
+   tres medidas independentes. */
+@media (max-width: 820px) {
+  html[data-manager-app] .manager-dashboard-kpis,
+  html[data-manager-app] .manager-tools {
+    gap: var(--e3);
+  }
+}
+
+
+/* ── A VAGA DE FOTO VIROU BOTAO ───────────────────────────────────────────
+   Era um <div> tracejado com icone de imagem: parecia clicavel e nao era. O
+   estilo herdado ja desenha a caixa; o que falta aqui e o que o botao traz de
+   fabrica e atrapalha (fundo e padding do agente), mais o retorno ao toque —
+   sem hover, cinco quadrados iguais nao dizem qual esta sob o cursor. */
+html[data-manager-app] .galeria__vaga {
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+html[data-manager-app] .galeria__vaga:hover,
+html[data-manager-app] .galeria__vaga:focus-visible {
+  border-color: var(--pq-brand);
+  background: var(--pq-tint);
+  color: var(--pq-brand);
+}
+
+/* O filete que separa um indicador do outro estava sendo herdado por TUDO que
+   e div ali dentro (a regra e de descendente, nao de filho): cada faixa do dia
+   ganhava a sua linha, e o bloco virava tabela de tres colunas dentro de um
+   cartao que ja e uma lista. So o topo do bloco separa — ele e um item da
+   lista, as tres faixas sao o conteudo dele. */
+html[data-manager-app][data-manager-view="financeiro"] .faixa-dia div {
+  border-top: 0;
+}
+
+/* A dica do expediente ocupa a fileira inteira e so aparece onde o botao fica
+   sem rotulo — no celular cada botao ja se explica sozinho. */
+html[data-manager-app] .expediente__dica {
+  display: none;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: var(--e1);
+  margin: 0 0 var(--e2);
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+}
+
+html[data-manager-app] .expediente__dica .ic {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
+@media (min-width: 561px) {
+  html[data-manager-app] .expediente__dica { display: block; }
+}

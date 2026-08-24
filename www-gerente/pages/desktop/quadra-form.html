@@ -33,9 +33,9 @@
             <strong>Fotos da quadra</strong>
             <small data-galeria-conta>0 de 5 — mínimo para publicar</small>
           </div>
-          <button type="button" class="btn btn-outline btn-xs" data-file-trigger="#foto-file">
-            <i class="ic sm" data-lucide="image"></i> Adicionar fotos
-          </button>
+          <!-- O botao "Adicionar fotos" saiu daqui: cada vaga da grade abaixo
+               e o proprio gatilho, com um "+". O envio fica no lugar que mostra
+               o que falta, em vez de num canto do cabecalho. -->
           <input type="file" id="foto-file" accept="image/*" multiple hidden data-galeria-input>
         </div>
 
@@ -70,8 +70,16 @@
     </div>
     <div class="set-fields">
       <div class="input-row">
-        <div class="inp"><label>Preço por hora (R$)</label><input type="number" name="price" value="120" min="0" step="10" required></div>
-        <div class="inp"><label>Mensalista (por mês)</label><input type="number" name="priceMonthly" value="408" min="0" step="10" required></div>
+        <!-- step="any" e nao step="10".
+
+             Com passo de 10 o navegador so aceita multiplos de 10, e o campo de
+             mensalista ja nascia em 408 — valor invalido pelo proprio passo. O
+             formulario de quadra NOVA era recusado antes de sair da tela, com a
+             mensagem "os dois valores validos mais proximos sao 400 e 410", que
+             nao diz a ninguem que o problema e o passo. Preco de quadra nao anda
+             de dez em dez: ha arena cobrando 135 e arena cobrando 89,90. -->
+        <div class="inp"><label>Preço por hora (R$)</label><input type="number" name="price" value="120" min="0" step="any" required></div>
+        <div class="inp"><label>Mensalista (por mês)</label><input type="number" name="priceMonthly" value="408" min="0" step="any" required></div>
       </div>
       <div class="input-row">
         <div class="inp"><label>Duração mínima</label><select name="duracaoMin">
