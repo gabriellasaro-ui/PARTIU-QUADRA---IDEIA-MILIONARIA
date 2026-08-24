@@ -1681,8 +1681,12 @@ html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats div
   border-left: 0;
 }
 
+/* Sem filete: era o ultimo de quatro que o bloco tinha, e ja tinha ido de
+   quatro para dois. O espaco separa o interruptor do texto acima sem precisar
+   desenhar uma linha para dizer isso. */
 html[data-manager-app][data-manager-view="quadras"] .manager-showcase__settings {
-  padding-top: var(--e4);
+  padding-top: var(--e3);
+  border-top: 0;
 }
 
 /* O interruptor tambem perde a moldura propria: ele ja esta dentro do cartao,
@@ -1785,13 +1789,42 @@ html[data-manager-app] form.settings { padding-bottom: var(--e6); }
 
    Zerando o padding para esta tela, o chat comeca exatamente onde a area de
    conteudo comeca, em qualquer largura e com a sidebar aberta ou fechada. */
+/* FLEX, e nao `height: 100%`.
+
+   `.content` media 752px e o chat parava em 515 — a altura natural das sete
+   conversas. Altura percentual precisa de um pai com altura DEFINIDA, e
+   `.content` cresce por flex dentro de `.main`: a altura dele existe no fim do
+   layout, tarde demais para o filho resolver 100% contra ela.
+
+   Como coluna flex, o chat pede `flex: 1` e ocupa o que sobra — sem depender
+   de nenhum numero. */
 html[data-manager-app][data-manager-view="mensagens"] .content {
+  display: flex;
+  flex-direction: column;
   padding: 0;
   overflow: hidden;
 }
 
+/* A CADEIA INTEIRA precisa ser flex, e nao so o primeiro nivel.
+
+   Entre `.content` e `.chat` existe o `<main data-desktop-route-view>` — o
+   container que o roteador reescreve a cada tela. Dando `flex: 1` so ao
+   primeiro filho, o `main` esticava e o chat continuava com a altura natural
+   das sete conversas dentro dele. */
+html[data-manager-app][data-manager-view="mensagens"] .content > *,
+html[data-manager-app][data-manager-view="mensagens"] [data-desktop-route-view] > * {
+  flex: 1;
+  min-height: 0;
+}
+
+html[data-manager-app][data-manager-view="mensagens"] [data-desktop-route-view] {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 html[data-manager-app][data-manager-view="mensagens"] .chat {
-  height: 100%;
+  height: auto;
   min-height: 0;
   max-height: none;
   margin: 0;
@@ -1867,10 +1900,35 @@ html[data-manager-app][data-manager-view="quadraForm"] .input-row {
 
 /* O expediente ganha duas colunas na largura cheia: sete dias empilhados
    faziam a tela rolar sem necessidade. */
+/* ── EXPEDIENTE: a linha do dia ocupa a coluna ────────────────────────────
+
+   Em tres colunas de ~383px, o conteudo de cada dia media ~330px e sobravam
+   50px mortos a direita de cada um, mais o vao de 32px entre colunas — as
+   linhas ficavam boiando com branco dos dois lados.
+
+   Duas colunas, e nao tres: sete dias em tres deixam o domingo sozinho na
+   terceira fileira com duas lacunas ao lado. Em duas, a ultima fileira tem um
+   vazio so.
+
+   E a linha se distribui: o nome do dia empurra os horarios para a direita,
+   entao os selects ficam alinhados entre as colunas e o botao de copiar encosta
+   na borda. */
 html[data-manager-app][data-manager-view="quadraForm"] .expediente {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 0 var(--e6);
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 0 var(--e5);
+}
+
+html[data-manager-app][data-manager-view="quadraForm"] .exp-dia {
+  grid-template-columns: minmax(0, 1fr) auto 32px;
+  gap: var(--e4);
+  padding: var(--e2) 0;
+}
+
+/* Os dois selects com a mesma largura: sem isso "08:00" e "23:00" medem
+   diferente e a palavra "ate" dança de posicao a cada linha. */
+html[data-manager-app][data-manager-view="quadraForm"] .exp-dia__horas select {
+  width: 86px;
 }
 
 html[data-manager-app][data-manager-view="quadraForm"] .expediente__aviso {
