@@ -4,13 +4,22 @@
      no Explorar) e o catalogo de espacos. A versao refatorada tinha perdido
      a Vitrine inteira e listava as arenas do marketplace no lugar das
      quadras da casa. Preenchido por assets/js/manager-courts.js. -->
+<!-- VITRINE: uma linha, sem texto de enfeite.
+
+     O cartao tinha um titulo de marketing ("Sua arena pronta para ser
+     encontrada") e uma frase explicando o que o proprio interruptor ja diz —
+     duas linhas grandes de nada, ocupando mais espaco do que os numeros e o
+     controle juntos.
+
+     O que ele faz e uma coisa so: ligar e desligar a arena no Explorar, e
+     mostrar se isso esta dando resultado. Entao e isso que fica — o
+     interruptor com o estado, e os dois numeros que respondem "adianta?". -->
 <section class="manager-showcase" id="vitrine">
   <div class="manager-showcase__copy">
     <span class="manager-eyebrow"><i></i> Vitrine no Explorar</span>
-    <h2>Sua arena pronta para ser encontrada</h2>
-    <p>Controle a visibilidade e o destaque das suas quadras sem sair da gestão.</p>
-
+    <p data-showcase-estado>Sua arena aparece na busca e no mapa do app.</p>
   </div>
+
   <div class="manager-showcase__stats" aria-label="Indicadores da vitrine">
       <!-- "1.284 visualizacoes em 30 dias" e "9,8% de conversao" eram duas
            constantes escritas a mao. O rotulo mudou junto com a origem: a
@@ -22,26 +31,10 @@
 
   <div class="manager-showcase__settings">
       <button type="button" class="manager-setting-toggle" data-showcase-setting="visible" aria-pressed="false">
-        <span><i class="ic" data-lucide="map"></i></span>
-        <div><strong>Visível no Explorar</strong><small>Jogadores podem encontrar sua arena</small></div>
+        <div><strong>Visível no Explorar</strong></div>
         <i></i>
       </button>
   </div>
-
-  <!-- Turbinar e recurso pago: vira card com preco e prazo, nao um
-        interruptor solto. O efeito e real — a arena turbinada sobe no
-        Explorar do jogador. A cobranca entra quando houver adquirente. -->
-  <!-- DESTAQUE REGIONAL: removido por enquanto.
-
-       O botao dizia "Turbinar · R$ 79/30 dias" e gravava a compra no
-       localStorage do proprio navegador. Nenhum backend, nenhuma cobranca,
-       nenhum efeito na busca do jogador — o dono clicava achando que tinha
-       contratado destaque, via o selo "Turbinada ate 21/09" e nao acontecia
-       absolutamente nada.
-
-       Mock de tela e uma coisa; mock que simula COMPRA e outra. A ideia do
-       produto e boa e o lugar dela e este — volta quando existir a rota, o
-       adquirente e o efeito real na ordenacao do Explorar. -->
 </section>
 
 <div class="manager-section__head manager-courts-head">

@@ -316,11 +316,45 @@ html[data-manager-app] .manager-heatmap__hour {
 /* A escala de cor precisa ter DEGRAUS visiveis. Estavam tao proximos que o
    mapa parecia uniforme — e um mapa de calor sem contraste entre niveis nao
    informa nada, so ocupa espaco. */
-html[data-manager-app] .manager-heatmap__cell.b0 { background: var(--pq-tint); }
-html[data-manager-app] .manager-heatmap__cell.b1 { background: color-mix(in srgb, var(--pq-brand) 22%, var(--pq-tint)); }
-html[data-manager-app] .manager-heatmap__cell.b2 { background: color-mix(in srgb, var(--pq-brand) 45%, var(--pq-tint)); }
-html[data-manager-app] .manager-heatmap__cell.b3 { background: color-mix(in srgb, var(--pq-brand) 72%, var(--pq-tint)); }
-html[data-manager-app] .manager-heatmap__cell.b4 { background: var(--pq-brand); }
+/* ESCALA QUENTE, e nao verde.
+
+   O mapa era um degrade de verde dentro de um painel verde: as celulas fracas
+   se confundiam com o fundo dos cartoes e as fortes com qualquer botao da
+   marca. E verde, no resto do painel, ja significa "esta tudo certo" — usar a
+   mesma cor para dizer "aqui esta cheio" e "aqui esta vazio" e pedir para o
+   olho separar duas coisas que a cor nao separa.
+
+   Quente e a convencao de mapa de calor porque ela tem uma direcao obvia: mais
+   quente, mais movimento. E nao colide com nada — o painel nao usa laranja em
+   lugar nenhum. */
+html[data-manager-app] {
+  --calor-0: color-mix(in srgb, var(--pq-line) 55%, transparent);
+  --calor-1: #fde4b8;
+  --calor-2: #f9bf63;
+  --calor-3: #ef8f2a;
+  --calor-4: #d95f18;
+}
+
+/* No tema escuro os tons claros do topo da escala sumiriam contra o painel; a
+   rampa inteira desce um degrau e ganha saturacao. */
+html[data-manager-app]:not([data-theme="light"]) {
+  --calor-0: color-mix(in srgb, var(--pq-line) 70%, transparent);
+  --calor-1: #5c3b17;
+  --calor-2: #96591b;
+  --calor-3: #d4841f;
+  --calor-4: #f7a72e;
+}
+
+html[data-manager-app] .manager-heatmap__cell.b0,
+html[data-manager-app] .manager-heatmap__legend .b0 { background: var(--calor-0); }
+html[data-manager-app] .manager-heatmap__cell.b1,
+html[data-manager-app] .manager-heatmap__legend .b1 { background: var(--calor-1); }
+html[data-manager-app] .manager-heatmap__cell.b2,
+html[data-manager-app] .manager-heatmap__legend .b2 { background: var(--calor-2); }
+html[data-manager-app] .manager-heatmap__cell.b3,
+html[data-manager-app] .manager-heatmap__legend .b3 { background: var(--calor-3); }
+html[data-manager-app] .manager-heatmap__cell.b4,
+html[data-manager-app] .manager-heatmap__legend .b4 { background: var(--calor-4); }
 
 
 /* ─────────── A GRADE DO PAINEL: quem responde primeiro fica em cima ───────
@@ -1130,14 +1164,25 @@ html[data-manager-app] .manager-agenda-title h2 {
   letter-spacing: -.02em;
 }
 
+/* A NAVEGACAO DA SEMANA sem caixa em volta.
+
+   Era um cartao com borda e fundo proprio flutuando ao lado do titulo, e nao
+   ha nada dentro dele que precise de moldura: sao tres botoes. A caixa fazia o
+   controle parecer um bloco de conteudo, quando ele e so o jeito de andar na
+   semana que ja esta escrita do lado. */
 html[data-manager-app] .cal-range {
   display: flex;
   align-items: center;
   gap: var(--e1);
   min-width: 0;
-  padding: var(--e1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* Os botoes e que ganham contorno — sao eles que se clica. */
+html[data-manager-app] .cal-nav {
   border: 1px solid var(--pq-line);
-  border-radius: var(--r-controle);
   background: var(--pq-panel);
 }
 
@@ -2080,4 +2125,53 @@ html[data-manager-app] .manager-finance-metrics strong {
 html[data-manager-app] .manager-finance-metrics .is-perda > span {
   background: var(--pq-amber-soft);
   color: var(--pq-gold);
+}
+
+/* O `.content` tem `max-width: 1480px` e se centraliza — o que faz sentido em
+   tela de leitura, e nao numa de conversa. Em monitor de 1920 sobravam ~100px
+   de cada lado do chat, e era esse o branco nas pontas. Aqui ele nao vale. */
+html[data-manager-app][data-manager-view="mensagens"] .content {
+  max-width: none;
+}
+
+
+/* ══════════════════ VITRINE: uma linha ═══════════════════════════════════ */
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "copy stats settings";
+  align-items: center;
+  gap: var(--e6);
+  padding: var(--e4) var(--e5);
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__copy p {
+  margin-top: var(--e1);
+  color: var(--pq-muted);
+  font-size: var(--t-corpo);
+}
+
+/* Escondida, a frase deixa de ser informativa e passa a ser aviso. */
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__copy p.is-off {
+  color: var(--pq-gold);
+  font-weight: 600;
+}
+
+html[data-manager-app][data-manager-view="quadras"] .manager-showcase__settings {
+  padding-top: 0;
+}
+
+/* Sem o icone e sem a descricao, o interruptor e so rotulo + chave. */
+html[data-manager-app][data-manager-view="quadras"] .manager-setting-toggle {
+  grid-template-columns: auto auto;
+  gap: var(--e3);
+  width: auto;
+}
+
+@media (max-width: 1000px) {
+  html[data-manager-app][data-manager-view="quadras"] .manager-showcase {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "copy" "stats" "settings";
+    gap: var(--e4);
+  }
 }

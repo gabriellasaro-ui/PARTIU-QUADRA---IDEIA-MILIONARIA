@@ -217,6 +217,20 @@ export async function renderManagerCourts(root) {
     btn.setAttribute('aria-pressed', String(ligado));
   });
 
+  /* A frase do cartao DIZ O ESTADO, em vez de repetir o que o interruptor ja
+     mostra. Antes era "Controle a visibilidade e o destaque das suas quadras
+     sem sair da gestao" — texto de folheto, igual com a arena visivel ou
+     escondida. Agora ela muda, e desligado o aviso e o que importa: a arena
+     sumiu da busca. */
+  const frase = root.querySelector('[data-showcase-estado]');
+  if (frase) {
+    const visivel = Boolean(estado.visible);
+    frase.textContent = visivel
+      ? 'Sua arena aparece na busca e no mapa do app.'
+      : 'Sua arena está escondida — ninguém encontra suas quadras no app.';
+    frase.classList.toggle('is-off', !visivel);
+  }
+
 
   tratarFotosQuebradas(root);
   window.pqRefreshIcons?.(root);
