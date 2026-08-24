@@ -714,10 +714,19 @@ html[data-manager-app] .manager-booking-person small { font-size: var(--t-apoio)
    — era por isso que "CLIENTE" batia e "STATUS" estava 25px fora.
 
    Com largura fixa nas duas ultimas, as grades nao tem mais como divergir. */
-html[data-manager-app] .manager-booking-head,
-html[data-manager-app] .manager-booking-row {
-  grid-template-columns:
-    minmax(180px, 1.2fr) minmax(120px, .8fr) minmax(160px, 1fr) minmax(90px, .55fr) 120px 132px;
+/* SO ACIMA DE 900px.
+
+   A folha antiga ja transforma a linha num CARTAO empilhado no celular
+   (`grid-template-columns: 1fr auto`), e minha regra de seis colunas fixas
+   passava por cima dela: as colunas somavam ~900px de largura minima, o
+   navegador afastava o zoom para caber, e a pagina inteira do celular virava
+   uma miniatura de 900px. */
+@media (min-width: 900px) {
+  html[data-manager-app] .manager-booking-head,
+  html[data-manager-app] .manager-booking-row {
+    grid-template-columns:
+      minmax(180px, 1.2fr) minmax(120px, .8fr) minmax(160px, 1fr) minmax(90px, .55fr) 120px 132px;
+  }
 }
 
 html[data-manager-app] .manager-booking-head {
@@ -1594,12 +1603,24 @@ html[data-manager-app] .manager-section {
   padding: var(--e5);
 }
 
+/* No celular a secao perde a moldura e o recuo: os cartoes de reserva ja tem os
+   seus, e cartao dentro de cartao numa tela de 390px come metade da largura. */
+@media (max-width: 899px) {
+  html[data-manager-app] .manager-section {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+}
+
 html[data-manager-app] .manager-booking-head {
   padding: var(--e2) 0;
 }
 
-html[data-manager-app] .manager-booking-row {
-  padding: var(--e3) 0;
+@media (min-width: 900px) {
+  html[data-manager-app] .manager-booking-row {
+    padding: var(--e3) 0;
+  }
 }
 
 /* A ultima linha nao precisa de filete: o fim do cartao ja termina a lista. */
@@ -1621,13 +1642,34 @@ html[data-manager-app] .manager-bookings .manager-booking-row:last-child {
 
    E ela vai ate embaixo. Sem altura propria, a coluna terminava onde o
    conteudo terminava, e sobrava um retalho de fundo diferente no pe da tela. */
-html[data-manager-app] .sidebar {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  border-right: 1px solid var(--pq-line);
-  background: var(--pq-panel);
+/* SO NO DESKTOP.
+
+   `position: sticky` aqui vencia o `position: fixed` do off-canvas (o menu do
+   celular e uma gaveta que entra por fora da tela, `translateX(-100%)`).
+   Vencendo, a sidebar voltava para o fluxo normal como um bloco de 100vh — no
+   celular ela virava a primeira "tela" e empurrava o painel inteiro para baixo,
+   que era o vazio com o Dashboard aparecendo no rodape.
+
+   `pointer: coarse` acompanha o resto da folha: o corte nao e so de largura, e
+   de tipo de aparelho. Uma janela estreita no computador continua com a
+   sidebar fixa, que e o certo — ali nao ha gaveta. */
+@media (min-width: 821px), (pointer: fine) {
+  html[data-manager-app] .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--pq-line);
+    background: var(--pq-panel);
+  }
+}
+
+/* No celular ela mantem so a superficie; posicao e da gaveta. */
+@media (max-width: 820px) and (pointer: coarse) {
+  html[data-manager-app] .sidebar {
+    border-right: 1px solid var(--pq-line);
+    background: var(--pq-panel);
+  }
 }
 
 /* ITEM ATIVO com barra de marca: a cor de fundo sozinha e sutil demais num
@@ -2243,7 +2285,14 @@ html[data-manager-app] [data-modo="mes"] .cal-body {
   max-height: none;
   overflow: visible;
   background-image: none;
+  /* `.cal-body` tem `min-width: 720px` para a regua de horas nao espremer as
+     colunas de dia. O mes nao tem regua: sao 42 quadrados que devem caber na
+     largura que houver. Com o minimo herdado, o calendario ficava com 720px
+     dentro de um cartao de 390 e a metade da semana sumia atras do recorte. */
+  min-width: 0;
 }
+
+html[data-manager-app] [data-modo="mes"] .cal-head { min-width: 0; }
 
 html[data-manager-app] .cal-mes {
   display: grid;
@@ -2471,3 +2520,100 @@ html[data-manager-app] .app.collapsed .sb-perfil {
 
 html[data-manager-app] .app.collapsed .sb-perfil__txt,
 html[data-manager-app] .app.collapsed .sb-perfil .ic { display: none; }
+
+
+/* ══════════════════ CELULAR ══════════════════════════════════════════════ */
+
+@media (max-width: 560px) {
+  /* ATALHOS em uma coluna. Em duas, sobravam ~80px para o texto e "Mensalistas"
+     virava "M..." com a descricao em "Rec..." — dois truncamentos que nao
+     identificam nada. Melhor um por linha e legivel. */
+  html[data-manager-app][data-manager-view="dashboard"] .manager-tools {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* O cabecalho do cartao empilha: titulo, controle e link em fila unica
+     estouravam a largura — era o que fazia a pagina medir 422px numa tela de
+     390 e o navegador afastar o zoom. */
+  html[data-manager-app] .manager-panel__head,
+  html[data-manager-app] .manager-section__head {
+    flex-wrap: wrap;
+    gap: var(--e2);
+  }
+
+  html[data-manager-app] .chips-periodo--grafico {
+    order: 3;
+    margin: 0;
+  }
+
+  /* Os oito indicadores do financeiro em duas colunas, e nao quatro. */
+  html[data-manager-app] .manager-finance-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-manager-app] .manager-finance-metrics strong { font-size: var(--t-secao); }
+
+  /* Detalhe do periodo volta a uma coluna: dois numeros lado a lado em 390px
+     deixam cada um com 160px, e as legendas quebram em tres linhas. */
+  html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health > div:nth-child(2) {
+    border-top: 1px solid var(--pq-line);
+    padding-top: var(--e3);
+  }
+
+  /* Expediente e comodidades: uma coluna. */
+  html[data-manager-app][data-manager-view="quadraForm"] .expediente {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* A vitrine volta a empilhar (ja tinha regra em 1000px, reforcada aqui para
+     o interruptor nao dividir linha com os numeros). */
+  html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats {
+    gap: var(--e5);
+  }
+
+  /* Filtro por nota e paginador: quebram em vez de esticar a pagina. */
+  html[data-manager-app] .pager { flex-wrap: wrap; gap: var(--e3); }
+}
+
+/* O PERFIL DA SIDEBAR no celular fica dentro da gaveta, e ali ela tem
+   `padding-bottom` da area segura — o rodape nao pode grudar no gesto de
+   voltar do sistema. */
+@media (max-width: 820px) and (pointer: coarse) {
+  html[data-manager-app] .sb-perfil {
+    margin-bottom: var(--e2);
+  }
+}
+
+
+/* ── O MES tambem no celular ──────────────────────────────────────────────
+
+   No celular a agenda usa a lista de dias (`manager-agenda-mobile`) e a grade
+   de horas fica escondida — e o certo: sete colunas de hora num aparelho de
+   390px sao ilegiveis.
+
+   Mas o MES nao e uma grade de horas: sao 42 quadrados, que e exatamente o que
+   qualquer calendario de celular mostra. Nesse modo a grade volta e a lista
+   sai, senao "Mes" seria um botao que nao faz nada no aparelho. */
+@media (max-width: 820px) and (pointer: coarse) {
+  html[data-manager-app] [data-modo="mes"] .manager-agenda-desktop {
+    display: block;
+  }
+
+  html[data-manager-app] [data-modo="mes"] .manager-agenda-mobile {
+    display: none;
+  }
+
+  /* Quadrado menor e sem o valor: em 55px de largura cabe o dia e a contagem,
+     e "R$ 120,00" quebraria em duas linhas por cima do numero. */
+  html[data-manager-app] .cal-dia-mes {
+    min-height: 62px;
+    padding: var(--e1) var(--e2);
+  }
+
+  html[data-manager-app] .cal-dia-mes .v { display: none; }
+  html[data-manager-app] .cal-dia-mes .q { font-size: var(--t-micro); }
+}
