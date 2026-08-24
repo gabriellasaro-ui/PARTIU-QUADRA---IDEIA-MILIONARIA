@@ -2356,3 +2356,63 @@ html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health s
 html[data-manager-app][data-manager-view="financeiro"] .manager-finance-chart .lc {
   height: 300px;
 }
+
+
+/* ══════════════════ FORMULARIOS: usar a largura ══════════════════════════ */
+
+/* `form.settings` tem `max-width: 1080px` e alinha a esquerda. Numa area de
+   1424px isso deixa 344px mortos do lado direito — teto de leitura faz sentido
+   para TEXTO corrido, e nao para um formulario cujos campos ja estao
+   organizados em colunas.
+
+   Sem o teto, a galeria de fotos, o expediente e os pares de campo ganham a
+   largura toda, e a tela deixa de terminar no meio. */
+html[data-manager-app][data-manager-view="quadraForm"] form.settings,
+html[data-manager-app][data-manager-view="reservaNova"] form.settings,
+html[data-manager-app][data-manager-view="config"] form.settings {
+  max-width: none;
+}
+
+/* Com mais largura o expediente cabe em tres colunas, e os sete dias passam a
+   caber em tres linhas em vez de quatro. */
+@media (min-width: 1500px) {
+  html[data-manager-app][data-manager-view="quadraForm"] .expediente {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+
+/* ══════════════════ NAVEGACAO DA AGENDA: sem caixa nenhuma ═══════════════ */
+
+/* Tirei a moldura de fora e coloquei uma em cada botao — troquei uma caixa por
+   tres. Sao controles de apoio ao lado do titulo: nao precisam de contorno para
+   serem encontrados, precisam responder ao passar o mouse. */
+html[data-manager-app][data-manager-view="agenda"] .cal-nav {
+  border: 0;
+  background: transparent;
+  color: var(--pq-muted);
+}
+
+html[data-manager-app][data-manager-view="agenda"] .cal-nav:hover {
+  background: var(--pq-tint);
+  color: var(--pq-ink);
+}
+
+html[data-manager-app][data-manager-view="agenda"] .cal-nav--hoje {
+  color: var(--pq-brand-deep);
+  font-weight: 750;
+}
+
+/* AUTO-FIT, e nao auto-fill, na galeria de fotos.
+
+   `auto-fill` cria as colunas que couberem na largura e deixa as vazias
+   ocupando espaco: com o formulario largo, as cinco fotos continuavam com
+   112px cada e sobrava a fileira inteira a direita. `auto-fit` colapsa as
+   colunas vazias e distribui a largura entre as que existem.
+
+   Miniatura maior tambem e melhor aqui: a decisao que o dono toma nesta tela e
+   "esta foto mostra bem a quadra?", e num quadrado de 112px nao da para ver. */
+html[data-manager-app][data-manager-view="quadraForm"] .galeria__grade {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--e3);
+}
