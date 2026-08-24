@@ -1774,17 +1774,42 @@ html[data-manager-app] form.settings { padding-bottom: var(--e6); }
    por baixo de nenhum dos dois (quem limita e a propria area de conteudo).
    O padding sai com margem negativa em vez de zerar `.content`, porque
    `.content` e compartilhado com as outras oito telas. */
+/* O PADDING SAI DA AREA DE CONTEUDO, em vez de ser cancelado por margem
+   negativa.
+
+   Eu tinha medido 26/28/56px no navegador e escrito `margin: -26px -28px -56px`.
+   Funciona — ate a largura mudar: `.content` troca de padding por media query,
+   e a sidebar colapsa para 76px. Com o padding mudando e a margem fixa, sobra
+   uma fresta de um lado ou o chat monta em cima do menu. Numero casado na mao
+   com outro numero e uma conta que so vale enquanto ninguem mexe.
+
+   Zerando o padding para esta tela, o chat comeca exatamente onde a area de
+   conteudo comeca, em qualquer largura e com a sidebar aberta ou fechada. */
+html[data-manager-app][data-manager-view="mensagens"] .content {
+  padding: 0;
+  overflow: hidden;
+}
+
 html[data-manager-app][data-manager-view="mensagens"] .chat {
-  height: calc(100vh - 68px);
+  height: 100%;
   min-height: 0;
   max-height: none;
-  /* Medidos no navegador: a topbar tem 68px e o `.content` tem padding
-     26px/28px/56px. As margens negativas cancelam exatamente esse padding, e
-     nao um valor escolhido no olho — errar aqui deixa uma fresta ou faz o chat
-     passar por baixo da sidebar. */
-  margin: -26px -28px -56px;
+  margin: 0;
   border: 0;
   border-radius: 0;
+}
+
+/* A area de conteudo passa a ter a altura da janela menos o header, para o
+   `height: 100%` do chat ter contra o que medir. */
+html[data-manager-app][data-manager-view="mensagens"] .main {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* A coluna de conversas pinta o fundo ate embaixo: sem isso, abaixo da ultima
+   conversa aparecia um retalho da cor do conteudo. */
+html[data-manager-app][data-manager-view="mensagens"] .chat-list {
+  background: var(--pq-panel);
 }
 
 /* A divisoria entre a lista e a conversa e a unica linha que sobra. */
@@ -1876,3 +1901,84 @@ html[data-manager-app] [data-desktop-route-view][aria-busy="true"] {
   transition: opacity .12s ease;
   pointer-events: none;
 }
+
+
+/* ══════════════════ AGENDA: cor da casa e dia fechado visivel ════════════ */
+
+/* DIA FECHADO nao tinha CSS nenhum. O JS desenhava `<div class="cal-closed">`
+   com o rotulo "Fechado" desde a fase do dia-fechado, e o elemento existia
+   invisivel — o domingo aparecia igual a qualquer dia vazio. Pior: o unico tom
+   naquela coluna era o de HOJE, entao "fechado" e "hoje" se confundiam.
+
+   Hachura, e nao cor chapada: cor chapada compete com as reservas e parece
+   mais um estado de reserva. Hachura le como "area indisponivel" em qualquer
+   calendario. */
+html[data-manager-app] .cal-closed {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--pq-line) 0 1px,
+    transparent 1px 9px
+  );
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* So a faixa que cobre o dia inteiro escreve "Fechado". Nas bordas (antes de
+   abrir, depois de fechar) o rotulo repetido viraria ruido em sete colunas. */
+html[data-manager-app] .cal-closed:not(.is-full) > span,
+html[data-manager-app] .cal-closed:not(.is-full) { font-size: 0; }
+html[data-manager-app] .cal-closed.is-full > span { font-size: var(--t-micro); }
+
+/* ── AS CORES DOS EVENTOS voltam para a familia da marca ──────────────────
+   "Confirmado" era #6ea2ff, um azul de outro sistema, e ele e o estado MAIS
+   COMUM — a agenda inteira ficava azul dentro de um painel verde.
+
+   A distincao que importa nao e pago vs confirmado (os dois estao resolvidos),
+   e sim RESOLVIDO vs PRECISA DE MIM. Entao: verde para o que esta de pe, com
+   dois pesos, e ambar so para o que espera decisao. O ambar passa a ser a
+   unica cor quente da grade, e o olho vai direto nele. */
+html[data-manager-app] .cal-ev.pago {
+  background: var(--pq-brand);
+  border-color: var(--pq-brand-strong);
+  color: #06231a;
+}
+
+html[data-manager-app] .cal-ev.confirmado {
+  background: var(--pq-tint-strong);
+  border-color: var(--pq-brand);
+  color: var(--pq-brand-deep);
+}
+
+html[data-manager-app] .cal-ev.pendente,
+html[data-manager-app] .cal-ev.solicitada {
+  background: var(--pq-amber-soft);
+  border-color: var(--pq-gold);
+  color: var(--pq-gold);
+}
+
+/* A legenda acompanha, senao ela passa a mentir sobre as cores da grade. */
+html[data-manager-app] .cal-legend .pago { background: var(--pq-brand); }
+html[data-manager-app] .cal-legend .confirmado { background: var(--pq-tint-strong); border: 1px solid var(--pq-brand); }
+html[data-manager-app] .cal-legend .pendente { background: var(--pq-gold); }
+html[data-manager-app] .cal-legend .fechado {
+  background-image: repeating-linear-gradient(-45deg, var(--pq-line-strong) 0 1px, transparent 1px 5px);
+  border: 1px solid var(--pq-line-strong);
+}
+
+/* A LINHA DE AGORA em vermelho era a unica cor de alerta da tela, chamando
+   atencao para uma informacao que nao pede acao nenhuma. Marca, discreta. */
+html[data-manager-app] .cal-now { border-top-color: var(--pq-brand-strong); }
+html[data-manager-app] .cal-now > i { background: var(--pq-brand-strong); }
+
+/* HOJE continua com a coluna tintada — e util, e agora nao se confunde mais
+   com dia fechado, que passou a ter hachura propria. */
