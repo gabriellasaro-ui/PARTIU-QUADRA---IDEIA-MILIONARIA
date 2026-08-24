@@ -26,6 +26,63 @@ def _dados() -> dict:
     return json.loads(_ARQUIVO.read_text(encoding="utf-8"))
 
 
+@router.get("/cep/{cep}")
+def por_cep(cep: str):
+    """Endereco a partir do CEP.
+
+    O dono digitava bairro, cidade e UF a mao — e bairro escrito errado nao e
+    detalhe: e por ele que o jogador procura ("quadra na Savassi"), e e ele que
+    posiciona a arena no mapa. Um "Savasi" ou um "Centro" generico tira a arena
+    das buscas certas sem que ninguem perceba.
+
+    PROXY pelo backend, e nao chamada do navegador. Tres razoes, as mesmas que
+    fizeram a lista de municipios morar aqui: o navegador nao faz request para
+    fora (o IP de quem cadastra nao vaza para um terceiro), a resposta pode ser
+    guardada, e no dia em que o servico mudar existe UM lugar para trocar.
+
+    Timeout curto e falha silenciosa: CEP e ATALHO, nao obrigacao. Se o servico
+    estiver fora, a tela mantem os campos editaveis e o dono digita — quebrar o
+    cadastro inteiro porque um servico de terceiro caiu seria trocar um
+    problema pequeno por um grande.
+    """
+    limpo = "".join(c for c in cep if c.isdigit())
+    if len(limpo) != 8:
+        raise HTTPException(status_code=422, detail="CEP deve ter 8 dígitos")
+
+    dados = _consultar_cep(limpo)
+    if dados is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Não foi possível consultar o CEP agora",
+        )
+    if dados.get("erro"):
+        raise HTTPException(status_code=404, detail="CEP não encontrado")
+
+    return {
+        "cep": limpo,
+        "logradouro": dados.get("logradouro") or "",
+        "bairro": dados.get("bairro") or "",
+        "cidade": dados.get("localidade") or "",
+        "estado": dados.get("uf") or "",
+    }
+
+
+@lru_cache(maxsize=512)
+def _consultar_cep(cep: str):
+    """Cache em memoria: o mesmo CEP e consultado varias vezes enquanto o dono
+    ajusta o cadastro, e endereco de CEP nao muda de um dia para o outro."""
+    import httpx
+
+    try:
+        with httpx.Client(timeout=4.0) as cliente:
+            r = cliente.get(f"https://viacep.com.br/ws/{cep}/json/")
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except Exception:
+        return None
+
+
 @router.get("/estados")
 def estados():
     return {"estados": _dados()["estados"]}

@@ -90,3 +90,61 @@ def test_uf_com_tamanho_errado_e_recusada(client):
         json={"name": "Clube UF ruim", "sport": "Futsal", "city": "Goiânia", "state": "Goiás"},
     )
     assert r.status_code == 422
+
+
+"""CEP: o atalho que evita bairro escrito errado.
+
+O dono digitava bairro a mao, e bairro errado nao e detalhe de cadastro — e
+por ele que o jogador procura e e ele que posiciona a arena no mapa. Os testes
+abaixo trocam a consulta externa por uma funcao local: o que importa aqui e a
+TRADUCAO da resposta e o comportamento quando o servico de fora falha, nao se
+o ViaCEP esta no ar (a suite nao pode depender de rede).
+"""
+
+
+def _fingir_consulta(monkeypatch, resposta):
+    monkeypatch.setattr("app.api.localidades._consultar_cep", lambda cep: resposta)
+
+
+def test_cep_traduz_os_campos_do_servico(client, monkeypatch):
+    _fingir_consulta(monkeypatch, {
+        "logradouro": "Rua Fernandes Tourinho", "bairro": "Savassi",
+        "localidade": "Belo Horizonte", "uf": "MG",
+    })
+    # Com mascara, que e como o campo da tela manda.
+    r = client.get("/api/localidades/cep/30112-000")
+    assert r.status_code == 200, r.text
+    assert r.json() == {
+        "cep": "30112000", "logradouro": "Rua Fernandes Tourinho",
+        "bairro": "Savassi", "cidade": "Belo Horizonte", "estado": "MG",
+    }
+
+
+def test_cep_incompleto_nao_vira_consulta(client, monkeypatch):
+    def nao_deveria(cep):
+        raise AssertionError("consultou o servico externo com CEP invalido")
+    monkeypatch.setattr("app.api.localidades._consultar_cep", nao_deveria)
+    assert client.get("/api/localidades/cep/3011").status_code == 422
+
+
+def test_cep_inexistente_responde_404(client, monkeypatch):
+    _fingir_consulta(monkeypatch, {"erro": True})
+    assert client.get("/api/localidades/cep/99999999").status_code == 404
+
+
+def test_servico_fora_do_ar_nao_quebra_o_cadastro(client, monkeypatch):
+    """503, e nao 500: a tela trata isso mantendo os campos editaveis para o
+    dono digitar. CEP e atalho — servico de terceiro fora nao pode impedir o
+    cadastro da arena."""
+    _fingir_consulta(monkeypatch, None)
+    assert client.get("/api/localidades/cep/30112000").status_code == 503
+
+
+def test_campos_ausentes_viram_string_vazia(client, monkeypatch):
+    """CEP de logradouro unico (praca, rodovia) volta sem rua e sem bairro. O
+    front preenche o que veio e deixa o resto para o dono — por isso vazio, e
+    nao None, que apareceria como "null" dentro do input."""
+    _fingir_consulta(monkeypatch, {"localidade": "Brasilia", "uf": "DF"})
+    dados = client.get("/api/localidades/cep/70000000").json()
+    assert dados["logradouro"] == "" and dados["bairro"] == ""
+    assert dados["cidade"] == "Brasilia"

@@ -207,7 +207,6 @@ export async function renderManagerCourts(root) {
 
   // (O bloco de destaque regional saiu da tela: simulava uma COMPRA que
   //  nao existia em lugar nenhum. Ver o comentario em quadras.html.)
-  root.querySelector('[data-boost]')?.classList.toggle('is-on', Boolean(ativo));
 
   // Vitrine: os toggles refletem o estado salvo, nao a classe escrita no HTML.
   const estado = showcase();

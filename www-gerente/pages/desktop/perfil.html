@@ -50,13 +50,36 @@
            Estado e cidade sao ENCADEADOS e saem da mesma base do app do
            jogador: digitado a mao, "BH", "Belo Horizonte" e "belo horizonte"
            viram tres cidades diferentes e nenhum filtro fecha. -->
+      <!-- O CEP PREENCHE O RESTO.
+
+           Bairro digitado a mao nao e detalhe: e por ele que o jogador procura
+           ("quadra na Savassi") e e ele que posiciona a arena no mapa. Um
+           "Savasi" ou um "Centro" generico tira a arena das buscas certas sem
+           que ninguem perceba, e o dono nao tem como descobrir.
+
+           Os campos continuam EDITAVEIS depois de preenchidos: CEP acerta a
+           rua e o bairro, mas arena em area nova ou com entrada por outra via
+           precisa corrigir. Atalho, e nao trava. -->
       <div class="input-row">
+        <div class="inp">
+          <label for="cfg-cep">CEP</label>
+          <div class="campo-cep">
+            <input id="cfg-cep" type="text" name="cep" inputmode="numeric" maxlength="9"
+                   placeholder="00000-000" data-cep autocomplete="postal-code">
+            <button type="button" class="btn btn-soft btn-xs" data-cep-buscar>
+              <i class="ic sm" data-lucide="search"></i> Buscar
+            </button>
+          </div>
+          <small class="inp__aviso" data-cep-aviso hidden></small>
+        </div>
         <div class="inp"><label for="cfg-uf">Estado</label><select id="cfg-uf" name="estado" data-uf></select></div>
-        <div class="inp"><label for="cfg-cidade">Cidade</label><select id="cfg-cidade" name="cidade" data-cidade></select></div>
       </div>
       <div class="input-row">
-        <div class="inp"><label>Bairro</label><input type="text" name="bairro" placeholder="Ex.: Savassi"></div>
-        <div class="inp"><label>Rua e número</label><input type="text" name="endereco" placeholder="Ex.: Rua Pernambuco, 1200"></div>
+        <div class="inp"><label for="cfg-cidade">Cidade</label><select id="cfg-cidade" name="cidade" data-cidade></select></div>
+        <div class="inp"><label>Bairro</label><input type="text" name="bairro" placeholder="Ex.: Savassi" data-bairro></div>
+      </div>
+      <div class="input-row">
+        <div class="inp"><label>Rua e número</label><input type="text" name="endereco" placeholder="Ex.: Rua Pernambuco, 1200" data-logradouro></div>
       </div>
       <div class="input-row" style="margin-bottom:0;">
         <div class="inp" style="margin-bottom:0;"><label>Telefone / WhatsApp</label><input type="text" name="telefone" placeholder="(31) 90000-0000"></div>

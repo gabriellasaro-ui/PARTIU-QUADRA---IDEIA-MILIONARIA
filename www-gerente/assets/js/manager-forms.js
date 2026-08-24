@@ -469,6 +469,66 @@ export async function renderManagerSettings(root) {
 
 // ------------------------------------------------------------------------ eventos
 
+/* ══════════ BUSCA DE CEP ═════════════════════════════════════════════════
+
+   Preenche UF, cidade, bairro e rua. Os campos continuam editaveis: CEP acerta
+   a rua e o bairro, mas arena em area nova ou com entrada por outra via precisa
+   corrigir — e atalho, nao trava.
+
+   Falha em silencio util: se o servico estiver fora, o aviso diz para digitar e
+   os campos ficam como estavam. Quebrar o cadastro porque um servico de
+   terceiro caiu seria trocar um problema pequeno por um grande. */
+async function buscarCep(root) {
+  const campo = root.querySelector('[data-cep]');
+  const aviso = root.querySelector('[data-cep-aviso]');
+  if (!campo) return;
+
+  const dizer = (texto, erro) => {
+    if (!aviso) return;
+    aviso.hidden = !texto;
+    aviso.textContent = texto || '';
+    aviso.classList.toggle('is-erro', Boolean(erro));
+  };
+
+  const limpo = campo.value.replace(/\D/g, '');
+  if (limpo.length !== 8) {
+    dizer('Digite os 8 números do CEP.', true);
+    return;
+  }
+
+  dizer('Buscando…', false);
+  let dados;
+  try {
+    dados = await venueService.enderecoPorCep(limpo);
+  } catch (error) {
+    dizer(error?.status === 404
+      ? 'CEP não encontrado. Confira o número ou preencha à mão.'
+      : 'Não deu para consultar agora — preencha à mão.', true);
+    return;
+  }
+  if (!dados) { dizer('', false); return; }
+
+  const por = (sel, valor) => {
+    const el = root.querySelector(sel);
+    if (el && valor) el.value = valor;
+  };
+  por('[data-bairro]', dados.bairro);
+  por('[data-logradouro]', dados.logradouro);
+
+  /* UF E CIDADE sao selects encadeados: mudar a UF sozinha nao repovoa a lista
+     de cidades, entao a cidade seria escrita num select que ainda tem as
+     cidades da UF anterior — e o valor cairia fora. `ligarParEstadoCidade`
+     remonta os dois na ordem certa. */
+  const selUf = root.querySelector('[data-uf]');
+  const selCidade = root.querySelector('[data-cidade]');
+  if (selUf && selCidade && dados.estado) {
+    await ligarParEstadoCidade(selUf, selCidade, { uf: dados.estado, cidade: dados.cidade });
+  }
+
+  dizer(`${dados.bairro || ''}${dados.bairro && dados.cidade ? ' · ' : ''}${dados.cidade || ''}${dados.estado ? ' · ' + dados.estado : ''}`.trim(), false);
+  root.querySelector('[data-form-actions]')?.removeAttribute('hidden');
+}
+
 export function initManagerForms() {
   /* A BARRA DE SALVAR aparece quando o formulario fica sujo.
 
@@ -489,7 +549,31 @@ export function initManagerForms() {
   /* Enter no campo de comodidade adiciona em vez de submeter o formulario.
      Sem isso, digitar "churrasqueira" e apertar Enter salvaria a quadra sem a
      comodidade — o gesto mais natural fazendo a coisa errada. */
+  /* Digitou os oito numeros, busca. Esperar o clique no botao faz o dono
+     digitar o CEP e continuar preenchendo o resto a mao sem perceber que havia
+     atalho. O botao continua ali para quem colou o valor. */
+  document.addEventListener('input', async (event) => {
+    const campo = event.target.closest?.('[data-cep]');
+    if (!campo) return;
+    // Mascara: 00000-000, aplicada enquanto digita.
+    const nums = campo.value.replace(/\D/g, '').slice(0, 8);
+    campo.value = nums.length > 5 ? `${nums.slice(0, 5)}-${nums.slice(5)}` : nums;
+    if (nums.length === 8) {
+      const root = document.querySelector('[data-desktop-route-view]');
+      if (root) await buscarCep(root);
+    }
+  });
+
   document.addEventListener('keydown', (event) => {
+    // Enter no CEP busca, e nao envia o formulario inteiro.
+    const cep = event.target.closest?.('[data-cep]');
+    if (cep && event.key === 'Enter') {
+      event.preventDefault();
+      const root = document.querySelector('[data-desktop-route-view]');
+      if (root) buscarCep(root);
+      return;
+    }
+
     const campo = event.target.closest?.('[data-amenity-novo]');
     if (!campo || event.key !== 'Enter') return;
     event.preventDefault();
@@ -589,6 +673,12 @@ export function initManagerForms() {
       if (campo) campo.value = '';
       pintarComodidades(root);
       root.querySelector('[data-form-actions]')?.removeAttribute('hidden');
+      return;
+    }
+
+    if (event.target.closest('[data-cep-buscar]')) {
+      event.preventDefault();
+      await buscarCep(root);
       return;
     }
 

@@ -207,12 +207,27 @@ export async function renderManagerFinance(root) {
     /* A reparticao do dia em percentual, e nao em reais: o que interessa e a
        proporcao entre os tres, e tres valores em reais lado a lado nao cabem
        na largura do painel. */
+    /* CADA FAIXA COM O SEU NOME E A SUA BARRA.
+
+       Era uma linha "Manhã · Tarde · Noite" e outra "0% · 0% · 100%": para
+       saber de quem era o 100% a pessoa contava a posicao e casava com o rotulo
+       de cima. A barra entra porque proporcao se compara melhor por comprimento
+       do que por numero — "92% contra 8%" se ve, nao se calcula. */
     const fx = ind.ranking.faixas || {};
     const somaFx = Object.values(fx).reduce((t, v) => t + v, 0);
-    set(root, '[data-finance-faixas]', somaFx
-      ? ['Manhã', 'Tarde', 'Noite']
-          .map((n) => `${Math.round((fx[n] || 0) * 100 / somaFx)}%`).join(' · ')
-      : '—');
+    const caixaFaixas = root.querySelector('[data-finance-faixas]');
+    if (caixaFaixas) {
+      caixaFaixas.innerHTML = somaFx
+        ? ['Manhã', 'Tarde', 'Noite'].map((n) => {
+            const pct = Math.round((fx[n] || 0) * 100 / somaFx);
+            return `<div class="faixa-dia__linha">
+              <span>${n}</span>
+              <span class="faixa-dia__barra"><i style="width:${pct}%"></i></span>
+              <strong class="num">${pct}%</strong>
+            </div>`;
+          }).join('')
+        : '<p class="faixa-dia__vazio">Sem faturamento no período.</p>';
+    }
 
     const perdido = (ind.perdas.canceladoValor || 0) + (ind.perdas.expiradoValor || 0);
     set(root, '[data-finance-perda]', formatCurrency(perdido));

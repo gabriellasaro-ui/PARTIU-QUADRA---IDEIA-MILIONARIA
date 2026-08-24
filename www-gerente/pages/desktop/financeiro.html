@@ -85,7 +85,13 @@
       <div><span>Já jogavam aqui</span><strong class="num" data-finance-recorrentes>—</strong></div>
       <div><span>Pedidos recusados</span><strong class="num" data-finance-recusadas>—</strong></div>
       <div><span>Expiraram sem resposta</span><strong class="num" data-finance-expiradas>—</strong></div>
-      <div><span>Manhã · Tarde · Noite</span><strong class="num" data-finance-faixas>—</strong></div>
+      <!-- ANTES: o rotulo dizia "Manhã · Tarde · Noite" e o valor "0% · 0% ·
+           100%" numa linha abaixo — para saber de quem era o 100% a pessoa
+           tinha de contar a posicao e casar com o rotulo de cima. Com o valor
+           ao lado do proprio nome nao ha o que casar. -->
+      <div class="faixa-dia"><span>Quando a arena fatura</span>
+        <div data-finance-faixas></div>
+      </div>
       <div><span>Maior faturamento diário</span><strong class="num" data-finance-peak>R$ 0,00</strong></div>
     </div>
   </section>

@@ -59,6 +59,16 @@ export const venueService = {
     return data?.horarios || [];
   },
 
+  /* CEP -> endereco. Passa pelo backend em vez de o navegador falar com o
+     servico de CEP: o IP de quem cadastra nao vai para um terceiro, a resposta
+     pode ser guardada, e no dia em que o servico mudar existe UM lugar para
+     trocar. */
+  async enderecoPorCep(cep) {
+    const limpo = String(cep || '').replace(/\D/g, '');
+    if (!API_BASE_URL || limpo.length !== 8) return null;
+    return api.get(`/api/localidades/cep/${limpo}`, { auth: false });
+  },
+
   async cidadesDe(uf) {
     if (!API_BASE_URL || !uf) return [];
     const data = await api.get(`/api/localidades/estados/${encodeURIComponent(uf)}/cidades`, { auth: false });
