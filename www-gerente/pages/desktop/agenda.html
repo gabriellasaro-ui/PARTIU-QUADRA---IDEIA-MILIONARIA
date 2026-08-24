@@ -20,11 +20,32 @@
       <span data-agenda-month>Agenda da arena</span>
       <h2 data-agenda-range>Semana atual</h2>
     </div>
+    <!-- NAVEGAR e so isso: duas setas e um atalho para voltar ao presente.
+         Sem caixa em volta — nao ha conteudo ali que precise de moldura. O
+         passo muda com o modo: um dia, uma semana ou um mes. -->
     <div class="cal-range">
-      <button class="cal-nav" type="button" data-agenda-week="-1" aria-label="Semana anterior"><i class="ic sm" data-lucide="chevron-left"></i></button>
+      <button class="cal-nav" type="button" data-agenda-passo="-1" aria-label="Anterior"><i class="ic sm" data-lucide="chevron-left"></i></button>
       <button class="cal-nav cal-nav--hoje" type="button" data-agenda-hoje>Hoje</button>
-      <button class="cal-nav" type="button" data-agenda-week="1" aria-label="Próxima semana"><i class="ic sm" data-lucide="chevron-right"></i></button>
+      <button class="cal-nav" type="button" data-agenda-passo="1" aria-label="Próximo"><i class="ic sm" data-lucide="chevron-right"></i></button>
     </div>
+  </div>
+
+  <!-- MODO DE VISUALIZACAO.
+
+       Cada um responde uma pergunta diferente, e por isso a grade muda de
+       forma junto — nao e o mesmo desenho com zoom:
+
+         DIA    — colunas por QUADRA. "Quem esta onde hoje, e qual quadra esta
+                  livre as 20h." Na semana isso e impossivel: as sete colunas
+                  ja sao os dias, e as quadras somem empilhadas.
+         SEMANA — colunas por dia. "Onde tem buraco nesta semana."
+         MES    — um quadrado por dia, com quantas reservas e quanto entra.
+                  Aqui hora nao importa; o que se ve e o desenho do mes, quais
+                  semanas enchem e quais nao. -->
+  <div class="cal-modos" role="tablist" aria-label="Visualização da agenda">
+    <button type="button" role="tab" data-agenda-modo="dia">Dia</button>
+    <button type="button" role="tab" class="on" data-agenda-modo="semana">Semana</button>
+    <button type="button" role="tab" data-agenda-modo="mes">Mês</button>
   </div>
   <!-- OS TRES NUMEROS SAIRAM.
 

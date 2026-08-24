@@ -68,6 +68,17 @@ function ajustarJanela(eventos) {
 
 // Estado da tela: semana visivel e quadra filtrada. Vive no modulo porque a
 // pagina e remontada a cada render e nao pode esquecer onde a pessoa estava.
+/* MODO DE VISUALIZACAO: 'dia' | 'semana' | 'mes'.
+
+   Cada modo responde uma pergunta diferente, e por isso a grade muda de FORMA
+   — nao e o mesmo desenho com zoom. No dia as colunas sao as QUADRAS (qual
+   esta livre as 20h); na semana sao os dias (onde tem buraco); no mes nao ha
+   coluna de hora nenhuma, e sim um quadrado por dia. */
+let modo = 'semana';
+
+/* Um offset so, lido na unidade do modo: dias, semanas ou meses. Manter tres
+   contadores separados faria "Hoje" ter de zerar os tres, e trocar de modo
+   herdaria a posicao errada de um deles. */
 let offsetSemana = 0;
 let quadraFiltro = 'todas';
 let quadrasCarregadas = null;
@@ -79,10 +90,45 @@ function escapeHtml(value) {
 }
 
 /* Segunda-feira da semana visivel. */
+const hojeZerado = () => {
+  const h = new Date();
+  return new Date(h.getFullYear(), h.getMonth(), h.getDate());
+};
+
+/* O DIA ANCORA do modo 'dia': hoje mais o offset em dias. */
+function diaAtual() {
+  const d = hojeZerado();
+  d.setDate(d.getDate() + offsetSemana);
+  return d;
+}
+
+/* A segunda-feira da semana visivel.
+
+   No modo 'dia' ela e a segunda DAQUELE dia, e nao a de hoje: a busca traz
+   sempre uma semana inteira, e pedir a semana errada devolveria uma grade sem
+   o dia que se esta olhando. */
 function segundaDaSemana() {
-  const hoje = new Date();
-  const d = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  if (modo === 'dia') {
+    const d = diaAtual();
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return d;
+  }
+  const d = hojeZerado();
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offsetSemana * 7);
+  return d;
+}
+
+/* Primeiro dia do mes visivel, e a segunda-feira em que a grade do mes comeca
+   (ela sempre abre numa segunda, mesmo que caia no mes anterior). */
+function primeiroDoMes() {
+  const h = hojeZerado();
+  return new Date(h.getFullYear(), h.getMonth() + offsetSemana, 1);
+}
+
+function segundaDaGradeDoMes() {
+  const p = primeiroDoMes();
+  const d = new Date(p);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return d;
 }
 
@@ -94,6 +140,24 @@ function rotuloSemana(segunda) {
     return `${dia(segunda)} a ${dia(domingo)} de ${MESES[segunda.getMonth()]}`;
   }
   return `${dia(segunda)} de ${MESES[segunda.getMonth()]} a ${dia(domingo)} de ${MESES[domingo.getMonth()]}`;
+}
+
+/* O TITULO da tela muda com o modo: no dia e a data por extenso, na semana o
+   intervalo, no mes o nome do mes. Um rotulo fixo faria a grade e o cabecalho
+   discordarem sobre o que esta sendo mostrado. */
+const DIAS_LONGOS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
+
+function rotuloDoModo(segunda) {
+  if (modo === 'dia') {
+    const d = diaAtual();
+    const nome = DIAS_LONGOS[(d.getDay() + 6) % 7];
+    return `${nome}, ${String(d.getDate()).padStart(2, '0')} de ${MESES[d.getMonth()]}`;
+  }
+  if (modo === 'mes') {
+    const p = primeiroDoMes();
+    return `${MESES[p.getMonth()][0].toUpperCase()}${MESES[p.getMonth()].slice(1)} de ${p.getFullYear()}`;
+  }
+  return rotuloSemana(segunda);
 }
 
 function rotuloMes(segunda) {
@@ -169,9 +233,13 @@ function eventosApi(quadras) {
 let expedienteCarregado = {};
 let colunasCarregadas = [];
 
+/* A DATA VAI EM HORA LOCAL. `toISOString()` converte para UTC e, em Brasilia,
+   uma segunda-feira vira domingo — a semana inteira desliza um dia. */
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 async function eventosDaSemana(segunda) {
   if (API_BASE_URL) {
-    const data = await managerService.agenda(segunda.toISOString().slice(0, 10));
+    const data = await managerService.agenda(iso(segunda));
     quadrasCarregadas = data.quadras;
     expedienteCarregado = data.expediente || {};
     colunasCarregadas = data.colunas || [];
@@ -180,6 +248,39 @@ async function eventosDaSemana(segunda) {
   expedienteCarregado = {};
   colunasCarregadas = [];
   return eventosMock(segunda);
+}
+
+/* O MES SAO ATE SEIS SEMANAS, e a rota entrega uma por vez.
+
+   Busca as seis EM PARALELO em vez de uma apos a outra: em serie seriam seis
+   idas ao servidor somadas, e trocar de mes ficaria com um segundo de espera
+   visivel. `Promise.all` deixa o custo no tempo da mais lenta.
+
+   O modo mes so precisa de contagem e valor por dia — nao usa expediente nem
+   as colunas, entao nada disso e guardado aqui. */
+async function eventosDoMes() {
+  if (!API_BASE_URL) return [];
+  const inicio = segundaDaGradeDoMes();
+  const semanas = [];
+  for (let i = 0; i < 6; i += 1) {
+    const d = new Date(inicio);
+    d.setDate(d.getDate() + i * 7);
+    semanas.push(d);
+  }
+  const respostas = await Promise.all(
+    semanas.map((d) => managerService.agenda(iso(d)).catch(() => null))
+  );
+  const primeira = respostas.find(Boolean);
+  if (primeira) quadrasCarregadas = primeira.quadras;
+
+  /* Achatado com a DATA de cada evento: no mes o que importa e em que dia ele
+     cai, e `dow` (o indice na semana) nao serve para isso quando as semanas
+     vem de seis respostas diferentes. */
+  const eventos = [];
+  respostas.filter(Boolean).forEach((data) => {
+    (data.eventos || []).forEach((e) => eventos.push(e));
+  });
+  return eventos;
 }
 
 /* Faixas de funcionamento de UMA coluna (dia) da grade.
@@ -254,6 +355,153 @@ function distribuir(eventos) {
   fechar();
   return saida;
 }
+
+/* ═════════════════ MODO DIA: colunas por QUADRA ══════════════════════════
+
+   Na semana as sete colunas sao os dias, e as quadras ficam empilhadas dentro
+   de cada uma — para saber qual quadra esta livre as 20h o dono tinha de abrir
+   reserva por reserva. Aqui a coluna e a quadra, e a resposta e visual.
+
+   Reaproveita a mesma calha de horas e o mesmo bloco de evento: muda so o que
+   define a coluna. */
+function renderDia(root, eventos) {
+  const head = root.querySelector('[data-agenda-head]');
+  const body = root.querySelector('[data-agenda-body]');
+  if (!head || !body) return;
+
+  const alvo = diaAtual();
+  const diaISO = iso(alvo);
+  const doDia = eventos.filter((e) => e.dia === diaISO);
+
+  const quadras = (API_BASE_URL ? (quadrasCarregadas || []) : courts())
+    .filter((q) => quadraFiltro === 'todas' || q.label === quadraFiltro);
+
+  if (!quadras.length) {
+    head.innerHTML = '';
+    body.innerHTML = '<p class="cal-vazio">Nenhuma quadra cadastrada.</p>';
+    return;
+  }
+
+  head.style.setProperty('--cols', String(quadras.length));
+  body.style.setProperty('--cols', String(quadras.length));
+  head.innerHTML = '<div class="ch-gut"></div>' + quadras.map((q) =>
+    `<div class="ch-day"><div class="d">${escapeHtml(q.label)}</div><div class="n">${
+      doDia.filter((e) => e.quadra === q.label).length
+    }</div></div>`).join('');
+
+  const horas = [];
+  for (let h = HORA_INICIAL; h <= HORA_FINAL; h += 1) horas.push(h);
+  const altura = horas.length * ALTURA_HORA;
+  body.style.setProperty('--hourh', `${ALTURA_HORA}px`);
+
+  const agora = new Date();
+  const horaAgora = agora.getHours() + agora.getMinutes() / 60;
+  const ehHoje = alvo.toDateString() === agora.toDateString();
+  const mostrarAgora = ehHoje && horaAgora >= HORA_INICIAL && horaAgora <= HORA_FINAL + 1;
+
+  body.innerHTML = `<div class="cal-gutter">${
+    horas.map((h) => `<div class="hr"><span>${String(h).padStart(2, '0')}:00</span></div>`).join('')
+  }</div>` + quadras.map((q, i) => {
+    const daQuadra = doDia.filter((e) => e.quadra === q.label);
+
+    // O expediente e por quadra: aqui da para fechar a coluna certa, o que na
+    // semana nao dava (a coluna e o dia, e as quadras dividem a mesma).
+    const faixas = faixasDoDia(diaISO, q.id != null ? String(q.id) : null);
+    let fechados = '';
+    if (faixas) {
+      if (!faixas.length) {
+        fechados = `<div class="cal-closed is-full" style="top:0;height:${altura}px"><span>Fechado</span></div>`;
+      } else {
+        const abre = Math.min(...faixas.map((f) => f[0]));
+        const fecha = Math.max(...faixas.map((f) => f[1]));
+        if (abre > HORA_INICIAL) {
+          const h = (abre - HORA_INICIAL) * ALTURA_HORA;
+          fechados += `<div class="cal-closed" style="top:0;height:${h}px">${h >= 46 ? '<span>Fechado</span>' : ''}</div>`;
+        }
+        if (fecha < HORA_FINAL + 1) {
+          const topo = (fecha - HORA_INICIAL) * ALTURA_HORA;
+          fechados += `<div class="cal-closed" style="top:${topo}px;height:${altura - topo}px">${altura - topo >= 46 ? '<span>Fechado</span>' : ''}</div>`;
+        }
+      }
+    }
+
+    const linhaAgora = (mostrarAgora && i === 0)
+      ? `<div class="cal-now" style="top:${(horaAgora - HORA_INICIAL) * ALTURA_HORA}px" aria-hidden="true"><i></i></div>`
+      : '';
+
+    return `<div class="cal-col${ehHoje ? ' today' : ''}" data-cal-dia="${escapeHtml(diaISO)}"
+      data-cal-inicio="${HORA_INICIAL}" data-cal-hourh="${ALTURA_HORA}"
+      style="min-height:${altura}px">${fechados}${linhaAgora}${
+      distribuir(daQuadra).map(({ e, col, de }) => {
+        const top = (e.inicio - HORA_INICIAL) * ALTURA_HORA;
+        const h = Math.max(26, (e.fim - e.inicio) * ALTURA_HORA - 3);
+        const larg = 100 / de;
+        const esq = larg * col;
+        return `<div class="cal-ev ${e.cls}" role="button" tabindex="0"
+          style="top:${top}px;height:${h}px;left:calc(${esq}% + 3px);width:calc(${larg}% - 5px)"
+          title="${escapeHtml(e.cliente)} · ${escapeHtml(e.hora)}" ${atributosEvento(e)}>
+          <div class="t">${escapeHtml(e.cliente)}</div>
+          <div class="h">${escapeHtml(e.hora)}</div>
+          ${h >= 78 ? `<div class="ev-extra"><span></span><span class="ev-valor">${formatCurrency(e.valor)}</span></div>` : ''}
+        </div>`;
+      }).join('')
+    }</div>`;
+  }).join('');
+}
+
+
+/* ═════════════════ MODO MES: um quadrado por dia ═════════════════════════
+
+   Aqui HORA NAO IMPORTA. O que se ve e o desenho do mes — quais semanas
+   enchem, onde estao os vazios, quanto cada dia trouxe. Desenhar a regua de
+   horas em trinta dias daria uma tira ilegivel de 1cm por dia.
+
+   O quadrado leva a contagem e o valor porque sao as duas coisas que fazem o
+   dono parar num dia: "cinco reservas" e "R$ 600" contam historias diferentes
+   quando aparecem juntos. */
+function renderMes(root, eventos) {
+  const head = root.querySelector('[data-agenda-head]');
+  const body = root.querySelector('[data-agenda-body]');
+  if (!head || !body) return;
+
+  const mesVisivel = primeiroDoMes().getMonth();
+  const inicio = segundaDaGradeDoMes();
+  const hoje = hojeZerado();
+
+  const porDia = new Map();
+  eventos.forEach((e) => {
+    if (quadraFiltro !== 'todas' && e.quadra !== quadraFiltro) return;
+    const atual = porDia.get(e.dia) || { qtd: 0, valor: 0 };
+    atual.qtd += 1;
+    atual.valor += Number(e.valor) || 0;
+    porDia.set(e.dia, atual);
+  });
+
+  head.style.removeProperty('--cols');
+  body.style.removeProperty('--cols');
+  head.innerHTML = DIAS.map((d) => `<div class="ch-day"><div class="d">${d}</div></div>`).join('');
+
+  /* SEIS SEMANAS sempre, e nao "as que couberem": um mes que ocupa cinco
+     linhas e outro que ocupa seis mudariam a altura da grade ao virar o mes, e
+     a tela saltaria. */
+  const celulas = [];
+  for (let i = 0; i < 42; i += 1) {
+    const d = new Date(inicio);
+    d.setDate(d.getDate() + i);
+    const chave = iso(d);
+    const dados = porDia.get(chave);
+    const foraDoMes = d.getMonth() !== mesVisivel;
+    const ehHoje = d.getTime() === hoje.getTime();
+    celulas.push(`<button type="button" class="cal-dia-mes${foraDoMes ? ' fora' : ''}${ehHoje ? ' hoje' : ''}"
+      data-agenda-abrir-dia="${chave}">
+      <span class="n">${d.getDate()}</span>
+      ${dados ? `<span class="q">${dados.qtd} ${dados.qtd === 1 ? 'reserva' : 'reservas'}</span>
+                 <span class="v">${formatCurrency(dados.valor)}</span>` : ''}
+    </button>`);
+  }
+  body.innerHTML = `<div class="cal-mes">${celulas.join('')}</div>`;
+}
+
 
 function renderDesktop(root, eventos, segunda) {
   const head = root.querySelector('[data-agenda-head]');
@@ -455,11 +703,30 @@ export async function renderManagerAgenda(root) {
   if (!root.querySelector('[data-agenda-body]')) return;
 
   const segunda = segundaDaSemana();
-  const eventos = await eventosDaSemana(segunda);
+  /* O MES busca seis semanas; os outros dois, uma. Buscar sempre seis seria
+     seis vezes o trafego para desenhar um dia. */
+  const eventos = modo === 'mes' ? await eventosDoMes() : await eventosDaSemana(segunda);
 
   const rotulo = root.querySelector('[data-agenda-range]');
-  if (rotulo) rotulo.textContent = rotuloSemana(segunda);
+  if (rotulo) rotulo.textContent = rotuloDoModo(segunda);
   atualizarResumo(root, eventos, segunda);
+
+  root.querySelectorAll('[data-agenda-modo]').forEach((b) => {
+    b.classList.toggle('on', b.dataset.agendaModo === modo);
+    b.setAttribute('aria-selected', String(b.dataset.agendaModo === modo));
+  });
+  // O CSS pendura regras neste atributo: a grade do mes nao tem calha de horas.
+  root.querySelector('.manager-agenda-workspace')?.setAttribute('data-modo', modo);
+
+  /* O SUBTITULO DA TELA acompanha o modo. Ele vem do roteador como "Semana de
+     reservas por horario" e ficava dizendo isso com o mes na tela — uma
+     legenda que contradiz o que esta desenhado embaixo dela. */
+  const sub = document.querySelector('[data-page-sub]');
+  if (sub) {
+    sub.textContent = modo === 'dia' ? 'Reservas do dia por quadra'
+      : modo === 'mes' ? 'Movimento do mês, dia a dia'
+      : 'Semana de reservas por horário';
+  }
 
   // O filtro sai das quadras da arena, nao de uma lista escrita a mao. Existe
   // uma unica barra responsiva para evitar estados duplicados na agenda.
@@ -473,8 +740,11 @@ export async function renderManagerAgenda(root) {
 
   // A janela e a altura da hora saem do expediente + das reservas da semana.
   ajustarJanela(eventos);
-  renderDesktop(root, eventos, segunda);
-  renderMobile(root, eventos, segunda);
+  if (modo === 'dia') renderDia(root, eventos);
+  else if (modo === 'mes') renderMes(root, eventos);
+  else renderDesktop(root, eventos, segunda);
+  // A lista do celular acompanha o dia/semana; no mes ela nao se aplica.
+  if (modo !== 'mes') renderMobile(root, eventos, segunda);
 
   /* O scroll automatico so entra se a grade NAO couber.
 
@@ -575,9 +845,40 @@ export function initManagerAgenda() {
       return;
     }
 
-    const passo = event.target.closest('[data-agenda-week]');
+    /* O PASSO E LIDO NA UNIDADE DO MODO: um dia, uma semana ou um mes. O mesmo
+       botao anda o que estiver na tela — avancar uma semana enquanto se olha um
+       dia so seria desorientador. */
+    const passo = event.target.closest('[data-agenda-passo]');
     if (passo) {
-      offsetSemana += Number(passo.dataset.agendaWeek);
+      offsetSemana += Number(passo.dataset.agendaPasso);
+      await renderManagerAgenda(root);
+      return;
+    }
+
+    /* TROCAR DE MODO ZERA O OFFSET.
+
+       Ele e contado na unidade do modo: "3" significa tres dias no modo dia e
+       tres MESES no modo mes. Herdar o numero ao trocar jogaria o dono em
+       marco olhando para uma quarta-feira aleatoria. Trocar de modo volta para
+       hoje, que e o unico ponto que os tres compartilham. */
+    const troca = event.target.closest('[data-agenda-modo]');
+    if (troca) {
+      if (troca.dataset.agendaModo === modo) return;
+      modo = troca.dataset.agendaModo;
+      offsetSemana = 0;
+      await renderManagerAgenda(root);
+      return;
+    }
+
+    /* Clicar num dia do mes abre AQUELE dia — e o gesto natural depois de ver
+       um quadrado cheio e querer saber de quem sao os horarios. */
+    const abrirDia = event.target.closest('[data-agenda-abrir-dia]');
+    if (abrirDia) {
+      const alvo = new Date(`${abrirDia.dataset.agendaAbrirDia}T12:00:00`);
+      const hoje = hojeZerado();
+      const dias = Math.round((alvo - hoje) / 86400000);
+      modo = 'dia';
+      offsetSemana = dias;
       await renderManagerAgenda(root);
       return;
     }

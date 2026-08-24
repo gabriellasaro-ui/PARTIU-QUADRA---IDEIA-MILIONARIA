@@ -2175,3 +2175,132 @@ html[data-manager-app][data-manager-view="quadras"] .manager-setting-toggle {
     gap: var(--e4);
   }
 }
+
+
+/* ══════════════════ AGENDA: DIA · SEMANA · MES ═══════════════════════════ */
+
+html[data-manager-app] .cal-modos {
+  display: inline-flex;
+  gap: var(--e1);
+  padding: var(--e1);
+  border: 1px solid var(--pq-line);
+  border-radius: var(--r-pilula);
+  background: var(--pq-panel);
+}
+
+html[data-manager-app] .cal-modos button {
+  min-height: 32px;
+  padding: 0 var(--e4);
+  border: 0;
+  border-radius: var(--r-pilula);
+  background: transparent;
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  font-weight: 700;
+}
+
+html[data-manager-app] .cal-modos button.on {
+  background: var(--pq-brand);
+  color: #06231a;
+}
+
+/* ── MODO DIA: as colunas sao as quadras, e o numero delas varia ───────────
+   A grade da semana tem sete colunas fixas no CSS; aqui vem de `--cols`, que
+   o JS escreve com a contagem de quadras filtradas. */
+html[data-manager-app] [data-modo="dia"] .cal-head,
+html[data-manager-app] [data-modo="dia"] .cal-body {
+  grid-template-columns: 56px repeat(var(--cols, 1), minmax(0, 1fr));
+}
+
+/* No cabecalho do dia, a "data" e a contagem de reservas daquela quadra. */
+html[data-manager-app] [data-modo="dia"] .ch-day .d {
+  overflow: hidden;
+  font-size: var(--t-corpo);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-manager-app] [data-modo="dia"] .ch-day .n {
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  font-weight: 600;
+}
+
+/* ── MODO MES: sem calha de horas ─────────────────────────────────────────
+   O corpo deixa de ser uma regua vertical e vira uma grade de sete colunas.
+   `overflow` volta ao normal: nao ha o que rolar, o mes inteiro cabe. */
+html[data-manager-app] [data-modo="mes"] .cal-head {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+html[data-manager-app] [data-modo="mes"] .cal-body {
+  display: block;
+  max-height: none;
+  overflow: visible;
+  background-image: none;
+}
+
+html[data-manager-app] .cal-mes {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--pq-line);
+}
+
+html[data-manager-app] .cal-dia-mes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 104px;
+  padding: var(--e2) var(--e3);
+  border: 0;
+  background: var(--pq-panel);
+  text-align: left;
+}
+
+html[data-manager-app] .cal-dia-mes:hover { background: var(--pq-tint); }
+
+html[data-manager-app] .cal-dia-mes .n {
+  color: var(--pq-ink);
+  font-size: var(--t-corpo);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dia de outro mes fica apagado, e nao escondido: sem ele a primeira e a
+   ultima semana ficariam com buracos e a grade perderia a forma. */
+html[data-manager-app] .cal-dia-mes.fora { background: var(--pq-panel-2); }
+html[data-manager-app] .cal-dia-mes.fora .n { color: var(--pq-muted); opacity: .6; }
+
+html[data-manager-app] .cal-dia-mes.hoje .n {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  color: #06231a;
+}
+
+html[data-manager-app] .cal-dia-mes .q {
+  color: var(--pq-brand-deep);
+  font-size: var(--t-apoio);
+  font-weight: 700;
+}
+
+html[data-manager-app] .cal-dia-mes .v {
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-manager-app] .cal-vazio {
+  padding: var(--e7) var(--e4);
+  color: var(--pq-muted);
+  text-align: center;
+}
+
+/* A legenda de estados nao vale no mes: os quadrados nao usam essas cores, e
+   uma legenda que nao explica nada do que esta na tela e ruido. */
+html[data-manager-app] [data-modo="mes"] .cal-legend { display: none; }
