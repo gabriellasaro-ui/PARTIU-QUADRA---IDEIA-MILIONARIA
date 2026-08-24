@@ -1170,13 +1170,18 @@ html[data-manager-app] .manager-agenda-title h2 {
    ha nada dentro dele que precise de moldura: sao tres botoes. A caixa fazia o
    controle parecer um bloco de conteudo, quando ele e so o jeito de andar na
    semana que ja esta escrita do lado. */
-html[data-manager-app] .cal-range {
+/* SELETOR com [data-manager-view="agenda"]: o manager-app.css declara a caixa
+   com esse mesmo atributo (0,3,1) e um seletor de 0,2,1 aqui perdia mesmo
+   vindo depois. Terceira vez que essa folha me pega — ela tem um bloco inteiro
+   por tela no fim do arquivo, e tudo ali carrega o atributo da tela. */
+html[data-manager-app][data-manager-view="agenda"] .cal-range {
   display: flex;
   align-items: center;
   gap: var(--e1);
   min-width: 0;
   padding: 0;
   border: 0;
+  border-radius: 0;
   background: transparent;
 }
 
@@ -2304,3 +2309,50 @@ html[data-manager-app] .cal-vazio {
 /* A legenda de estados nao vale no mes: os quadrados nao usam essas cores, e
    uma legenda que nao explica nada do que esta na tela e ruido. */
 html[data-manager-app] [data-modo="mes"] .cal-legend { display: none; }
+
+/* Sem a etiqueta em cima, o titulo da agenda encosta no topo do bloco. */
+html[data-manager-app] .manager-agenda-title h2 { margin-top: 0; }
+
+
+/* ══════════════════ FINANCEIRO: o vazio sob o grafico ════════════════════ */
+
+/* "Detalhe do periodo" tinha SEIS linhas empilhadas, uma por indicador, com o
+   numero em 24px. Isso o deixava com quase o dobro da altura do grafico ao
+   lado, e sobrava um retangulo branco de ~290px embaixo do grafico — a coluna
+   mais larga da tela terminando antes da mais estreita.
+
+   Em duas colunas o painel cai para tres linhas e as duas colunas terminam
+   juntas. E os seis numeros passam a se comparar lado a lado, que e como se
+   lê "novos contra recorrentes" e "recusados contra expirados" — eles vem em
+   pares, e empilhados os pares ficavam separados por uma linha inteira. */
+html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--e5);
+}
+
+html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health > div {
+  padding: var(--e3) 0;
+  border-top: 1px solid var(--pq-line);
+}
+
+/* As DUAS primeiras linhas perdem o filete de cima, e nao so a primeira: em
+   duas colunas, os dois primeiros itens sao a primeira fileira. */
+html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health > div:nth-child(-n+2) {
+  border-top: 0;
+  padding-top: 0;
+}
+
+html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health span {
+  font-size: var(--t-apoio);
+}
+
+html[data-manager-app][data-manager-view="financeiro"] .manager-finance-health strong {
+  margin-top: 2px;
+  font-size: 20px;
+}
+
+/* E o grafico ganha altura: com o painel encolhido, sobraria o vazio do outro
+   lado. Os dois passam a ter o mesmo porte. */
+html[data-manager-app][data-manager-view="financeiro"] .manager-finance-chart .lc {
+  height: 300px;
+}

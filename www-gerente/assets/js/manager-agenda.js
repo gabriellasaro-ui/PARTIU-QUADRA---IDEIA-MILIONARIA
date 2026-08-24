@@ -147,33 +147,41 @@ function rotuloSemana(segunda) {
    discordarem sobre o que esta sendo mostrado. */
 const DIAS_LONGOS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
 
+const mesPorExtenso = (d) =>
+  `${MESES[d.getMonth()][0].toUpperCase()}${MESES[d.getMonth()].slice(1)} de ${d.getFullYear()}`;
+
 function rotuloDoModo(segunda) {
+  /* No DIA a data completa, porque nada mais na tela a mostra: as colunas sao
+     as quadras. Na semana e no mes basta o mes — o dia esta escrito na grade
+     (SEG 17, TER 18...) e repetir "17 a 23 de agosto" no titulo era dizer duas
+     vezes a mesma coisa. */
   if (modo === 'dia') {
     const d = diaAtual();
     const nome = DIAS_LONGOS[(d.getDay() + 6) % 7];
     return `${nome}, ${String(d.getDate()).padStart(2, '0')} de ${MESES[d.getMonth()]}`;
   }
-  if (modo === 'mes') {
-    const p = primeiroDoMes();
-    return `${MESES[p.getMonth()][0].toUpperCase()}${MESES[p.getMonth()].slice(1)} de ${p.getFullYear()}`;
+  if (modo === 'mes') return mesPorExtenso(primeiroDoMes());
+
+  /* A semana pode cair em dois meses. Nesse caso os dois aparecem, senao o
+     titulo mentiria sobre metade da grade. */
+  const domingo = new Date(segunda);
+  domingo.setDate(domingo.getDate() + 6);
+  if (segunda.getMonth() !== domingo.getMonth()) {
+    return `${MESES[segunda.getMonth()]} / ${mesPorExtenso(domingo)}`;
   }
-  return rotuloSemana(segunda);
+  return mesPorExtenso(segunda);
 }
 
-function rotuloMes(segunda) {
-  const quinta = new Date(segunda);
-  quinta.setDate(quinta.getDate() + 3);
-  return `${MESES[quinta.getMonth()]} ${quinta.getFullYear()}`;
-}
 
 /* O RESUMO DA SEMANA SAIU da agenda — os tres numeros vivem no Dashboard.
 
    Sobrou so o rotulo do mes, que ainda titula a tela. Os `querySelector` dos
    contadores ficariam devolvendo null para sempre; era codigo procurando
    elemento que nao existe mais. */
-function atualizarResumo(root, eventos, segunda) {
-  const month = root.querySelector('[data-agenda-month]');
-  if (month) month.textContent = rotuloMes(segunda);
+function atualizarResumo() {
+  /* Vazia de proposito. O resumo da semana saiu para o Dashboard e a etiqueta
+     do mes saiu junto do titulo duplicado — a funcao fica como ponto unico
+     caso volte algo de cabecalho, em vez de espalhar `querySelector` de novo. */
 }
 
 /* Eventos posicionados por DATA, nao por indice de dia da semana. Cada
