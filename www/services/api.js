@@ -60,6 +60,67 @@ async function tryRefreshToken() {
   }
 }
 
+/* PRAZO PARA A RESPOSTA — sem isto o app trava sem dizer nada.
+
+   `fetch` nao tem timeout proprio. Quando o servidor esta inalcancavel — IP
+   da LAN que mudou, celular noutra rede, backend parado — a promessa fica
+   pendurada por MINUTOS ate o sistema desistir, e nesse tempo quem chamou nao
+   recebe nem sucesso nem erro.
+
+   O estrago nao e a espera, e o que ela esconde: a rota mostra a tela de
+   carregamento antes de buscar os dados e so a remove quando a busca termina.
+   Promessa que nunca resolve = overlay que nunca sai. O app fica preso numa
+   tela de carregamento eterna, e de fora parece que "nao abre" — foi
+   exatamente o que aconteceu com o APK apontando para o IP velho.
+
+   Oito segundos: acima disso nao ha internet ruim que salve, e e melhor dizer
+   "sem resposta" do que fingir que ainda vai chegar. O erro sobe como
+   ApiError com status 0, igual a qualquer outra falha de rede, entao quem
+   chama nao precisa saber que existe prazo.
+
+   O `signal` de quem chamou continua valendo: quem cancela uma busca porque a
+   pessoa digitou outra letra tem que continuar cancelando. Os dois abortam o
+   mesmo controlador — o primeiro que chegar vence. */
+const PRAZO_MS = 8000;
+
+async function comPrazo(url, init, signalExterno) {
+  const controlador = new AbortController();
+
+  /* UMA BANDEIRA, e nao o motivo do abort.
+
+     `controlador.abort('prazo')` faz o fetch rejeitar com a propria string
+     'prazo' — nao com um AbortError. Testando, o erro subia cru: sem `name`,
+     sem `message`, sem `status`, e a tela mostrava "undefined". Quem decide
+     que houve estouro e este escopo, entao ele guarda o fato aqui em vez de
+     tentar ler de volta do objeto de erro. */
+  let estourouPrazo = false;
+  const porPrazo = setTimeout(() => {
+    estourouPrazo = true;
+    controlador.abort();
+  }, PRAZO_MS);
+
+  const repassar = () => controlador.abort(signalExterno?.reason);
+  if (signalExterno) {
+    if (signalExterno.aborted) repassar();
+    else signalExterno.addEventListener('abort', repassar, { once: true });
+  }
+
+  try {
+    return await fetch(url, { ...init, signal: controlador.signal });
+  } catch (erro) {
+    /* Cancelamento de quem chamou sobe como estava: quem cancelou sabe o que
+       fazer com isso. So o estouro de prazo vira mensagem de rede. */
+    if (signalExterno?.aborted) throw erro;
+    if (estourouPrazo) {
+      throw new ApiError('Sem resposta do servidor. Verifique sua conexão.', null, null);
+    }
+    throw erro;
+  } finally {
+    clearTimeout(porPrazo);
+    signalExterno?.removeEventListener('abort', repassar);
+  }
+}
+
 export async function apiRequest(path, options = {}) {
   const {
     method = 'GET',
@@ -81,12 +142,11 @@ export async function apiRequest(path, options = {}) {
 
   if (token) requestHeaders.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(buildUrl(path), {
+  const response = await comPrazo(buildUrl(path), {
     method,
     headers: requestHeaders,
-    body: body instanceof FormData || body === undefined ? body : JSON.stringify(body),
-    signal
-  });
+    body: body instanceof FormData || body === undefined ? body : JSON.stringify(body)
+  }, signal);
 
   const payload = await parseResponse(response);
 

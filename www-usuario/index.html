@@ -47,7 +47,57 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- A FOLHA DE FONTE NAO SEGURA MAIS A PRIMEIRA PINTURA.
+       Como <link rel="stylesheet"> comum ela bloqueia a renderizacao ate
+       responder — e ela mora num servidor de fora. No app instalado isso e uma
+       ida a internet a cada abertura: com sinal ruim a tela fica em branco
+       esperando, e sem sinal fica ate o tempo esgotar. Nada disso e sobre a
+       fonte em si, que ja vinha com `display=swap` e nunca segurou o texto.
+       `media="print"` faz o navegador buscar sem bloquear; o onload devolve
+       para `all` quando chega. O <noscript> cobre quem desliga o script. -->
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"></noscript>
+  <!-- CASCATA DE MODULOS: 27 arquivos descobertos em quatro viagens ─────────
+       O navegador so descobre um import DEPOIS de baixar e ler quem importa.
+       Medido aqui, os modulos comecavam em quatro ondas — 315ms, 636ms, 940ms
+       e 1500ms — e a tela ficava em branco ate a ultima terminar: primeira
+       pintura com conteudo aos 2,8s, sem nada de rede lenta no meio.
+
+       `modulepreload` conta a arvore inteira de uma vez, na primeira viagem.
+       Nao muda semantica nenhuma (nao executa nada, so busca) e o navegador
+       ignora o que nao reconhecer.
+
+       Se um caminho daqui sumir do codigo, o efeito e um aviso no console e um
+       arquivo baixado a toa — nao uma tela quebrada. -->
+  <link rel="modulepreload" href="./assets/js/component-loader.js">
+  <link rel="modulepreload" href="./assets/js/mobile.js">
+  <link rel="modulepreload" href="./assets/js/player-desktop.js">
+  <link rel="modulepreload" href="./assets/js/game-mode.js">
+  <link rel="modulepreload" href="./assets/js/loading.js">
+  <link rel="modulepreload" href="./assets/js/sport-icons.js">
+  <link rel="modulepreload" href="./middleware/auth.js">
+  <link rel="modulepreload" href="./services/auth.js">
+  <link rel="modulepreload" href="./services/api.js">
+  <link rel="modulepreload" href="./services/venues.js">
+  <link rel="modulepreload" href="./services/notifications.js">
+  <link rel="modulepreload" href="./services/ws.js">
+  <link rel="modulepreload" href="./services/push.js">
+  <link rel="modulepreload" href="./services/platform.js">
+  <link rel="modulepreload" href="./services/navegacao.js">
+  <link rel="modulepreload" href="./services/tema.js">
+  <link rel="modulepreload" href="./services/auth-mock.js">
+  <link rel="modulepreload" href="./services/google-auth.js">
+  <link rel="modulepreload" href="./services/localidades.js">
+  <link rel="modulepreload" href="./services/reservation-live.js">
+  <link rel="modulepreload" href="./services/geo.js">
+  <link rel="modulepreload" href="./storage/storage.js">
+  <link rel="modulepreload" href="./config/constants.js">
+  <link rel="modulepreload" href="./config/routes.js">
+  <link rel="modulepreload" href="./config/mock-data.js">
+  <link rel="modulepreload" href="./config/esportes.js">
+  <link rel="modulepreload" href="./utils/helpers.js">
+  <link rel="modulepreload" href="./utils/formatters.js">
   <link rel="stylesheet" href="./assets/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="./assets/css/tokens.css">
   <link rel="stylesheet" href="./assets/css/style.css">

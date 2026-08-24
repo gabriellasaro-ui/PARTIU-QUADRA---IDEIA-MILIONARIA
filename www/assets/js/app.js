@@ -396,12 +396,17 @@ async function renderMobileRoute() {
   }
 
   // Loading antes dos fragmentos: a espera inteira e carregar HTML + dados.
+  /* O `try` COMECA JUNTO COM O OVERLAY, e nao depois de carregar os
+     fragmentos. Quem mostra a tela de carregamento tem que ser quem garante
+     que ela sai — e a busca dos fragmentos ficava fora da rede de protecao:
+     qualquer falha ali deixava o overlay de pe para sempre, com o app
+     renderizado e invisivel atras dele. */
   mostrarLoading();
-  await Promise.all([
-    setFragment(header, route.header),
-    setFragment(view, route.page)
-  ]);
   try {
+    await Promise.all([
+      setFragment(header, route.header),
+      setFragment(view, route.page)
+    ]);
     await renderMobilePage(routeState, view);
   } catch (error) {
     // Registrar SEMPRE: sem isto o erro fica invisivel e so sobra a tela de
@@ -468,9 +473,10 @@ async function renderPlayerDesktopRoute() {
 
   view.dataset.currentRoute = routeState.signature;
   updatePlayerDesktopMeta(routeName, route);
+  // Mesmo motivo do roteador mobile: o overlay so e seguro dentro do try.
   mostrarLoading();
-  await setFragment(view, route.page);
   try {
+    await setFragment(view, route.page);
     await renderPlayerDesktopPage(routeState, view);
   } catch (error) {
     // Registrar SEMPRE: sem isto o erro fica invisivel e so sobra a tela de
