@@ -170,6 +170,57 @@ export async function renderManagerFinance(root) {
   const tituloGraf = root.querySelector('[data-finance-titulo]');
   if (tituloGraf) tituloGraf.textContent = periodo === '30d' ? 'Faturamento no mês' : 'Faturamento na semana';
 
+  /* ══════ COMPORTAMENTO DO CLIENTE ══════
+
+     Onde nao ha base para a conta, o backend manda `null` e a tela mostra
+     travessao — e nao "0%". "0% de retorno" e uma afirmacao sobre os clientes,
+     e sem cliente nenhum ela e falsa. Zero inventado e o defeito que este
+     painel ja teve em quatro lugares. */
+  const ind = dados?.indicadores;
+  const pct = (v) => (v === null || v === undefined ? '—' : `${v}%`);
+
+  if (ind) {
+    set(root, '[data-finance-retorno]', pct(ind.clientes.taxaRetorno));
+    set(root, '[data-finance-retorno-sub]', ind.clientes.total
+      ? `${ind.clientes.recorrentes} de ${ind.clientes.total} já jogaram aqui`
+      : 'Clientes que voltaram');
+
+    set(root, '[data-finance-conv]', pct(ind.conversao.taxa));
+    const decididas = ind.conversao.aceitas + ind.conversao.recusadas + ind.conversao.expiradas;
+    set(root, '[data-finance-conv-sub]', decididas
+      ? `${ind.conversao.aceitas} de ${decididas} pedidos aceitos`
+      : 'Pedidos que viraram jogo');
+
+    const q = ind.ranking.quadra;
+    const f = ind.ranking.faixa;
+    set(root, '[data-finance-top]', q ? q.nome : '—');
+    set(root, '[data-finance-top-sub]', f
+      ? `Melhor quadra · pico à ${f.nome.toLowerCase()}`
+      : 'Onde está o dinheiro');
+
+    // Detalhe por tras dos numeros, no painel lateral.
+    set(root, '[data-finance-novos]', String(ind.clientes.novos));
+    set(root, '[data-finance-recorrentes]', String(ind.clientes.recorrentes));
+    set(root, '[data-finance-recusadas]', String(ind.conversao.recusadas));
+    set(root, '[data-finance-expiradas]', String(ind.conversao.expiradas));
+
+    /* A reparticao do dia em percentual, e nao em reais: o que interessa e a
+       proporcao entre os tres, e tres valores em reais lado a lado nao cabem
+       na largura do painel. */
+    const fx = ind.ranking.faixas || {};
+    const somaFx = Object.values(fx).reduce((t, v) => t + v, 0);
+    set(root, '[data-finance-faixas]', somaFx
+      ? ['Manhã', 'Tarde', 'Noite']
+          .map((n) => `${Math.round((fx[n] || 0) * 100 / somaFx)}%`).join(' · ')
+      : '—');
+
+    const perdido = (ind.perdas.canceladoValor || 0) + (ind.perdas.expiradoValor || 0);
+    set(root, '[data-finance-perda]', formatCurrency(perdido));
+    set(root, '[data-finance-perda-sub]', ind.perdas.expiradoValor
+      ? `${formatCurrency(ind.perdas.expiradoValor)} expirou sem resposta`
+      : 'Cancelado e expirado');
+  }
+
   set(root, '[data-finance-occ]', `${ocupacao}%`);
   set(root, '[data-finance-occ-top]', `${ocupacao}%`);
 

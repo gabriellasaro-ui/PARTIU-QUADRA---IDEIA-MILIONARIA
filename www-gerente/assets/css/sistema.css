@@ -1982,3 +1982,44 @@ html[data-manager-app] .cal-now > i { background: var(--pq-brand-strong); }
 
 /* HOJE continua com a coluna tintada — e util, e agora nao se confunde mais
    com dia fechado, que passou a ter hachura propria. */
+
+
+/* ══════════════════ FINANCEIRO: oito indicadores ═════════════════════════ */
+
+/* Quatro de caixa e quatro de comportamento. Numa fileira so eles ficariam com
+   140px cada; em duas linhas de quatro, cada cartao tem largura para o rotulo
+   inteiro — e as duas familias se separam sozinhas pela quebra. */
+html[data-manager-app] .manager-finance-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--e3);
+}
+
+@media (max-width: 1180px) {
+  html[data-manager-app] .manager-finance-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* A legenda de cada cartao virou frase ("3 de 8 já jogaram aqui"), e nao mais
+   um rotulo curto: precisa caber em duas linhas sem empurrar o numero. */
+html[data-manager-app] .manager-finance-metrics small {
+  display: block;
+  color: var(--pq-muted);
+  font-size: var(--t-apoio);
+  line-height: 1.35;
+}
+
+html[data-manager-app] .manager-finance-metrics strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+/* O cartao de perda nao usa vermelho de erro: nada quebrou. E ambar, que no
+   resto do painel ja significa "olha isto". */
+html[data-manager-app] .manager-finance-metrics .is-perda > span {
+  background: var(--pq-amber-soft);
+  color: var(--pq-gold);
+}

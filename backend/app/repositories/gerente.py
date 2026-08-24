@@ -134,6 +134,29 @@ def bookings_between(db: Session, arena_id, start: datetime, end: datetime):
     )
 
 
+def clientes_anteriores(db: Session, arena_id, antes: datetime) -> set:
+    """Quem ja tinha reservado nesta arena ANTES do inicio do periodo.
+
+    E o que separa cliente novo de cliente que voltou. Sem isso, "recorrente"
+    seria so quem reservou duas vezes DENTRO da janela — e um cliente fiel de
+    tres anos que veio uma vez neste mes apareceria como novo.
+    """
+    arena_id = _uuid(arena_id)
+    if arena_id is None:
+        return set()
+    linhas = db.execute(
+        select(Booking.user_id)
+        .where(
+            Booking.arena_id == arena_id,
+            Booking.user_id.is_not(None),
+            Booking.start_at < _utc_naive(antes),
+            Booking.status.in_(list(ACTIVE_STATUSES)),
+        )
+        .distinct()
+    ).scalars().all()
+    return {str(x) for x in linhas if x}
+
+
 def mensalist_groups(db: Session, arena_id):
     """Bookings "pai" de mensalistas (plan=mensalista, nao sessao)."""
     arena_id = _uuid(arena_id)

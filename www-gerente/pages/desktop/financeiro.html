@@ -28,6 +28,32 @@
     <article><span><i class="ic" data-lucide="calendar"></i></span><div><small>Reservas no período</small><strong class="num" data-finance-count>0</strong></div></article>
     <article><span><i class="ic" data-lucide="dollar-sign"></i></span><div><small>Ticket médio</small><strong class="num" data-finance-ticket-top>R$ 0,00</strong></div></article>
     <article><span><i class="ic" data-lucide="clock"></i></span><div><small>Ocupação média</small><strong class="num" data-finance-occ-top>0%</strong></div></article>
+
+    <!-- ══════ COMPORTAMENTO DO CLIENTE ══════
+
+         Os quatro primeiros dizem QUANTO entrou. Estes dizem POR QUE, e sao o
+         que muda decisao:
+
+         CLIENTES QUE VOLTARAM — a diferenca entre uma arena que constroi base e
+         uma que vende avulso para sempre. "Recorrente" e quem ja tinha
+         reservado ANTES do periodo, e nao quem veio duas vezes dentro dele:
+         senao um cliente de tres anos que veio uma vez neste mes contaria como
+         novo.
+
+         CONVERSAO — de cada dez pedidos que esperaram decisao, quantos viraram
+         jogo. Conta so quem PASSOU por solicitacao; reserva paga direto pelo
+         app nunca esperou o dono, e incluir infla a taxa para perto de 100%.
+
+         ONDE ESTA O DINHEIRO — a quadra e a faixa de horario que mais faturam.
+
+         PERDIDO — cancelado e expirado somados. Separados no titulo do card
+         porque pedem acoes opostas: cancelado e cliente que desistiu; expirado
+         e pedido que o dono nao respondeu a tempo, e esse esta sob o controle
+         dele. -->
+    <article><span><i class="ic" data-lucide="repeat"></i></span><div><small data-finance-retorno-sub>Clientes que voltaram</small><strong class="num" data-finance-retorno>—</strong></div></article>
+    <article><span><i class="ic" data-lucide="clipboard-check"></i></span><div><small data-finance-conv-sub>Pedidos que viraram jogo</small><strong class="num" data-finance-conv>—</strong></div></article>
+    <article><span><i class="ic" data-lucide="land-plot"></i></span><div><small data-finance-top-sub>Onde está o dinheiro</small><strong class="num" data-finance-top>—</strong></div></article>
+    <article class="is-perda"><span><i class="ic" data-lucide="triangle-alert"></i></span><div><small data-finance-perda-sub>Perdido no período</small><strong class="num" data-finance-perda>R$ 0,00</strong></div></article>
   </div>
 </section>
 
@@ -44,10 +70,22 @@
   </section>
 
   <section class="manager-panel manager-finance-breakdown">
-    <div class="manager-panel__head"><div><span>Indicadores</span><h2>Saude da operacao</h2></div></div>
+    <!-- ESTE CARTAO REPETIA os cartoes de cima.
+
+         Ticket medio e ocupacao ja estao na fileira de indicadores, e ler o
+         mesmo numero duas vezes na mesma tela nao acrescenta — so faz procurar
+         a diferenca que nao existe.
+
+         Aqui fica o DETALHE por tras dos numeros novos: de onde vem o cliente,
+         por que os pedidos nao viraram jogo, e como o dinheiro se reparte no
+         dia. E o que se olha depois de ver a taxa e querer saber o motivo. -->
+    <div class="manager-panel__head"><div><span>Por trás dos números</span><h2>Detalhe do período</h2></div></div>
     <div class="manager-finance-health">
-      <div><span>Ticket médio</span><strong class="num" data-finance-ticket>R$ 0,00</strong></div>
-      <div><span>Ocupação média</span><strong class="num" data-finance-occ>0%</strong></div>
+      <div><span>Clientes novos</span><strong class="num" data-finance-novos>—</strong></div>
+      <div><span>Já jogavam aqui</span><strong class="num" data-finance-recorrentes>—</strong></div>
+      <div><span>Pedidos recusados</span><strong class="num" data-finance-recusadas>—</strong></div>
+      <div><span>Expiraram sem resposta</span><strong class="num" data-finance-expiradas>—</strong></div>
+      <div><span>Manhã · Tarde · Noite</span><strong class="num" data-finance-faixas>—</strong></div>
       <div><span>Maior faturamento diário</span><strong class="num" data-finance-peak>R$ 0,00</strong></div>
     </div>
   </section>

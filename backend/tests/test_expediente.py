@@ -116,3 +116,56 @@ def test_arena_pausada_ida_e_volta(client):
     finally:
         client.patch("/api/gerente/configuracoes", headers=h, json={"pausada": False})
     assert client.get("/api/gerente/configuracoes", headers=h).json()["pausada"] is False
+
+
+# ───────────────────── indicadores do financeiro ───────────────────────────
+
+def test_indicadores_vem_no_financeiro(client):
+    h = _gerente(client)
+    d = client.get("/api/gerente/financeiro?periodo=30d", headers=h).json()
+    ind = d["indicadores"]
+    assert set(ind) == {"clientes", "conversao", "ranking", "perdas"}
+    assert set(ind["clientes"]) >= {"total", "novos", "recorrentes", "taxaRetorno"}
+
+
+def test_novos_mais_recorrentes_fecham_o_total(client):
+    """Todo cliente do periodo e novo OU ja jogava aqui — nunca os dois, nunca
+    nenhum. Se a conta nao fechar, um dos dois conjuntos esta sendo montado
+    errado e a taxa de retorno mente."""
+    h = _gerente(client)
+    c = client.get("/api/gerente/financeiro?periodo=30d", headers=h).json()["indicadores"]["clientes"]
+    assert c["novos"] + c["recorrentes"] == c["total"]
+
+
+def test_sem_cliente_a_taxa_e_nula_e_nao_zero(client):
+    """"0% de retorno" e uma afirmacao sobre os clientes, e sem cliente nenhum
+    ela e falsa. O zero inventado ja apareceu em quatro lugares deste painel."""
+    h = _gerente(client)
+    # Janela no passado remoto: a arena nao existia.
+    d = client.get("/api/gerente/financeiro?de=2020-01-01&ate=2020-01-07", headers=h).json()
+    ind = d["indicadores"]
+    assert ind["clientes"]["total"] == 0
+    assert ind["clientes"]["taxaRetorno"] is None
+    assert ind["conversao"]["taxa"] is None
+    assert ind["ranking"]["quadra"] is None
+
+
+def test_conversao_nao_conta_reserva_que_nunca_esperou_decisao(client):
+    """A taxa e sobre pedidos DECIDIDOS. Aceitas + recusadas + expiradas e a
+    base; se ela incluisse reserva paga direto pelo app, a taxa iria para perto
+    de 100% e pararia de dizer qualquer coisa."""
+    h = _gerente(client)
+    conv = client.get("/api/gerente/financeiro?periodo=30d", headers=h).json()["indicadores"]["conversao"]
+    base = conv["aceitas"] + conv["recusadas"] + conv["expiradas"]
+    if base:
+        assert conv["taxa"] == round(conv["aceitas"] * 100 / base)
+
+
+def test_faixas_somam_o_faturamento_das_reservas_ativas(client):
+    h = _gerente(client)
+    ind = client.get("/api/gerente/financeiro?periodo=30d", headers=h).json()["indicadores"]
+    faixas = ind["ranking"]["faixas"]
+    assert set(faixas) == {"Manhã", "Tarde", "Noite"}
+    pico = ind["ranking"]["faixa"]
+    if pico:
+        assert abs(faixas[pico["nome"]] - pico["valor"]) < 0.01

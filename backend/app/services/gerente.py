@@ -34,6 +34,7 @@ from ..models import (
     STATUS_COMPLETED,
     STATUS_CONFIRMED,
     STATUS_EXPIRED,
+    STATUS_PAYMENT_CONFIRMED,
     STATUS_PAYMENT_FAILED,
     STATUS_PENDING_PAYMENT,
     STATUS_REJECTED,
@@ -626,6 +627,101 @@ def _serie_diaria(db: Session, arena_id, start: datetime, end: datetime) -> list
     return pontos
 
 
+def _indicadores(db: Session, arena, start: datetime, end: datetime) -> dict:
+    """Os quatro indicadores de comportamento do Financeiro.
+
+    Todos saem das reservas do periodo — nenhum inventa numero. Onde nao ha
+    base para a conta (zero reservas, zero solicitacoes), devolve None em vez de
+    zero: "0% de retorno" e uma afirmacao sobre os clientes, e sem cliente
+    nenhum ela e falsa. A tela mostra travessao.
+    """
+    linhas = repo.bookings_between(db, arena.id, start, end)
+
+    # ── Clientes que voltaram ─────────────────────────────────────────────
+    #
+    # Recorrente e quem JA TINHA reservado antes desta janela. Contar so quem
+    # apareceu duas vezes dentro dela trataria um cliente de tres anos, que veio
+    # uma vez neste mes, como novo.
+    anteriores = repo.clientes_anteriores(db, arena.id, start)
+    do_periodo = {
+        str(b.user_id) for b, *_ in linhas
+        if b.user_id and b.status in ACTIVE_STATUSES
+    }
+    recorrentes = do_periodo & anteriores
+    novos = do_periodo - anteriores
+
+    # ── Conversao de solicitacoes ─────────────────────────────────────────
+    #
+    # So conta quem PASSOU por solicitacao: reserva paga direto pelo app nunca
+    # esperou decisao do dono, e incluir infla a taxa para perto de 100%.
+    aceitas = recusadas = expiradas = 0
+    for booking, *_ in linhas:
+        if booking.status == STATUS_REJECTED:
+            recusadas += 1
+        elif booking.status == STATUS_EXPIRED:
+            expiradas += 1
+        elif booking.status in (STATUS_CONFIRMED, STATUS_COMPLETED, STATUS_PAYMENT_CONFIRMED):
+            aceitas += 1
+    decididas = aceitas + recusadas + expiradas
+
+    # ── Onde esta o dinheiro ──────────────────────────────────────────────
+    por_quadra: dict[str, int] = {}
+    por_faixa = {"Manhã": 0, "Tarde": 0, "Noite": 0}
+    for booking, court, _arena, _user in linhas:
+        if booking.status not in ACTIVE_STATUSES:
+            continue
+        cents = booking.subtotal_cents or 0
+        por_quadra[court.name] = por_quadra.get(court.name, 0) + cents
+        hora = _as_local(booking.start_at).hour
+        faixa = "Manhã" if hora < 12 else ("Tarde" if hora < 18 else "Noite")
+        por_faixa[faixa] += cents
+
+    melhor_quadra = max(por_quadra.items(), key=lambda x: x[1], default=None)
+    melhor_faixa = max(por_faixa.items(), key=lambda x: x[1], default=None)
+
+    # ── Perdas ────────────────────────────────────────────────────────────
+    #
+    # Separadas porque pedem acoes diferentes: cancelada e cliente que desistiu
+    # depois de fechar; expirada e pedido que o dono nao respondeu a tempo — a
+    # segunda esta sob o controle dele.
+    cancelado = sum(
+        (b.subtotal_cents or 0) for b, *_ in linhas if b.status == STATUS_CANCELLED
+    )
+    expirado = sum(
+        (b.subtotal_cents or 0) for b, *_ in linhas if b.status == STATUS_EXPIRED
+    )
+    total_reservas = sum(1 for b, *_ in linhas if b.status in ACTIVE_STATUSES)
+    canceladas_qtd = sum(1 for b, *_ in linhas if b.status == STATUS_CANCELLED)
+    base_cancel = total_reservas + canceladas_qtd
+
+    return {
+        "clientes": {
+            "total": len(do_periodo),
+            "novos": len(novos),
+            "recorrentes": len(recorrentes),
+            "taxaRetorno": round(len(recorrentes) * 100 / len(do_periodo)) if do_periodo else None,
+        },
+        "conversao": {
+            "aceitas": aceitas,
+            "recusadas": recusadas,
+            "expiradas": expiradas,
+            "taxa": round(aceitas * 100 / decididas) if decididas else None,
+        },
+        "ranking": {
+            "quadra": {"nome": melhor_quadra[0], "valor": melhor_quadra[1] / 100} if melhor_quadra and melhor_quadra[1] else None,
+            "faixa": {"nome": melhor_faixa[0], "valor": melhor_faixa[1] / 100} if melhor_faixa and melhor_faixa[1] else None,
+            # A reparticao inteira, e nao so o pico: saber que a noite lidera
+            # nao diz se a tarde e fraca ou inexistente.
+            "faixas": {k: v / 100 for k, v in por_faixa.items()},
+        },
+        "perdas": {
+            "canceladoValor": cancelado / 100,
+            "expiradoValor": expirado / 100,
+            "taxaCancelamento": round(canceladas_qtd * 100 / base_cancel) if base_cancel else None,
+        },
+    }
+
+
 def financeiro(
     db: Session,
     manager,
@@ -685,6 +781,9 @@ def financeiro(
         # a tela mostrava "ticket medio R$ 23.184,00" ao lado de "faturamento
         # R$ 695,52" — cem vezes maior, num painel onde o dono decide preco.
         "ticket_medio": round(gross / cnt / 100, 2) if cnt else 0,
+        # Comportamento do cliente: retorno, conversao, onde entra o dinheiro e
+        # o que escorreu. Ver `_indicadores`.
+        "indicadores": _indicadores(db, arena, start, end),
         "repasses": [_serialize_settlement(s) for s in settlements],
     }
 
