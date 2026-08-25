@@ -74,6 +74,27 @@ def _relative_date(value) -> str:
     return f"Há {years} ano{'s' if years > 1 else ''}"
 
 
+def bairro_da_arena(arena) -> str:
+    """O bairro que o jogador ve — de `neighborhood`, e nao de `address`.
+
+    O painel do gerente grava o bairro em `Arena.neighborhood` desde que o
+    cadastro passou a separar bairro de rua (e o CEP passou a preencher os
+    dois). Mas TRES lugares do lado do jogador montavam o campo "neighborhood"
+    a partir de `arena.address`, que e a RUA. Resultado: o dono trocava o
+    bairro no painel, salvava, e o app continuava mostrando o valor antigo —
+    parecia que a alteracao nao tinha sido gravada, quando na verdade estava
+    sendo gravada num campo que ninguem lia.
+
+    Um comentario em api/quadras.py chegava a afirmar que "nao ha coluna
+    neighborhood em Arena". Ha, e indexada, desde models/arena.py.
+
+    A cascata mantem quem ainda nao preencheu o bairro: arena antiga com
+    endereco em texto livre continua mostrando o que tem, em vez de virar
+    vazio de um dia para o outro.
+    """
+    return arena.neighborhood or arena.address or arena.city or ""
+
+
 def _distance_to(arena: Arena, lat: float | None, lng: float | None) -> float:
     user_loc = (lat, lng) if lat is not None and lng is not None else DEFAULT_LOC
     if arena.lat is None or arena.lng is None:
@@ -90,6 +111,7 @@ def to_venue(
     lng: float | None = None,
     reviews: list | None = None,
     db: Session | None = None,
+    arena_court_count: int | None = None,
 ) -> dict:
     photos = court.photos or []
     avg, count = (stats or {}).get(arena.id, (0, 0)) or (0, 0)
@@ -97,8 +119,22 @@ def to_venue(
         "id": str(court.id),
         "arenaId": str(arena.id),
         "name": arena.name,
+        # NOME DA QUADRA, alem do nome da arena.
+        #
+        # Toda quadra se apresentava com o nome da ARENA. Numa arena com tres
+        # quadras, o jogador via "Arena Bola na Rede" tres vezes na lista e nao
+        # tinha como saber qual era qual — nem depois de reservar, porque o
+        # comprovante repetia o mesmo nome.
+        #
+        # `name` continua sendo o da arena: e o que a tela usa como titulo e o
+        # que o resto do app ja consome. `courtName` entra como a linha de
+        # baixo, e `arenaCourtCount` deixa a tela decidir se vale mostra-la —
+        # arena de uma quadra so nao ganha subtitulo que nao distingue nada.
+        "arenaName": arena.name,
+        "courtName": court.name,
+        "arenaCourtCount": arena_court_count if arena_court_count is not None else 1,
         "sport": court.sport,
-        "neighborhood": arena.address or arena.city or "",
+        "neighborhood": bairro_da_arena(arena),
         "distance": _distance_to(arena, lat, lng),
         "rating": avg,
         "reviews": count,
@@ -156,8 +192,13 @@ def list_venues(
     stats = repo.review_stats(db, [r[1].id for r in rows]) if rows else {}
     total = len(rows)
     page = rows[offset : offset + limit]
+    # Contagem por arena calculada UMA vez para a pagina inteira: dentro do
+    # to_venue seria uma consulta por quadra listada.
+    contagens = repo.court_counts(db, [a.id for _, a in page]) if page else {}
     venues = [
-        to_venue(arena, court, stats=stats, lat=lat, lng=lng, db=db) for court, arena in page
+        to_venue(arena, court, stats=stats, lat=lat, lng=lng, db=db,
+                 arena_court_count=contagens.get(arena.id))
+        for court, arena in page
     ]
     # boost > rating > distancia — mesma regra que o app aplica do lado dele.
     venues.sort(key=lambda v: (v["rating"] or 0, -v["distance"]), reverse=True)
@@ -179,7 +220,9 @@ def get_venue_detail(db: Session, court_id, *, lat=None, lng=None) -> dict | Non
     court, arena = row
     stats = repo.review_stats(db, [arena.id])
     reviews = repo.reviews_for_arena(db, arena.id, limit=3)
-    return to_venue(arena, court, stats=stats, lat=lat, lng=lng, reviews=reviews, db=db)
+    contagens = repo.court_counts(db, [arena.id])
+    return to_venue(arena, court, stats=stats, lat=lat, lng=lng, reviews=reviews, db=db,
+                    arena_court_count=contagens.get(arena.id))
 
 
 def _day_window(db: Session, court: Court, day: datetime) -> list[tuple[time, time]]:
@@ -292,7 +335,8 @@ def get_resumo(db: Session, court_id, hora: str, dur: int) -> dict | None:
     h_start = int(str(hora).split(":")[0])
     h_end = h_start + dur
     return {
-        "quadra": to_venue(arena, court, stats=repo.review_stats(db, [arena.id]), db=db),
+        "quadra": to_venue(arena, court, stats=repo.review_stats(db, [arena.id]), db=db,
+                           arena_court_count=repo.court_counts(db, [arena.id]).get(arena.id)),
         "hora": hora,
         "hora_fim": f"{h_end:02d}:00",
         "dur": dur,
@@ -332,7 +376,9 @@ def get_featured(db: Session, lat: float | None = None, lng: float | None = None
         return cached
     rows = repo.list_visible_courts(db)
     stats = repo.review_stats(db, [r[1].id for r in rows]) if rows else {}
-    venues = [to_venue(arena, court, stats=stats, lat=lat, lng=lng, db=db) for court, arena in rows]
+    contagens = repo.court_counts(db, [a.id for _, a in rows]) if rows else {}
+    venues = [to_venue(arena, court, stats=stats, lat=lat, lng=lng, db=db,
+                       arena_court_count=contagens.get(arena.id)) for court, arena in rows]
     venues.sort(key=lambda v: (v["rating"] or 0), reverse=True)
     payload = {
         "destaques": venues[:4],
@@ -365,7 +411,9 @@ def get_favorite_venues(db: Session, user_id) -> list:
         return []
     rows = repo.list_visible_courts(db, arena_ids=arena_ids)
     stats = repo.review_stats(db, arena_ids) if rows else {}
-    return [to_venue(arena, court, stats=stats, db=db) for court, arena in rows]
+    contagens = repo.court_counts(db, arena_ids) if rows else {}
+    return [to_venue(arena, court, stats=stats, db=db, arena_court_count=contagens.get(arena.id))
+            for court, arena in rows]
 
 
 def registrar_interesse(db: Session, court_id, date_str: str | None, hora: str, dur: int) -> None:

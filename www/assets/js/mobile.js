@@ -409,6 +409,20 @@ function venueCard(venue, options = {}) {
   return `
     <article class="card venue-card" data-venue-id="${venue.id}">
       ${removable}
+      <!-- VER NO MAPA — IRMAO do link do card, e nao filho.
+
+           A distancia diz "2,2 km", e numero nao responde a pergunta que a
+           pessoa faz de verdade, que e "isso e longe DE MIM?". O botao abre o
+           mapa com esta quadra destacada, ao lado do ponto de quem procura.
+
+           Fica FORA do <a> do card pelo mesmo motivo que o botao de favorito:
+           ancora dentro de ancora e HTML invalido — o parser fecha a de fora
+           no lugar errado e o card inteiro se desmonta. O mesmo vale para
+           <button>, que e conteudo interativo dentro de link. Irmao dentro do
+           <article>, posicionado por cima da foto, resolve os dois. -->
+      <a class="venue-card-mapa" href="#mapa?quadra=${encodeURIComponent(venue.id)}"
+         aria-label="Ver ${escapeHtml(venue.arenaName || venue.name)} no mapa"
+         title="Ver no mapa">${icon('map')}</a>
       <a class="venue-card-link" href="#quadra/${venue.id}">
         <!-- O selo de disponibilidade SAIU da foto.
 
@@ -427,7 +441,16 @@ function venueCard(venue, options = {}) {
             <b>${icon('star', 'ic ic-star')}${venue.rating}</b>
           </div>
           ${selo}
-          <h3>${escapeHtml(venue.name)}</h3>
+          <h3>${escapeHtml(venue.arenaName || venue.name)}</h3>
+          <!-- NOME DA QUADRA embaixo do nome da arena.
+
+               Arena com tres quadras aparecia tres vezes com o mesmo nome, e
+               nada na lista dizia qual era qual — nem depois de reservar. So
+               aparece quando ha mais de uma quadra visivel: numa arena unica o
+               subtitulo nao distingue nada e vira ruido. -->
+          ${venue.arenaCourtCount > 1 && venue.courtName
+            ? `<p class="venue-card-quadra">${icon('layout-grid')}${escapeHtml(venue.courtName)}</p>`
+            : ''}
           <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${formatDistance(venue.distance)} km</p>
           <div class="tags">${venue.tags.slice(0, 2).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
           <div class="foot">
@@ -742,9 +765,19 @@ async function renderMap(root, route) {
   const mapElement = root.querySelector('[data-live-map]');
   const userLocation = currentCoordinates();
 
-  summary.textContent = esportesSel.length === 1
-    ? `${venues.length} opções de ${displayText(esportesSel[0])}`
-    : `${venues.length} quadras perto de você`;
+  /* QUADRA EM DESTAQUE — quem chegou pelo "Ver no mapa" de um card.
+
+     O card responde "2,2 km", e distancia em numero nao responde a pergunta
+     de verdade, que e "isso e longe de mim?". Aqui a arena vem marcada com
+     cor propria ao lado do ponto de quem procura, e a resposta e de olhar. */
+  const idDestaque = query.get('quadra') || '';
+  const emDestaque = idDestaque ? venues.find((v) => String(v.id) === idDestaque) : null;
+
+  summary.textContent = emDestaque
+    ? `${emDestaque.arenaName || emDestaque.name}${emDestaque.arenaCourtCount > 1 && emDestaque.courtName ? ' · ' + emDestaque.courtName : ''} — ${formatDistance(emDestaque.distance)} km de você`
+    : esportesSel.length === 1
+      ? `${venues.length} opções de ${displayText(esportesSel[0])}`
+      : `${venues.length} quadras perto de você`;
 
   /* Lista de multipla escolha, dentro do botao flutuante sobre o mapa.
 
@@ -830,26 +863,51 @@ async function renderMap(root, route) {
      10 km, o mapa mostra 10 km. Quadra fora disso ainda ganha marcador (da
      para arrastar ate la), so nao manda no zoom. */
   const bounds = [userLocation];
+  let marcadorDestaque = null;
   venues.forEach((venue) => {
     const position = [venue.map.lat, venue.map.lng];
+    const destacada = emDestaque && String(venue.id) === idDestaque;
     const marker = window.L.marker(position, {
       icon: window.L.divIcon({
-        className: 'map-price-marker',
+        className: destacada ? 'map-price-marker is-destaque' : 'map-price-marker',
         html: `<span>${formatCurrency(venue.price).replace(',00', '')}</span>`,
         iconSize: [66, 34],
         iconAnchor: [33, 34]
-      })
+      }),
+      // zIndexOffset porque marcadores se sobrepoem por latitude, e o
+      // destacado tem que ficar por cima mesmo quando esta atras de outro.
+      zIndexOffset: destacada ? 1000 : 0
     }).addTo(activeMobileMap);
     marker.bindPopup(mapPopup(venue), {
       closeButton: false,
       offset: [0, -26],
       minWidth: 228
     });
+    if (destacada) marcadorDestaque = marker;
     if (distanciaKm(userLocation, position) <= raio) bounds.push(position);
   });
 
   /* Sem nada perto, o mapa fica no raio pedido em vez de dar zoom out atras
      de uma quadra distante. A lista abaixo continua mostrando que ela existe. */
+  if (marcadorDestaque) {
+    /* Vindo do "Ver no mapa", o enquadramento e OUTRO: os dois pontos que
+       importam sao a quadra escolhida e quem procura. Enquadrar tudo faria a
+       quadra destacada virar mais um alfinete no meio, que e exatamente o que
+       o botao existe para evitar. */
+    activeMobileMap.fitBounds([userLocation, marcadorDestaque.getLatLng()], {
+      paddingTopLeft: [40, 80],
+      paddingBottomRight: [40, 100],
+      maxZoom: 16
+    });
+    // Depois do invalidateSize: popup aberto antes do mapa saber o tamanho
+    // final nasce no lugar errado.
+    setTimeout(() => {
+      activeMobileMap?.invalidateSize();
+      marcadorDestaque.openPopup();
+    }, 60);
+    return;
+  }
+
   if (bounds.length > 1) {
     activeMobileMap.fitBounds(bounds, {
       paddingTopLeft: [28, 60],

@@ -8060,3 +8060,57 @@ html[data-theme="dark"] {
   color: var(--pq-muted);
   transition: background .14s ease, color .14s ease;
 }
+
+/* ── NOME DA QUADRA, e o atalho para o mapa ───────────────────────────────
+   Uma arena com tres quadras aparecia tres vezes com o mesmo titulo. A linha
+   de baixo diz qual e — em corpo menor e cor de apoio, porque ela QUALIFICA o
+   nome de cima em vez de competir com ele. */
+.venue-card-quadra {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 0 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.venue-card-quadra .ic {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+/* O botao de mapa espelha o de favorito (mesmo tamanho, mesma altura na foto,
+   mesmo fundo translucido) e fica do lado oposto: sao dois atalhos de mesmo
+   peso sobre a mesma imagem, e alinha-los diferente pareceria descuido. */
+.venue-card-mapa {
+  position: absolute;
+  z-index: 4;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--pq-radius);
+  background: var(--pq-panel-veil);
+  color: var(--pq-brand-deep);
+  box-shadow: 0 8px 20px rgba(5, 13, 9, .2);
+}
+
+.venue-card-mapa .ic {
+  width: 20px;
+  height: 20px;
+}
+
+/* ── A QUADRA ESCOLHIDA, no mapa ──────────────────────────────────────────
+   Chegando pelo "Ver no mapa", o alfinete dela nao pode ser mais um entre os
+   outros — e a razao de a tela ter aberto. Cor da marca, texto invertido e um
+   halo que sobrevive a um mapa claro ou escuro por baixo. */
+.map-price-marker.is-destaque > span {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #06210f;
+  box-shadow: 0 0 0 4px rgba(22, 167, 101, .28), 0 10px 22px rgba(5, 13, 9, .35);
+}

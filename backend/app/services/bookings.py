@@ -58,7 +58,7 @@ from ..repositories import bookings as repo
 from ..repositories import payments as pay_repo
 from ..repositories import venues as venues_repo
 from sqlalchemy import select
-from .catalog import _as_local, _day_window
+from .catalog import _as_local, _day_window, bairro_da_arena
 from .messages import ensure_conversation_for_booking
 from .notifications import emit_notification, notify_booking_event
 from .payments import get_provider
@@ -116,6 +116,9 @@ def compute_quote(price_cents: int, duration_h: int, *, plan: str = PLAN_AVULSO)
     """Preco em centavos. Avulso: preco da hora x duracao. Mensalista: a base
     ja e o preco do mes (1h/semana x 4 semanas), multiplicada pela duracao."""
     dur = max(1, min(3, int(duration_h or 1)))
+    # `or 0` como rede: preco ausente vira zero e o erro aparece no valor, que
+    # e visivel, em vez de virar 500 no meio da criacao da reserva.
+    price_cents = int(price_cents or 0)
     base = price_cents if plan == PLAN_MENSALISTA else price_cents * dur
     if plan == PLAN_AVULSO:
         base = price_cents * dur
@@ -148,17 +151,47 @@ def quote_booking(db: Session, *, court_id, date: str, hora: str, dur: int, plan
 
 # --- Datas e slots ---------------------------------------------------------
 
-def _parse_start(date_str: str | None, hora: str) -> datetime:
-    """Converte data+hora do jogador (fuso do produto) para UTC-aware."""
-    if date_str:
-        day = datetime.strptime(date_str, "%Y-%m-%d").date()
-    else:
-        day = now_local().date()
+def _parse_start(date_str: str | None, hora: str, weekday: int | None = None) -> datetime:
+    """Converte data+hora do jogador (fuso do produto) para UTC-aware.
+
+    O DIA DA SEMANA DO MENSALISTA ERA IGNORADO AQUI.
+
+    Sem `data`, a funcao caia em `now_local().date()` — HOJE — e o `weekday`
+    escolhido so era guardado na coluna, nunca usado para achar a data. As
+    consequencias eram duas, e as duas silenciosas:
+
+    - a pessoa escolhia quinta e recebia quatro sessoes na TERCA, porque terca
+      era o dia em que ela estava mexendo no app;
+    - se a hora escolhida ja tivesse passado hoje, a criacao morria com 409
+      "nao e possivel reservar um horario que ja passou" — falando de um
+      horario que ninguem pediu.
+
+    Agora, sem data explicita e com dia da semana, anda ate a proxima
+    ocorrencia daquele dia. Hoje conta se a hora ainda nao passou: quem marca
+    quinta as 21h, numa quinta as 18h, quer dizer hoje — mandar para a semana
+    seguinte seria igualmente arbitrario, so na direcao oposta.
+
+    A convencao bate com a do schema (0=segunda..6=domingo) e com
+    `date.weekday()` do Python. Se um dos dois mudar, o mensalista comeca no
+    dia errado sem nenhum erro aparecer.
+    """
     try:
         hour = int(str(hora).split(":")[0])
     except (ValueError, TypeError):
         hour = 19
     hour = max(0, min(23, hour))
+
+    if date_str:
+        day = datetime.strptime(date_str, "%Y-%m-%d").date()
+    else:
+        agora = now_local()
+        day = agora.date()
+        if weekday is not None:
+            passos = (int(weekday) - day.weekday()) % 7
+            if passos == 0 and agora.hour >= hour:
+                passos = 7
+            day = day + timedelta(days=passos)
+
     return datetime.combine(day, time(hour, 0), tzinfo=TZ).astimezone(timezone.utc)
 
 
@@ -357,7 +390,7 @@ def create_booking(
     court, arena = row
 
     dur = max(1, min(3, int(dur or 1)))
-    start_at = _parse_start(date, hora)
+    start_at = _parse_start(date, hora, weekday if plan == PLAN_MENSALISTA else None)
     if start_at <= now_local():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -368,7 +401,19 @@ def create_booking(
     repo.lock_court(db, court.id)  # serializa criacao por quadra (FOR UPDATE)
     _ensure_slots_free(db, court, sessions, dur)
 
-    price_base = court.price_monthly_cents if plan == PLAN_MENSALISTA else court.price_cents
+    # MENSALIDADE NAO CADASTRADA NAO PODE DERRUBAR A RESERVA.
+    #
+    # `price_monthly_cents` e opcional no cadastro da quadra, e quando esta
+    # vazio isto virava `compute_quote(None, ...)` -> TypeError -> 500. Toda
+    # tentativa de virar mensalista numa quadra sem mensalidade explodia, e a
+    # pessoa via "erro no servidor" sem nada dizendo o que faltava.
+    #
+    # O card do jogador ja mostrava `preco x 4` nesse caso, entao o valor
+    # cobrado passa a ser o MESMO que ele leu antes de tocar em reservar —
+    # cobrar diferente do que estava na tela seria pior do que o 500.
+    price_base = court.price_cents
+    if plan == PLAN_MENSALISTA:
+        price_base = court.price_monthly_cents or (court.price_cents * MONTHLY_SESSIONS)
     amounts = compute_quote(price_base, dur, plan=plan)
     group_id = uuid.uuid4() if plan == PLAN_MENSALISTA else None
 
@@ -471,7 +516,7 @@ def _to_reservation(booking: Booking, court: Court, arena: Arena) -> dict:
         "venueId": str(court.id),
         "venueName": arena.name,
         "sport": court.sport,
-        "neighborhood": arena.address or arena.city or "",
+        "neighborhood": bairro_da_arena(arena),
         "image": (court.photos or [""])[0],
         "date": date_label,
         "dateValue": date_value,

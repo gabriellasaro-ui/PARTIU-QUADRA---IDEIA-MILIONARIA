@@ -67,6 +67,30 @@ def get_visible_court(db: Session, court_id):
     return db.execute(stmt).one_or_none()
 
 
+def court_counts(db: Session, arena_ids: list) -> dict:
+    """arena_id -> quantas quadras VISIVEIS aquela arena tem.
+
+    Serve para a tela decidir se mostra o nome da quadra embaixo do nome da
+    arena: com uma quadra so o subtitulo nao distingue nada e vira ruido; com
+    tres, e a unica forma de saber qual e qual.
+
+    Conta pelo mesmo VISIBLE da listagem — se a quadra nao aparece na busca,
+    ela nao pode contar para decidir o rotulo do que aparece. Uma arena com
+    duas quadras e uma pausada volta a ser "arena de uma quadra" aos olhos do
+    jogador, que e a verdade que ele ve.
+    """
+    if not arena_ids:
+        return {}
+    rows = db.execute(
+        select(Court.arena_id, func.count(Court.id))
+        .join(Arena, Arena.id == Court.arena_id)
+        .where(*VISIBLE)
+        .where(Court.arena_id.in_(arena_ids))
+        .group_by(Court.arena_id)
+    ).all()
+    return {r[0]: r[1] for r in rows}
+
+
 def review_stats(db: Session, arena_ids: list) -> dict:
     """arena_id -> (media, total) das avaliacoes."""
     if not arena_ids:

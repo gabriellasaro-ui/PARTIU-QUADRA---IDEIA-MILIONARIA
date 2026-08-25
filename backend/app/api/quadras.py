@@ -76,13 +76,14 @@ def local_mais_proximo(
     dist = haversine_km(origem, (perto.lat, perto.lng))
     return {
         "local": {
-            # O "bairro" do contrato publico e o address da arena — e o que
-            # catalog.to_venue ja expoe como neighborhood. Nao ha coluna
-            # neighborhood em Arena.
-            "neighborhood": perto.address or "",
+            # O bairro sai de `neighborhood`, como no resto do app. O
+            # comentario que estava aqui afirmava que a coluna nao existia —
+            # existe, e indexada, e era ela que o painel do gerente vinha
+            # gravando enquanto esta linha lia a rua.
+            "neighborhood": catalog.bairro_da_arena(perto),
             "city": perto.city or "",
             "state": perto.state or "",
-            "label": ", ".join(x for x in (perto.address, perto.city) if x),
+            "label": ", ".join(x for x in (catalog.bairro_da_arena(perto), perto.city) if x),
             "distanceKm": round(dist, 1),
         }
     }

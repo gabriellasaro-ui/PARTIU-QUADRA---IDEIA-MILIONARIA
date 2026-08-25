@@ -177,21 +177,33 @@ async function atualizarAvisos() {
     return;
   }
   const naoLidas = Number(badges?.msg_ger || 0);
+  const solicitacoes = Number(badges?.solicitacoes || 0);
 
-  const item = document.querySelector('[data-nav-page="mensagens"]');
-  if (item) {
+  /* O MESMO selo serve as duas abas, entao vira funcao.
+
+     Reservas nao tinha selo nenhum. A solicitacao chegava, o dono estava em
+     qualquer outra tela, e a unica pista era o ponto do sino — que soma tudo
+     e nao diz ONDE. Ele so descobria o pedido abrindo Reservas por acaso, com
+     quinze minutos de relogio correndo. Mensagens tinha contador desde o
+     inicio; a tela onde se decide dinheiro nao tinha. */
+  const marcar = (pagina, quantidade) => {
+    const item = document.querySelector(`[data-nav-page="${pagina}"]`);
+    if (!item) return;
     let selo = item.querySelector('.badge');
-    if (naoLidas > 0) {
+    if (quantidade > 0) {
       if (!selo) {
         selo = document.createElement('span');
         selo.className = 'badge';
         item.appendChild(selo);
       }
-      selo.textContent = String(naoLidas);
+      selo.textContent = String(quantidade);
     } else if (selo) {
       selo.remove();
     }
-  }
+  };
+
+  marcar('mensagens', naoLidas);
+  marcar('reservas', solicitacoes);
 
   /* O MESMO contador na folha de menu do celular. Ali a sidebar nao existe, e
      Mensagens so aparece dentro da folha — sem o numero, a unica pista de que
@@ -203,12 +215,27 @@ async function atualizarAvisos() {
   }
 
   // O ponto do sino soma tudo o que espera o dono, e nao so mensagem.
-  const pendencias = naoLidas + Number(badges?.solicitacoes || 0);
+  const pendencias = naoLidas + solicitacoes;
   document.querySelector('.ndot')?.classList.toggle('on', pendencias > 0);
 }
 
 export function initManagerMessages() {
   atualizarAvisos();
+
+  /* RESERVA MEXE NOS AVISOS TAMBEM.
+
+     Os contadores so eram recalculados quando chegava MENSAGEM. Uma
+     solicitacao de reserva nova nao mexia em nada: nem no selo de Reservas,
+     nem no ponto do sino. O aviso existia no servidor e ninguem ia busca-lo
+     ate a proxima mensagem de alguem — que podia nao vir nunca.
+
+     `booking.updated` entra junto porque aprovar ou recusar TIRA a pendencia:
+     sem isso o selo continuaria mostrando um pedido que o dono acabou de
+     decidir. */
+  window.addEventListener('pq:ws:event', (evento) => {
+    const tipo = (evento.detail || {}).type;
+    if (tipo === 'reserva.solicitada' || tipo === 'booking.updated') atualizarAvisos();
+  });
 
   window.addEventListener('pq:ws:event', async (evento) => {
     const dado = evento.detail || {};

@@ -7,12 +7,13 @@ cliente.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session
 
 from ..models import (
     ACTIVE_STATUSES,
     PLAN_MENSALISTA,
+    STATUS_REQUESTED,
     PAYMENT_CONFIRMED,
     Arena,
     Booking,
@@ -112,7 +113,22 @@ def list_arena_bookings(
             select(func.count()).select_from(stmt.order_by(None).subquery())
         ).scalar_one()
 
-    stmt = stmt.order_by(Booking.start_at.desc()).limit(limit).offset(offset)
+    # ORDEM DE CAIXA DE ENTRADA, e nao de calendario.
+    #
+    # Era `start_at desc`: a data do JOGO. Uma solicitacao que acabou de
+    # chegar para jogar amanha aparecia DEPOIS de toda reserva marcada para
+    # daqui a duas semanas — no meio da lista, sem nada distinguindo. O dono
+    # abria a tela principal e nao via o pedido que estava esperando decisao
+    # dele, com quinze minutos no relogio antes de expirar.
+    #
+    # Esta tela e a caixa de entrada da arena, entao ordena como caixa de
+    # entrada: primeiro o que espera resposta, depois o que chegou por ultimo.
+    # A data do jogo continua na linha, e quem quer ver por calendario tem a
+    # Agenda, que e a tela feita para isso.
+    stmt = stmt.order_by(
+        case((Booking.status == STATUS_REQUESTED, 0), else_=1),
+        Booking.created_at.desc(),
+    ).limit(limit).offset(offset)
     linhas = list(db.execute(stmt).all())
     return (linhas, total) if com_total else linhas
 
