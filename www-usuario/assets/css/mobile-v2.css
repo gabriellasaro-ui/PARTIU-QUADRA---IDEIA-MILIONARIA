@@ -3,13 +3,13 @@
    Frontend-only polish layer for Capacitor/FastAPI migration.
    ========================================================= */
 :root {
-  --pq-ink: #143523;
-  --pq-ink-soft: #315742;
-  --pq-muted: #6b7f72;
-  --pq-green: #16a765;
-  --pq-green-dark: #075e3a;
-  --pq-green-soft: #e8f6ed;
-  --pq-court: #b9edcb;
+  --pq-ink: #1f2e0b;
+  --pq-ink-soft: #495731;
+  --pq-muted: #606b56;
+  --pq-green: #9bcf33;
+  --pq-green-dark: #3f5c11;
+  --pq-green-soft: #ecf9cd;
+  --pq-court: #ddf2a8;
   --pq-gold: #e4a11b;
   --pq-blue: #2563eb;
   --pq-rose: #e85d75;
@@ -18,9 +18,9 @@
      contraste e nada parecia limpo. */
   --pq-paper: #ffffff;
   --pq-surface: #ffffff;
-  --pq-surface-2: #f3f5f1;
-  --pq-line: #e4e7df;
-  --pq-line-strong: #ccd5cb;
+  --pq-surface-2: #f2f7e6;
+  --pq-line: #e8eeda;
+  --pq-line-strong: #d5e0bc;
   --pq-shadow-1: 0 1px 2px rgba(17, 17, 17, .05), 0 8px 22px rgba(17, 17, 17, .06);
   --pq-shadow-2: 0 18px 46px rgba(17, 17, 17, .14);
   --pq-radius: 18px;
@@ -45,8 +45,8 @@
 :root {
   --pq-danger: #b4233c;
   --pq-danger-strong: #8e1a2f;
-  --pq-tint: #e8f6ed;
-  --pq-tint-strong: #dfeee3;
+  --pq-tint: #ecf9cd;
+  --pq-tint-strong: #e8eedf;
   --pq-danger-soft: #fdf2f2;
 }
 
@@ -157,7 +157,7 @@ html[data-route="mapa"] .mobile-map-route {
 .topbar {
   padding: calc(24px + var(--pq-safe-top)) 18px 20px;
   background:
-    linear-gradient(145deg, #00b95f 0%, #00a859 56%, #008f4c 100%);
+    linear-gradient(145deg, #75b900 0%, #6aa800 56%, #5b8f00 100%);
   border-bottom: 0;
 }
 
@@ -231,7 +231,7 @@ html[data-route="mapa"] .mobile-map-route {
 }
 
 .searchbar input::placeholder {
-  color: #87928c;
+  color: #8e9287;
 }
 
 .field {
@@ -277,7 +277,7 @@ html[data-route="mapa"] .mobile-map-route {
 .btn-mini,
 .pwa-go {
   border-radius: 10px;
-  background: #008f4c;
+  background: #5b8f00;
   color: #fff;
   font-weight: 900;
   box-shadow: 0 12px 24px rgba(0, 143, 76, .22);
@@ -291,7 +291,7 @@ html[data-route="mapa"] .mobile-map-route {
 .btn:hover,
 .btn-mini:hover,
 .pwa-go:hover {
-  background: #007c42;
+  background: #4f7c00;
 }
 
 .btn:focus-visible,
@@ -711,7 +711,7 @@ button .ic,
 
 .day.on {
   border-color: var(--pq-green) !important;
-  background: #168a48 !important;
+  background: #5f8a16 !important;
   box-shadow: 0 8px 18px rgba(22, 138, 72, .24) !important;
 }
 
@@ -727,7 +727,7 @@ button .ic,
 
 .avail-slots .slot.sel {
   border-color: var(--pq-green) !important;
-  background: #168a48 !important;
+  background: #5f8a16 !important;
   color: #fff !important;
 }
 
@@ -948,7 +948,7 @@ button .ic,
   height: 20px;
   border: 4px solid var(--pq-line);
   border-radius: 50%;
-  background: var(--pq-brand-strong, #0c8b52);
+  background: var(--pq-brand-strong, #86bd23);
   box-shadow: 0 0 0 6px rgba(22, 167, 101, .2), 0 4px 12px rgba(5, 13, 9, .22);
 }
 
@@ -1071,7 +1071,7 @@ button .ic,
   height: 9px;
   border: 2px solid var(--pq-line);
   border-radius: 50%;
-  background: var(--pq-brand-strong, #0c8b52);
+  background: var(--pq-brand-strong, #86bd23);
   box-shadow: 0 0 0 3px rgba(22, 167, 101, .2);
 }
 
@@ -1107,7 +1107,7 @@ button .ic,
   overflow: hidden;
   padding: 24px 20px 20px;
   border-radius: var(--pq-radius);
-  background: #082c1b;
+  background: #1f2c08;
   color: #fff;
 }
 
@@ -1447,7 +1447,7 @@ button .ic,
   border: 3px solid var(--pq-line);
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
   cursor: pointer;
 }
 
@@ -1909,7 +1909,7 @@ button .ic,
   height: 34px;
   border-radius: 12px;
   background: var(--pq-green-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .esporte-favorito__ic .ic { width: 18px; height: 18px; }
@@ -1965,7 +1965,7 @@ button .ic,
 
 .map-radius .chip.on {
   background: var(--pq-panel);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   box-shadow: 0 2px 6px rgba(16, 43, 28, .10);
 }
 
@@ -2040,11 +2040,11 @@ button .ic,
 }
 
 .escolha-lista input:checked + span {
-  border-color: var(--pq-brand-strong);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-green-soft);
 }
 
-.escolha-lista input:checked + span strong { color: var(--pq-brand-strong); }
+.escolha-lista input:checked + span strong { color: var(--pq-brand-deep); }
 
 /* Adicionar cartao: o lugar do cartao existe na tela ANTES de existir o
    adquirente. Um aviso dizendo "por enquanto so Pix" fala do que falta; um
@@ -2072,7 +2072,7 @@ button .ic,
   height: 38px;
   border-radius: 12px;
   background: var(--pq-green-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 22px;
   font-weight: 700;
   line-height: 1;
@@ -2495,7 +2495,7 @@ button .ic,
 }
 
 .venue-review__stars .ic.is-empty {
-  color: #d5ded8;
+  color: #dbded5;
   fill: none;
 }
 
@@ -2528,7 +2528,7 @@ button .ic,
   height: 38px;
   border-radius: 50%;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .approval-policy > span .ic {
@@ -2594,7 +2594,7 @@ button .ic,
   height: 4px;
   overflow: hidden;
   border-radius: 999px;
-  background: linear-gradient(90deg, #dcefe3 0%, #a8d9b9 50%, #dcefe3 100%);
+  background: linear-gradient(90deg, #e8efdc 0%, #c7d9a8 50%, #e8efdc 100%);
   box-shadow: inset 0 0 0 1px rgba(8, 81, 47, .04);
 }
 
@@ -2635,9 +2635,9 @@ button .ic,
 
 .approval-live-visual__arena {
   right: 16px;
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
   animation: pq-approval-arena-breathe 2.3s ease-in-out infinite;
 }
 
@@ -2679,6 +2679,7 @@ button .ic,
   border-radius: 50%;
   background: var(--pq-brand);
   animation: pq-approval-dot 1.1s ease-in-out infinite;
+  color: var(--pq-on-brand);
 }
 
 .approval-live-caption i:nth-child(2) {
@@ -2755,7 +2756,7 @@ button .ic,
   margin: 0 auto 18px;
   border-radius: 50%;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   box-shadow: 0 0 0 10px rgba(22, 167, 101, .08);
 }
 
@@ -2765,7 +2766,7 @@ button .ic,
 }
 
 .approval-eyebrow {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
@@ -2829,6 +2830,7 @@ button .ic,
   border-radius: inherit;
   background: var(--pq-brand);
   transition: width .3s linear;
+  color: var(--pq-on-brand);
 }
 
 .approval-reservation {
@@ -2874,7 +2876,7 @@ button .ic,
   padding: 13px;
   border-radius: 18px;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   text-align: left;
 }
 
@@ -3032,7 +3034,7 @@ button .ic,
   grid-row: 1 / 3;
   width: 18px;
   height: 18px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .arena-facts .arena-rating .ic {
@@ -3074,7 +3076,7 @@ button .ic,
 }
 
 .venue-section-head > div > span {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
@@ -3115,7 +3117,7 @@ button .ic,
 }
 
 .venue-gallery-thumb.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
 }
 
 .venue-gallery-thumb img {
@@ -3147,7 +3149,7 @@ button .ic,
   height: 30px;
   border-radius: 50%;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .venue-amenity .ic {
@@ -3253,7 +3255,7 @@ button .ic,
 
 .calendar-day.is-today:not(.on) {
   border-color: var(--pq-line-strong);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 /* Todas as datas do plano, nao so a escolhida: no mensalista a pessoa
@@ -3262,19 +3264,19 @@ button .ic,
 .calendar-day.is-plan:not(.on) {
   border-color: var(--pq-signal);
   background: var(--pq-signal-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-weight: 800;
 }
 
 .calendar-day.on {
-  border-color: var(--pq-brand-strong);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand-strong);
-  color: #fff;
+  color: var(--pq-on-brand);
   box-shadow: 0 4px 10px rgba(0, 138, 75, .2);
 }
 
 .calendar-day:disabled {
-  color: #c0c8c2;
+  color: #c5c8c0;
   cursor: default;
 }
 
@@ -3285,7 +3287,7 @@ button .ic,
   gap: 9px;
   padding-top: 11px;
   border-top: 1px solid var(--pq-line);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .book-bar__assurance > .ic {
@@ -3348,7 +3350,7 @@ button .ic,
 }
 
 .venue-review-stars .ic.is-empty {
-  color: #d5ded8;
+  color: #dbded5;
   fill: none;
 }
 
@@ -3371,7 +3373,7 @@ button .ic,
 .venue-review-summary > p .ic {
   width: 17px;
   height: 17px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 @media (max-width: 359px) {
@@ -3479,24 +3481,25 @@ button .ic,
    Descoberta rapida, disponibilidade e reserva em primeiro plano.
    ========================================================= */
 :root {
-  --pq-brand: #16a765;
-  --pq-brand-strong: #0c8b52;
-  --pq-brand-deep: #075e3a;
-  --pq-signal: #b9edcb;
-  --pq-signal-soft: #edf9f1;
+  --pq-brand: #9bcf33;
+  --pq-on-brand: #1f2e0b;
+  --pq-brand-strong: #86bd23;
+  --pq-brand-deep: #3f5c11;
+  --pq-signal: #ddf2a8;
+  --pq-signal-soft: #f5fce6;
   /* Ambar de estado: "vai acontecer". Distinto de --pq-gold, que e ambar de
      sinalizacao (estrelas, cartao amarelo, Time B) — ajustar um nao move o outro. */
   --pq-amber: #ea580c;
   --pq-amber-strong: #9a3412;
   --pq-amber-soft: #ffedd5;
-  --pq-coral: #4cb77b;
-  --pq-sky: #219565;
-  --pq-app-bg: #f3f8f4;
+  --pq-coral: #90b74c;
+  --pq-sky: #6a9521;
+  --pq-app-bg: #f5fce6;
   --pq-panel: #ffffff;
-  --pq-ink: #143523;
-  --pq-ink-soft: #315742;
-  --pq-muted: #6b7f72;
-  --pq-line: #dce9df;
+  --pq-ink: #1f2e0b;
+  --pq-ink-soft: #495731;
+  --pq-muted: #606b56;
+  --pq-line: #e3eecd;
   --pq-shadow-1: 0 2px 4px rgba(7, 94, 58, .03), 0 12px 28px rgba(7, 94, 58, .07);
 }
 
@@ -3562,6 +3565,7 @@ html[data-route="mapa"] .phone {
   border-radius: 16px;
   background: var(--pq-brand-strong);
   box-shadow: none;
+  color: var(--pq-on-brand);
 }
 
 .btn-mini,
@@ -3629,7 +3633,7 @@ html[data-route="mapa"] .phone {
   /* Fundo transparente: o alfinete verde sobre branco ja se le, e o circulo
      cheio pesava mais que o proprio nome da cidade ao lado. */
   background: transparent;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .location-switch__icon .ic {
@@ -3741,7 +3745,7 @@ html[data-route="mapa"] .phone {
 .explore-search > .ic {
   width: 20px;
   height: 20px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .market-search input,
@@ -3757,7 +3761,7 @@ html[data-route="mapa"] .phone {
 
 .market-search input::placeholder,
 .explore-search input::placeholder {
-  color: #89948d;
+  color: #909489;
 }
 
 .market-search button,
@@ -3771,7 +3775,7 @@ html[data-route="mapa"] .phone {
 
 .market-search button {
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .market-search button .ic,
@@ -3801,9 +3805,9 @@ html[data-route="mapa"] .phone {
 }
 
 .market-shortcut--now {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .market-shortcut > span {
@@ -3872,7 +3876,7 @@ html[data-route="mapa"] .phone {
 .booking-title > span,
 .explore-header > div > span,
 .market-sheet__head > div > span {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -3887,7 +3891,7 @@ html[data-route="mapa"] .phone {
 
 .market-section__head > a {
   flex: 0 0 auto;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 11.5px;
   font-weight: 850;
 }
@@ -3932,7 +3936,7 @@ html[data-route="mapa"] .phone {
   border: 1px solid var(--pq-line);
   border-radius: 50%;
   background: var(--pq-panel);
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
   box-shadow: 0 5px 14px rgba(16, 24, 19, .04);
 }
 
@@ -3976,7 +3980,7 @@ html[data-route="mapa"] .phone {
   height: 40px;
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .availability-pulse__icon .ic {
@@ -4010,7 +4014,7 @@ html[data-route="mapa"] .phone {
 .availability-pulse > .ic {
   width: 18px;
   height: 18px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .venue-rail {
@@ -4224,9 +4228,9 @@ html[data-route="mapa"] .phone {
 .explore-header .icon-btn {
   width: 42px;
   height: 42px;
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .explore-market {
@@ -4269,13 +4273,13 @@ html[data-route="mapa"] .phone {
 .sport-filter-chip .ic {
   width: 15px;
   height: 15px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .sport-filter-chip.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .sport-filter-chip.on .ic {
@@ -4309,12 +4313,12 @@ html[data-route="mapa"] .phone {
 .result-context .ic {
   width: 14px;
   height: 14px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .result-context > a {
   flex: 0 0 auto;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-weight: 850;
 }
 
@@ -4361,7 +4365,7 @@ html[data-route="mapa"] .phone {
 .tabbar > a.on,
 .tabbar > button.on {
   background: transparent;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .tabbar .tabbar-map {
@@ -4390,7 +4394,7 @@ html[data-route="mapa"] .phone {
   border-radius: 50%;
   background: var(--pq-brand-strong);
   box-shadow: 0 8px 18px rgba(0, 168, 90, .30);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .tabbar .tabbar-map > span .ic {
@@ -4407,11 +4411,11 @@ html[data-route="mapa"] .phone {
 
 .tabbar .tabbar-map.on > span {
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .tabbar .tabbar-map.on em {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 /* ---------- detalhe e reserva ---------- */
@@ -4474,7 +4478,7 @@ html[data-route="mapa"] .phone {
   width: 14px;
   height: 14px;
   margin-right: 2px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .venue-hero-dots {
@@ -4514,7 +4518,7 @@ html[data-route="mapa"] .phone {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -4564,7 +4568,7 @@ html[data-route="mapa"] .phone {
   grid-row: 1 / 3;
   width: 19px;
   height: 19px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .venue-proof > span:first-child .ic {
@@ -4620,9 +4624,10 @@ html[data-route="mapa"] .phone {
 }
 
 .day.on {
-  border-color: var(--pq-brand-strong) !important;
+  border-color: var(--pq-brand-deep) !important;
   background: var(--pq-brand-strong) !important;
   box-shadow: 0 6px 14px rgba(0, 168, 90, .2) !important;
+  color: var(--pq-on-brand);
 }
 
 .sec-head {
@@ -4670,12 +4675,12 @@ html[data-route="mapa"] .phone {
 }
 
 .avail-slots .slot.sel {
-  border-color: var(--pq-brand-strong) !important;
+  border-color: var(--pq-brand-deep) !important;
   background: var(--pq-brand-strong) !important;
   /* Estas duas faltavam so nesta arvore (a do app ja tinha): sem elas o
      horario escolhido ficava com texto escuro sobre o verde forte, e
      herdava o risco de .slot.busy quando vinha de um estado riscado. */
-  color: #fff !important;
+  color: var(--pq-on-brand) !important;
   text-decoration: none !important;
   box-shadow: 0 5px 12px rgba(0, 168, 90, .18) !important;
 }
@@ -4683,7 +4688,7 @@ html[data-route="mapa"] .phone {
 .slot.busy {
   border-color: var(--pq-line);
   background: var(--pq-tint);
-  color: #a8b0aa;
+  color: #adb0a8;
 }
 
 /* Horario que ja passou: apagado, mas sem o risco de "reservado" — nao ha
@@ -4691,7 +4696,7 @@ html[data-route="mapa"] .phone {
 .slot.past {
   border-color: var(--pq-line);
   background: var(--pq-panel);
-  color: #b9c0ba;
+  color: #bdc0b9;
   text-decoration: none;
 }
 
@@ -4703,7 +4708,7 @@ html[data-route="mapa"] .phone {
 .slot.nofit {
   border-color: var(--pq-line);
   background: var(--pq-panel);
-  color: #aeb6b0;
+  color: #b3b6ae;
   text-decoration: none;
 }
 
@@ -4712,9 +4717,9 @@ html[data-route="mapa"] .phone {
    realmente esta. */
 .slot.bloco,
 .avail-slots .slot.bloco {
-  border-color: var(--pq-brand-strong) !important;
-  background: #dcf3e5 !important;
-  color: var(--pq-brand-strong) !important;
+  border-color: var(--pq-brand-deep) !important;
+  background: #ebf3dc !important;
+  color: var(--pq-brand-deep) !important;
   text-decoration: none !important;
   opacity: 1;
 }
@@ -4730,10 +4735,10 @@ html[data-route="mapa"] .phone {
 }
 
 .dur.on {
-  border-color: var(--pq-brand-strong);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand-strong);
   box-shadow: none;
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .book-bar {
@@ -4746,6 +4751,7 @@ html[data-route="mapa"] .phone {
 
 .book-bar .btn {
   background: var(--pq-brand-strong);
+  color: var(--pq-on-brand);
 }
 
 .note {
@@ -4755,7 +4761,7 @@ html[data-route="mapa"] .phone {
 }
 
 .note .ic {
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .booking-flow {
@@ -4784,7 +4790,7 @@ html[data-route="mapa"] .phone {
   display: grid;
   justify-items: center;
   gap: 5px;
-  color: #86948b;
+  color: #8f9486;
 }
 
 .booking-flow li > span {
@@ -4811,20 +4817,20 @@ html[data-route="mapa"] .phone {
 
 .booking-flow li.is-current,
 .booking-flow li.is-done {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .booking-flow li.is-current > span {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
-  box-shadow: 0 0 0 4px #e5f5eb;
+  color: var(--pq-on-brand);
+  box-shadow: 0 0 0 4px #eff5e5;
 }
 
 .booking-flow li.is-done > span {
   border-color: var(--pq-line-strong);
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .booking-intro {
@@ -4835,7 +4841,7 @@ html[data-route="mapa"] .phone {
 .checkout-recap__eyebrow,
 .checkout-section__head span,
 .success-eyebrow {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -4879,7 +4885,7 @@ html[data-route="mapa"] .phone {
   height: 34px;
   border-radius: 50%;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 12px;
   font-weight: 900;
 }
@@ -4902,7 +4908,7 @@ html[data-route="mapa"] .phone {
   padding: 5px 8px;
   border-radius: 999px;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9px;
   font-weight: 850;
 }
@@ -4975,7 +4981,7 @@ html[data-route="mapa"] .phone {
 }
 
 .booking-step .slot.sel {
-  box-shadow: 0 0 0 3px #dcefe3 !important;
+  box-shadow: 0 0 0 3px #e8efdc !important;
 }
 
 .booking-step .dur-seg {
@@ -5048,7 +5054,7 @@ html[data-route="mapa"] .phone {
   height: 40px;
   border-radius: 50%;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .book-bar__icon .ic {
@@ -5128,7 +5134,7 @@ html[data-route="mapa"] .phone {
   min-height: 76px;
   padding: calc(16px + var(--pq-safe-top)) 16px 14px;
   border-bottom: 1px solid var(--pq-line);
-  /* Era #f5fbf7, um branco puxado para o verde. Esta e a regra que vence
+  /* Era #f9fbf5, um branco puxado para o verde. Esta e a regra que vence
      (vem depois da de cima no arquivo), entao e aqui que a cor tem de mudar —
      trocar so la em cima nao surtia efeito nenhum.
 
@@ -5218,7 +5224,7 @@ html[data-route="mapa"] .phone {
 .checkout-recap .info-rows .k .ic {
   width: 16px;
   height: 16px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .checkout-recap .info-rows .v {
@@ -5246,7 +5252,7 @@ html[data-route="mapa"] .phone {
 .checkout-section__head > .ic {
   width: 22px;
   height: 22px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .checkout-total {
@@ -5286,7 +5292,7 @@ html[data-route="mapa"] .phone {
 .checkout-total p .ic {
   width: 14px;
   height: 14px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .pay-methods {
@@ -5326,27 +5332,27 @@ html[data-route="mapa"] .phone {
 }
 
 .method.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-tint);
-  box-shadow: 0 0 0 3px #e4f3e9;
+  box-shadow: 0 0 0 3px #eef3e4;
 }
 
 .method.on .check {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .method.is-unavailable {
   border-color: var(--pq-line);
   background: var(--pq-tint);
-  color: #9aa49d;
+  color: #a0a49a;
   cursor: not-allowed;
 }
 
 .method.is-unavailable .badge-ic,
 .method.is-unavailable small {
-  color: #9aa49d;
+  color: #a0a49a;
 }
 
 .checkout-action {
@@ -5384,7 +5390,7 @@ html[data-route="mapa"] .phone {
   height: 64px;
   margin-bottom: 16px;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   box-shadow: 0 0 0 9px rgba(22, 167, 101, .09);
 }
 
@@ -5429,7 +5435,7 @@ html[data-route="mapa"] .phone {
 }
 
 .ticket-venue span {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 8.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -5543,6 +5549,7 @@ html[data-route="mapa"] .phone {
 .profile-avatar {
   border-radius: 50%;
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 .favorite-sport .ic {
@@ -5703,7 +5710,7 @@ html[data-route="mapa"] .phone {
 .location-options button > .ic {
   width: 17px;
   height: 17px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .market-sheet__label {
@@ -5749,12 +5756,12 @@ html[data-route="mapa"] .phone {
 
 .notification-list__icon--success {
   background: var(--pq-tint);
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .notification-list em {
   margin-top: 6px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9px;
   font-style: normal;
   font-weight: 800;
@@ -5823,13 +5830,13 @@ html[data-route="mapa"] .phone {
 .filter-choice-grid label > span .ic {
   width: 16px;
   height: 16px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .filter-choice-grid input:checked + span {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .filter-choice-grid input:checked + span .ic {
@@ -5909,6 +5916,7 @@ html[data-route="mapa"] .phone {
 
 .filter-now input:checked + .filter-switch {
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 .filter-now input:checked + .filter-switch::after {
@@ -5936,17 +5944,18 @@ html[data-route="mapa"] .phone {
 }
 
 .map-filter-strip .chip.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
   box-shadow: none;
+  color: var(--pq-on-brand);
 }
 
 .map-price-marker span {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
 }
 
 .map-price-marker span::after {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
 }
 
 @media (max-width: 370px) {
@@ -6195,7 +6204,7 @@ html[data-route="mapa"] .phone {
 
 .bub-name {
   margin-bottom: 3px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -6265,7 +6274,7 @@ html[data-route="mapa"] .phone {
 }
 
 .pelada-kind label:has(input:checked) {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-signal-soft);
 }
 
@@ -6363,7 +6372,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
   padding: 0 4px;
   border-radius: 999px;
   background: var(--pq-brand-strong);
-  color: #fff;
+  color: var(--pq-on-brand);
   font-size: 10px;
   font-weight: 900;
   line-height: 17px;
@@ -6382,7 +6391,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
   white-space: nowrap;
 }
 
-.contextbar__tab.is-active { color: var(--pq-brand-strong); }
+.contextbar__tab.is-active { color: var(--pq-brand-deep); }
 .contextbar__tab.is-active .ic { stroke-width: 2.4; }
 
 .contextbar__tab:active,
@@ -6405,7 +6414,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
   height: 34px;
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
   box-shadow: 0 8px 18px rgba(7, 94, 58, .28);
 }
 
@@ -6415,7 +6424,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
 }
 
 .contextbar__primary em {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-style: normal;
   font-weight: 800;
@@ -6451,7 +6460,7 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 }
 
 .plan-option.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-signal-soft);
   box-shadow: 0 8px 20px rgba(7, 94, 58, .1);
 }
@@ -6465,13 +6474,13 @@ html[data-bottombar="game"] .game-tabs { display: none; }
   height: 36px;
   margin-bottom: 6px;
   border-radius: 50%;
-  background: var(--pq-surface-2, #f3f5f1);
-  color: var(--pq-brand-strong);
+  background: var(--pq-surface-2, #f2f7e6);
+  color: var(--pq-brand-deep);
 }
 
 .plan-option.on .plan-option__icon {
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .plan-option__icon .ic { width: 18px; height: 18px; }
@@ -6532,7 +6541,7 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 .weekday.on {
   border-color: transparent;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .weekday:active { transform: translateY(1px); }
@@ -6585,7 +6594,7 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 
 .filter-range input[type="range"] {
   width: 100%;
-  accent-color: var(--pq-brand);
+  accent-color: var(--pq-brand-deep);
 }
 
 .filter-range output {
@@ -6643,7 +6652,7 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 .plan-card__when .ic {
   width: 15px;
   height: 15px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .plan-card__next {
@@ -6795,7 +6804,7 @@ html[data-route="cadastro"]::before {
   border-radius: 20px;
   margin-bottom: 16px;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .auth-mark .ic { width: 30px; height: 30px; }
@@ -6859,7 +6868,7 @@ html[data-route="cadastro"]::before {
 .auth-link {
   display: block;
   padding: 14px 0 2px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 13px;
   font-weight: 600;
   text-align: center;
@@ -6874,7 +6883,7 @@ html[data-route="cadastro"]::before {
 }
 
 .auth-swap a {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-weight: 700;
   text-decoration: none;
 }
@@ -6925,6 +6934,7 @@ html[data-route="cadastro"]::before {
      entao a barra avanca de um passo ao outro. Um keyframe reiniciaria do
      zero a cada troca. */
   transition: width .28s cubic-bezier(.2, .8, .2, 1);
+  color: var(--pq-on-brand);
 }
 
 .onb-skip {
@@ -7076,7 +7086,7 @@ html[data-route="cadastro"]::before {
   border-radius: 50%;
   margin-bottom: 20px;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
   /* Reusa o pop que a tela de aprovacao ja usa — mesma sensacao de "deu
      certo", sem inventar um segundo vocabulario. */
   animation: pq-approval-success-pop .5s cubic-bezier(.2, .9, .25, 1.25) both;
@@ -7092,7 +7102,7 @@ html[data-route="cadastro"]::before {
   border-radius: 14px;
   margin: 20px 0;
   background: var(--pq-signal-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 13px;
   line-height: 1.45;
   text-align: left;
@@ -7118,7 +7128,7 @@ html[data-route="cadastro"]::before {
 }
 
 .club-code__value {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: .08em;
@@ -7133,7 +7143,7 @@ html[data-route="cadastro"]::before {
   border: 0;
   border-radius: 50%;
   background: var(--pq-panel);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   cursor: pointer;
 }
 
@@ -7189,8 +7199,8 @@ html[data-route="cadastro"]::before {
 /* Aceitar pedido: a unica acao verde desta tela. Recusar fica neutra — o
    par verde/vermelho transformaria "nao agora" em punicao. */
 .member-remove--ok {
-  border-color: var(--pq-brand-strong);
-  color: var(--pq-brand-strong);
+  border-color: var(--pq-brand-deep);
+  color: var(--pq-brand-deep);
 }
 
 /* Seletor de clube no cabecalho. So aparece com mais de um. */
@@ -7269,7 +7279,7 @@ html[data-route="cadastro"]::before {
 .player-card__edit {
   border: 0;
   background: none;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -7319,7 +7329,7 @@ html[data-route="cadastro"]::before {
   height: 32px;
   border-radius: 50%;
   background: var(--pq-panel);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .ficha-convite__ic .ic { width: 17px; height: 17px; }
@@ -7362,7 +7372,7 @@ html[data-route="cadastro"]::before {
   border-radius: 14px;
   margin: 18px 0 0;
   background: var(--pq-signal-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 12.5px;
   line-height: 1.45;
 }
@@ -7439,7 +7449,7 @@ html[data-route="cadastro"]::before {
 .market-brand .qadras-logo {
   width: 118px;
   height: auto;
-  color: var(--pq-ink, #0b1f16);
+  color: var(--pq-ink, #181f0b);
 }
 
 
@@ -7481,7 +7491,7 @@ html[data-route="cadastro"]::before {
 }
 
 .field-date:focus {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   outline: none;
   box-shadow: 0 0 0 3px var(--pq-green-soft);
 }
@@ -7535,7 +7545,7 @@ html[data-route="cadastro"]::before {
 }
 
 .ic-star.is-empty {
-  color: #d5ded8;
+  color: #dbded5;
   fill: none;
 }
 
@@ -7612,43 +7622,44 @@ html[data-route="cadastro"] .screen {
    Tudo abaixo e troca de TOKEN. Os 82 fundos claros do arquivo ja apontam para
    --pq-panel / --pq-tint / --pq-tint-strong, entao mudar estes valores vira a
    tela inteira sem tocar em regra nenhuma. Os quatro acentos que sobraram
-   cravados (#008f4c, #007c42, #082c1b, #c8324d) sao cores saturadas de marca e
+   cravados (#5b8f00, #4f7c00, #1f2c08, #c8324d) sao cores saturadas de marca e
    de alerta — funcionam sobre fundo escuro do mesmo jeito.
 
-   Verde e escuro brigam: o verde da marca (#16a765) sobre quase-preto tem
+   Verde e escuro brigam: o verde da marca (#9bcf33) sobre quase-preto tem
    contraste baixo demais para texto. Por isso a marca CLAREIA no escuro em vez
    de manter o mesmo hex — o objetivo e ler, nao repetir o valor. */
 :root[data-theme="dark"] {
-  --pq-ink: #e8f2ec;
-  --pq-ink-soft: #b3c9bd;
-  --pq-muted: #8ba396;
+  --pq-ink: #eef5e2;
+  --pq-ink-soft: #c1c9b3;
+  --pq-muted: #9aa88a;
 
   /* Fundo em duas camadas: o app um degrau mais escuro que os cartoes, para o
      cartao continuar sendo "a coisa em cima". No escuro isso e o que substitui
      a sombra, que praticamente some. */
-  --pq-app-bg: #0e1613;
-  --pq-paper: #0e1613;
-  --pq-panel: #18211d;
-  --pq-surface: #18211d;
-  --pq-surface-2: #212b26;
+  --pq-app-bg: #111409;
+  --pq-paper: #111409;
+  --pq-panel: #1b2113;
+  --pq-surface: #1b2113;
+  --pq-surface-2: #272b21;
 
-  --pq-tint: #1e2f26;
-  --pq-tint-strong: #263b30;
+  --pq-tint: #242d16;
+  --pq-tint-strong: #333b26;
   --pq-danger-soft: #3a1f24;
 
-  --pq-line: #2a3831;
-  --pq-line-strong: #3a4a42;
+  --pq-line: #2f3820;
+  --pq-line-strong: #444a3a;
 
-  /* Marca mais clara: #16a765 sobre #18211d nao alcanca contraste de leitura. */
-  --pq-green: #35c785;
-  --pq-brand: #35c785;
-  --pq-brand-strong: #4dd598;
-  --pq-brand-deep: #7ee3b4;
-  --pq-green-dark: #7ee3b4;
-  --pq-green-soft: #1e2f26;
-  --pq-signal: #2f6b4c;
-  --pq-signal-soft: #1e2f26;
-  --pq-court: #2f6b4c;
+  /* Marca mais clara: #9bcf33 sobre #1b2113 nao alcanca contraste de leitura. */
+  --pq-green: #b2de4b;
+  --pq-brand: #b2de4b;
+  --pq-on-brand: #1f2e0b;
+  --pq-brand-strong: #c8ea72;
+  --pq-brand-deep: #c8ea72;
+  --pq-green-dark: #c8ea72;
+  --pq-green-soft: #242d16;
+  --pq-signal: #3f5c11;
+  --pq-signal-soft: #242d16;
+  --pq-court: #3f5c11;
 
   --pq-gold: #f0b429;
   --pq-amber-soft: #3a2c14;
@@ -7664,7 +7675,7 @@ html[data-route="cadastro"] .screen {
    area). Sem isto, puxar a tela no escuro mostrava uma faixa branca. */
 :root[data-theme="dark"] html,
 html[data-theme="dark"] {
-  background: #0e1613;
+  background: #111409;
 }
 
 /* Fotos e mapa: no escuro o branco puro das imagens fica ofuscante. Um leve
@@ -7748,7 +7759,7 @@ html[data-theme="dark"] {
 :root[data-theme="dark"] {
   --pq-danger: #ff8095;
   --pq-danger-strong: #ff6b84;
-  --pq-surface-2: #212b26;
+  --pq-surface-2: #272b21;
 }
 
 /* Selo de aberta/fechada — no CORPO do card, nao sobre a foto.
@@ -7779,6 +7790,7 @@ html[data-theme="dark"] {
 .venue-status.is-open > i {
   background: var(--pq-brand);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--pq-brand) 22%, transparent);
+  color: var(--pq-on-brand);
 }
 
 .venue-status.is-closed > i {
@@ -7878,12 +7890,12 @@ html[data-theme="dark"] {
 
 .map-filter-item.on .ic-sport,
 .map-filter-item.on > .ic {
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .map-filter-item__ck {
   flex: 0 0 auto;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 /* A casca do mapa passa a ancorar o filtro flutuante. */
@@ -7962,10 +7974,10 @@ html[data-theme="dark"] {
 
 /* Estados do horario no modo escuro.
 
-   Os cinzas de "indisponivel" (#a8b0aa, #b9c0ba, #9aa39d) foram escolhidos
+   Os cinzas de "indisponivel" (#adb0a8, #bdc0b9, #a0a39a) foram escolhidos
    para APAGAR sobre fundo branco. Sobre fundo escuro eles fazem o oposto:
    ficam mais claros que o texto normal, e a hora reservada saltava mais que a
-   livre. E o bloco verde (#dcf3e5) era uma pastilha clara acesa no meio.
+   livre. E o bloco verde (#ebf3dc) era uma pastilha clara acesa no meio.
 
    Aqui a hierarquia se inverte junto com o fundo: indisponivel escurece,
    disponivel continua legivel, e o inicio escolhido segue sendo o unico
@@ -7979,35 +7991,35 @@ html[data-theme="dark"] {
 :root[data-theme="dark"] .slot.busy {
   border-color: var(--pq-line);
   background: var(--pq-app-bg);
-  color: #5d6b64;
+  color: #666b5d;
 }
 
 :root[data-theme="dark"] .slot.past,
 :root[data-theme="dark"] .slot.nofit {
   border-color: var(--pq-line);
   background: var(--pq-app-bg);
-  color: #64726b;
+  color: #6d7264;
 }
 
 :root[data-theme="dark"] .avail-slots .slot.sel,
 :root[data-theme="dark"] .slots .slot.sel {
-  border-color: var(--pq-brand) !important;
+  border-color: var(--pq-brand-deep) !important;
   background: var(--pq-brand) !important;
-  color: #0b1a12 !important;
+  color: #141a0b !important;
 }
 
 :root[data-theme="dark"] .slot.bloco,
 :root[data-theme="dark"] .avail-slots .slot.bloco {
-  border-color: var(--pq-brand) !important;
-  background: #21402f !important;
-  color: #7ee3b4 !important;
+  border-color: var(--pq-brand-deep) !important;
+  background: #354021 !important;
+  color: #c8ea72 !important;
 }
 
 /* Duracao: o selecionado tem fundo cheio, entao o texto precisa ser escuro. */
 :root[data-theme="dark"] .dur.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #0b1a12;
+  color: #141a0b;
 }
 
 /* CONTROLES NATIVOS (select, input, barra de rolagem).
@@ -8078,12 +8090,12 @@ html[data-theme="dark"] {
 .seg-item.on {
   background: var(--pq-brand);
   box-shadow: none;
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 :root[data-theme="dark"] .seg-item.on {
   background: var(--pq-brand);
-  color: #0b1a12;
+  color: #141a0b;
 }
 
 .seg-item {
@@ -8144,9 +8156,9 @@ html[data-theme="dark"] {
    outros — e a razao de a tela ter aberto. Cor da marca, texto invertido e um
    halo que sobrevive a um mapa claro ou escuro por baixo. */
 .map-price-marker.is-destaque > span {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #06210f;
+  color: #172106;
   box-shadow: 0 0 0 4px rgba(22, 167, 101, .28), 0 10px 22px rgba(5, 13, 9, .35);
 }
 
@@ -8355,7 +8367,7 @@ html[data-theme="dark"] {
   grid-row: 1 / 3;
   width: 18px;
   height: 18px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .arena-facts .arena-rating .ic {
@@ -8397,7 +8409,7 @@ html[data-theme="dark"] {
 }
 
 .venue-section-head > div > span {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
@@ -8438,7 +8450,7 @@ html[data-theme="dark"] {
 }
 
 .venue-gallery-thumb.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
 }
 
 .venue-gallery-thumb img {
@@ -8470,7 +8482,7 @@ html[data-theme="dark"] {
   height: 30px;
   border-radius: 50%;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .venue-amenity .ic {
@@ -8576,7 +8588,7 @@ html[data-theme="dark"] {
 
 .calendar-day.is-today:not(.on) {
   border-color: var(--pq-line-strong);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 /* Todas as datas do plano, nao so a escolhida: no mensalista a pessoa
@@ -8585,19 +8597,19 @@ html[data-theme="dark"] {
 .calendar-day.is-plan:not(.on) {
   border-color: var(--pq-signal);
   background: var(--pq-signal-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-weight: 800;
 }
 
 .calendar-day.on {
-  border-color: var(--pq-brand-strong);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand-strong);
-  color: #fff;
+  color: var(--pq-on-brand);
   box-shadow: 0 4px 10px rgba(0, 138, 75, .2);
 }
 
 .calendar-day:disabled {
-  color: #c0c8c2;
+  color: #c5c8c0;
   cursor: default;
 }
 
@@ -8608,7 +8620,7 @@ html[data-theme="dark"] {
   gap: 9px;
   padding-top: 11px;
   border-top: 1px solid var(--pq-line);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .book-bar__assurance > .ic {
@@ -8671,7 +8683,7 @@ html[data-theme="dark"] {
 }
 
 .venue-review-stars .ic.is-empty {
-  color: #d5ded8;
+  color: #dbded5;
   fill: none;
 }
 
@@ -8694,7 +8706,7 @@ html[data-theme="dark"] {
 .venue-review-summary > p .ic {
   width: 17px;
   height: 17px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 @media (max-width: 359px) {
@@ -8802,24 +8814,25 @@ html[data-theme="dark"] {
    Descoberta rapida, disponibilidade e reserva em primeiro plano.
    ========================================================= */
 :root {
-  --pq-brand: #16a765;
-  --pq-brand-strong: #0c8b52;
-  --pq-brand-deep: #075e3a;
-  --pq-signal: #b9edcb;
-  --pq-signal-soft: #edf9f1;
+  --pq-brand: #9bcf33;
+  --pq-on-brand: #1f2e0b;
+  --pq-brand-strong: #86bd23;
+  --pq-brand-deep: #3f5c11;
+  --pq-signal: #ddf2a8;
+  --pq-signal-soft: #f5fce6;
   /* Ambar de estado: "vai acontecer". Distinto de --pq-gold, que e ambar de
      sinalizacao (estrelas, cartao amarelo, Time B) — ajustar um nao move o outro. */
   --pq-amber: #ea580c;
   --pq-amber-strong: #9a3412;
   --pq-amber-soft: #ffedd5;
-  --pq-coral: #4cb77b;
-  --pq-sky: #219565;
-  --pq-app-bg: #f3f8f4;
+  --pq-coral: #90b74c;
+  --pq-sky: #6a9521;
+  --pq-app-bg: #f5fce6;
   --pq-panel: #ffffff;
-  --pq-ink: #143523;
-  --pq-ink-soft: #315742;
-  --pq-muted: #6b7f72;
-  --pq-line: #dce9df;
+  --pq-ink: #1f2e0b;
+  --pq-ink-soft: #495731;
+  --pq-muted: #606b56;
+  --pq-line: #e3eecd;
   --pq-shadow-1: 0 2px 4px rgba(7, 94, 58, .03), 0 12px 28px rgba(7, 94, 58, .07);
 }
 
@@ -8885,6 +8898,7 @@ html[data-route="mapa"] .phone {
   border-radius: 16px;
   background: var(--pq-brand-strong);
   box-shadow: none;
+  color: var(--pq-on-brand);
 }
 
 .btn-mini,
@@ -8952,7 +8966,7 @@ html[data-route="mapa"] .phone {
   /* Fundo transparente: o alfinete verde sobre branco ja se le, e o circulo
      cheio pesava mais que o proprio nome da cidade ao lado. */
   background: transparent;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .location-switch__icon .ic {
@@ -9064,7 +9078,7 @@ html[data-route="mapa"] .phone {
 .explore-search > .ic {
   width: 20px;
   height: 20px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .market-search input,
@@ -9080,7 +9094,7 @@ html[data-route="mapa"] .phone {
 
 .market-search input::placeholder,
 .explore-search input::placeholder {
-  color: #89948d;
+  color: #909489;
 }
 
 .market-search button,
@@ -9094,7 +9108,7 @@ html[data-route="mapa"] .phone {
 
 .market-search button {
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .market-search button .ic,
@@ -9124,9 +9138,9 @@ html[data-route="mapa"] .phone {
 }
 
 .market-shortcut--now {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .market-shortcut > span {
@@ -9195,7 +9209,7 @@ html[data-route="mapa"] .phone {
 .booking-title > span,
 .explore-header > div > span,
 .market-sheet__head > div > span {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -9210,7 +9224,7 @@ html[data-route="mapa"] .phone {
 
 .market-section__head > a {
   flex: 0 0 auto;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 11.5px;
   font-weight: 850;
 }
@@ -9255,7 +9269,7 @@ html[data-route="mapa"] .phone {
   border: 1px solid var(--pq-line);
   border-radius: 50%;
   background: var(--pq-panel);
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
   box-shadow: 0 5px 14px rgba(16, 24, 19, .04);
 }
 
@@ -9299,7 +9313,7 @@ html[data-route="mapa"] .phone {
   height: 40px;
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .availability-pulse__icon .ic {
@@ -9333,7 +9347,7 @@ html[data-route="mapa"] .phone {
 .availability-pulse > .ic {
   width: 18px;
   height: 18px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .venue-rail {
@@ -9547,9 +9561,9 @@ html[data-route="mapa"] .phone {
 .explore-header .icon-btn {
   width: 42px;
   height: 42px;
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .explore-market {
@@ -9592,13 +9606,13 @@ html[data-route="mapa"] .phone {
 .sport-filter-chip .ic {
   width: 15px;
   height: 15px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .sport-filter-chip.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .sport-filter-chip.on .ic {
@@ -9632,12 +9646,12 @@ html[data-route="mapa"] .phone {
 .result-context .ic {
   width: 14px;
   height: 14px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .result-context > a {
   flex: 0 0 auto;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-weight: 850;
 }
 
@@ -9684,7 +9698,7 @@ html[data-route="mapa"] .phone {
 .tabbar > a.on,
 .tabbar > button.on {
   background: transparent;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .tabbar .tabbar-map {
@@ -9713,7 +9727,7 @@ html[data-route="mapa"] .phone {
   border-radius: 50%;
   background: var(--pq-brand-strong);
   box-shadow: 0 8px 18px rgba(0, 168, 90, .30);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .tabbar .tabbar-map > span .ic {
@@ -9730,11 +9744,11 @@ html[data-route="mapa"] .phone {
 
 .tabbar .tabbar-map.on > span {
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .tabbar .tabbar-map.on em {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 /* ---------- detalhe e reserva ---------- */
@@ -9797,7 +9811,7 @@ html[data-route="mapa"] .phone {
   width: 14px;
   height: 14px;
   margin-right: 2px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .venue-hero-dots {
@@ -9837,7 +9851,7 @@ html[data-route="mapa"] .phone {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -9887,7 +9901,7 @@ html[data-route="mapa"] .phone {
   grid-row: 1 / 3;
   width: 19px;
   height: 19px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .venue-proof > span:first-child .ic {
@@ -9943,9 +9957,10 @@ html[data-route="mapa"] .phone {
 }
 
 .day.on {
-  border-color: var(--pq-brand-strong) !important;
+  border-color: var(--pq-brand-deep) !important;
   background: var(--pq-brand-strong) !important;
   box-shadow: 0 6px 14px rgba(0, 168, 90, .2) !important;
+  color: var(--pq-on-brand);
 }
 
 .sec-head {
@@ -9993,12 +10008,12 @@ html[data-route="mapa"] .phone {
 }
 
 .avail-slots .slot.sel {
-  border-color: var(--pq-brand-strong) !important;
+  border-color: var(--pq-brand-deep) !important;
   background: var(--pq-brand-strong) !important;
   /* Estas duas faltavam so nesta arvore (a do app ja tinha): sem elas o
      horario escolhido ficava com texto escuro sobre o verde forte, e
      herdava o risco de .slot.busy quando vinha de um estado riscado. */
-  color: #fff !important;
+  color: var(--pq-on-brand) !important;
   text-decoration: none !important;
   box-shadow: 0 5px 12px rgba(0, 168, 90, .18) !important;
 }
@@ -10006,7 +10021,7 @@ html[data-route="mapa"] .phone {
 .slot.busy {
   border-color: var(--pq-line);
   background: var(--pq-tint);
-  color: #a8b0aa;
+  color: #adb0a8;
 }
 
 /* Horario que ja passou: apagado, mas sem o risco de "reservado" — nao ha
@@ -10014,7 +10029,7 @@ html[data-route="mapa"] .phone {
 .slot.past {
   border-color: var(--pq-line);
   background: var(--pq-panel);
-  color: #b9c0ba;
+  color: #bdc0b9;
   text-decoration: none;
 }
 
@@ -10026,7 +10041,7 @@ html[data-route="mapa"] .phone {
 .slot.nofit {
   border-color: var(--pq-line);
   background: var(--pq-panel);
-  color: #aeb6b0;
+  color: #b3b6ae;
   text-decoration: none;
 }
 
@@ -10035,9 +10050,9 @@ html[data-route="mapa"] .phone {
    realmente esta. */
 .slot.bloco,
 .avail-slots .slot.bloco {
-  border-color: var(--pq-brand-strong) !important;
-  background: #dcf3e5 !important;
-  color: var(--pq-brand-strong) !important;
+  border-color: var(--pq-brand-deep) !important;
+  background: #ebf3dc !important;
+  color: var(--pq-brand-deep) !important;
   text-decoration: none !important;
   opacity: 1;
 }
@@ -10053,10 +10068,10 @@ html[data-route="mapa"] .phone {
 }
 
 .dur.on {
-  border-color: var(--pq-brand-strong);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand-strong);
   box-shadow: none;
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .book-bar {
@@ -10069,6 +10084,7 @@ html[data-route="mapa"] .phone {
 
 .book-bar .btn {
   background: var(--pq-brand-strong);
+  color: var(--pq-on-brand);
 }
 
 .note {
@@ -10078,7 +10094,7 @@ html[data-route="mapa"] .phone {
 }
 
 .note .ic {
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .booking-flow {
@@ -10107,7 +10123,7 @@ html[data-route="mapa"] .phone {
   display: grid;
   justify-items: center;
   gap: 5px;
-  color: #86948b;
+  color: #8f9486;
 }
 
 .booking-flow li > span {
@@ -10134,20 +10150,20 @@ html[data-route="mapa"] .phone {
 
 .booking-flow li.is-current,
 .booking-flow li.is-done {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .booking-flow li.is-current > span {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
-  box-shadow: 0 0 0 4px #e5f5eb;
+  color: var(--pq-on-brand);
+  box-shadow: 0 0 0 4px #eff5e5;
 }
 
 .booking-flow li.is-done > span {
   border-color: var(--pq-line-strong);
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .booking-intro {
@@ -10158,7 +10174,7 @@ html[data-route="mapa"] .phone {
 .checkout-recap__eyebrow,
 .checkout-section__head span,
 .success-eyebrow {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -10202,7 +10218,7 @@ html[data-route="mapa"] .phone {
   height: 34px;
   border-radius: 50%;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 12px;
   font-weight: 900;
 }
@@ -10225,7 +10241,7 @@ html[data-route="mapa"] .phone {
   padding: 5px 8px;
   border-radius: 999px;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9px;
   font-weight: 850;
 }
@@ -10298,7 +10314,7 @@ html[data-route="mapa"] .phone {
 }
 
 .booking-step .slot.sel {
-  box-shadow: 0 0 0 3px #dcefe3 !important;
+  box-shadow: 0 0 0 3px #e8efdc !important;
 }
 
 .booking-step .dur-seg {
@@ -10371,7 +10387,7 @@ html[data-route="mapa"] .phone {
   height: 40px;
   border-radius: 50%;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .book-bar__icon .ic {
@@ -10451,7 +10467,7 @@ html[data-route="mapa"] .phone {
   min-height: 76px;
   padding: calc(16px + var(--pq-safe-top)) 16px 14px;
   border-bottom: 1px solid var(--pq-line);
-  /* Era #f5fbf7, um branco puxado para o verde. Esta e a regra que vence
+  /* Era #f9fbf5, um branco puxado para o verde. Esta e a regra que vence
      (vem depois da de cima no arquivo), entao e aqui que a cor tem de mudar —
      trocar so la em cima nao surtia efeito nenhum.
 
@@ -10541,7 +10557,7 @@ html[data-route="mapa"] .phone {
 .checkout-recap .info-rows .k .ic {
   width: 16px;
   height: 16px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .checkout-recap .info-rows .v {
@@ -10569,7 +10585,7 @@ html[data-route="mapa"] .phone {
 .checkout-section__head > .ic {
   width: 22px;
   height: 22px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .checkout-total {
@@ -10609,7 +10625,7 @@ html[data-route="mapa"] .phone {
 .checkout-total p .ic {
   width: 14px;
   height: 14px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .pay-methods {
@@ -10649,27 +10665,27 @@ html[data-route="mapa"] .phone {
 }
 
 .method.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-tint);
-  box-shadow: 0 0 0 3px #e4f3e9;
+  box-shadow: 0 0 0 3px #eef3e4;
 }
 
 .method.on .check {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .method.is-unavailable {
   border-color: var(--pq-line);
   background: var(--pq-tint);
-  color: #9aa49d;
+  color: #a0a49a;
   cursor: not-allowed;
 }
 
 .method.is-unavailable .badge-ic,
 .method.is-unavailable small {
-  color: #9aa49d;
+  color: #a0a49a;
 }
 
 .checkout-action {
@@ -10707,7 +10723,7 @@ html[data-route="mapa"] .phone {
   height: 64px;
   margin-bottom: 16px;
   background: var(--pq-tint);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   box-shadow: 0 0 0 9px rgba(22, 167, 101, .09);
 }
 
@@ -10752,7 +10768,7 @@ html[data-route="mapa"] .phone {
 }
 
 .ticket-venue span {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 8.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -10866,6 +10882,7 @@ html[data-route="mapa"] .phone {
 .profile-avatar {
   border-radius: 50%;
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 .favorite-sport .ic {
@@ -11026,7 +11043,7 @@ html[data-route="mapa"] .phone {
 .location-options button > .ic {
   width: 17px;
   height: 17px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .market-sheet__label {
@@ -11072,12 +11089,12 @@ html[data-route="mapa"] .phone {
 
 .notification-list__icon--success {
   background: var(--pq-tint);
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .notification-list em {
   margin-top: 6px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9px;
   font-style: normal;
   font-weight: 800;
@@ -11146,13 +11163,13 @@ html[data-route="mapa"] .phone {
 .filter-choice-grid label > span .ic {
   width: 16px;
   height: 16px;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .filter-choice-grid input:checked + span {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .filter-choice-grid input:checked + span .ic {
@@ -11232,6 +11249,7 @@ html[data-route="mapa"] .phone {
 
 .filter-now input:checked + .filter-switch {
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 .filter-now input:checked + .filter-switch::after {
@@ -11259,17 +11277,18 @@ html[data-route="mapa"] .phone {
 }
 
 .map-filter-strip .chip.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
   box-shadow: none;
+  color: var(--pq-on-brand);
 }
 
 .map-price-marker span {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
 }
 
 .map-price-marker span::after {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
 }
 
 @media (max-width: 370px) {
@@ -11518,7 +11537,7 @@ html[data-route="mapa"] .phone {
 
 .bub-name {
   margin-bottom: 3px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -11588,7 +11607,7 @@ html[data-route="mapa"] .phone {
 }
 
 .pelada-kind label:has(input:checked) {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-signal-soft);
 }
 
@@ -11686,7 +11705,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
   padding: 0 4px;
   border-radius: 999px;
   background: var(--pq-brand-strong);
-  color: #fff;
+  color: var(--pq-on-brand);
   font-size: 10px;
   font-weight: 900;
   line-height: 17px;
@@ -11705,7 +11724,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
   white-space: nowrap;
 }
 
-.contextbar__tab.is-active { color: var(--pq-brand-strong); }
+.contextbar__tab.is-active { color: var(--pq-brand-deep); }
 .contextbar__tab.is-active .ic { stroke-width: 2.4; }
 
 .contextbar__tab:active,
@@ -11728,7 +11747,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
   height: 34px;
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
   box-shadow: 0 8px 18px rgba(7, 94, 58, .28);
 }
 
@@ -11738,7 +11757,7 @@ html[data-bottombar="game"] .contextbar--game { display: grid; }
 }
 
 .contextbar__primary em {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-style: normal;
   font-weight: 800;
@@ -11774,7 +11793,7 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 }
 
 .plan-option.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-signal-soft);
   box-shadow: 0 8px 20px rgba(7, 94, 58, .1);
 }
@@ -11788,13 +11807,13 @@ html[data-bottombar="game"] .game-tabs { display: none; }
   height: 36px;
   margin-bottom: 6px;
   border-radius: 50%;
-  background: var(--pq-surface-2, #f3f5f1);
-  color: var(--pq-brand-strong);
+  background: var(--pq-surface-2, #f2f7e6);
+  color: var(--pq-brand-deep);
 }
 
 .plan-option.on .plan-option__icon {
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .plan-option__icon .ic { width: 18px; height: 18px; }
@@ -11855,7 +11874,7 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 .weekday.on {
   border-color: transparent;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .weekday:active { transform: translateY(1px); }
@@ -11908,7 +11927,7 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 
 .filter-range input[type="range"] {
   width: 100%;
-  accent-color: var(--pq-brand);
+  accent-color: var(--pq-brand-deep);
 }
 
 .filter-range output {
@@ -11966,7 +11985,7 @@ html[data-bottombar="game"] .game-tabs { display: none; }
 .plan-card__when .ic {
   width: 15px;
   height: 15px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .plan-card__next {
@@ -12118,7 +12137,7 @@ html[data-route="cadastro"]::before {
   border-radius: 20px;
   margin-bottom: 16px;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .auth-mark .ic { width: 30px; height: 30px; }
@@ -12182,7 +12201,7 @@ html[data-route="cadastro"]::before {
 .auth-link {
   display: block;
   padding: 14px 0 2px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 13px;
   font-weight: 600;
   text-align: center;
@@ -12197,7 +12216,7 @@ html[data-route="cadastro"]::before {
 }
 
 .auth-swap a {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-weight: 700;
   text-decoration: none;
 }
@@ -12248,6 +12267,7 @@ html[data-route="cadastro"]::before {
      entao a barra avanca de um passo ao outro. Um keyframe reiniciaria do
      zero a cada troca. */
   transition: width .28s cubic-bezier(.2, .8, .2, 1);
+  color: var(--pq-on-brand);
 }
 
 .onb-skip {
@@ -12399,7 +12419,7 @@ html[data-route="cadastro"]::before {
   border-radius: 50%;
   margin-bottom: 20px;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
   /* Reusa o pop que a tela de aprovacao ja usa — mesma sensacao de "deu
      certo", sem inventar um segundo vocabulario. */
   animation: pq-approval-success-pop .5s cubic-bezier(.2, .9, .25, 1.25) both;
@@ -12415,7 +12435,7 @@ html[data-route="cadastro"]::before {
   border-radius: 14px;
   margin: 20px 0;
   background: var(--pq-signal-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 13px;
   line-height: 1.45;
   text-align: left;
@@ -12441,7 +12461,7 @@ html[data-route="cadastro"]::before {
 }
 
 .club-code__value {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: .08em;
@@ -12456,7 +12476,7 @@ html[data-route="cadastro"]::before {
   border: 0;
   border-radius: 50%;
   background: var(--pq-panel);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   cursor: pointer;
 }
 
@@ -12512,8 +12532,8 @@ html[data-route="cadastro"]::before {
 /* Aceitar pedido: a unica acao verde desta tela. Recusar fica neutra — o
    par verde/vermelho transformaria "nao agora" em punicao. */
 .member-remove--ok {
-  border-color: var(--pq-brand-strong);
-  color: var(--pq-brand-strong);
+  border-color: var(--pq-brand-deep);
+  color: var(--pq-brand-deep);
 }
 
 /* Seletor de clube no cabecalho. So aparece com mais de um. */
@@ -12592,7 +12612,7 @@ html[data-route="cadastro"]::before {
 .player-card__edit {
   border: 0;
   background: none;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -12642,7 +12662,7 @@ html[data-route="cadastro"]::before {
   height: 32px;
   border-radius: 50%;
   background: var(--pq-panel);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .ficha-convite__ic .ic { width: 17px; height: 17px; }
@@ -12685,7 +12705,7 @@ html[data-route="cadastro"]::before {
   border-radius: 14px;
   margin: 18px 0 0;
   background: var(--pq-signal-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 12.5px;
   line-height: 1.45;
 }
@@ -12762,7 +12782,7 @@ html[data-route="cadastro"]::before {
 .market-brand .qadras-logo {
   width: 118px;
   height: auto;
-  color: var(--pq-ink, #0b1f16);
+  color: var(--pq-ink, #181f0b);
 }
 
 
@@ -12804,7 +12824,7 @@ html[data-route="cadastro"]::before {
 }
 
 .field-date:focus {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   outline: none;
   box-shadow: 0 0 0 3px var(--pq-green-soft);
 }
@@ -12858,7 +12878,7 @@ html[data-route="cadastro"]::before {
 }
 
 .ic-star.is-empty {
-  color: #d5ded8;
+  color: #dbded5;
   fill: none;
 }
 
@@ -12935,43 +12955,44 @@ html[data-route="cadastro"] .screen {
    Tudo abaixo e troca de TOKEN. Os 82 fundos claros do arquivo ja apontam para
    --pq-panel / --pq-tint / --pq-tint-strong, entao mudar estes valores vira a
    tela inteira sem tocar em regra nenhuma. Os quatro acentos que sobraram
-   cravados (#008f4c, #007c42, #082c1b, #c8324d) sao cores saturadas de marca e
+   cravados (#5b8f00, #4f7c00, #1f2c08, #c8324d) sao cores saturadas de marca e
    de alerta — funcionam sobre fundo escuro do mesmo jeito.
 
-   Verde e escuro brigam: o verde da marca (#16a765) sobre quase-preto tem
+   Verde e escuro brigam: o verde da marca (#9bcf33) sobre quase-preto tem
    contraste baixo demais para texto. Por isso a marca CLAREIA no escuro em vez
    de manter o mesmo hex — o objetivo e ler, nao repetir o valor. */
 :root[data-theme="dark"] {
-  --pq-ink: #e8f2ec;
-  --pq-ink-soft: #b3c9bd;
-  --pq-muted: #8ba396;
+  --pq-ink: #eef5e2;
+  --pq-ink-soft: #c1c9b3;
+  --pq-muted: #9aa88a;
 
   /* Fundo em duas camadas: o app um degrau mais escuro que os cartoes, para o
      cartao continuar sendo "a coisa em cima". No escuro isso e o que substitui
      a sombra, que praticamente some. */
-  --pq-app-bg: #0e1613;
-  --pq-paper: #0e1613;
-  --pq-panel: #18211d;
-  --pq-surface: #18211d;
-  --pq-surface-2: #212b26;
+  --pq-app-bg: #111409;
+  --pq-paper: #111409;
+  --pq-panel: #1b2113;
+  --pq-surface: #1b2113;
+  --pq-surface-2: #272b21;
 
-  --pq-tint: #1e2f26;
-  --pq-tint-strong: #263b30;
+  --pq-tint: #242d16;
+  --pq-tint-strong: #333b26;
   --pq-danger-soft: #3a1f24;
 
-  --pq-line: #2a3831;
-  --pq-line-strong: #3a4a42;
+  --pq-line: #2f3820;
+  --pq-line-strong: #444a3a;
 
-  /* Marca mais clara: #16a765 sobre #18211d nao alcanca contraste de leitura. */
-  --pq-green: #35c785;
-  --pq-brand: #35c785;
-  --pq-brand-strong: #4dd598;
-  --pq-brand-deep: #7ee3b4;
-  --pq-green-dark: #7ee3b4;
-  --pq-green-soft: #1e2f26;
-  --pq-signal: #2f6b4c;
-  --pq-signal-soft: #1e2f26;
-  --pq-court: #2f6b4c;
+  /* Marca mais clara: #9bcf33 sobre #1b2113 nao alcanca contraste de leitura. */
+  --pq-green: #b2de4b;
+  --pq-brand: #b2de4b;
+  --pq-on-brand: #1f2e0b;
+  --pq-brand-strong: #c8ea72;
+  --pq-brand-deep: #c8ea72;
+  --pq-green-dark: #c8ea72;
+  --pq-green-soft: #242d16;
+  --pq-signal: #3f5c11;
+  --pq-signal-soft: #242d16;
+  --pq-court: #3f5c11;
 
   --pq-gold: #f0b429;
   --pq-amber-soft: #3a2c14;
@@ -12987,7 +13008,7 @@ html[data-route="cadastro"] .screen {
    area). Sem isto, puxar a tela no escuro mostrava uma faixa branca. */
 :root[data-theme="dark"] html,
 html[data-theme="dark"] {
-  background: #0e1613;
+  background: #111409;
 }
 
 /* Fotos e mapa: no escuro o branco puro das imagens fica ofuscante. Um leve
@@ -13071,7 +13092,7 @@ html[data-theme="dark"] {
 :root[data-theme="dark"] {
   --pq-danger: #ff8095;
   --pq-danger-strong: #ff6b84;
-  --pq-surface-2: #212b26;
+  --pq-surface-2: #272b21;
 }
 
 /* Selo de aberta/fechada — no CORPO do card, nao sobre a foto.
@@ -13102,6 +13123,7 @@ html[data-theme="dark"] {
 .venue-status.is-open > i {
   background: var(--pq-brand);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--pq-brand) 22%, transparent);
+  color: var(--pq-on-brand);
 }
 
 .venue-status.is-closed > i {
@@ -13201,12 +13223,12 @@ html[data-theme="dark"] {
 
 .map-filter-item.on .ic-sport,
 .map-filter-item.on > .ic {
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 .map-filter-item__ck {
   flex: 0 0 auto;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 /* A casca do mapa passa a ancorar o filtro flutuante. */
@@ -13285,10 +13307,10 @@ html[data-theme="dark"] {
 
 /* Estados do horario no modo escuro.
 
-   Os cinzas de "indisponivel" (#a8b0aa, #b9c0ba, #9aa39d) foram escolhidos
+   Os cinzas de "indisponivel" (#adb0a8, #bdc0b9, #a0a39a) foram escolhidos
    para APAGAR sobre fundo branco. Sobre fundo escuro eles fazem o oposto:
    ficam mais claros que o texto normal, e a hora reservada saltava mais que a
-   livre. E o bloco verde (#dcf3e5) era uma pastilha clara acesa no meio.
+   livre. E o bloco verde (#ebf3dc) era uma pastilha clara acesa no meio.
 
    Aqui a hierarquia se inverte junto com o fundo: indisponivel escurece,
    disponivel continua legivel, e o inicio escolhido segue sendo o unico
@@ -13302,35 +13324,35 @@ html[data-theme="dark"] {
 :root[data-theme="dark"] .slot.busy {
   border-color: var(--pq-line);
   background: var(--pq-app-bg);
-  color: #5d6b64;
+  color: #666b5d;
 }
 
 :root[data-theme="dark"] .slot.past,
 :root[data-theme="dark"] .slot.nofit {
   border-color: var(--pq-line);
   background: var(--pq-app-bg);
-  color: #64726b;
+  color: #6d7264;
 }
 
 :root[data-theme="dark"] .avail-slots .slot.sel,
 :root[data-theme="dark"] .slots .slot.sel {
-  border-color: var(--pq-brand) !important;
+  border-color: var(--pq-brand-deep) !important;
   background: var(--pq-brand) !important;
-  color: #0b1a12 !important;
+  color: #141a0b !important;
 }
 
 :root[data-theme="dark"] .slot.bloco,
 :root[data-theme="dark"] .avail-slots .slot.bloco {
-  border-color: var(--pq-brand) !important;
-  background: #21402f !important;
-  color: #7ee3b4 !important;
+  border-color: var(--pq-brand-deep) !important;
+  background: #354021 !important;
+  color: #c8ea72 !important;
 }
 
 /* Duracao: o selecionado tem fundo cheio, entao o texto precisa ser escuro. */
 :root[data-theme="dark"] .dur.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #0b1a12;
+  color: #141a0b;
 }
 
 /* CONTROLES NATIVOS (select, input, barra de rolagem).
@@ -13401,12 +13423,12 @@ html[data-theme="dark"] {
 .seg-item.on {
   background: var(--pq-brand);
   box-shadow: none;
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 :root[data-theme="dark"] .seg-item.on {
   background: var(--pq-brand);
-  color: #0b1a12;
+  color: #141a0b;
 }
 
 .seg-item {
@@ -13467,9 +13489,9 @@ html[data-theme="dark"] {
    outros — e a razao de a tela ter aberto. Cor da marca, texto invertido e um
    halo que sobrevive a um mapa claro ou escuro por baixo. */
 .map-price-marker.is-destaque > span {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
-  color: #06210f;
+  color: #172106;
   box-shadow: 0 0 0 4px rgba(22, 167, 101, .28), 0 10px 22px rgba(5, 13, 9, .35);
 }
 
@@ -13629,7 +13651,7 @@ html[data-theme="dark"] {
 .arena-numeros__estrelas .ic {
   width: 11px;
   height: 11px;
-  color: var(--pq-warning, #f5a524);
+  color: var(--pq-warning, #a06400);
   fill: currentColor;
 }
 
@@ -13740,7 +13762,7 @@ html[data-theme="dark"] {
 .arena-nota__valor .ic {
   width: 15px;
   height: 15px;
-  color: var(--pq-warning, #f5a524);
+  color: var(--pq-warning, #a06400);
   fill: currentColor;
 }
 
@@ -13840,7 +13862,7 @@ html[data-theme="dark"] {
 .arena-review__estrelas .ic {
   width: 12px;
   height: 12px;
-  color: var(--pq-warning, #f5a524);
+  color: var(--pq-warning, #a06400);
   fill: currentColor;
 }
 
@@ -13930,19 +13952,19 @@ html[data-theme="dark"] {
   width: 18px;
   height: 18px;
   border: 2.5px solid var(--pq-line);
-  border-top-color: var(--pq-brand);
+  border-top-color: var(--pq-brand-deep);
   border-radius: 50%;
 }
 
 /* Passou do limiar: a roda enche de cor para dizer "solta agora". */
 .puxar-atualizar.is-pronto .puxar-atualizar__roda {
-  border-color: var(--pq-brand);
-  border-top-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
+  border-top-color: var(--pq-brand-deep);
 }
 
 .puxar-atualizar.is-girando .puxar-atualizar__roda {
   border-color: var(--pq-line);
-  border-top-color: var(--pq-brand);
+  border-top-color: var(--pq-brand-deep);
   animation: puxar-girar .7s linear infinite;
 }
 
@@ -14008,4 +14030,5 @@ html[data-theme="dark"] .leaflet-tile-pane {
   border-radius: 50%;
   background: var(--pq-brand);
   transform: translateY(-50%);
+  color: var(--pq-on-brand);
 }

@@ -5,27 +5,27 @@ html[data-player-desktop] {
   --web-max: 1440px;
   --web-header: #ffffff;
   --web-canvas: #f7faf8;
-  --web-soft: #eff6f1;
-  --web-line: #dce7df;
-  --web-ink: #102b1c;
-  --web-muted: #66776c;
-  --web-green: #129653;
-  --web-green-dark: #08703b;
-  --web-green-soft: #e2f4e9;
+  --web-soft: #f3f6ef;
+  --web-line: #e3e7dc;
+  --web-ink: #212b10;
+  --web-muted: #666b5b;
+  --web-green: #9bcf33;
+  --web-green-dark: #3f5c11;
+  --web-green-soft: #f5fce6;
   --web-shadow: 0 12px 34px rgba(16, 43, 28, .07);
   --bg: var(--web-canvas);
   --panel: #ffffff;
   --line: var(--web-line);
-  --line-2: #eaf0ec;
+  --line-2: #eef0ea;
   --ink: var(--web-ink);
-  --ink-2: #355242;
+  --ink-2: #475235;
   --muted: var(--web-muted);
   --green: var(--web-green);
-  --green-600: #0d8448;
+  --green-600: #58840d;
   --green-700: var(--web-green-dark);
-  --green-ink: #0a4f2d;
+  --green-ink: #364f0a;
   --mint: var(--web-green-soft);
-  --mint-line: #c9e5d3;
+  --mint-line: #dbe5c9;
   --r: 14px;
   --r-lg: 20px;
 }
@@ -530,7 +530,7 @@ html[data-player-desktop] .desktop-market-search .field {
 
 html[data-player-desktop] .desktop-market-search .field:focus-within {
   background: var(--pq-panel);
-  box-shadow: inset 0 0 0 1px #9dceb0;
+  box-shadow: inset 0 0 0 1px #bcce9d;
 }
 
 html[data-player-desktop] .desktop-market-search .field input,
@@ -850,7 +850,7 @@ html[data-player-desktop] .desktop-checkout-venue > img {
 
 html[data-player-desktop] .wallet-hero {
   border-radius: 20px;
-  background: linear-gradient(135deg, #08703b, #13a45b);
+  background: linear-gradient(135deg, #3f5c11, #6fa413);
 }
 
 html[data-player-desktop] .split-2,
@@ -1292,7 +1292,7 @@ html[data-player-desktop] .desktop-sport-trigger {
 html[data-player-desktop] .desktop-sport-trigger:hover,
 html[data-player-desktop] .desktop-sport-picker.is-open .desktop-sport-trigger {
   background: var(--pq-tint);
-  box-shadow: inset 0 0 0 1px #9dceb0;
+  box-shadow: inset 0 0 0 1px #bcce9d;
 }
 
 html[data-player-desktop] .desktop-sport-trigger > .ic:first-child {
@@ -1854,7 +1854,9 @@ html[data-player-desktop] .web-account > summary > .web-account__avatar {
   width: 34px;
   height: 34px;
   background: var(--web-green);
-  color: #fff;
+  /* Branco sobre o lime da 1,85:1. A inicial da conta e texto de verdade —
+     alguem le "G" para saber em qual conta esta. */
+  color: var(--pq-on-brand, #1f2e0b);
 }
 
 html[data-player-desktop] .web-account > summary > .ic {

@@ -16,11 +16,12 @@
   --pq-team-b: #1d6fd8;
 
   /* marca */
-  --pq-brand: #16a765;
-  --pq-brand-strong: #0c8b52;
-  --pq-brand-deep: #075e3a;
-  --pq-signal: #b9edcb;
-  --pq-signal-soft: #edf9f1;
+  --pq-brand: #9bcf33;
+  --pq-on-brand: #1f2e0b;
+  --pq-brand-strong: #86bd23;
+  --pq-brand-deep: #3f5c11;
+  --pq-signal: #ddf2a8;
+  --pq-signal-soft: #f5fce6;
 
   /* estado "vai acontecer" — distinto de --pq-gold, que e sinalizacao */
   --pq-amber: #ea580c;
@@ -31,12 +32,12 @@
   --pq-gold: #e4a11b;
 
   /* superficies e texto */
-  --pq-app-bg: #f3f8f4;
+  --pq-app-bg: #f5fce6;
   --pq-panel: #ffffff;
-  --pq-surface-2: #f3f5f1;
-  --pq-ink: #143523;
-  --pq-muted: #6b7f72;
-  --pq-line: #dce9df;
-  --pq-line-strong: #ccd5cb;
+  --pq-surface-2: #f2f7e6;
+  --pq-ink: #1f2e0b;
+  --pq-muted: #606b56;
+  --pq-line: #e3eecd;
+  --pq-line-strong: #d5e0bc;
   --pq-shadow-1: 0 2px 4px rgba(7, 94, 58, .03), 0 12px 28px rgba(7, 94, 58, .07);
 }

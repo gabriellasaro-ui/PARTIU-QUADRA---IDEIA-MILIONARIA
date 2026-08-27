@@ -288,6 +288,7 @@ html[data-manager-app] .manager-progress > i {
   border-radius: var(--r-pilula);
   background: var(--pq-brand);
   transition: width .3s ease;
+  color: var(--pq-on-brand);
 }
 
 /* O MAPA DE CALOR ganha o espaco que a coluna passou a ter. Celulas de 10px
@@ -498,7 +499,7 @@ html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats {
 html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats strong {
   font-size: 24px;
   font-weight: 800;
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 html[data-manager-app][data-manager-view="quadras"] .manager-showcase__stats small {
@@ -620,7 +621,7 @@ html[data-manager-app][data-manager-view="quadras"] .add-card .add-ic {
   height: 44px;
   border-radius: var(--r-pilula);
   background: var(--pq-tint);
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 html[data-manager-app][data-manager-view="quadras"] .add-card strong { font-size: var(--t-cartao); }
@@ -877,6 +878,7 @@ html[data-manager-app] .loader__marca {
   background: var(--pq-brand);
   -webkit-mask: url("../video/carregando.webp") center / contain no-repeat;
   mask: url("../video/carregando.webp") center / contain no-repeat;
+  color: var(--pq-on-brand);
 }
 
 html[data-manager-app] .loader__texto {
@@ -937,7 +939,7 @@ html[data-manager-app][data-manager-view="dashboard"] .manager-tools a {
 }
 
 html[data-manager-app][data-manager-view="dashboard"] .manager-tools a:hover {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
 }
 
 html[data-manager-app][data-manager-view="dashboard"] .manager-tools a > span {
@@ -1336,7 +1338,7 @@ html[data-manager-app] .comodidade {
 }
 
 html[data-manager-app] .comodidade.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-tint);
   color: var(--pq-brand-deep);
 }
@@ -1385,7 +1387,7 @@ html[data-manager-app] .exp-dia__nome {
   font-weight: 600;
 }
 
-html[data-manager-app] .exp-dia__nome input { width: 16px; height: 16px; accent-color: var(--pq-brand); }
+html[data-manager-app] .exp-dia__nome input { width: 16px; height: 16px; accent-color: var(--pq-brand-deep); }
 
 /* Dia fechado fica visivelmente apagado: numa lista de sete, a diferenca entre
    "8h-23h" e "Fechado" precisa se ler de relance, sem comparar texto. */
@@ -1464,7 +1466,7 @@ html[data-manager-app] .chip-nota .ic { color: var(--pq-gold); }
 html[data-manager-app] .chip-nota b { color: var(--pq-ink); font-variant-numeric: tabular-nums; }
 
 html[data-manager-app] .chip-nota.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-tint);
   color: var(--pq-brand-deep);
 }
@@ -1577,7 +1579,7 @@ html[data-manager-app] .sb-link.on {
   box-shadow: none;
 }
 
-html[data-manager-app] .sb-link.on .ic { color: var(--pq-brand); }
+html[data-manager-app] .sb-link.on .ic { color: var(--pq-brand-deep); }
 
 /* O rotulo de grupo estava em 9.5px — abaixo de tudo no sistema, e ilegivel. */
 html[data-manager-app] .sb-group {
@@ -1643,8 +1645,8 @@ html[data-manager-app] .manager-bookings .manager-booking-row:last-child {
 
 /* ══════════════════ SIDEBAR: superficie propria ══════════════════════════ */
 
-/* Ela usava `--pq-tint` de fundo. No tema claro, tint e #edf6f0 e o fundo da
-   aplicacao e #f3f8f4 — dois verdes palidos a seis pontos de distancia. Na
+/* Ela usava `--pq-tint` de fundo. No tema claro, tint e #f3f6ed e o fundo da
+   aplicacao e #f5fce6 — dois verdes palidos a seis pontos de distancia. Na
    pratica a sidebar nao tinha superficie: era o mesmo plano do conteudo, com
    nove links soltos em cima. Nao ha separacao para o olho encontrar.
 
@@ -1699,6 +1701,7 @@ html[data-manager-app] .sb-link.on::before {
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 /* ══════════════════ ICONES com presenca ═════════════════════════════════ */
@@ -2110,13 +2113,13 @@ html[data-manager-app] .cal-closed.is-full > span { font-size: var(--t-micro); }
    unica cor quente da grade, e o olho vai direto nele. */
 html[data-manager-app] .cal-ev.pago {
   background: var(--pq-brand);
-  border-color: var(--pq-brand-strong);
-  color: #06231a;
+  border-color: var(--pq-brand-deep);
+  color: #182306;
 }
 
 html[data-manager-app] .cal-ev.confirmado {
   background: var(--pq-tint-strong);
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   color: var(--pq-brand-deep);
 }
 
@@ -2128,7 +2131,9 @@ html[data-manager-app] .cal-ev.solicitada {
 }
 
 /* A legenda acompanha, senao ela passa a mentir sobre as cores da grade. */
-html[data-manager-app] .cal-legend .pago { background: var(--pq-brand); }
+html[data-manager-app] .cal-legend .pago { background: var(--pq-brand);
+  color: var(--pq-on-brand);
+}
 html[data-manager-app] .cal-legend .confirmado { background: var(--pq-tint-strong); border: 1px solid var(--pq-brand); }
 html[data-manager-app] .cal-legend .pendente { background: var(--pq-gold); }
 html[data-manager-app] .cal-legend .fechado {
@@ -2138,8 +2143,10 @@ html[data-manager-app] .cal-legend .fechado {
 
 /* A LINHA DE AGORA em vermelho era a unica cor de alerta da tela, chamando
    atencao para uma informacao que nao pede acao nenhuma. Marca, discreta. */
-html[data-manager-app] .cal-now { border-top-color: var(--pq-brand-strong); }
-html[data-manager-app] .cal-now > i { background: var(--pq-brand-strong); }
+html[data-manager-app] .cal-now { border-top-color: var(--pq-brand-deep); }
+html[data-manager-app] .cal-now > i { background: var(--pq-brand-strong);
+  color: var(--pq-on-brand);
+}
 
 /* HOJE continua com a coluna tintada — e util, e agora nao se confunde mais
    com dia fechado, que passou a ter hachura propria. */
@@ -2259,7 +2266,7 @@ html[data-manager-app] .cal-modos button {
 
 html[data-manager-app] .cal-modos button.on {
   background: var(--pq-brand);
-  color: #06231a;
+  color: #182306;
 }
 
 /* ── MODO DIA: as colunas sao as quadras, e o numero delas varia ───────────
@@ -2345,7 +2352,7 @@ html[data-manager-app] .cal-dia-mes.hoje .n {
   height: 24px;
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #06231a;
+  color: #182306;
 }
 
 html[data-manager-app] .cal-dia-mes .q {
@@ -2718,7 +2725,7 @@ html[data-manager-app] .app.collapsed .sb-perfil .ic { display: none; }
     border-radius: 50%;
     background: var(--pq-brand-strong);
     box-shadow: 0 8px 18px rgba(0, 168, 90, .30);
-    color: #fff;
+    color: var(--pq-on-brand);
   }
 
   html[data-manager-app] .manager-tabbar-fab > span .ic {
@@ -2737,7 +2744,9 @@ html[data-manager-app] .app.collapsed .sb-perfil .ic { display: none; }
   /* Em Reservas o circulo fica na marca cheia e o rotulo acende — o realce
      normal do item ativo (mudar a cor do icone) nao vale aqui, porque o icone
      ja e branco sobre verde. */
-  html[data-manager-app] .manager-tabbar-fab.on > span { background: var(--pq-brand); }
+  html[data-manager-app] .manager-tabbar-fab.on > span { background: var(--pq-brand);
+  color: var(--pq-on-brand);
+}
   html[data-manager-app] .manager-tabbar-fab.on em { color: var(--pq-brand-deep); }
 }
 
@@ -2868,7 +2877,7 @@ html[data-manager-app] .mgr-menu .badge {
   padding: 2px 7px;
   border-radius: var(--r-pilula);
   background: var(--pq-brand);
-  color: #06231a;
+  color: #182306;
   font-size: var(--t-micro);
   font-weight: 800;
   text-align: center;
@@ -2985,6 +2994,7 @@ html[data-manager-app] .notif.nova::after {
   height: 7px;
   border-radius: 50%;
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 /* O titulo da nao lida vem em peso cheio; o da lida recua para o tom de apoio.
@@ -3437,6 +3447,7 @@ html[data-manager-app] .faixa-dia__barra > i {
   height: 100%;
   border-radius: var(--r-pilula);
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 html[data-manager-app] .faixa-dia__linha strong {
@@ -3641,7 +3652,7 @@ html[data-manager-app] .inp .campo-cep input:focus {
 }
 
 html[data-manager-app] .campo-cep:focus-within {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
 }
 
 /* ── OS TRES NUMEROS DO INICIO COM AR ENTRE ELES ──────────────────────────
@@ -3670,9 +3681,9 @@ html[data-manager-app] .galeria__vaga {
 
 html[data-manager-app] .galeria__vaga:hover,
 html[data-manager-app] .galeria__vaga:focus-visible {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-tint);
-  color: var(--pq-brand);
+  color: var(--pq-brand-deep);
 }
 
 /* O filete que separa um indicador do outro estava sendo herdado por TUDO que

@@ -23,29 +23,30 @@
 /* ── Paleta base: ESCURO (o padrao) ─────────────────────────────────────── */
 :root {
   /* Marca — os mesmos valores do app do jogador no escuro. O verde de marca
-     CLAREIA sobre fundo escuro: #16a765 sobre quase-preto nao alcanca
+     CLAREIA sobre fundo escuro: #9bcf33 sobre quase-preto nao alcanca
      contraste de leitura, e o objetivo e ler, nao repetir o hex. */
-  --pq-brand: #35c785;
-  --pq-brand-strong: #4dd598;
-  --pq-brand-deep: #7ee3b4;
-  --pq-signal: #2f6b4c;
-  --pq-signal-soft: #1e2f26;
+  --pq-brand: #b2de4b;
+  --pq-on-brand: #1f2e0b;
+  --pq-brand-strong: #c8ea72;
+  --pq-brand-deep: #c8ea72;
+  --pq-signal: #3f5c11;
+  --pq-signal-soft: #242d16;
 
   /* Superficies em camadas: o fundo do app um degrau abaixo dos cartoes, para
      o cartao continuar sendo "a coisa em cima". No escuro isso substitui a
      sombra, que praticamente desaparece. */
-  --pq-app-bg: #0e1613;
-  --pq-panel: #18211d;
-  --pq-panel-2: #212b26;
-  --pq-tint: #1e2f26;
-  --pq-tint-strong: #263b30;
+  --pq-app-bg: #111409;
+  --pq-panel: #1b2113;
+  --pq-panel-2: #272b21;
+  --pq-tint: #242d16;
+  --pq-tint-strong: #333b26;
 
-  --pq-ink: #e8f2ec;
-  --pq-ink-soft: #b3c9bd;
-  --pq-muted: #8ba396;
+  --pq-ink: #eef5e2;
+  --pq-ink-soft: #c1c9b3;
+  --pq-muted: #9aa88a;
 
-  --pq-line: #2a3831;
-  --pq-line-strong: #3a4a42;
+  --pq-line: #2f3820;
+  --pq-line-strong: #444a3a;
 
   --pq-gold: #f0b429;
   --pq-amber-soft: #3a2c14;
@@ -64,24 +65,25 @@
 
 /* ── Claro: escolha da pessoa, em Configuracoes ─────────────────────────── */
 :root[data-theme="light"] {
-  --pq-brand: #16a765;
-  --pq-brand-strong: #0c8b52;
-  --pq-brand-deep: #075e3a;
-  --pq-signal: #b9edcb;
-  --pq-signal-soft: #edf9f1;
+  --pq-brand: #9bcf33;
+  --pq-on-brand: #1f2e0b;
+  --pq-brand-strong: #86bd23;
+  --pq-brand-deep: #3f5c11;
+  --pq-signal: #ddf2a8;
+  --pq-signal-soft: #f5fce6;
 
-  --pq-app-bg: #f3f8f4;
+  --pq-app-bg: #f5fce6;
   --pq-panel: #ffffff;
-  --pq-panel-2: #f3f5f1;
-  --pq-tint: #e8f6ed;
-  --pq-tint-strong: #dfeee3;
+  --pq-panel-2: #f2f7e6;
+  --pq-tint: #ecf9cd;
+  --pq-tint-strong: #e8eedf;
 
-  --pq-ink: #143523;
-  --pq-ink-soft: #315742;
-  --pq-muted: #6b7f72;
+  --pq-ink: #1f2e0b;
+  --pq-ink-soft: #495731;
+  --pq-muted: #606b56;
 
-  --pq-line: #dce9df;
-  --pq-line-strong: #c7ddce;
+  --pq-line: #e3eecd;
+  --pq-line-strong: #d5ddc7;
 
   --pq-gold: #e4a11b;
   --pq-amber-soft: #ffedd5;
@@ -369,7 +371,7 @@ html[data-manager-app][data-manager-view="agenda"] .cal-col {
 .rev-quadra:hover { background: var(--pq-tint); }
 
 .rev-quadra.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-tint);
 }
 
@@ -463,6 +465,7 @@ html[data-manager-app][data-manager-view="agenda"] .cal-col {
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 .conv-vazio {
@@ -618,7 +621,7 @@ html[data-manager-app][data-manager-view="agenda"] .cal-col {
 
 .seg-escopo > button.on .seg-num {
   background: var(--pq-brand);
-  color: #06120c;
+  color: #0e1206;
 }
 
 /* PERIODO: atalhos + intervalo proprio, lado a lado.
@@ -647,7 +650,7 @@ html[data-manager-app][data-manager-view="agenda"] .cal-col {
 }
 
 .chips-periodo > button.on {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-tint);
   color: var(--pq-brand-deep);
 }
@@ -779,7 +782,7 @@ html[data-manager-app] .manager-panel--bookings {
   font-weight: 600;
 }
 
-.galeria__topo small.ok { color: var(--pq-brand); }
+.galeria__topo small.ok { color: var(--pq-brand-deep); }
 
 .galeria__barra {
   height: 4px;
@@ -797,7 +800,9 @@ html[data-manager-app] .manager-panel--bookings {
   transition: width .2s ease, background .2s ease;
 }
 
-.galeria__barra > i.ok { background: var(--pq-brand); }
+.galeria__barra > i.ok { background: var(--pq-brand);
+  color: var(--pq-on-brand);
+}
 
 .galeria__grade {
   display: grid;
@@ -826,7 +831,7 @@ html[data-manager-app] .manager-panel--bookings {
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--pq-brand);
-  color: #06120c;
+  color: #0e1206;
   font-size: 10px;
   font-weight: 800;
 }

@@ -511,8 +511,8 @@ async function renderExplore(root, route) {
    do resto. */
 const PIN_QUADRA = `
   <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
-    <path d="M14 0C6.27 0 0 6.27 0 14c0 9.8 12.36 22.94 12.89 23.5a1.53 1.53 0 0 0 2.22 0C15.64 36.94 28 23.8 28 14 28 6.27 21.73 0 14 0Z" fill="#0c8b52"/>
-    <path d="M14 1.6C7.15 1.6 1.6 7.15 1.6 14c0 8.7 11.1 20.9 12.4 22.3 1.3-1.4 12.4-13.6 12.4-22.3 0-6.85-5.55-12.4-12.4-12.4Z" fill="#16a765"/>
+    <path d="M14 0C6.27 0 0 6.27 0 14c0 9.8 12.36 22.94 12.89 23.5a1.53 1.53 0 0 0 2.22 0C15.64 36.94 28 23.8 28 14 28 6.27 21.73 0 14 0Z" fill="#86bd23"/>
+    <path d="M14 1.6C7.15 1.6 1.6 7.15 1.6 14c0 8.7 11.1 20.9 12.4 22.3 1.3-1.4 12.4-13.6 12.4-22.3 0-6.85-5.55-12.4-12.4-12.4Z" fill="#9bcf33"/>
     <circle cx="14" cy="13.6" r="5.2" fill="#fff"/>
   </svg>`;
 
@@ -559,7 +559,7 @@ function initExploreMap(root) {
   const haloUsuario = window.L.circleMarker(coordenadaAtual(), {
     radius: 20,
     stroke: false,
-    fillColor: '#16a765',
+    fillColor: '#9bcf33',
     fillOpacity: 0.18,
     interactive: false
   }).addTo(desktopMap);
@@ -567,7 +567,7 @@ function initExploreMap(root) {
     radius: 10,
     color: '#ffffff',
     weight: 4,
-    fillColor: '#0c8b52',
+    fillColor: '#86bd23',
     fillOpacity: 1
   }).addTo(desktopMap);
   marcadorUsuario.bindTooltip('Você está aqui', {

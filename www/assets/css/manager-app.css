@@ -3,18 +3,18 @@
    Camada isolada para preservar o frontend do jogador.
    ========================================================= */
 html[data-manager-app] {
-  --manager-bg: #f3f8f4;
+  --manager-bg: #f5fce6;
   --manager-panel: #ffffff;
-  --manager-panel-soft: #edf8f1;
-  --manager-line: #dce9df;
-  --manager-line-strong: #c7ddce;
-  --manager-ink: #143523;
-  --manager-ink-soft: #315742;
-  --manager-muted: #6b7f72;
-  --manager-green: #16a765;
-  --manager-green-strong: #0c8b52;
-  --manager-green-deep: #075e3a;
-  --manager-green-light: #b9edcb;
+  --manager-panel-soft: #f4f8ed;
+  --manager-line: #e3eecd;
+  --manager-line-strong: #d5ddc7;
+  --manager-ink: #1f2e0b;
+  --manager-ink-soft: #495731;
+  --manager-muted: #606b56;
+  --manager-green: #9bcf33;
+  --manager-green-strong: #86bd23;
+  --manager-green-deep: #3f5c11;
+  --manager-green-light: #ddf2a8;
   --manager-warning: #e8a02f;
   --manager-danger: #c94151;
   --manager-blue: #2774d9;
@@ -48,7 +48,7 @@ html[data-manager-app] .app {
 html[data-manager-app] .sidebar {
   padding: 18px 13px;
   border-color: var(--manager-line);
-  background: #edf8f1;
+  background: #f4f8ed;
 }
 
 html[data-manager-app] .sb-top {
@@ -76,7 +76,7 @@ html[data-manager-app] .sb-collapse {
 
 html[data-manager-app] .sb-group {
   padding: 15px 12px 7px;
-  color: #718178;
+  color: #7b8171;
   font-size: 9.5px;
   letter-spacing: 0;
 }
@@ -86,7 +86,7 @@ html[data-manager-app] .sb-link {
   margin-bottom: 2px;
   padding: 10px 12px;
   border-radius: 14px;
-  color: #52705e;
+  color: #657052;
   font-size: 13.5px;
   font-weight: 650;
 }
@@ -110,7 +110,7 @@ html[data-manager-app] .sb-link .badge {
   min-width: 22px;
   padding: 2px 7px;
   background: var(--manager-green);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
   text-align: center;
 }
 
@@ -222,7 +222,7 @@ html[data-manager-app] .period button {
 html[data-manager-app] .period a.on,
 html[data-manager-app] .period button.on {
   background: var(--manager-green);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
 }
 
 html[data-manager-app] .panel,
@@ -377,7 +377,7 @@ html[data-manager-app] .manager-notification-item small {
 }
 
 html[data-manager-app] .manager-notification-item.is-new > span {
-  background: #dff4e7;
+  background: #ecf4df;
   color: var(--manager-green);
 }
 
@@ -411,9 +411,9 @@ html[data-manager-app] .manager-welcome {
   gap: 24px;
   margin-bottom: 18px;
   padding: 24px 26px;
-  border: 1px solid #cfe7d7;
+  border: 1px solid #dee7cf;
   border-radius: var(--manager-radius-lg);
-  background: #eaf7ee;
+  background: #f2f7ea;
 }
 
 html[data-manager-app] .manager-welcome__copy h2 {
@@ -447,7 +447,7 @@ html[data-manager-app] .manager-request-cta > span {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #dcf4e5;
+  background: #ebf4dc;
   color: var(--manager-green-strong);
 }
 
@@ -471,7 +471,7 @@ html[data-manager-app] .manager-request-cta > .ic {
 }
 
 html[data-manager-app] .manager-request-cta.is-clear > span {
-  background: #e6f7ec;
+  background: #f1f7e6;
 }
 
 html[data-manager-app] .manager-summary {
@@ -491,7 +491,7 @@ html[data-manager-app] .manager-balance {
   padding: 21px;
   border-radius: var(--manager-radius);
   background: var(--manager-green-strong);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
   box-shadow: 0 16px 32px rgba(12, 139, 82, .16);
 }
 
@@ -711,7 +711,7 @@ html[data-manager-app] .manager-tools > a > .ic {
   height: 27px;
   padding: 7px;
   border-radius: 50%;
-  background: #edf7f0;
+  background: #f3f7ed;
   color: var(--manager-green-strong);
 }
 
@@ -780,7 +780,7 @@ html[data-manager-app] .manager-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e1f4e7;
+  background: #edf4e1;
   color: var(--manager-green-deep);
   font-size: 13px;
   font-weight: 850;
@@ -838,7 +838,7 @@ html[data-manager-app] .manager-progress {
   overflow: hidden;
   height: 8px;
   border-radius: 999px;
-  background: #e8f1eb;
+  background: #eef1e8;
 }
 
 html[data-manager-app] .manager-progress i {
@@ -924,27 +924,27 @@ html[data-manager-app] .manager-heatmap__cell:hover {
 
 html[data-manager-app] .manager-heatmap__cell.b0,
 html[data-manager-app] .manager-heatmap__legend .b0 {
-  background: #edf5ef;
+  background: #f2f5ed;
 }
 
 html[data-manager-app] .manager-heatmap__cell.b1,
 html[data-manager-app] .manager-heatmap__legend .b1 {
-  background: #ccebd7;
+  background: #e0ebcc;
 }
 
 html[data-manager-app] .manager-heatmap__cell.b2,
 html[data-manager-app] .manager-heatmap__legend .b2 {
-  background: #91d9aa;
+  background: #bfd991;
 }
 
 html[data-manager-app] .manager-heatmap__cell.b3,
 html[data-manager-app] .manager-heatmap__legend .b3 {
-  background: #3fba78;
+  background: #8dba3f;
 }
 
 html[data-manager-app] .manager-heatmap__cell.b4,
 html[data-manager-app] .manager-heatmap__legend .b4 {
-  background: #087345;
+  background: #4c7308;
 }
 
 html[data-manager-app] .manager-heatmap__legend {
@@ -1044,9 +1044,9 @@ html[data-manager-app] .req-banner {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border: 1px solid #cbe7d4;
+  border: 1px solid #dde7cb;
   border-radius: var(--manager-radius);
-  background: #e8f7ed;
+  background: #f2f7e8;
   color: var(--manager-green-deep);
 }
 
@@ -1128,7 +1128,7 @@ html[data-manager-app] .manager-reservation-overview small {
 }
 
 html[data-manager-app] .manager-reservation-overview .has-pending > span {
-  background: #dff4e7;
+  background: #ecf4df;
   color: var(--manager-green);
 }
 
@@ -1161,7 +1161,7 @@ html[data-manager-app] .manager-filter-tabs button {
 
 html[data-manager-app] .manager-filter-tabs button.on {
   background: var(--manager-green);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
 }
 
 html[data-manager-app] .manager-bookings,
@@ -1340,7 +1340,7 @@ html[data-manager-app] .cal-ev {
 }
 
 html[data-manager-app] .cal-ev.pago {
-  background: #def3e5;
+  background: #ebf3de;
   border-color: var(--manager-green);
   color: var(--manager-green-deep);
 }
@@ -1365,12 +1365,12 @@ html[data-manager-app] .manager-finance-balance {
   padding: 22px;
   border-radius: var(--manager-radius);
   background: var(--manager-green-strong);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
   box-shadow: 0 16px 32px rgba(12, 139, 82, .16);
 }
 
 html[data-manager-app] .manager-finance-balance .manager-eyebrow {
-  color: #d8f5e2;
+  color: #eaf5d8;
 }
 
 html[data-manager-app] .manager-finance-balance .manager-eyebrow i {
@@ -1515,7 +1515,7 @@ html[data-manager-app] .manager-finance-donut {
   width: 128px;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: conic-gradient(var(--manager-green) 0 var(--manager-net), #bfe4cc var(--manager-net) 100%);
+  background: conic-gradient(var(--manager-green) 0 var(--manager-net), #d6e4bf var(--manager-net) 100%);
 }
 
 html[data-manager-app] .manager-finance-donut::after {
@@ -1569,7 +1569,7 @@ html[data-manager-app] .manager-finance-legend .is-net {
 }
 
 html[data-manager-app] .manager-finance-legend .is-fee {
-  background: #bfe4cc;
+  background: #d6e4bf;
 }
 
 html[data-manager-app] .manager-finance-legend p > span {
@@ -1668,9 +1668,9 @@ html[data-manager-app] .manager-showcase {
   scroll-margin-top: 92px;
   margin-bottom: 28px;
   padding: 25px;
-  border: 1px solid #cfe7d7;
+  border: 1px solid #dee7cf;
   border-radius: var(--manager-radius-lg);
-  background: #eaf7ee;
+  background: #f2f7ea;
 }
 
 html[data-manager-app] .manager-showcase__copy > h2 {
@@ -1733,7 +1733,7 @@ html[data-manager-app] .manager-setting-toggle > span {
   width: 35px;
   height: 35px;
   border-radius: 50%;
-  background: #e4f4e9;
+  background: #eef4e4;
   color: var(--manager-green-strong);
 }
 
@@ -1769,7 +1769,7 @@ html[data-manager-app] .manager-setting-toggle > i {
   width: 34px;
   height: 20px;
   border-radius: 999px;
-  background: #cdd8d0;
+  background: #d4d8cd;
   transition: background .18s;
 }
 
@@ -1902,7 +1902,7 @@ html[data-manager-app] .status {
 html[data-manager-app] .add-card {
   min-height: 300px;
   border-radius: 22px;
-  background: #edf6f0;
+  background: #f3f6ed;
   box-shadow: none;
 }
 
@@ -1960,9 +1960,9 @@ html[data-manager-app] .manager-coupon {
   align-items: center;
   gap: 10px;
   padding: 11px 12px;
-  border: 1px dashed #b9d9c4;
+  border: 1px dashed #cdd9b9;
   border-radius: 16px;
-  background: #f0faf3;
+  background: #f6faf0;
 }
 
 html[data-manager-app] .manager-coupon > span {
@@ -1971,7 +1971,7 @@ html[data-manager-app] .manager-coupon > span {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #dcf4e5;
+  background: #ebf4dc;
   color: var(--manager-green-strong);
 }
 
@@ -2036,7 +2036,7 @@ html[data-manager-app] .conv.on {
 }
 
 html[data-manager-app] .bubbles {
-  background: #f3f8f4;
+  background: #f5fce6;
 }
 
 html[data-manager-app] .bubble {
@@ -2297,7 +2297,7 @@ html[data-manager-app] .toast {
     min-height: 54px;
     padding: 4px 1px;
     border-radius: 16px;
-    color: #718078;
+    color: #7a8071;
   }
 
   html[data-manager-app] .manager-tabbar .ic {
@@ -2338,7 +2338,7 @@ html[data-manager-app] .toast {
     border: 2px solid #fff;
     border-radius: 999px;
     background: var(--manager-green);
-    color: #fff;
+    color: var(--pq-on-brand, #1f2e0b);
     font-size: 8px;
   }
 
@@ -2745,7 +2745,7 @@ html[data-manager-app] .toast {
 
   html[data-manager-app] .manager-agenda-court-filter button.on {
     background: var(--manager-green);
-    color: #fff;
+    color: var(--pq-on-brand, #1f2e0b);
   }
 
   html[data-manager-app] .manager-agenda-days {
@@ -2798,7 +2798,7 @@ html[data-manager-app] .toast {
   html[data-manager-app] .manager-agenda-days button.on {
     border-color: var(--manager-green);
     background: var(--manager-green);
-    color: #fff;
+    color: var(--pq-on-brand, #1f2e0b);
     box-shadow: 0 8px 18px rgba(22, 167, 101, .16);
   }
 
@@ -2902,7 +2902,7 @@ html[data-manager-app] .toast {
   }
 
   html[data-manager-app] .manager-day-booking__chevron {
-    color: #91a198;
+    color: #9ba191;
   }
 
   html[data-manager-app] .manager-agenda-empty {
@@ -2988,7 +2988,7 @@ html[data-manager-app] .toast {
 
   html[data-manager-app] .manager-mobile-period button.on {
     background: var(--manager-green);
-    color: #fff;
+    color: var(--pq-on-brand, #1f2e0b);
   }
 
   html[data-manager-app] .manager-finance-analytics {
@@ -3392,22 +3392,22 @@ html[data-manager-app] .manager-boost {
   justify-content: space-between;
   gap: 16px;
   padding: 18px 20px;
-  border: 1px solid var(--line-2, #e6ece7);
+  border: 1px solid var(--line-2, #eaece6);
   border-radius: 18px;
   margin-top: 12px;
   background: #fff;
 }
 
 html[data-manager-app] .manager-boost.is-on {
-  border-color: #b9edcb;
-  background: #f2fbf5;
+  border-color: #ddf2a8;
+  background: #f8fbf2;
 }
 
 html[data-manager-app] .manager-boost__tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #0c8b52;
+  color: var(--pq-brand-deep);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .04em;

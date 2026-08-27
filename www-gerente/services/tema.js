@@ -20,7 +20,7 @@ const ESCURO = 'dark';
    aparelho fica verde-claro sobre um painel escuro e a emenda aparece
    exatamente na borda da tela. */
 const BARRA = {
-  [ESCURO]: '#0e1613',
+  [ESCURO]: '#111409',
   [CLARO]: '#1b7a3e'
 };
 

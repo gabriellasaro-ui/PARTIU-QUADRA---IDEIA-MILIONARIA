@@ -3,18 +3,18 @@
    Camada isolada para preservar o frontend do jogador.
    ========================================================= */
 html[data-manager-app] {
-  --manager-bg: #f3f8f4;
+  --manager-bg: #f5fce6;
   --manager-panel: #ffffff;
-  --manager-panel-soft: #edf8f1;
-  --manager-line: #dce9df;
-  --manager-line-strong: #c7ddce;
-  --manager-ink: #143523;
-  --manager-ink-soft: #315742;
-  --manager-muted: #6b7f72;
-  --manager-green: #16a765;
-  --manager-green-strong: #0c8b52;
-  --manager-green-deep: #075e3a;
-  --manager-green-light: #b9edcb;
+  --manager-panel-soft: #f4f8ed;
+  --manager-line: #e3eecd;
+  --manager-line-strong: #d5ddc7;
+  --manager-ink: #1f2e0b;
+  --manager-ink-soft: #495731;
+  --manager-muted: #606b56;
+  --manager-green: #9bcf33;
+  --manager-green-strong: #86bd23;
+  --manager-green-deep: #3f5c11;
+  --manager-green-light: #ddf2a8;
   --manager-warning: #e8a02f;
   --manager-danger: #c94151;
   --manager-blue: #2774d9;
@@ -109,7 +109,7 @@ html[data-manager-app] .sb-link .badge {
   min-width: 22px;
   padding: 2px 7px;
   background: var(--manager-green);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
   text-align: center;
 }
 
@@ -221,7 +221,7 @@ html[data-manager-app] .period button {
 html[data-manager-app] .period a.on,
 html[data-manager-app] .period button.on {
   background: var(--manager-green);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
 }
 
 html[data-manager-app] .panel,
@@ -490,7 +490,7 @@ html[data-manager-app] .manager-balance {
   padding: 21px;
   border-radius: var(--manager-radius);
   background: var(--manager-green-strong);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
   box-shadow: 0 16px 32px rgba(12, 139, 82, .16);
 }
 
@@ -933,17 +933,17 @@ html[data-manager-app] .manager-heatmap__legend .b1 {
 
 html[data-manager-app] .manager-heatmap__cell.b2,
 html[data-manager-app] .manager-heatmap__legend .b2 {
-  background: #91d9aa;
+  background: #bfd991;
 }
 
 html[data-manager-app] .manager-heatmap__cell.b3,
 html[data-manager-app] .manager-heatmap__legend .b3 {
-  background: #3fba78;
+  background: #8dba3f;
 }
 
 html[data-manager-app] .manager-heatmap__cell.b4,
 html[data-manager-app] .manager-heatmap__legend .b4 {
-  background: #087345;
+  background: #4c7308;
 }
 
 html[data-manager-app] .manager-heatmap__legend {
@@ -1160,7 +1160,7 @@ html[data-manager-app] .manager-filter-tabs button {
 
 html[data-manager-app] .manager-filter-tabs button.on {
   background: var(--manager-green);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
 }
 
 html[data-manager-app] .manager-bookings,
@@ -1396,12 +1396,12 @@ html[data-manager-app] .manager-finance-balance {
   padding: 22px;
   border-radius: var(--manager-radius);
   background: var(--manager-green-strong);
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
   box-shadow: 0 16px 32px rgba(12, 139, 82, .16);
 }
 
 html[data-manager-app] .manager-finance-balance .manager-eyebrow {
-  color: #d8f5e2;
+  color: #eaf5d8;
 }
 
 html[data-manager-app] .manager-finance-balance .manager-eyebrow i {
@@ -1546,7 +1546,7 @@ html[data-manager-app] .manager-finance-donut {
   width: 128px;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: conic-gradient(var(--manager-green) 0 var(--manager-net), #bfe4cc var(--manager-net) 100%);
+  background: conic-gradient(var(--manager-green) 0 var(--manager-net), #d6e4bf var(--manager-net) 100%);
 }
 
 html[data-manager-app] .manager-finance-donut::after {
@@ -2369,7 +2369,7 @@ html[data-manager-app] .toast {
     border: 2px solid var(--pq-line);
     border-radius: 999px;
     background: var(--manager-green);
-    color: #fff;
+    color: var(--pq-on-brand, #1f2e0b);
     font-size: 8px;
   }
 
@@ -2776,7 +2776,7 @@ html[data-manager-app] .toast {
 
   html[data-manager-app] .manager-agenda-court-filter button.on {
     background: var(--manager-green);
-    color: #fff;
+    color: var(--pq-on-brand, #1f2e0b);
   }
 
   html[data-manager-app] .manager-agenda-days {
@@ -2829,7 +2829,7 @@ html[data-manager-app] .toast {
   html[data-manager-app] .manager-agenda-days button.on {
     border-color: var(--manager-green);
     background: var(--manager-green);
-    color: #fff;
+    color: var(--pq-on-brand, #1f2e0b);
     box-shadow: 0 8px 18px rgba(22, 167, 101, .16);
   }
 
@@ -2933,7 +2933,7 @@ html[data-manager-app] .toast {
   }
 
   html[data-manager-app] .manager-day-booking__chevron {
-    color: #91a198;
+    color: #9ba191;
   }
 
   html[data-manager-app] .manager-agenda-empty {
@@ -3019,7 +3019,7 @@ html[data-manager-app] .toast {
 
   html[data-manager-app] .manager-mobile-period button.on {
     background: var(--manager-green);
-    color: #fff;
+    color: var(--pq-on-brand, #1f2e0b);
   }
 
   html[data-manager-app] .manager-finance-analytics {
@@ -3423,7 +3423,7 @@ html[data-manager-app] .manager-boost {
   justify-content: space-between;
   gap: 16px;
   padding: 18px 20px;
-  border: 1px solid var(--line-2, #e6ece7);
+  border: 1px solid var(--line-2, #eaece6);
   border-radius: 18px;
   margin-top: 12px;
   background: var(--pq-panel);
@@ -3510,14 +3510,14 @@ html[data-manager-app] .manager-boost__price em {
 html[data-manager-app] {
   --manager-bg: #f6f8f7;
   --manager-panel: #ffffff;
-  --manager-line: #dfe6e1;
-  --manager-line-strong: #cbd7cf;
-  --manager-ink: #17251d;
-  --manager-ink-soft: #516157;
-  --manager-muted: #77837b;
-  --manager-green: #138b57;
-  --manager-green-strong: #0b7346;
-  --manager-green-deep: #075536;
+  --manager-line: #e3e6df;
+  --manager-line-strong: #d3d7cb;
+  --manager-ink: #202517;
+  --manager-ink-soft: #5b6151;
+  --manager-muted: #7f8377;
+  --manager-green: #5f8b13;
+  --manager-green-strong: #4d730b;
+  --manager-green-deep: #385507;
   --manager-radius-sm: 8px;
   --manager-radius: 12px;
   --manager-radius-lg: 16px;
@@ -3725,10 +3725,10 @@ html[data-manager-app][data-manager-view="agenda"] .manager-agenda-stats strong 
 html[data-manager-app][data-manager-view="agenda"] .manager-agenda-workspace { border-color:var(--pq-line); border-radius:12px; box-shadow:0 8px 24px rgba(24,73,47,.05); }
 html[data-manager-app][data-manager-view="agenda"] .cal-toolbar { min-height:58px; padding:10px 16px; border-bottom-color:var(--pq-line); background:var(--pq-panel); }
 html[data-manager-app][data-manager-view="agenda"] .manager-agenda-court-filter button { border-radius:7px; }
-html[data-manager-app][data-manager-view="agenda"] .manager-agenda-court-filter button.on { background:var(--manager-green-strong); color:#fff; }
+html[data-manager-app][data-manager-view="agenda"] .manager-agenda-court-filter button.on { background:var(--manager-green-strong); color:var(--pq-on-brand, #1f2e0b); }
 html[data-manager-app][data-manager-view="agenda"] .cal-head { border-bottom-color:var(--pq-line); background:var(--pq-tint); }
 html[data-manager-app][data-manager-view="agenda"] .cal-head > * { color:var(--manager-green-deep); font-weight:800; }
-/* Listrado das horas: era #e8f0eb cravado, um cinza claro que no escuro
+/* Listrado das horas: era #edf0e8 cravado, um cinza claro que no escuro
    virava uma gaiola de riscos brancos POR CIMA das reservas — o calendario
    competindo com o conteudo dele. */
 html[data-manager-app][data-manager-view="agenda"] .cal-col { background-image:repeating-linear-gradient(to bottom,var(--pq-line) 0,var(--pq-line) 1px,transparent 1px,transparent var(--hourh)); }

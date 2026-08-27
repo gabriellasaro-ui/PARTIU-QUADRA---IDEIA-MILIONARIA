@@ -37,7 +37,7 @@
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .game-card__icon .ic {
@@ -55,7 +55,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -106,14 +106,14 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 /* Em andamento: unica variante preenchida, para chamar atencao sem sair da marca */
 .game-card--live {
   border-color: transparent;
   background: linear-gradient(135deg, var(--pq-brand-strong), var(--pq-brand));
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
 }
 
 .game-card--live .game-card__icon {
@@ -304,13 +304,14 @@
 
 .game-phase__step.done:not(:last-child)::after {
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
 .game-phase__step i {
   width: 10px;
   height: 10px;
   flex-shrink: 0;
-  border: 2px solid var(--pq-line-strong, #ccd5cb);
+  border: 2px solid var(--pq-line-strong, #d5e0bc);
   border-radius: 50%;
   background: var(--pq-panel);
 }
@@ -318,16 +319,18 @@
 .game-phase__step.done { color: var(--pq-brand-deep); }
 
 .game-phase__step.done i {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
+  color: var(--pq-on-brand);
 }
 
-.game-phase__step.active { color: var(--pq-brand-strong); }
+.game-phase__step.active { color: var(--pq-brand-deep); }
 
 .game-phase__step.active i {
-  border-color: var(--pq-brand);
+  border-color: var(--pq-brand-deep);
   background: var(--pq-brand);
   box-shadow: 0 0 0 4px var(--pq-signal-soft);
+  color: var(--pq-on-brand);
 }
 
 .game-content {
@@ -362,7 +365,7 @@
 }
 
 .game-countdown__label {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -423,7 +426,7 @@
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .game-info-item__value span {
@@ -471,7 +474,7 @@
 
 .game-btn--primary {
   background: var(--pq-brand-strong);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .game-btn--outline {
@@ -579,7 +582,7 @@
 }
 
 .game-team-card__header.team-a {
-  border-bottom-color: var(--pq-brand);
+  border-bottom-color: var(--pq-brand-deep);
   color: var(--pq-brand-deep);
 }
 
@@ -626,7 +629,7 @@
   gap: 11px;
   margin-top: 10px;
   padding: 11px 13px;
-  border: 1px dashed var(--pq-line-strong, #ccd5cb);
+  border: 1px dashed var(--pq-line-strong, #d5e0bc);
   border-radius: 22px;
   background: var(--pq-signal-soft);
   color: var(--pq-ink);
@@ -647,7 +650,7 @@
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .game-shuffle__icon .ic {
@@ -675,7 +678,7 @@
 .game-shuffle > .ic {
   width: 18px;
   height: 18px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 /* Placar */
@@ -685,7 +688,7 @@
   border: 1px solid transparent;
   border-radius: 22px;
   background: linear-gradient(135deg, var(--pq-brand-deep), var(--pq-brand-strong));
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
   text-align: center;
 }
 
@@ -851,14 +854,14 @@
   color: var(--pq-muted);
 }
 
-.game-event__icon.goal-a { color: var(--pq-brand); }
+.game-event__icon.goal-a { color: var(--pq-brand-deep); }
 .game-event__icon.goal-b { color: var(--pq-gold, #e4a11b); }
 .game-event__icon.yellow { color: var(--pq-gold); }
 .game-event__icon.red { color: #e85d75; }
 
 .game-empty {
   padding: 14px;
-  border: 1px dashed var(--pq-line-strong, #ccd5cb);
+  border: 1px dashed var(--pq-line-strong, #d5e0bc);
   border-radius: 16px;
   color: var(--pq-muted);
   font-size: 11px;
@@ -877,7 +880,7 @@
 }
 
 .game-result__winner {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 9.5px;
   font-weight: 900;
   text-transform: uppercase;
@@ -952,7 +955,7 @@
 .game-rating__star {
   border: none;
   background: none;
-  color: var(--pq-line-strong, #ccd5cb);
+  color: var(--pq-line-strong, #d5e0bc);
   font-size: 26px;
   line-height: 1;
   cursor: pointer;
@@ -973,7 +976,7 @@
   overflow: hidden;
   aspect-ratio: 1;
   border-radius: 16px;
-  background: var(--pq-surface-2, #f3f5f1);
+  background: var(--pq-surface-2, #f2f7e6);
 }
 
 .game-photo-item img {
@@ -985,9 +988,9 @@
 .game-photo-add {
   display: grid;
   place-items: center;
-  border: 1px dashed var(--pq-line-strong, #ccd5cb);
+  border: 1px dashed var(--pq-line-strong, #d5e0bc);
   background: var(--pq-panel);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   cursor: pointer;
 }
 
@@ -1032,7 +1035,7 @@
 .game-tabs__tab.is-active {
   border-color: transparent;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .game-tabpanel[hidden] { display: none; }
@@ -1049,7 +1052,7 @@
 }
 
 .game-bigclock__label {
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -1175,7 +1178,7 @@
   z-index: 200;
   overflow: hidden;
   background: linear-gradient(135deg, var(--pq-brand-deep), var(--pq-brand-strong));
-  color: #fff;
+  color: var(--pq-on-brand, #1f2e0b);
 }
 
 .game-tv[hidden] { display: none; }
@@ -1298,7 +1301,7 @@ body.is-tv-open { overflow: hidden; }
 .game-chip.is-on {
   border-color: transparent;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .game-chip:active { transform: translateY(1px); }
@@ -1358,7 +1361,7 @@ body.is-tv-open { overflow: hidden; }
   min-height: 46px;
   border: 1px solid var(--pq-line);
   border-radius: 14px;
-  background: var(--pq-surface-2, #f3f5f1);
+  background: var(--pq-surface-2, #f2f7e6);
   color: var(--pq-ink);
   font-family: inherit;
   font-size: 20px;
@@ -1370,7 +1373,7 @@ body.is-tv-open { overflow: hidden; }
 .game-scorepad__btn.is-plus {
   border-color: transparent;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 /* O + pega a cor do proprio time: dois botoes verdes iguais comandando
@@ -1422,14 +1425,14 @@ body.is-tv-open { overflow: hidden; }
   height: 40px;
   border-radius: 50%;
   background: var(--pq-brand);
-  color: #fff;
+  color: var(--pq-on-brand);
 }
 
 .game-jump__icon .ic { width: 20px; height: 20px; }
 .game-jump > span:nth-child(2) { display: flex; min-width: 0; flex-direction: column; }
 .game-jump strong { font-size: 12.5px; font-weight: 900; }
 .game-jump small { margin-top: 2px; color: var(--pq-muted); font-size: 9.5px; }
-.game-jump > .ic { width: 18px; height: 18px; color: var(--pq-brand-strong); }
+.game-jump > .ic { width: 18px; height: 18px; color: var(--pq-brand-deep); }
 
 /* ── Fila de times ──────────────────────────────────────── */
 .game-queue {
@@ -1445,7 +1448,7 @@ body.is-tv-open { overflow: hidden; }
   gap: 10px;
   padding: 10px 13px;
   border: 1px solid var(--pq-line);
-  border-left: 4px solid var(--pq-line-strong, #ccd5cb);
+  border-left: 4px solid var(--pq-line-strong, #d5e0bc);
   border-radius: 16px;
   background: var(--pq-panel);
 }
@@ -1456,7 +1459,7 @@ body.is-tv-open { overflow: hidden; }
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--pq-surface-2, #f3f5f1);
+  background: var(--pq-surface-2, #f2f7e6);
   color: var(--pq-muted);
   font-size: 11px;
   font-weight: 900;
@@ -1486,12 +1489,12 @@ body.is-tv-open { overflow: hidden; }
 }
 
 /* ── Cores dos times (ate 6) — todas ja existentes na paleta ── */
-[data-team-accent="0"] { --team-color: var(--pq-brand); }
+[data-team-accent="0"] { --team-color: var(--pq-brand-deep); }
 [data-team-accent="1"] { --team-color: var(--pq-gold, #e4a11b); }
 [data-team-accent="2"] { --team-color: var(--pq-blue, #2563eb); }
 [data-team-accent="3"] { --team-color: var(--pq-rose, #e85d75); }
 [data-team-accent="4"] { --team-color: var(--pq-brand-deep); }
-[data-team-accent="5"] { --team-color: var(--pq-ink-soft, #315742); }
+[data-team-accent="5"] { --team-color: var(--pq-ink-soft, #495731); }
 
 .game-team-card__header[data-team-accent] {
   border-bottom-color: var(--team-color);
@@ -1533,7 +1536,7 @@ body.is-tv-open { overflow: hidden; }
 .game-facts dt .ic {
   width: 15px;
   height: 15px;
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .game-facts dd {
@@ -1582,7 +1585,7 @@ body.is-tv-open { overflow: hidden; }
   border-radius: 50%;
   margin-bottom: 12px;
   background: var(--pq-signal-soft);
-  color: var(--pq-brand-strong);
+  color: var(--pq-brand-deep);
 }
 
 .game-teams-empty__icon .ic { width: 24px; height: 24px; }

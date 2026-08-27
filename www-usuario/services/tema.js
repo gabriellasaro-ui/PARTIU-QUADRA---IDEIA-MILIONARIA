@@ -18,8 +18,8 @@ const CLARO = 'light';
    Sem trocar isto, o topo do aparelho continuava verde-claro sobre um app
    escuro — a emenda aparecia justamente na borda da tela. */
 const BARRA = {
-  [CLARO]: '#16a765',
-  [ESCURO]: '#0e1613'
+  [CLARO]: '#9bcf33',
+  [ESCURO]: '#111409'
 };
 
 export function temaAtual() {
