@@ -88,11 +88,19 @@ def bairro_da_arena(arena) -> str:
     Um comentario em api/quadras.py chegava a afirmar que "nao ha coluna
     neighborhood em Arena". Ha, e indexada, desde models/arena.py.
 
-    A cascata mantem quem ainda nao preencheu o bairro: arena antiga com
-    endereco em texto livre continua mostrando o que tem, em vez de virar
-    vazio de um dia para o outro.
+    `address` NAO ENTRA NA CASCATA, e isso e deliberado.
+
+    A primeira versao caia em `arena.address` quando o bairro estava vazio,
+    para nao deixar arena antiga sem nada. So que `address` e texto livre e na
+    pratica guarda a RUA: a API chegou a devolver
+    `"neighborhood": "Rua Senador Campos Vergueiro 222"`. Publicar a rua da
+    arena e justamente o que a plataforma nao faz — quem tem o endereco e o
+    telefone fecha por fora, e o app perde a reserva que sustenta o negocio.
+    A mesma regra ja vale para o chat, que so abre depois da reserva paga.
+
+    Sem bairro, entao, mostra a CIDADE: menos preciso, nunca o endereco.
     """
-    return arena.neighborhood or arena.address or arena.city or ""
+    return arena.neighborhood or arena.city or ""
 
 
 def _distance_to(arena: Arena, lat: float | None, lng: float | None) -> float:
@@ -133,6 +141,15 @@ def to_venue(
         "arenaName": arena.name,
         "courtName": court.name,
         "arenaCourtCount": arena_court_count if arena_court_count is not None else 1,
+        # A LOGO EXISTIA E NUNCA SAIA DAQUI.
+        #
+        # `Arena.logo` esta no banco desde sempre e o painel do gerente ja
+        # deixa o dono subir a dele. Mas nenhum payload do jogador carregava o
+        # campo, entao a tela da quadra — que TEM um bloco de identidade da
+        # arena pronto — desenhava as INICIAIS do nome num circulo. A arena
+        # aparecia sem cara, e a marca que o dono cadastrou nao chegava a
+        # ninguem. Vazio continua caindo nas iniciais, que e o fallback certo.
+        "arenaLogo": arena.logo or "",
         "sport": court.sport,
         "neighborhood": bairro_da_arena(arena),
         "distance": _distance_to(arena, lat, lng),
@@ -223,6 +240,144 @@ def get_venue_detail(db: Session, court_id, *, lat=None, lng=None) -> dict | Non
     contagens = repo.court_counts(db, [arena.id])
     return to_venue(arena, court, stats=stats, lat=lat, lng=lng, reviews=reviews, db=db,
                     arena_court_count=contagens.get(arena.id))
+
+
+def get_arena_profile(db: Session, arena_id, *, lat=None, lng=None) -> dict | None:
+    """A vitrine da arena: quem ela e, e tudo o que ela tem para alugar.
+
+    O app listava quadras soltas. Uma arena com tres quadras aparecia tres
+    vezes na busca e nao existia lugar nenhum onde ela fosse UMA coisa — com
+    logo, descricao, avaliacoes e catalogo. E o modelo do iFood invertido: la
+    voce entra no restaurante e ve os produtos; aqui so havia produtos.
+
+    O QUE ESTA PAGINA NAO MOSTRA, e por que:
+
+    Nada de telefone, e-mail ou rua. Nao e descuido nem falta de espaco — quem
+    sai daqui com o contato e o endereco fecha por fora, e a plataforma perde
+    a reserva que a sustenta. A mesma regra ja governa o chat com a arena, que
+    so abre depois da reserva paga. Localizacao aqui e bairro/cidade mais o
+    NOSSO mapa; `arena.phone`, `arena.email`, `arena.pix_key` e `arena.address`
+    nao entram no retorno em hipotese nenhuma.
+
+    Devolve None quando a arena nao existe ou esta fora do ar — a API traduz
+    para 404.
+    """
+    arena = repo.get_visible_arena(db, arena_id)
+    if arena is None:
+        return None
+
+    rows = repo.list_visible_courts(db, arena_ids=[arena.id])
+    stats = repo.review_stats(db, [arena.id])
+    avg, count = stats.get(arena.id, (0, 0)) or (0, 0)
+
+    # `arena_court_count` sai de len(rows) e nao de repo.court_counts: e a
+    # mesma contagem, ja em memoria, e uma consulta a menos.
+    quadras = [
+        to_venue(arena, court, stats=stats, lat=lat, lng=lng, db=db,
+                 arena_court_count=len(rows))
+        for court, _ in rows
+    ]
+
+    # GALERIA DA ARENA = as fotos das quadras, sem repetir.
+    #
+    # Arena nao tem album proprio no banco, e criar um agora obrigaria o dono a
+    # subir tudo de novo para a vitrine aparecer. As fotos das quadras SAO as
+    # fotos da arena; dedup porque a mesma imagem as vezes esta em duas quadras,
+    # e a vitrine mostraria o mesmo campo duas vezes seguidas.
+    fotos: list[str] = []
+    for court, _ in rows:
+        for foto in (court.photos or []):
+            if foto and foto not in fotos:
+                fotos.append(foto)
+
+    precos = [q["price"] for q in quadras if q["price"] is not None]
+    esportes = sorted({q["sport"] for q in quadras if q["sport"]})
+
+    return {
+        "id": str(arena.id),
+        "nome": arena.name,
+        "logo": arena.logo or "",
+        "descricao": arena.description or "",
+        "bairro": bairro_da_arena(arena),
+        "cidade": arena.city or "",
+        "estado": arena.state or "",
+        "rating": avg,
+        "reviews": count,
+        "distancia": _distance_to(arena, lat, lng),
+        "map": _map_xy(arena.lat, arena.lng),
+        "fotos": fotos,
+        "quadras": quadras,
+        "totalQuadras": len(quadras),
+        "precoMin": min(precos) if precos else None,
+        "esportes": esportes,
+        "avaliacoes": [
+            {
+                "author": autor,
+                "date": _relative_date(review.created_at),
+                "rating": review.rating,
+                "text": review.comment or "",
+            }
+            for review, autor in repo.reviews_for_arena(db, arena.id)
+        ],
+    }
+
+
+def list_arenas(db: Session, *, lat=None, lng=None, limit: int = 20) -> list[dict]:
+    """Arenas com quadra disponivel, da mais perto para a mais longe.
+
+    Alimenta a faixa "Arenas perto de voce" da home. Sai da MESMA consulta da
+    busca de quadras, agrupada por arena: assim a faixa nunca mostra arena que
+    a lista de baixo nao mostraria, e nao ha um segundo conceito de
+    "visivel" para manter em dia.
+
+    Resumo curto de proposito — logo, bairro, nota, quantas quadras e a partir
+    de quanto. O resto e o perfil que conta; repetir tudo aqui so faria a faixa
+    competir com a tela para onde ela leva.
+    """
+    rows = repo.list_visible_courts(db)
+    if not rows:
+        return []
+
+    stats = repo.review_stats(db, [arena.id for _, arena in rows])
+
+    por_arena: dict = {}
+    for court, arena in rows:
+        item = por_arena.get(arena.id)
+        if item is None:
+            avg, count = stats.get(arena.id, (0, 0)) or (0, 0)
+            item = {
+                "id": str(arena.id),
+                "nome": arena.name,
+                "logo": arena.logo or "",
+                "bairro": bairro_da_arena(arena),
+                "cidade": arena.city or "",
+                "rating": avg,
+                "reviews": count,
+                "distancia": _distance_to(arena, lat, lng),
+                "map": _map_xy(arena.lat, arena.lng),
+                "quadras": 0,
+                "precoMin": None,
+                "esportes": [],
+                # Uma foto para a faixa nao ficar so de logo: arena sem logo
+                # cairia num circulo de iniciais e nada mais.
+                "foto": "",
+            }
+            por_arena[arena.id] = item
+
+        item["quadras"] += 1
+        preco = _money(court.price_cents)
+        if preco is not None and (item["precoMin"] is None or preco < item["precoMin"]):
+            item["precoMin"] = preco
+        if court.sport and court.sport not in item["esportes"]:
+            item["esportes"].append(court.sport)
+        if not item["foto"] and (court.photos or []):
+            item["foto"] = court.photos[0]
+
+    arenas = list(por_arena.values())
+    for item in arenas:
+        item["esportes"].sort()
+    arenas.sort(key=lambda a: a["distancia"])
+    return arenas[: max(1, int(limit or 20))]
 
 
 def _day_window(db: Session, court: Court, day: datetime) -> list[tuple[time, time]]:

@@ -11,6 +11,26 @@
     <div class="sport-rail" data-sport-chips></div>
   </section>
 
+  <!-- ARENAS — o caminho de quem escolhe pelo LUGAR, e nao pelo horario.
+
+       A lista de baixo e de quadras, que e como se procura horario. Esta faixa
+       responde a outra pergunta, a de quem quer saber onde jogar antes de
+       decidir quando — e e por ela que se chega ao perfil da arena, com a
+       logo, a descricao e todas as quadras daquele lugar.
+
+       Nasce escondida: `renderHome` so mostra a secao quando ha arena para
+       listar. Faixa vazia com titulo e pior do que faixa nenhuma. -->
+  <section class="market-section market-section--arenas" data-arena-section hidden>
+    <div class="market-section__head">
+      <div>
+        <span>Onde jogar</span>
+        <h2>Arenas perto de você</h2>
+      </div>
+      <a href="#quadras">Ver todas</a>
+    </div>
+    <div class="arena-rail" data-arena-rail></div>
+  </section>
+
   <!-- Card da partida (estilo Uber): proxima partida / em andamento / encerrada -->
   <div class="game-mode"><div id="gameCardContainer"></div></div>
 

@@ -11,6 +11,7 @@ export const ROUTES = {
   mapa: './index.html#mapa',
   reservas: './index.html#reservas',
   quadra: './index.html#quadra',
+  arena: './index.html#arena',
   pagamento: './index.html#pagamento',
   confirmado: './index.html#confirmado',
   favoritos: './index.html#favoritos',
@@ -42,6 +43,7 @@ export function parseMobileRouteHash(hashValue = '') {
     'quadras',
     'mapa',
     'quadra',
+    'arena',
     'pagamento',
     'confirmado',
     'reservas',
@@ -60,7 +62,13 @@ export function parseMobileRouteHash(hashValue = '') {
   let name = aliases[first] || first;
   const params = {};
 
-  if (name === 'quadra' || name === 'pagamento' || name === 'confirmado') {
+  /* `arena` entra junto das que carregam id no caminho (#arena/<uuid>).
+
+     O nome da rota e `arena`, e nao `perfil`: `perfil` ja e a conta de quem
+     esta usando o app. Sao duas telas diferentes com o mesmo apelido em
+     portugues, e trocar uma pela outra seria o tipo de engano que so aparece
+     no aparelho de alguem. */
+  if (name === 'quadra' || name === 'arena' || name === 'pagamento' || name === 'confirmado') {
     params.id = parts[1] || '';
   }
   if (name === 'mensagens') params.id = parts[1] || '';

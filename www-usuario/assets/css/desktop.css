@@ -3731,3 +3731,267 @@ html[data-player-desktop] .qcard .foot {
   margin-top: 24px;
   padding-top: 18px;
 }
+
+/* ── PERFIL DA ARENA (web) ─────────────────────────────────────────────────
+   A mesma vitrine do app: a arena como uma coisa so, com logo, descricao,
+   avaliacoes e o catalogo de quadras. */
+
+.desktop-arena-rail-wrap {
+  margin: 18px 0 6px;
+}
+
+.desktop-arena-rail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.desktop-arena-rail-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.desktop-arena-rail-head small {
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Faixa rolavel tambem no desktop: numa cidade com muitas arenas, empilhar
+   todas empurraria a lista de quadras para fora da primeira tela — e ela e
+   que continua sendo o caminho principal. */
+.desktop-arena-rail {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+
+.desktop-arena-rail .arena-chip {
+  flex: none;
+  width: 158px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 14px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-panel);
+  text-align: center;
+  transition: border-color .15s, transform .15s;
+}
+
+.desktop-arena-rail .arena-chip:hover {
+  border-color: var(--pq-brand);
+  transform: translateY(-2px);
+}
+
+.desktop-arena-rail .arena-chip__logo {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.desktop-arena-rail .arena-chip__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.desktop-arena-rail .arena-chip strong {
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.desktop-arena-rail .arena-chip small {
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.desktop-arena-rail .arena-chip__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.desktop-arena-rail .arena-chip__meta .ic {
+  width: 12px;
+  height: 12px;
+}
+
+.desktop-arena-rail .arena-chip__meta b { opacity: .4; }
+
+/* A logo do dono, quando existe, manda na moldura redonda. */
+.desktop-arena-logo.tem-imagem {
+  padding: 0;
+  overflow: hidden;
+}
+
+.desktop-arena-logo.tem-imagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.desktop-arena-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--pq-brand-deep);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.desktop-arena-link:hover {
+  text-decoration: underline;
+}
+
+.qcard-quadra {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 0 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.qcard-quadra .ic {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.arena-sobre {
+  margin: 0;
+  color: var(--pq-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.desktop-review-list {
+  display: grid;
+  gap: 14px;
+}
+
+/* Secoes do perfil: UMA coluna, titulo em cima.
+
+   A primeira versao reusou `.venue-information`, que e um grid de duas colunas
+   (titulo a esquerda, conteudo a direita) feito para a ficha da quadra. O
+   resultado foi o catalogo da arena espremido em 585px do lado direito, com
+   cards de 182px onde preco e botao nao cabiam na mesma linha — e metade da
+   tela vazia a esquerda. */
+.arena-bloco {
+  display: block;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--pq-line);
+}
+
+.arena-bloco h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.arena-bloco h2 small {
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Largura minima de 260px: abaixo disso o rodape do card (preco + "Ver
+   horarios") nao cabe lado a lado, que foi o defeito da primeira versao. */
+.arena-bloco__quadras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* Tres fatos em vez de dois: com o grid herdado da ficha da quadra o terceiro
+   caia sozinho numa segunda linha. */
+.desktop-arena-identity .desktop-arena-facts {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 22px;
+  align-items: center;
+}
+
+/* Nome e data da avaliacao em linhas separadas: com `display:block` no
+   container os dois sairam colados ("Gabriel LisboaHa 1 semana"). */
+.desktop-review-list .venue-review header > div {
+  display: grid;
+  gap: 1px;
+}
+
+.desktop-review-list .venue-review header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.desktop-review-list .venue-review header small {
+  color: var(--pq-muted);
+  font-size: 12px;
+}
+
+.desktop-review-list .venue-review__avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-weight: 900;
+}
+
+.desktop-review-list .venue-review__stars {
+  margin-left: auto;
+  color: var(--pq-warning, #f5a524);
+  letter-spacing: 1px;
+}
+
+.desktop-review-list {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+/* Foto que nao carrega no topo do perfil: vira fundo neutro em vez de um
+   retangulo vazio com o texto alternativo atravessado. */
+.desktop-venue-gallery__main.sem-foto,
+.desktop-venue-gallery__side button.sem-foto {
+  background: var(--pq-tint);
+}
+
+/* A imagem substituida pelo pixel transparente: o fundo neutro e o object-fit
+   evitam que 1x1 seja esticado para o tamanho da moldura. */
+.desktop-venue-gallery__main.sem-foto,
+.desktop-venue-gallery__side img.sem-foto {
+  object-fit: none;
+  background: var(--pq-tint);
+}

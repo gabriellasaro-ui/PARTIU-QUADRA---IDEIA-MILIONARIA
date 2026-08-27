@@ -45,7 +45,10 @@ export function isWebLimited() {
    seria cruel. */
 export const ROTAS_WEB = new Set([
   // o funil: achar, olhar, reservar
-  'quadras', 'quadra', 'mapa', 'home', 'buscar',
+  // `arena` e o perfil da ARENA (a vitrine), nao o perfil de quem usa o app.
+  // Entra no funil porque e onde a pessoa decide entre uma arena e outra —
+  // deixar de fora faria a web mostrar o link e a rota cair na home.
+  'quadras', 'quadra', 'arena', 'mapa', 'home', 'buscar',
   'pagamento', 'confirmado',
   // favoritos liberado a pedido do dono: salvar quadra e um gancho barato
   // para o sujeito voltar, e nao depende de mais nada do app

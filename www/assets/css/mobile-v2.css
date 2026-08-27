@@ -3865,6 +3865,7 @@ html[data-route="mapa"] .phone {
 
 .sport-rail,
 .venue-rail,
+.arena-rail,
 .sport-filter-rail {
   display: flex;
   overflow-x: auto;
@@ -8113,4 +8114,208 @@ html[data-theme="dark"] {
   background: var(--pq-brand);
   color: #06210f;
   box-shadow: 0 0 0 4px rgba(22, 167, 101, .28), 0 10px 22px rgba(5, 13, 9, .35);
+}
+
+/* ── PERFIL DA ARENA ───────────────────────────────────────────────────────
+   A vitrine entre a busca e a quadra. O app listava quadras soltas: uma arena
+   com tres quadras aparecia tres vezes e nao havia lugar nenhum onde ela fosse
+   uma coisa so. */
+
+/* Faixa da home. Herda o comportamento de rolagem de .sport-rail/.venue-rail
+   (declarado junto com elas la em cima) e so define o proprio ritmo. */
+.arena-rail {
+  gap: 10px;
+  padding: 0 16px 6px;
+  scroll-padding-left: 16px;
+}
+
+.arena-chip {
+  scroll-snap-align: start;
+  flex: none;
+  width: 148px;
+  display: grid;
+  gap: 2px;
+  padding: 14px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: var(--pq-radius-lg, 16px);
+  background: var(--pq-panel);
+  text-align: center;
+  justify-items: center;
+}
+
+.arena-chip__logo {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 14px;
+  font-weight: 950;
+  overflow: hidden;
+}
+
+/* A logo do dono manda na moldura: `cover` num circulo evita a imagem
+   deformada quando ela nao e quadrada, que e o caso mais comum. */
+.arena-chip__logo.tem-imagem img,
+.arena-logo.tem-imagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.arena-logo.tem-imagem {
+  padding: 0;
+  overflow: hidden;
+}
+
+.arena-chip strong {
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.25;
+  /* Duas linhas e o teto: nome longo empurrando o resto faria os cards da
+     faixa ficarem de alturas diferentes. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.arena-chip small {
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.arena-chip__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.arena-chip__meta .ic {
+  width: 12px;
+  height: 12px;
+}
+
+.arena-chip__meta b {
+  opacity: .4;
+}
+
+/* ── A tela do perfil ───────────────────────────────────────────────────── */
+
+/* Tres fatos, e nao dois: a arena acrescenta "quantas quadras" aos dois que a
+   tela da quadra ja mostrava. Com o grid de duas colunas herdado, o terceiro
+   caia sozinho numa segunda linha, desalinhado do resto. */
+[data-arena-page] .arena-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+[data-arena-page] .arena-facts > span {
+  padding-inline: 8px;
+}
+
+/* Arena sem nenhuma foto de quadra: em vez do retangulo cinza, a faixa
+   encolhe para o tamanho da barra de navegacao. O cabecalho logo abaixo, com
+   logo e nome, ja identifica a arena sozinho. */
+.arena-hero.sem-foto {
+  min-height: 92px;
+  background: var(--pq-tint);
+}
+
+.arena-hero.sem-foto .venue-hero-photo-count,
+.arena-hero.sem-foto .venue-hero-dots {
+  display: none;
+}
+
+.arena-facts .ic {
+  width: 14px;
+  height: 14px;
+}
+
+.arena-map-cta {
+  margin-top: 14px;
+}
+
+/* O bloco de identidade agora LEVA a algum lugar, entao precisa parecer que
+   leva: a seta faz o trabalho que em lista se faz com o chevron da direita. */
+.arena-identity.is-link {
+  position: relative;
+  padding-right: 26px;
+  cursor: pointer;
+}
+
+.arena-identity__seta {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  color: var(--pq-muted);
+}
+
+.arena-identity__seta .ic {
+  width: 18px;
+  height: 18px;
+}
+
+.arena-body {
+  display: grid;
+  gap: 22px;
+  padding-top: 18px;
+}
+
+.arena-section {
+  display: grid;
+  gap: 12px;
+}
+
+.arena-sobre {
+  margin: 0;
+  color: var(--pq-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.section-count {
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Uma coluna: dentro do perfil os cards sao o conteudo principal da tela, e
+   nao uma faixa lateral por onde se passa o dedo. */
+.arena-court-list {
+  display: grid;
+  gap: 12px;
+}
+
+/* Foto que nao carregou: o lugar dela vira um icone discreto, e nao um vazio
+   com o texto alternativo atravessado. */
+.venue-card .photo.sem-foto {
+  display: grid;
+  place-items: center;
+  background: var(--pq-tint);
+}
+
+.venue-card .photo.sem-foto::before {
+  content: '';
+  width: 34px;
+  height: 34px;
+  opacity: .35;
+  background: currentColor;
+  color: var(--pq-brand-deep);
+  -webkit-mask: var(--icone-imagem) center / contain no-repeat;
+  mask: var(--icone-imagem) center / contain no-repeat;
+}
+
+:root {
+  /* Lucide "image" embutido: a moldura precisa do icone mesmo quando a rede
+     que falhou e a mesma que traria o sprite. */
+  --icone-imagem: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E");
 }

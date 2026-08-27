@@ -45,6 +45,20 @@ const MOBILE_ROUTES = {
     title: 'Detalhes da quadra - Qadras',
     nav: 'quadras'
   },
+  /* PERFIL DA ARENA — a vitrine, nao a quadra.
+
+     `header: null` como a tela da quadra: as duas trazem o proprio cabecalho
+     dentro do hero (voltar, favoritar, distancia), e o cabecalho da home por
+     cima empurraria a foto para baixo.
+
+     `nav: 'quadras'` porque o perfil e um degrau do funil de busca; acender
+     outra aba faria a barra de baixo discordar de onde a pessoa esta. */
+  arena: {
+    header: null,
+    page: './pages/arena.html',
+    title: 'Perfil da arena - Qadras',
+    nav: 'quadras'
+  },
   pagamento: {
     header: null,
     page: './pages/pagamento.html',
@@ -160,6 +174,13 @@ const PLAYER_DESKTOP_ROUTES = {
     title: 'Detalhes da quadra - Qadras',
     heading: 'Detalhes da quadra',
     sub: 'Estrutura, disponibilidade e reserva',
+    nav: 'quadras'
+  },
+  arena: {
+    page: './pages/player-desktop/arena.html',
+    title: 'Perfil da arena - Qadras',
+    heading: 'Perfil da arena',
+    sub: 'Quem é a arena e quais quadras ela tem',
     nav: 'quadras'
   },
   pagamento: {

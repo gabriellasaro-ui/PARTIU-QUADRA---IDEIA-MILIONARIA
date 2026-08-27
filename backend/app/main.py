@@ -17,6 +17,7 @@ from slowapi.errors import RateLimitExceeded
 from .api import (
     localidades,
     quadras,
+    arenas,
     reservas,
     mensagens,
     gerente,
@@ -169,6 +170,7 @@ app.add_middleware(RequestLogMiddleware)
 
 app.include_router(localidades.router)
 app.include_router(quadras.router)
+app.include_router(arenas.router)
 app.include_router(reservas.router)
 app.include_router(mensagens.router)
 app.include_router(gerente.router)

@@ -146,6 +146,44 @@ export const venueService = {
     return applyOverrides(clone(VENUES.find((venue) => String(venue.id) === String(id)) || null));
   },
 
+  /* PERFIL DA ARENA — a vitrine, nao a quadra.
+
+     `get(id)` devolve uma QUADRA; isto devolve a ARENA com o catalogo dela
+     dentro. Sem API nao ha equivalente local: `mock-data.js` so tem quadras
+     soltas, e inventar uma arena a partir delas daria uma vitrine que nao
+     existe em lugar nenhum. Devolve null, e a tela cai no aviso de sempre.
+
+     A coordenada vai junto pelo mesmo motivo de `list()`: sem ela o servidor
+     mede a distancia a partir do centro de Goiania e o perfil diz "3,8 km"
+     de uma arena a 600 km. */
+  async arena(id) {
+    if (!API_BASE_URL) return null;
+    const local = localEscolhido();
+    const query = local?.lat != null ? `?lat=${local.lat}&lng=${local.lng}` : '';
+    const data = await api.get(`/api/arenas/${encodeURIComponent(id)}${query}`);
+    return data?.arena || null;
+  },
+
+  /* Arenas para a faixa da home, da mais perto para a mais longe. */
+  async arenasProximas(limite = 12) {
+    if (!API_BASE_URL) return [];
+    const local = localEscolhido();
+    const params = new URLSearchParams({ limit: String(limite) });
+    if (local?.lat != null) {
+      params.set('lat', local.lat);
+      params.set('lng', local.lng);
+    }
+    try {
+      const data = await api.get(`/api/arenas?${params}`);
+      return data?.arenas || [];
+    } catch (error) {
+      /* A faixa e um extra na home: se ela falhar, a lista de quadras abaixo
+         continua sendo a tela. Derrubar a home inteira por causa dela seria
+         trocar um enfeite ausente por uma tela vazia. */
+      return [];
+    }
+  },
+
   async getResumo(id, hora, dur) {
     if (API_BASE_URL) return api.get(`/api/quadras/${id}/resumo?hora=${hora}&dur=${dur}`);
     return null;

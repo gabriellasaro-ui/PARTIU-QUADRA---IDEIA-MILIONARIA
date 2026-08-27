@@ -67,6 +67,31 @@ def get_visible_court(db: Session, court_id):
     return db.execute(stmt).one_or_none()
 
 
+def get_visible_arena(db: Session, arena_id):
+    """A arena, se ela puder ser vista pelo jogador.
+
+    O perfil da arena e uma pagina publica com URL propria, entao ela precisa
+    respeitar o mesmo corte da busca. Sem esta checagem o perfil viraria porta
+    lateral: a arena pausada some do mapa e da lista, mas continuaria acessivel
+    por link — e o dono que desligou a arena a veria no ar assim mesmo.
+
+    Nao usa VISIBLE inteiro de proposito: aquele conjunto tambem exige quadra
+    visivel, e arena ativa com todas as quadras pausadas deve abrir o perfil
+    (vazio, dizendo que nao ha quadra disponivel), e nao sumir como se nao
+    existisse.
+    """
+    arena_id = _uuid(arena_id)
+    if arena_id is None:
+        return None
+    return db.execute(
+        select(Arena).where(
+            Arena.id == arena_id,
+            Arena.deleted_at.is_(None),
+            Arena.is_active.is_(True),
+        )
+    ).scalar_one_or_none()
+
+
 def court_counts(db: Session, arena_ids: list) -> dict:
     """arena_id -> quantas quadras VISIVEIS aquela arena tem.
 

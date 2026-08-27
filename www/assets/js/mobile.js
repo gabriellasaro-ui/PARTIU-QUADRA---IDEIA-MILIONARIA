@@ -393,6 +393,11 @@ function renderBookingCalendar(root) {
 
 function venueCard(venue, options = {}) {
   const action = options.action || 'Ver horários';
+  /* DENTRO DO PERFIL DA ARENA o card muda de titulo.
+     Ali o nome da arena ja esta no topo da tela e sairia identico em todos os
+     cards; o que distingue um do outro e o nome da QUADRA. O atalho para o
+     mapa tambem sai: a tela inteira ja e daquela arena. */
+  const naArena = Boolean(options.dentroDaArena);
   const removable = options.removable
     ? `<button class="favorite-float on" type="button" data-favorite-toggle="${venue.arenaId}" aria-label="Remover dos favoritos">${icon('heart', 'ic fill')}</button>`
     : '';
@@ -420,9 +425,9 @@ function venueCard(venue, options = {}) {
            no lugar errado e o card inteiro se desmonta. O mesmo vale para
            <button>, que e conteudo interativo dentro de link. Irmao dentro do
            <article>, posicionado por cima da foto, resolve os dois. -->
-      <a class="venue-card-mapa" href="#mapa?quadra=${encodeURIComponent(venue.id)}"
+      ${naArena ? '' : `<a class="venue-card-mapa" href="#mapa?quadra=${encodeURIComponent(venue.id)}"
          aria-label="Ver ${escapeHtml(venue.arenaName || venue.name)} no mapa"
-         title="Ver no mapa">${icon('map')}</a>
+         title="Ver no mapa">${icon('map')}</a>`}
       <a class="venue-card-link" href="#quadra/${venue.id}">
         <!-- O selo de disponibilidade SAIU da foto.
 
@@ -441,14 +446,16 @@ function venueCard(venue, options = {}) {
             <b>${icon('star', 'ic ic-star')}${venue.rating}</b>
           </div>
           ${selo}
-          <h3>${escapeHtml(venue.arenaName || venue.name)}</h3>
+          <h3>${escapeHtml(naArena
+            ? (venue.courtName || venue.name)
+            : (venue.arenaName || venue.name))}</h3>
           <!-- NOME DA QUADRA embaixo do nome da arena.
 
                Arena com tres quadras aparecia tres vezes com o mesmo nome, e
                nada na lista dizia qual era qual — nem depois de reservar. So
                aparece quando ha mais de uma quadra visivel: numa arena unica o
                subtitulo nao distingue nada e vira ruido. -->
-          ${venue.arenaCourtCount > 1 && venue.courtName
+          ${!naArena && venue.arenaCourtCount > 1 && venue.courtName
             ? `<p class="venue-card-quadra">${icon('layout-grid')}${escapeHtml(venue.courtName)}</p>`
             : ''}
           <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${formatDistance(venue.distance)} km</p>
@@ -543,7 +550,12 @@ function rotuloModalidade(nome) {
 }
 
 async function renderHome(root) {
-  const [sports, venues] = await Promise.all([venueService.featuredSports(), venueService.featured()]);
+  tratarFotosDeQuadra();
+  const [sports, venues, arenas] = await Promise.all([
+    venueService.featuredSports(),
+    venueService.featured(),
+    venueService.arenasProximas()
+  ]);
   /* document, e nao `root`. O cabecalho da home vive em [data-route-header],
      um container IRMAO de [data-route-view] — procurar dentro da view nunca
      encontrava nada, e o "Olá" que aparecia era o texto estatico do HTML. Foi
@@ -585,6 +597,35 @@ async function renderHome(root) {
       .join('');
   }
   if (featured) featured.innerHTML = venues.map((venue) => venueCard(venue, { action: 'Reservar' })).join('');
+
+  /* FAIXA DE ARENAS — o caminho de quem escolhe pelo lugar, e nao pelo horario.
+
+     A lista de baixo continua sendo de quadras, que e como se procura horario.
+     Esta faixa serve a outra pergunta, a de quem quer saber ONDE jogar antes
+     de decidir QUANDO — e e por ela que se chega ao perfil.
+
+     Some quando nao ha o que mostrar (API fora, ou nenhuma arena por perto):
+     faixa vazia com titulo e pior que faixa nenhuma. */
+  const trilhaArenas = root.querySelector('[data-arena-rail]');
+  const secaoArenas = root.querySelector('[data-arena-section]');
+  if (secaoArenas) secaoArenas.hidden = !arenas.length;
+  if (trilhaArenas && arenas.length) {
+    trilhaArenas.innerHTML = arenas.map((arena) => `
+      <a class="arena-chip" href="#arena/${encodeURIComponent(arena.id)}">
+        <span class="arena-chip__logo${arena.logo ? ' tem-imagem' : ''}">
+          ${arena.logo
+            ? `<img src="${escapeHtml(arena.logo)}" alt="" loading="lazy">`
+            : escapeHtml(venueInitials(arena.nome))}
+        </span>
+        <strong>${escapeHtml(arena.nome)}</strong>
+        <small>${escapeHtml(arena.bairro || arena.cidade || '')}</small>
+        <span class="arena-chip__meta">
+          ${icon('layout-grid')}${arena.quadras}
+          <b>·</b>
+          ${icon('star', 'ic ic-star')}${arena.rating || '—'}
+        </span>
+      </a>`).join('');
+  }
   syncMarketplaceState(root);
 
   /* Primeiro acesso: pede o local na hora, sem esperar a pessoa descobrir o
@@ -739,6 +780,178 @@ function distanciaKm([lat1, lng1], [lat2, lng2]) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+/* FOTO DE QUADRA QUE NAO CARREGA VIRA "SEM FOTO", e nao um buraco.
+
+   Link de hospedagem que expirou, arquivo removido, aparelho sem rede: o <img>
+   fica no lugar, o navegador desenha o texto alternativo atravessado e sobra um
+   retangulo vazio do tamanho da foto. Numa lista isso ja era feio; dentro do
+   perfil da arena e pior, porque a vitrine e justamente onde a arena se
+   apresenta.
+
+   Um listener so, no documento, em vez de `onerror` em cada card: o atributo
+   inline mora dentro de template literal, que e exatamente onde uma aspa fora
+   do lugar derruba a tela inteira. `capture: true` porque o evento `error` de
+   <img> NAO borbulha — sem isso o listener no documento nunca seria chamado.
+
+   Esconde em vez de so limpar o src: sem src o elemento continua no fluxo e o
+   texto alternativo aparece por cima do proprio estado de vazio. */
+let fotoQuebradaLigada = false;
+
+function tratarFotosDeQuadra() {
+  if (fotoQuebradaLigada) return;
+  fotoQuebradaLigada = true;
+  document.addEventListener('error', (evento) => {
+    const img = evento.target;
+    if (img?.tagName !== 'IMG') return;
+    const moldura = img.closest('.venue-card .photo');
+    if (!moldura) return;
+    img.hidden = true;
+    img.removeAttribute('src');
+    moldura.classList.add('sem-foto');
+  }, { capture: true });
+}
+
+/* PERFIL DA ARENA — a vitrine entre a busca e a quadra.
+
+   O app listava quadras soltas. Uma arena com tres quadras aparecia tres vezes
+   na busca e nao havia lugar nenhum onde ela fosse UMA coisa, com logo,
+   descricao, avaliacoes e catalogo. E o modelo do iFood invertido: la voce
+   entra no restaurante e ve os produtos; aqui so havia produtos.
+
+   O QUE ESTA TELA NAO MOSTRA, e nao e esquecimento: telefone, WhatsApp,
+   e-mail e rua. Quem sai daqui com o contato fecha por fora e a reserva nao
+   acontece — a mesma razao pela qual o chat com a arena so abre depois da
+   reserva paga. O backend nem envia esses campos, entao nao ha o que a tela
+   possa vazar por engano. */
+async function renderArena(root, route) {
+  tratarFotosDeQuadra();
+  const arena = await venueService.arena(route.params.id);
+  if (!arena) {
+    location.hash = 'quadras';
+    return;
+  }
+
+  const favoriteIds = await venueService.favoriteIds();
+
+  /* GALERIA: as fotos das quadras servem de album da arena. Sem nenhuma, a
+     faixa fica escondida em vez de mostrar um retangulo cinza — o cabecalho
+     com logo e nome ja identifica a arena sozinho. */
+  const fotos = Array.isArray(arena.fotos) ? arena.fotos.filter(Boolean) : [];
+  const track = root.querySelector('[data-arena-track]');
+  const heroEl = root.querySelector('.arena-hero');
+  if (fotos.length) {
+    track.innerHTML = fotos.map((foto, i) => `
+      <img src="${escapeHtml(foto)}" alt="${escapeHtml(arena.nome)} — foto ${i + 1}" loading="${i ? 'lazy' : 'eager'}">`).join('');
+    bindHeroTrack(root, track, fotos.length);
+    root.querySelector('[data-arena-photo-count]').textContent = fotos.length;
+    root.querySelector('[data-arena-photo-current]').textContent = '1';
+    root.querySelector('[data-arena-gallery]').innerHTML = fotos.map((foto, i) => `
+      <button type="button" class="venue-hero-dot ${i === 0 ? 'on' : ''}"
+              data-gallery-index="${i}" aria-label="Ver foto ${i + 1} de ${fotos.length}"></button>`).join('');
+
+    /* FOTO MORTA NAO VIRA RETANGULO CINZA NO TOPO DA VITRINE.
+
+       A galeria da arena junta as fotos de todas as quadras, entao basta UMA
+       hospedagem que expirou para a primeira imagem do perfil ser um vazio com
+       o texto alternativo atravessado. O `error` de <img> nao borbulha — dai o
+       `capture: true` — e quem falhou sai da faixa junto com a bolinha dele.
+       Se todas morrerem, a faixa encolhe como se nao houvesse foto nenhuma. */
+    track.addEventListener('error', (evento) => {
+      const img = evento.target;
+      if (img?.tagName !== 'IMG') return;
+      const indice = [...track.children].indexOf(img);
+      img.remove();
+      root.querySelectorAll('[data-arena-gallery] .venue-hero-dot')[indice]?.remove();
+      const restantes = track.children.length;
+      root.querySelector('[data-arena-photo-count]').textContent = restantes;
+      if (!restantes) heroEl?.classList.add('sem-foto');
+    }, { capture: true });
+  } else {
+    heroEl?.classList.add('sem-foto');
+  }
+
+  root.querySelector('[data-arena-distance]').textContent = `${formatDistance(arena.distancia)} km`;
+  root.querySelector('[data-arena-name]').textContent = arena.nome;
+  /* Bairro e cidade — nunca a rua. Sem bairro cadastrado o backend ja devolve
+     a cidade, entao aqui nao ha decisao a tomar. */
+  root.querySelector('[data-arena-local]').textContent =
+    [arena.bairro, arena.cidade].filter(Boolean).join(' · ') || 'Localização não informada';
+  root.querySelector('[data-arena-rating]').textContent = arena.rating || '—';
+  root.querySelector('[data-arena-reviews]').textContent = `${arena.reviews || 0} avaliações`;
+  root.querySelector('[data-arena-courts]').textContent = arena.totalQuadras;
+  root.querySelector('[data-arena-price]').textContent =
+    arena.precoMin != null ? formatCurrency(arena.precoMin) : '—';
+
+  /* A LOGO REAL, e nao as iniciais.
+
+     `Arena.logo` estava no banco e o painel do gerente ja deixava o dono subir
+     a dele; o que faltava era o campo chegar ao app. Sem logo, as iniciais
+     continuam servindo — e melhor que um quadrado vazio. */
+  const logoEl = root.querySelector('[data-arena-logo]');
+  if (arena.logo) {
+    logoEl.innerHTML = `<img src="${escapeHtml(arena.logo)}" alt="">`;
+    logoEl.classList.add('tem-imagem');
+  } else {
+    logoEl.textContent = venueInitials(arena.nome);
+    logoEl.classList.remove('tem-imagem');
+  }
+
+  const sobre = root.querySelector('[data-arena-sobre]');
+  if (sobre) {
+    const texto = String(arena.descricao || '').trim();
+    sobre.hidden = !texto;
+    if (texto) root.querySelector('[data-arena-descricao]').textContent = texto;
+  }
+
+  const lista = root.querySelector('[data-arena-court-list]');
+  if (lista) {
+    lista.innerHTML = arena.quadras.length
+      ? arena.quadras.map((q) => venueCard(q, { action: 'Ver horários', dentroDaArena: true })).join('')
+      : `<div class="empty">
+           ${icon('calendar-off', 'ic lg')}
+           <h3>Nenhuma quadra disponível agora</h3>
+           <p>Esta arena não tem quadras abertas para reserva no momento.</p>
+         </div>`;
+  }
+  const rotulo = root.querySelector('[data-arena-courts-label]');
+  if (rotulo) {
+    rotulo.textContent = arena.totalQuadras === 1 ? '1 quadra' : `${arena.totalQuadras} quadras`;
+  }
+
+  const secaoReviews = root.querySelector('[data-arena-reviews-section]');
+  const avaliacoes = arena.avaliacoes || [];
+  if (secaoReviews) {
+    secaoReviews.hidden = !avaliacoes.length;
+    if (avaliacoes.length) {
+      root.querySelector('[data-arena-review-count]').textContent =
+        `${arena.reviews} no total`;
+      root.querySelector('[data-arena-review-list]').innerHTML = avaliacoes.map((review) => `
+        <article class="venue-review">
+          <header>
+            <span class="venue-review__avatar" aria-hidden="true">${escapeHtml(String(review.author || '?').slice(0, 1))}</span>
+            <div><strong>${escapeHtml(review.author)}</strong><small>${escapeHtml(review.date)}</small></div>
+            <span class="venue-review__stars" aria-label="${review.rating} de 5 estrelas">${ratingStars(review.rating)}</span>
+          </header>
+          <p>${escapeHtml(review.text)}</p>
+        </article>`).join('');
+    }
+  }
+
+  const mapa = root.querySelector('[data-arena-map]');
+  if (mapa) mapa.href = `#mapa?arena=${encodeURIComponent(arena.id)}`;
+
+  const favorito = root.querySelector('[data-favorite-toggle]');
+  if (favorito) {
+    favorito.dataset.favoriteToggle = arena.id;
+    /* favoriteIds() devolve ids de QUADRA (e o que a lista usa para acender o
+       coracao em cada card). Aqui a pergunta e sobre a arena, entao vale se
+       qualquer quadra dela estiver salva — favoritar sempre gravou a arena. */
+    favorito.classList.toggle('on', arena.quadras.some((q) => favoriteIds.includes(q.id)));
+  }
+
+  window.pqRefreshIcons?.(root);
+}
+
 async function renderMap(root, route) {
   const query = routeQuery(route);
   /* MULTIPLA ESCOLHA: `?esporte=` aceita varios separados por virgula.
@@ -771,9 +984,21 @@ async function renderMap(root, route) {
      de verdade, que e "isso e longe de mim?". Aqui a arena vem marcada com
      cor propria ao lado do ponto de quem procura, e a resposta e de olhar. */
   const idDestaque = query.get('quadra') || '';
-  const emDestaque = idDestaque ? venues.find((v) => String(v.id) === idDestaque) : null;
+  /* `?arena=` destaca a arena inteira: vindo do perfil, o que interessa e onde
+     fica AQUELE lugar, e nao qual das quadras dele. Como cada quadra e um
+     marcador proprio e todas dividem a mesma coordenada, marcar so uma
+     deixaria as irmas apagadas exatamente no mesmo ponto. */
+  const idArena = query.get('arena') || '';
+  const daArena = idArena ? venues.filter((v) => String(v.arenaId) === idArena) : [];
+  const emDestaque = idDestaque
+    ? venues.find((v) => String(v.id) === idDestaque)
+    : (daArena[0] || null);
 
-  summary.textContent = emDestaque
+  summary.textContent = emDestaque && idArena
+    // Vindo do perfil, o assunto e a ARENA: nomear uma das quadras aqui
+    // sugeriria que so ela esta marcada, quando todas estao.
+    ? `${emDestaque.arenaName || emDestaque.name} — ${formatDistance(emDestaque.distance)} km de você`
+    : emDestaque
     ? `${emDestaque.arenaName || emDestaque.name}${emDestaque.arenaCourtCount > 1 && emDestaque.courtName ? ' · ' + emDestaque.courtName : ''} — ${formatDistance(emDestaque.distance)} km de você`
     : esportesSel.length === 1
       ? `${venues.length} opções de ${displayText(esportesSel[0])}`
@@ -866,7 +1091,9 @@ async function renderMap(root, route) {
   let marcadorDestaque = null;
   venues.forEach((venue) => {
     const position = [venue.map.lat, venue.map.lng];
-    const destacada = emDestaque && String(venue.id) === idDestaque;
+    const destacada = idArena
+      ? String(venue.arenaId) === idArena
+      : Boolean(emDestaque) && String(venue.id) === idDestaque;
     const marker = window.L.marker(position, {
       icon: window.L.divIcon({
         className: destacada ? 'map-price-marker is-destaque' : 'map-price-marker',
@@ -964,7 +1191,37 @@ async function renderVenue(root, route) {
   root.querySelector('[data-venue-rating]').textContent = venue.rating;
   root.querySelector('[data-venue-reviews]').textContent = `${venue.reviews} avaliações`;
   root.querySelector('[data-venue-price]').textContent = formatCurrency(venue.price);
-  root.querySelector('[data-venue-logo]').textContent = venueInitials(venue.name);
+  /* A LOGO REAL, quando o dono subiu uma. O campo existia no banco e no painel
+     desde sempre; so nao chegava ate aqui, entao a arena aparecia como um
+     circulo de iniciais. Sem logo, as iniciais seguem valendo. */
+  const logoQuadra = root.querySelector('[data-venue-logo]');
+  if (venue.arenaLogo) {
+    logoQuadra.innerHTML = `<img src="${escapeHtml(venue.arenaLogo)}" alt="">`;
+    logoQuadra.classList.add('tem-imagem');
+  } else {
+    logoQuadra.textContent = venueInitials(venue.arenaName || venue.name);
+    logoQuadra.classList.remove('tem-imagem');
+  }
+
+  /* DAQUI SE CHEGA AO PERFIL DA ARENA.
+
+     Este bloco ja mostrava logo, nome e localizacao da arena — parecia
+     clicavel e nao era. Agora leva para a vitrine, que e onde estao as outras
+     quadras do mesmo lugar. E o caminho equivalente ao de tocar no nome do
+     restaurante dentro de um prato. */
+  const identidade = root.querySelector('.arena-identity');
+  if (identidade && venue.arenaId) {
+    identidade.classList.add('is-link');
+    identidade.setAttribute('role', 'link');
+    identidade.setAttribute('tabindex', '0');
+    identidade.dataset.abrirArena = venue.arenaId;
+    if (!identidade.querySelector('.arena-identity__seta')) {
+      identidade.insertAdjacentHTML('beforeend',
+        `<span class="arena-identity__seta" aria-hidden="true">${icon('chevron-right')}</span>`);
+    }
+    identidade.setAttribute('aria-label',
+      `Ver o perfil da arena ${venue.arenaName || venue.name}`);
+  }
   root.querySelector('[data-venue-photo-count]').textContent = gallery.length;
   root.querySelector('[data-venue-photo-current]').textContent = '1';
   root.querySelector('[data-venue-review-rating]').textContent = venue.rating;
@@ -2367,6 +2624,7 @@ export async function renderMobilePage(route, root) {
     quadras: renderExplore,
     mapa: renderMap,
     quadra: renderVenue,
+    arena: renderArena,
     pagamento: renderPayment,
     confirmado: renderConfirmation,
     reservas: renderReservations,
@@ -3213,6 +3471,17 @@ export function initMobileActions() {
       syncMarketplaceState(document);
       closeMarketSheet(markNotifications.closest('[data-market-sheet]'));
       window.pqToast?.('Notificações marcadas como lidas');
+      return;
+    }
+
+    /* O bloco de identidade da arena nao e um <a>: ele vive DENTRO da tela da
+       quadra, que ja tem seus proprios links, e transformar o container em
+       ancora empurraria o botao de favoritar para dentro dele. Um role=link
+       com este handler faz o mesmo trabalho sem mexer na estrutura. */
+    const abrirArena = event.target.closest('[data-abrir-arena]');
+    if (abrirArena) {
+      event.preventDefault();
+      location.hash = `arena/${abrirArena.dataset.abrirArena}`;
       return;
     }
 

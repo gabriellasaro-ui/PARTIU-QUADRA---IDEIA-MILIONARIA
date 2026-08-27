@@ -305,7 +305,12 @@ function routeQuery(route) {
   return route?.query instanceof URLSearchParams ? route.query : new URLSearchParams();
 }
 
-function venueCard(venue, favorite = false) {
+function venueCard(venue, favorite = false, options = {}) {
+  /* Dentro do perfil da arena o titulo e o nome da QUADRA: o da arena esta no
+     topo da tela e sairia repetido em todos os cards. Fora dele vale o
+     contrario — a arena e o que identifica o lugar, e a quadra vira a linha de
+     baixo, so quando ha mais de uma. */
+  const naArena = Boolean(options.dentroDaArena);
   const favoriteButton = favorite
     ? `<button type="button" class="fav-heart on" data-player-favorite="${venue.arenaId}" aria-label="Remover dos favoritos">
         ${icon('heart', 'ic fill')}
@@ -323,7 +328,10 @@ function venueCard(venue, favorite = false) {
       </div>
       <div class="bd">
         <div class="qcard-kicker">${sportIcon(venue.sport)}${escapeHtml(venue.sport)}</div>
-        <h3>${escapeHtml(venue.name)}</h3>
+        <h3>${escapeHtml(naArena ? (venue.courtName || venue.name) : (venue.arenaName || venue.name))}</h3>
+        ${!naArena && venue.arenaCourtCount > 1 && venue.courtName
+          ? `<p class="qcard-quadra">${icon('layout-grid')}${escapeHtml(venue.courtName)}</p>`
+          : ''}
         <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${venue.distance.toLocaleString('pt-BR')} km</p>
         <div class="tags">${venue.tags.slice(0, 3).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
         <div class="foot">
@@ -359,9 +367,10 @@ async function renderExplore(root, route) {
   const local = escolhido?.label || query.get('local') || cidades[0]?.label || 'Belo Horizonte, MG';
   const radius = query.get('raio') || '5';
   const now = query.get('agora') === '1';
-  const [sports, listedVenues] = await Promise.all([
+  const [sports, listedVenues, arenas] = await Promise.all([
     venueService.sports(),
-    venueService.list({ sport })
+    venueService.list({ sport }),
+    venueService.arenasProximas()
   ]);
   const needle = normalizeSearch(term);
   const venues = listedVenues.filter((venue) => {
@@ -444,6 +453,35 @@ async function renderExplore(root, route) {
         <button class="btn btn-primary" type="submit">${icon('arrow-right')}Buscar</button>
       </form>
     </section>
+
+    <!-- ARENAS — quem escolhe pelo LUGAR, e nao pelo horario.
+
+         A lista abaixo e de quadras, que e como se procura horario. Esta faixa
+         responde a outra pergunta ("onde eu jogo?") e leva ao perfil, com a
+         logo, a descricao e todas as quadras daquele lugar. Some quando nao ha
+         arena para mostrar: faixa vazia com titulo e pior que faixa nenhuma. -->
+    ${arenas.length ? `
+    <section class="desktop-arena-rail-wrap">
+      <div class="desktop-arena-rail-head">
+        <h2>Arenas perto de você</h2>
+        <small>${arenas.length} ${arenas.length === 1 ? 'arena' : 'arenas'}</small>
+      </div>
+      <div class="desktop-arena-rail">
+        ${arenas.map((arena) => `
+          <a class="arena-chip" href="#arena/${encodeURIComponent(arena.id)}">
+            <span class="arena-chip__logo${arena.logo ? ' tem-imagem' : ''}">
+              ${arena.logo
+                ? `<img src="${escapeHtml(arena.logo)}" alt="" loading="lazy">`
+                : escapeHtml(venueInitials(arena.nome))}
+            </span>
+            <strong>${escapeHtml(arena.nome)}</strong>
+            <small>${escapeHtml(arena.bairro || arena.cidade || '')}</small>
+            <span class="arena-chip__meta">
+              ${icon('layout-grid')}${arena.quadras}<b>·</b>${icon('star', 'ic ic-star')}${arena.rating || '—'}
+            </span>
+          </a>`).join('')}
+      </div>
+    </section>` : ''}
 
     <div class="res-bar">
       <div class="res-count"><b>${venues.length}</b> resultados${term ? ` para "${escapeHtml(term)}"` : sport ? ` para ${escapeHtml(sport)}` : ''} - ordenado por distância</div>
@@ -606,16 +644,25 @@ async function renderVenue(root, route) {
     </section>
 
     <section class="desktop-arena-identity">
-      <span class="desktop-arena-logo" aria-hidden="true">${escapeHtml(venueInitials(venue.name))}</span>
+      <span class="desktop-arena-logo${venue.arenaLogo ? ' tem-imagem' : ''}" aria-hidden="true">${
+        venue.arenaLogo
+          ? `<img src="${escapeHtml(venue.arenaLogo)}" alt="">`
+          : escapeHtml(venueInitials(venue.arenaName || venue.name))
+      }</span>
       <div class="desktop-arena-identity__copy">
         <span>${icon('badge-check', 'ic sm')}Arena verificada</span>
-        <h1>${escapeHtml(venue.name)}</h1>
+        <h1>${escapeHtml(venue.arenaName || venue.name)}</h1>
         <p>${icon('map-pin', 'ic sm')}${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</p>
       </div>
       <div class="desktop-arena-facts">
         <span>${icon('star', 'ic sm')}<b>${venue.rating}</b><small>${venue.reviews} avaliações</small></span>
         <span>${icon('circle-dollar-sign', 'ic sm')}<b>${money(venue.price)}</b><small>por hora</small></span>
       </div>
+      <!-- Este bloco ja mostrava a arena e parecia clicavel sem ser. Agora
+           leva a vitrine, que e onde estao as outras quadras do mesmo lugar. -->
+      <a class="desktop-arena-link" href="#arena/${escapeHtml(String(venue.arenaId))}">
+        ${icon('store', 'ic sm')}Ver perfil da arena${icon('chevron-right', 'ic sm')}
+      </a>
     </section>
 
     <section class="venue-information venue-information--overview">
@@ -917,6 +964,127 @@ function syncDesktopPaymentChoice(root, requestedMethod = 'pix') {
   params.set('metodo', selected.dataset.playerPaymentMethod);
   cta.href = `${cta.dataset.paymentRoute}?${params}`;
   cta.setAttribute('aria-label', `Enviar solicitação usando ${PAYMENT_METHOD_LABELS[selected.dataset.playerPaymentMethod]}`);
+}
+
+/* PERFIL DA ARENA no desktop — a mesma vitrine da versao mobile.
+
+   O funil achar -> olhar -> reservar ja e liberado na web, e a arena e um
+   degrau dele: e aqui que se compara "esta arena" com "aquela" antes de olhar
+   horario. Deixar a tela so no app faria o link existir na web e cair na home.
+
+   Como no mobile: nada de telefone, e-mail ou rua. O backend nao envia esses
+   campos, entao nao ha o que a tela esqueca de esconder. */
+async function renderArena(root, route) {
+  const arena = await venueService.arena(route.params.id);
+  if (!arena) {
+    location.hash = 'quadras';
+    return;
+  }
+  const favoriteIds = await venueService.favoriteIds();
+
+  const pageTitle = document.querySelector('[data-page-title]');
+  const pageSub = document.querySelector('[data-page-sub]');
+  if (pageTitle) pageTitle.textContent = arena.nome;
+  if (pageSub) {
+    pageSub.textContent = [arena.bairro, arena.cidade].filter(Boolean).join(' · ')
+      || 'Localização não informada';
+  }
+  document.title = `${arena.nome} - Qadras`;
+
+  const fotos = (arena.fotos || []).filter(Boolean);
+  const favorita = arena.quadras.some((q) => favoriteIds.includes(q.id));
+
+  root.innerHTML = `
+    <a href="#quadras" class="back-link">${icon('arrow-left', 'ic sm')}Voltar para explorar</a>
+
+    ${fotos.length ? `
+    <section class="desktop-booking-hero">
+      <div class="desktop-venue-gallery__grid">
+        <img class="desktop-venue-gallery__main" data-player-gallery-hero src="${escapeHtml(fotos[0])}" alt="${escapeHtml(arena.nome)}" decoding="async" fetchpriority="high">
+        <div class="desktop-venue-gallery__side">
+          ${fotos.slice(1, 3).map((foto, i) => `
+            <button type="button" data-player-gallery-image="${escapeHtml(foto)}" aria-label="Abrir foto ${i + 2}">
+              <img src="${escapeHtml(foto)}" alt="" loading="lazy" decoding="async">
+            </button>`).join('')}
+        </div>
+      </div>
+      <div class="desktop-booking-hero__badges">
+        <span>${icon('images', 'ic sm')}${fotos.length} fotos</span>
+        <span>${icon('navigation', 'ic sm')}${Number(arena.distancia).toLocaleString('pt-BR')} km</span>
+      </div>
+      <button type="button" class="fav-heart ${favorita ? 'on' : ''}" data-player-favorite="${arena.id}" aria-label="Salvar nos favoritos">
+        ${icon('heart', 'ic fill')}
+      </button>
+    </section>` : ''}
+
+    <section class="desktop-arena-identity">
+      <span class="desktop-arena-logo${arena.logo ? ' tem-imagem' : ''}" aria-hidden="true">${
+        arena.logo
+          ? `<img src="${escapeHtml(arena.logo)}" alt="">`
+          : escapeHtml(venueInitials(arena.nome))
+      }</span>
+      <div class="desktop-arena-identity__copy">
+        <span>${icon('badge-check', 'ic sm')}Arena verificada</span>
+        <h1>${escapeHtml(arena.nome)}</h1>
+        <p>${icon('map-pin', 'ic sm')}${escapeHtml([arena.bairro, arena.cidade].filter(Boolean).join(' · '))}</p>
+      </div>
+      <div class="desktop-arena-facts">
+        <span>${icon('star', 'ic sm')}<b>${arena.rating || '—'}</b><small>${arena.reviews || 0} avaliações</small></span>
+        <span>${icon('layout-grid', 'ic sm')}<b>${arena.totalQuadras}</b><small>para alugar</small></span>
+        <span>${icon('circle-dollar-sign', 'ic sm')}<b>${arena.precoMin != null ? money(arena.precoMin) : '—'}</b><small>a partir de</small></span>
+      </div>
+    </section>
+
+    ${String(arena.descricao || '').trim() ? `
+    <section class="arena-bloco">
+      <h2>Sobre a arena</h2>
+      <p class="arena-sobre">${escapeHtml(arena.descricao)}</p>
+    </section>` : ''}
+
+    <section class="arena-bloco">
+      <h2>Quadras disponíveis <small>${arena.totalQuadras === 1 ? '1 quadra' : arena.totalQuadras + ' quadras'}</small></h2>
+      ${arena.quadras.length
+        ? `<div class="arena-bloco__quadras">${arena.quadras.map((q) => venueCard(q, false, { dentroDaArena: true })).join('')}</div>`
+        : `<p class="arena-sobre">Esta arena não tem quadras abertas para reserva no momento.</p>`}
+    </section>
+
+    ${(arena.avaliacoes || []).length ? `
+    <section class="arena-bloco">
+      <h2>Avaliações <small>${arena.reviews} no total</small></h2>
+      <div class="desktop-review-list">
+        ${arena.avaliacoes.map((review) => `
+          <article class="venue-review">
+            <header>
+              <span class="venue-review__avatar" aria-hidden="true">${escapeHtml(String(review.author || '?').slice(0, 1))}</span>
+              <div><strong>${escapeHtml(review.author)}</strong><small>${escapeHtml(review.date)}</small></div>
+              <span class="venue-review__stars">${'★'.repeat(review.rating)}${'☆'.repeat(Math.max(0, 5 - review.rating))}</span>
+            </header>
+            <p>${escapeHtml(review.text)}</p>
+          </article>`).join('')}
+      </div>
+    </section>` : ''}
+  `;
+
+  /* FOTO MORTA NAO VIRA BURACO NA VITRINE.
+
+     A galeria da arena junta as fotos de todas as quadras, entao basta um link
+     que expirou para a imagem principal do perfil ser um vazio com o texto
+     alternativo atravessado. `capture: true` porque o `error` de <img> nao
+     borbulha. */
+  root.addEventListener('error', (evento) => {
+    const img = evento.target;
+    if (img?.tagName !== 'IMG') return;
+    img.classList.add('sem-foto');
+    /* Pixel transparente em vez de tirar o src: sem src o navegador desenha o
+       icone de imagem partida no canto, e tirar o elemento do DOM colapsaria a
+       celula da galeria. Com o pixel a moldura mantem o tamanho e quem pinta e
+       o fundo da classe. */
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    img.alt = '';
+    img.closest('button')?.classList.add('sem-foto');
+  }, { capture: true });
+
+  window.pqRefreshIcons?.(root);
 }
 
 async function renderPayment(root, route) {
@@ -1934,6 +2102,7 @@ export async function renderPlayerDesktopPage(route, root) {
   const renderers = {
     quadras: renderExplore,
     quadra: renderVenue,
+    arena: renderArena,
     pagamento: renderPayment,
     confirmado: renderConfirmation,
     reservas: renderReservations,
