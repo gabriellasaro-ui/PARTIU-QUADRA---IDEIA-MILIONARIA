@@ -258,6 +258,65 @@ def create_from_booking(db: Session, user, body) -> tuple[list[dict], bool]:
     return [_pelada_dict(db, p) for p in created], replay
 
 
+def definir_clube(db: Session, user, pelada_id, club_id):
+    """Aponta a pelada para um clube (ou tira dela o clube) DEPOIS de criada.
+
+    A pelada nasce quando a arena aprova a reserva, no meio da tela de
+    confirmacao — nao da para parar ali e perguntar de qual clube ela e sem
+    arriscar que a pessoa feche o app e a pelada nao exista. Entao ela nasce
+    avulsa, que e o padrao seguro (avulsa nao avisa ninguem), e a escolha do
+    clube acontece logo em seguida, sem bloquear nada.
+
+    E e AQUI que os membros sao avisados: o aviso sai no momento em que a
+    pelada passa a ser daquele clube, e nao antes. Sem isso, escolher o clube
+    depois deixaria a turma sem saber que o jogo existe.
+
+    So o organizador muda, e so para clube do qual ele faz parte — senao
+    qualquer um convocaria a turma dos outros.
+    """
+    pelada = repo.get_pelada(db, pelada_id)
+    if pelada is None:
+        raise HTTPException(status_code=404, detail="Pelada não encontrada")
+    if str(pelada.organizer_id) != str(user.id):
+        raise HTTPException(status_code=403, detail="Só quem organiza pode mudar o clube da pelada")
+
+    anterior = str(pelada.club_id) if pelada.club_id else None
+
+    if club_id:
+        club = clubs_repo.get_club(db, club_id)
+        if club is None or not clubs_repo.is_member(db, club.id, user.id):
+            raise HTTPException(status_code=403, detail="Você não faz parte deste clube")
+        pelada.club_id = club.id
+        pelada.kind = PELADA_KIND_CLUBE
+    else:
+        club = None
+        pelada.club_id = None
+        pelada.kind = PELADA_KIND_AVULSA
+    db.commit()
+
+    # Avisa so quando o clube MUDA para um clube — repetir a escolha nao
+    # reconvoca a turma, e voltar para avulsa nao avisa ninguem.
+    if club is not None and str(club.id) != anterior:
+        dados = {
+            "peladaId": str(pelada.id),
+            "clubId": str(club.id),
+            "title": pelada.title,
+            # A tela usa isto para oferecer "Vou" direto no aviso.
+            "podeConfirmar": True,
+        }
+        for m, _ in clubs_repo.list_members(db, club.id):
+            if str(m.user_id) == str(user.id):
+                continue
+            _notify(
+                db, m.user_id, NOTIF_PELADA_CRIADA, "Pelada do seu clube",
+                f"{pelada.title} · {pelada.venue_name}, {pelada.date_iso} às {pelada.start_time}.",
+                dados,
+            )
+            publish_user_event(m.user_id, {"type": "pelada.updated", "pelada": _pelada_dict(db, pelada)})
+
+    return _pelada_dict(db, pelada)
+
+
 def _session_dates(booking, start_local):
     base = start_local.strftime("%Y-%m-%d")
     if booking.plan == PLAN_MENSALISTA:

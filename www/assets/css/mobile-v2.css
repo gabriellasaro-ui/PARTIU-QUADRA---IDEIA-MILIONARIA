@@ -14223,3 +14223,69 @@ html[data-theme="dark"] .leaflet-tile-pane {
 @media (prefers-reduced-motion: reduce) {
   .res-card.is-alvo { animation: none; }
 }
+
+/* ── Escolher o clube da pelada, na tela de confirmacao ─────────────────── */
+.pelada-clube {
+  display: grid;
+  gap: 4px;
+  margin: 18px 0 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--pq-tint);
+  text-align: left;
+}
+
+.pelada-clube strong { font-size: 14px; font-weight: 900; }
+
+.pelada-clube small { color: var(--pq-muted); font-size: 12.5px; }
+
+.pelada-clube__opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pelada-clube__op {
+  padding: 8px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pelada-clube__op.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: var(--pq-on-brand, #1f2e0b);
+}
+
+/* ── "Vou" direto no aviso de pelada ─────────────────────────────────────── */
+.notification-list__acao {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 14px 12px;
+  margin-top: -6px;
+}
+
+.notification-list__acao .btn-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pq-brand);
+  color: var(--pq-on-brand, #1f2e0b);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.notification-list__acao .btn-mini .ic { width: 15px; height: 15px; }
+
+.notification-list__acao .btn-mini.is-feito {
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}

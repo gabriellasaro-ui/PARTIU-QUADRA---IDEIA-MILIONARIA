@@ -835,6 +835,17 @@ export const venueService = {
     return [];
   },
 
+  /* Aponta a pelada para um clube — ou tira o clube dela.
+
+     A pelada nasce avulsa junto com a aprovacao da reserva (parar aquela tela
+     para perguntar arriscaria a pessoa fechar o app e a pelada nao existir). A
+     escolha vem logo depois, e e nesta chamada que a turma do clube e avisada. */
+  async definirClubeDaPelada(peladaId, clubId) {
+    if (!API_BASE_URL || !peladaId) return null;
+    const data = await api.patch(`/api/peladas/${encodeURIComponent(peladaId)}`, { clubId: clubId || null });
+    return data?.pelada || null;
+  },
+
   async savePelada(pelada) {
     if (API_BASE_URL) return api.post('/api/peladas', pelada);
     const list = await this.peladas();

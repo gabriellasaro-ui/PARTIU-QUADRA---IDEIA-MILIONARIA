@@ -199,6 +199,13 @@ const DESTINO_NOTIFICACAO = {
 /* O aviso leva ate a RESERVA citada, e nao so ate a aba.
 
    O `data` da notificacao ja traz `bookingId` desde a Fase 7 — e so usar. */
+/* Aviso de pelada de clube pode ser respondido na propria lista. O backend
+   marca `podeConfirmar` quando manda a convocacao. */
+function podeConfirmarPresenca(n) {
+  const d = n.data || {};
+  return Boolean(d.peladaId && d.podeConfirmar);
+}
+
 function destinoDoAviso(n, familia) {
   const id = (n.data || {}).bookingId;
   const base = DESTINO_NOTIFICACAO[familia] || '#reservas';
@@ -244,7 +251,20 @@ async function renderNotificacoes() {
           <small>${escapeHtml(n.body || '')}</small>
           <em>${escapeHtml(quandoFoi(n.createdAt))}</em>
         </span>
-      </a>`;
+      </a>
+      ${podeConfirmarPresenca(n) ? `
+        <!-- CONFIRMAR DIRETO DO AVISO.
+
+             A pelada do clube existe para a turma nao faltar. Fazer a pessoa
+             abrir o aviso, entrar no clube, achar a pelada e so entao dizer
+             que vai e quatro toques a mais entre a intencao e a confirmacao —
+             e cada um deles e um lugar para desistir. Fica FORA do <a>: ancora
+             dentro de ancora e HTML invalido. -->
+        <div class="notification-list__acao">
+          <button type="button" class="btn btn-mini" data-pelada-vou="${escapeHtml(String((n.data || {}).peladaId))}">
+            ${icon('check')}Vou
+          </button>
+        </div>` : ''}`;
   }).join('');
   window.pqRefreshIcons?.(lista);
 }
@@ -1836,8 +1856,61 @@ async function renderPayment(root, route) {
 
    No mensalista a quadra e do clube por um mes inteiro, entao as quatro
    sessoes ja nascem juntas em vez de serem digitadas uma a uma. */
+/* A ESCOLHA DO CLUBE, depois da pelada existir.
+
+   Aparece so para quem esta em algum clube — perguntar a quem nao esta seria
+   um passo sem resposta possivel. "Sem clube" fica marcado por padrao, que e
+   como a pelada nasceu: nenhum aviso disparado.
+
+   Tocar num clube chama o PATCH, que aponta a pelada e AVISA a turma. E o
+   aviso sai nesse instante, e nao na criacao — porque e agora que a pelada
+   passou a ser daquele clube. */
+async function montarEscolhaDeClube(raiz, peladas) {
+  const caixa = raiz.querySelector('[data-pelada-clube]');
+  if (!caixa || !peladas || !peladas.length) return;
+
+  let clubes = [];
+  try {
+    clubes = (await venueService.myClubs?.()) || [];
+  } catch (erro) {
+    return;
+  }
+  if (!clubes.length) return;
+
+  caixa.hidden = false;
+  const opcoes = caixa.querySelector('[data-pelada-clube-opcoes]');
+  opcoes.innerHTML = [
+    '<button type="button" class="pelada-clube__op on" data-clube="">Sem clube</button>',
+    ...clubes.map((c) => `<button type="button" class="pelada-clube__op" data-clube="${escapeHtml(String(c.id))}">${escapeHtml(c.name || c.nome || 'Clube')}</button>`)
+  ].join('');
+
+  opcoes.addEventListener('click', async (evento) => {
+    const botao = evento.target.closest('[data-clube]');
+    if (!botao) return;
+    opcoes.querySelectorAll('[data-clube]').forEach((b) => b.classList.toggle('on', b === botao));
+    const clubeId = botao.dataset.clube || null;
+    try {
+      /* Todas as sessoes do mensalista vao juntas: elas sao o mesmo
+         compromisso, e deixar uma no clube e outra fora criaria duas turmas
+         para o mesmo horario. */
+      await Promise.all(peladas.map((id) => venueService.definirClubeDaPelada(id, clubeId)));
+      window.pqToast?.(clubeId ? 'Clube avisado' : 'Pelada sem clube');
+    } catch (erro) {
+      window.pqToast?.(erro?.message || 'Não foi possível avisar o clube');
+    }
+  });
+}
+
 async function criarPeladasDaReserva(context, code) {
-  const club = await venueService.myClub();
+  /* A PELADA NASCE AVULSA, e o clube e escolhido depois.
+
+     Antes ela saia automaticamente no `myClub()` — o primeiro clube da pessoa,
+     sem perguntar. Quem esta em dois clubes convocava o errado, e quem so
+     queria jogar com os amigos avisava o clube inteiro sem querer.
+
+     Avulsa e o padrao seguro: nao avisa ninguem. Logo abaixo, na propria tela
+     de confirmacao, aparece a escolha — e o aviso a turma sai no momento em
+     que a pelada passa a ser do clube, nao antes. */
   const user = await venueService.profile();
   const { venue, plan, hour, duration, date, weekday } = context;
 
@@ -1853,10 +1926,11 @@ async function criarPeladasDaReserva(context, code) {
     ? `Pelada de ${WEEKDAY_NAMES[weekday]}`
     : `Jogo na ${venue.name}`;
 
+  const criadas = [];
   for (const dateISO of sessoes) {
-    await venueService.savePelada({
-      clubId: club ? club.id : null,
-      kind: club ? 'clube' : 'avulsa',
+    const resposta = await venueService.savePelada({
+      clubId: null,
+      kind: 'avulsa',
       title: titulo,
       venueId: venue.id,
       venueName: venue.name,
@@ -1871,8 +1945,11 @@ async function criarPeladasDaReserva(context, code) {
       status: 'agendada',
       attendance: { [user.id]: 'sim' }
     });
+    // O backend devolve {peladas:[...]}; sem API, o proprio objeto salvo.
+    const lista = resposta?.peladas || (resposta ? [resposta] : []);
+    lista.forEach((x) => { if (x?.id) criadas.push(x.id); });
   }
-  return sessoes.length;
+  return criadas;
 }
 
 async function renderConfirmation(root, route) {
@@ -1984,7 +2061,7 @@ async function renderConfirmation(root, route) {
     });
     // So aqui, e nao ao enviar o pedido: reserva recusada nao pode deixar
     // pelada fantasma no clube.
-    await criarPeladasDaReserva(context, code);
+    const peladasCriadas = await criarPeladasDaReserva(context, code);
     const conversation = await venueService.ensureConversationForVenue(venue);
     document.title = 'Reserva confirmada - Qadras';
     content.innerHTML = `
@@ -1994,6 +2071,22 @@ async function renderConfirmation(root, route) {
         <span class="success-eyebrow">Arena aprovou sua solicitação</span>
         <h2>Reserva confirmada</h2>
         <p>Seu horário está garantido. Agora é só reunir a turma e jogar.</p>
+
+        <!-- DE QUEM E ESTA PELADA.
+
+             Ela nasce avulsa — que nao avisa ninguem — e a escolha do clube
+             acontece aqui, sem bloquear a confirmacao. Antes o app usava o
+             primeiro clube da pessoa sem perguntar: quem esta em dois
+             convocava o errado, e quem so queria jogar com os amigos avisava
+             o clube inteiro sem querer.
+
+             Some quando a pessoa nao esta em clube nenhum: pergunta sem
+             resposta possivel e so mais um passo. -->
+        <div class="pelada-clube" data-pelada-clube hidden>
+          <strong>Avisar um clube?</strong>
+          <small>A turma recebe o aviso e confirma presença por lá.</small>
+          <div class="pelada-clube__opcoes" data-pelada-clube-opcoes></div>
+        </div>
 
         <div class="ticket">
           <div class="ticket-venue">
@@ -2021,6 +2114,7 @@ async function renderConfirmation(root, route) {
         </div>
       </div>`;
     refreshApprovalIcons();
+    montarEscolhaDeClube(content, peladasCriadas);
   }
 
   async function renderRejected(reason = 'declined') {
@@ -3657,6 +3751,23 @@ export function initMobileActions() {
     /* Tocar num aviso o marca como lido no SERVIDOR. Sem `await` e sem
        preventDefault: o href e um hash, e travar a navegacao esperando a rede
        faria o toque parecer morto numa conexao ruim. */
+    const vou = event.target.closest('[data-pelada-vou]');
+    if (vou) {
+      event.preventDefault();
+      vou.disabled = true;
+      venueService.setPeladaAttendance?.(vou.dataset.peladaVou, null, 'sim')
+        .then(() => {
+          vou.textContent = 'Confirmado';
+          vou.classList.add('is-feito');
+          window.pqToast?.('Presença confirmada');
+        })
+        .catch((erro) => {
+          vou.disabled = false;
+          window.pqToast?.(erro?.message || 'Não foi possível confirmar');
+        });
+      return;
+    }
+
     const avisoTocado = event.target.closest('[data-notif-id]');
     if (avisoTocado) {
       notificationService.markRead?.(avisoTocado.dataset.notifId)?.catch?.(() => {});

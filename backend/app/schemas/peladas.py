@@ -17,6 +17,16 @@ class PeladaCreate(BaseModel):
     maxPlayers: int | None = Field(default=None, ge=2, le=100)
 
 
+class PeladaClube(BaseModel):
+    """Para qual clube a pelada e — ou nenhum.
+
+    `clubId` ausente e `clubId: null` significam coisas diferentes de
+    proposito: ausente e "nao mexi nisso", null e "tirar do clube". Pydantic
+    distingue os dois por `model_fields_set`, e o servico usa isso.
+    """
+    clubId: str | None = None
+
+
 class AttendanceBody(BaseModel):
     memberId: str | None = None  # ignorado — identidade vem do token
     value: str = Field(min_length=1, max_length=10)
