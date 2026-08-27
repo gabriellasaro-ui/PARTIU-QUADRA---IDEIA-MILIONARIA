@@ -14149,3 +14149,31 @@ html[data-theme="dark"] .leaflet-tile-pane {
   width: 16px;
   height: 16px;
 }
+
+/* O ESTADO VAZIO ATRAVESSA A GRADE.
+
+   Ele e filho do mesmo container que virou grade, entao caia numa celula de
+   173px: o aviso mais importante da tela — o que explica por que nao ha nada e
+   oferece a saida — ficava do tamanho de meio card, com o resto da linha vazio
+   ao lado. `1 / -1` faz ele ocupar todas as colunas, quantas forem. */
+.venue-grid .empty {
+  grid-column: 1 / -1;
+  padding: 34px 22px 30px;
+}
+
+.venue-grid .empty h3 {
+  font-size: 18px;
+}
+
+.venue-grid .empty p {
+  font-size: 14px;
+}
+
+.venue-grid .empty .btn {
+  margin-top: 14px;
+}
+
+.venue-grid .empty .empty-ic .ic {
+  width: 42px;
+  height: 42px;
+}
