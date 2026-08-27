@@ -8137,7 +8137,7 @@ html[data-theme="dark"] {
   gap: 2px;
   padding: 14px 12px;
   border: 1px solid var(--pq-line);
-  border-radius: var(--pq-radius-lg, 16px);
+  border-radius: 20px;
   background: var(--pq-panel);
   text-align: center;
   justify-items: center;
@@ -13450,7 +13450,7 @@ html[data-theme="dark"] {
   gap: 2px;
   padding: 14px 12px;
   border: 1px solid var(--pq-line);
-  border-radius: var(--pq-radius-lg, 16px);
+  border-radius: 20px;
   background: var(--pq-panel);
   text-align: center;
   justify-items: center;

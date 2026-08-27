@@ -3777,17 +3777,23 @@ html[data-player-desktop] .qcard .foot {
   display: grid;
   justify-items: center;
   gap: 2px;
-  padding: 14px 12px;
+  padding: 16px 12px;
   border: 1px solid var(--pq-line);
-  border-radius: 14px;
+  border-radius: 20px;
   background: var(--pq-panel);
   text-align: center;
-  transition: border-color .15s, transform .15s;
+  transition: background .15s, box-shadow .15s;
 }
 
+/* HOVER SEM CONTORNO VERDE.
+
+   Antes ele pintava a borda inteira com a cor da marca. Numa captura de tela
+   — e no canto do olho — aquilo le como "este card esta selecionado", e nao
+   como "o mouse esta aqui". O realce agora e o fundo e a sombra: responde ao
+   ponteiro sem afirmar um estado que nao existe. */
 .desktop-arena-rail .arena-chip:hover {
-  border-color: var(--pq-brand);
-  transform: translateY(-2px);
+  background: var(--pq-tint);
+  box-shadow: 0 6px 16px rgba(5, 13, 9, .10);
 }
 
 .desktop-arena-rail .arena-chip__logo {
