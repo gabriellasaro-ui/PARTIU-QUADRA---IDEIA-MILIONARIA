@@ -4427,7 +4427,13 @@ html[data-route="mapa"] .phone {
 }
 
 .booking-step .dur.on span {
-  color: rgba(255, 255, 255, .78);
+  /* O rotulo do botao ATIVO ficava branco translucido sobre o lime: 2,25:1.
+     A regra mora separada da que pinta o fundo, entao a varredura por bloco
+     nao a alcancou — foi o unico ponto do app que sobrou branco sobre a marca.
+
+     A translucidez fica (ela e que separa "1h" de "Jogo rapido" na hierarquia
+     do botao), mas agora sobre a tinta escura. */
+  color: color-mix(in srgb, var(--pq-on-brand, #1f2e0b) 80%, transparent);
 }
 
 .duration-help {
