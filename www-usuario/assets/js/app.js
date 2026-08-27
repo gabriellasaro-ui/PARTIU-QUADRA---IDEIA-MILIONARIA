@@ -1,4 +1,5 @@
 import { loadComponents, refreshIcons } from './component-loader.js';
+import { initPuxarAtualizar } from './puxar-atualizar.js';
 import { isProtectedRoute, authHashFor } from '../../middleware/auth.js';
 import { qsa } from '../../utils/helpers.js';
 import authService from '../../services/auth.js';
@@ -442,6 +443,20 @@ async function renderMobileRoute() {
 function initMobileRouter() {
   if (!document.querySelector('[data-route-view]')) return;
   window.addEventListener('hashchange', renderMobileRoute);
+
+  /* PUXAR PARA ATUALIZAR.
+
+     `renderMobileRoute` sai cedo quando a assinatura da rota nao mudou (e o
+     que evita remontar a tela a cada hashchange igual). Para o gesto valer,
+     entao, nao basta chamar de novo: e preciso APAGAR a assinatura antes, se
+     nao a funcao devolve na primeira linha e o indicador giraria sem nada
+     acontecer atras dele. */
+  initPuxarAtualizar(async () => {
+    const view = document.querySelector('[data-route-view]');
+    if (view) delete view.dataset.currentRoute;
+    await renderMobileRoute();
+  });
+
   return renderMobileRoute();
 }
 

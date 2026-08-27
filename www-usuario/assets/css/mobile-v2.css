@@ -13870,3 +13870,58 @@ html[data-theme="dark"] {
 .venue-card:has(.favorite-float) .venue-card-mapa {
   left: 60px;
 }
+
+/* == PUXAR PARA ATUALIZAR ================================================
+   O indicador que desce com o dedo. Fixo e centralizado, acima de tudo menos
+   dos sheets — ele nasce fora da tela e so aparece conforme o arrasto. */
+.puxar-atualizar {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pq-panel);
+  box-shadow: 0 4px 14px rgba(5, 13, 9, .18);
+  opacity: 0;
+  transform: translate(-50%, 0);
+  pointer-events: none;
+}
+
+/* Durante o arrasto NAO ha transicao: o indicador tem que colar no dedo. Ela
+   entra so na volta, para o recolhimento nao ser um corte seco. */
+.puxar-atualizar.is-voltando {
+  transition: transform .22s ease, opacity .22s ease;
+}
+
+.puxar-atualizar__roda {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--pq-line);
+  border-top-color: var(--pq-brand);
+  border-radius: 50%;
+}
+
+/* Passou do limiar: a roda enche de cor para dizer "solta agora". */
+.puxar-atualizar.is-pronto .puxar-atualizar__roda {
+  border-color: var(--pq-brand);
+  border-top-color: var(--pq-brand);
+}
+
+.puxar-atualizar.is-girando .puxar-atualizar__roda {
+  border-color: var(--pq-line);
+  border-top-color: var(--pq-brand);
+  animation: puxar-girar .7s linear infinite;
+}
+
+@keyframes puxar-girar {
+  to { transform: rotate(360deg); }
+}
+
+/* Quem pediu menos animacao ve o indicador parado, e nao girando. */
+@media (prefers-reduced-motion: reduce) {
+  .puxar-atualizar.is-girando .puxar-atualizar__roda { animation: none; }
+}
