@@ -4246,3 +4246,70 @@ html[data-player-desktop] .desktop-arena-identity--perfil .fav-heart {
   border-radius: 20px;
   background: var(--pq-panel-2, transparent);
 }
+
+/* == MENOS LINHA NO PERFIL DA ARENA (web) ================================
+   "Tem muita linha": cada cartao tinha borda, cada secao tinha borda, e os
+   numeros ainda tinham divisor entre as colunas. Tres niveis de traco na mesma
+   tela. Fica um: o cartao se separa do fundo por cor, nao por contorno. */
+
+.arena-numeros,
+.arena-nota,
+.arena-review,
+.arena-bloco {
+  border-color: transparent;
+  background: var(--pq-panel);
+  box-shadow: 0 1px 3px rgba(5, 13, 9, .05);
+}
+
+.arena-numeros > div + div {
+  border-left: 0;
+}
+
+/* Sem o botao do mapa, voltam a ser tres colunas iguais. */
+.arena-numeros--tres {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* AVALIACOES EMPILHADAS. Em grade de quatro colunas cada uma virava um
+   retangulo de duas linhas e a leitura pulava de coluna em coluna. Uma abaixo
+   da outra, com largura de leitura, e como se le comentario. */
+.arena-review-list--empilhada {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  max-width: 760px;
+}
+
+/* Cabecalho da rota vazio (perfil da arena) nao pode deixar uma faixa em
+   branco com borda embaixo atravessando a tela — mais uma linha sem funcao.
+   O seletor e `.web-context`, que e o bloco real no player-topbar.html. */
+.web-context:has([data-page-title]:empty) {
+  display: none;
+}
+
+/* Segmentado do ordenador das avaliacoes, tambem na web. */
+.arena-ordem {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--pq-tint);
+}
+
+.arena-ordem button {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.arena-ordem button.on {
+  background: var(--pq-panel);
+  color: var(--pq-brand-deep);
+  box-shadow: 0 1px 2px rgba(5, 13, 9, .08);
+}

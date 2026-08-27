@@ -50,14 +50,9 @@
       </div>
     </div>
 
-    <!-- "2,2 km" nao responde a pergunta que a pessoa faz, que e "isso e longe
-         DE MIM?". O mapa responde de olhar — e e o nosso, nao o de fora. -->
-    <a class="arena-map-cta" data-arena-map href="#mapa">
-      <i class="ic" data-lucide="map"></i>
-      <span>Ver no mapa</span>
-      <b data-arena-distance></b>
-      <i class="ic arena-map-cta__seta" data-lucide="chevron-right"></i>
-    </a>
+    <!-- O botao "Ver no mapa" saiu daqui a pedido. O caminho para o mapa
+         continua no card de cada quadra, que e onde a pergunta "e longe?"
+         aparece junto com o horario e o preco. -->
 
     <section class="arena-cartao" data-arena-sobre hidden>
       <h2>Sobre a arena</h2>
@@ -89,6 +84,16 @@
           <span data-arena-review-stars aria-hidden="true"></span>
         </div>
         <p data-arena-review-count></p>
+      </div>
+      <!-- ORDEM: melhores primeiro, por padrao.
+
+           A lista vinha por data, entao a primeira coisa lida era a avaliacao
+           mais recente — que pode ser a pior. Quem abre as avaliacoes de um
+           lugar quer saber se vale a pena; comecar pelas melhores responde
+           isso, e quem desconfia inverte num toque. -->
+      <div class="arena-ordem" role="group" aria-label="Ordenar avaliações">
+        <button type="button" data-arena-ordem="nota" class="on">Maiores notas</button>
+        <button type="button" data-arena-ordem="data">Mais recentes</button>
       </div>
       <div class="arena-review-list" data-arena-review-list></div>
       <button type="button" class="arena-review-mais" data-arena-review-mais hidden></button>

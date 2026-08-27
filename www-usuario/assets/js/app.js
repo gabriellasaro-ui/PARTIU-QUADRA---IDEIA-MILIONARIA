@@ -179,8 +179,11 @@ const PLAYER_DESKTOP_ROUTES = {
   arena: {
     page: './pages/player-desktop/arena.html',
     title: 'Perfil da arena - Qadras',
-    heading: 'Perfil da arena',
-    sub: 'Quem é a arena e quais quadras ela tem',
+    /* SEM heading/sub: a propria tela abre com a logo, o nome e o bairro em
+       corpo grande. O cabecalho da rota repetia os dois exatamente iguais,
+       um em cima do outro, a poucos pixels de distancia. */
+    heading: '',
+    sub: '',
     nav: 'quadras'
   },
   pagamento: {

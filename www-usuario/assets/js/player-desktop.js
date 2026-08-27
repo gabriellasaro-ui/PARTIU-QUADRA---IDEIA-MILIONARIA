@@ -979,13 +979,17 @@ async function renderArena(root, route) {
   }
   const favoriteIds = await venueService.favoriteIds();
 
+  /* O CABECALHO DA ROTA FICA VAZIO NESTA TELA.
+
+     Ele escrevia o nome da arena e o bairro no topo da pagina, e a propria
+     tela abre com os dois em corpo grande poucos pixels abaixo — o nome
+     aparecia duas vezes seguidas. Aqui o cabecalho some e a identidade fica
+     so onde ela tem tamanho para ser lida. O <title> da aba continua com o
+     nome, que e onde ele serve. */
   const pageTitle = document.querySelector('[data-page-title]');
   const pageSub = document.querySelector('[data-page-sub]');
-  if (pageTitle) pageTitle.textContent = arena.nome;
-  if (pageSub) {
-    pageSub.textContent = [arena.bairro, arena.cidade].filter(Boolean).join(' · ')
-      || 'Localização não informada';
-  }
+  if (pageTitle) pageTitle.textContent = '';
+  if (pageSub) pageSub.textContent = '';
   document.title = `${arena.nome} - Qadras`;
 
   const fotos = (arena.fotos || []).filter(Boolean);
@@ -1019,7 +1023,7 @@ async function renderArena(root, route) {
 
     <!-- Os numeros que decidem a escolha, em corpo grande e em cartao. Antes
          eram tres rotulos de 11px numa faixa fina. -->
-    <div class="arena-numeros">
+    <div class="arena-numeros arena-numeros--tres">
       <div>
         <b>${arena.rating || '—'}</b>
         <span class="arena-numeros__estrelas">${'★'.repeat(Math.round(arena.rating || 0))}${'☆'.repeat(Math.max(0, 5 - Math.round(arena.rating || 0)))}</span>
@@ -1027,10 +1031,6 @@ async function renderArena(root, route) {
       </div>
       <div><b>${arena.totalQuadras}</b><small>quadras</small></div>
       <div><b>${arena.precoMin != null ? money(arena.precoMin) : '—'}</b><small>a partir de, por hora</small></div>
-      <a class="arena-numeros__mapa" href="#mapa?arena=${escapeHtml(String(arena.id))}">
-        ${icon('map', 'ic sm')}Ver no mapa
-        <b>${Number(arena.distancia).toLocaleString('pt-BR')} km</b>
-      </a>
     </div>
 
     ${String(arena.descricao || '').trim() ? `
@@ -1070,8 +1070,19 @@ async function renderArena(root, route) {
         </div>
         <p>${arena.reviews === 1 ? '1 avaliação' : arena.reviews + ' avaliações'}</p>
       </div>
-      <div class="arena-review-list">
-        ${arena.avaliacoes.map((review) => `
+      <!-- Empilhadas, e da maior nota para a menor.
+
+           Em grade de quatro colunas cada avaliacao virava um retangulo de
+           duas linhas e a leitura pulava de coluna em coluna. E a ordem por
+           data punha a mais recente primeiro, que pode ser a pior — quem abre
+           as avaliacoes quer saber se o lugar vale a pena, e quem desconfia
+           inverte num clique. -->
+      <div class="arena-ordem" role="group" aria-label="Ordenar avaliações">
+        <button type="button" data-arena-ordem="nota" class="on">Maiores notas</button>
+        <button type="button" data-arena-ordem="data">Mais recentes</button>
+      </div>
+      <div class="arena-review-list arena-review-list--empilhada" data-arena-review-list>
+        ${arena.avaliacoes.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0)).map((review) => `
           <article class="arena-review">
             <header>
               <span class="arena-review__avatar" aria-hidden="true">${escapeHtml(String(review.author || '?').slice(0, 1))}</span>
@@ -1086,6 +1097,36 @@ async function renderArena(root, route) {
       </div>
     </section>` : ''}
   `;
+
+  /* A ORDEM E DO CLIENTE: sao algumas dezenas de avaliacoes ja em memoria, e
+     trocar sem ir na rede faz o clique responder na hora. `slice()` antes de
+     ordenar porque `sort` mexe no proprio array — sem isso "mais recentes"
+     nunca voltaria a ser a ordem original. */
+  const listaReviews = root.querySelector('[data-arena-review-list]');
+  if (listaReviews) {
+    const cartaoReview = (review) => `
+      <article class="arena-review">
+        <header>
+          <span class="arena-review__avatar" aria-hidden="true">${escapeHtml(String(review.author || '?').slice(0, 1))}</span>
+          <div>
+            <strong>${escapeHtml(review.author)}</strong>
+            <small>${escapeHtml(review.date)}</small>
+          </div>
+          <span class="arena-review__estrelas">${'★'.repeat(review.rating)}${'☆'.repeat(Math.max(0, 5 - review.rating))}</span>
+        </header>
+        <p>${escapeHtml(review.text)}</p>
+      </article>`;
+    root.querySelectorAll('[data-arena-ordem]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const porNota = btn.dataset.arenaOrdem === 'nota';
+        const itens = porNota
+          ? arena.avaliacoes.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          : arena.avaliacoes.slice();
+        listaReviews.innerHTML = itens.map(cartaoReview).join('');
+        root.querySelectorAll('[data-arena-ordem]').forEach((o) => o.classList.toggle('on', o === btn));
+      });
+    });
+  }
 
   /* FOTO MORTA NAO VIRA BURACO NA VITRINE.
 

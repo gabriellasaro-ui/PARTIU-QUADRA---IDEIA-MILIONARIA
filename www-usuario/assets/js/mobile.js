@@ -828,7 +828,6 @@ async function renderArena(root, route) {
 
   const favoriteIds = await venueService.favoriteIds();
 
-  root.querySelector('[data-arena-distance]').textContent = `${formatDistance(arena.distancia)} km`;
   root.querySelector('[data-arena-name]').textContent = arena.nome;
   /* Bairro e cidade — nunca a rua. Sem bairro cadastrado o backend ja devolve
      a cidade, entao aqui nao ha decisao a tomar. */
@@ -926,22 +925,40 @@ async function renderArena(root, route) {
       const lista = root.querySelector('[data-arena-review-list]');
       const botao = root.querySelector('[data-arena-review-mais]');
       const VISIVEIS = 3;
-      lista.innerHTML = avaliacoes.slice(0, VISIVEIS).map(cartao).join('');
-      if (botao) {
-        const restantes = avaliacoes.length - VISIVEIS;
-        botao.hidden = restantes <= 0;
-        botao.textContent = `Ver mais ${restantes} ${restantes === 1 ? 'avaliação' : 'avaliações'}`;
-        botao.onclick = () => {
-          lista.innerHTML = avaliacoes.map(cartao).join('');
-          botao.hidden = true;
-          window.pqRefreshIcons?.(lista);
+
+      /* A ordem e do CLIENTE, e nao do servidor: sao no maximo algumas dezenas
+         de avaliacoes ja em memoria, e trocar a ordem sem ir na rede faz o
+         toque responder na hora. `slice()` antes de ordenar porque `sort`
+         mexe no proprio array — sem isso "mais recentes" nunca voltaria a ser
+         a ordem original depois de passar por "maiores notas". */
+      let ordem = 'nota';
+      const ordenadas = () => (ordem === 'nota'
+        ? avaliacoes.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        : avaliacoes.slice());
+
+      let expandido = false;
+      const pintar = () => {
+        const itens = ordenadas();
+        lista.innerHTML = (expandido ? itens : itens.slice(0, VISIVEIS)).map(cartao).join('');
+        if (botao) {
+          const restantes = itens.length - VISIVEIS;
+          botao.hidden = expandido || restantes <= 0;
+          botao.textContent = `Ver mais ${restantes} ${restantes === 1 ? 'avaliação' : 'avaliações'}`;
+        }
+        window.pqRefreshIcons?.(lista);
+      };
+
+      if (botao) botao.onclick = () => { expandido = true; pintar(); };
+      root.querySelectorAll('[data-arena-ordem]').forEach((btn) => {
+        btn.onclick = () => {
+          ordem = btn.dataset.arenaOrdem;
+          root.querySelectorAll('[data-arena-ordem]').forEach((o) => o.classList.toggle('on', o === btn));
+          pintar();
         };
-      }
+      });
+      pintar();
     }
   }
-
-  const mapa = root.querySelector('[data-arena-map]');
-  if (mapa) mapa.href = `#mapa?arena=${encodeURIComponent(arena.id)}`;
 
   const favorito = root.querySelector('[data-favorite-toggle]');
   if (favorito) {

@@ -13554,9 +13554,9 @@ html[data-theme="dark"] {
   padding: 0 6px;
 }
 
-.arena-numeros > div + div {
-  border-left: 1px solid var(--pq-line);
-}
+/* SEM divisor entre os numeros. Eram tres tracos verticais dentro de um cartao
+   que ja tem borda, dentro de uma tela que ja tinha traco em toda secao — "tem
+   muita linha". O espacamento separa as colunas sozinho. */
 
 .arena-numeros b {
   font-size: 21px;
@@ -13587,36 +13587,6 @@ html[data-theme="dark"] {
 .arena-numeros__estrelas .ic.is-empty {
   fill: none;
   opacity: .35;
-}
-
-/* -- Ver no mapa ------------------------------------------------------- */
-.arena-map-cta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: var(--pq-brand);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 850;
-}
-
-.arena-map-cta .ic {
-  width: 19px;
-  height: 19px;
-}
-
-.arena-map-cta b {
-  margin-left: auto;
-  font-size: 13px;
-  font-weight: 800;
-  opacity: .85;
-}
-
-.arena-map-cta__seta {
-  margin-left: 0;
-  opacity: .8;
 }
 
 /* -- Secoes ------------------------------------------------------------ */
@@ -13735,6 +13705,33 @@ html[data-theme="dark"] {
   color: var(--pq-muted);
   font-size: 12.5px;
   font-weight: 800;
+}
+
+/* Dois botoes, um fundo so: segmentado, e nao dois botoes soltos com borda
+   cada — de novo linha demais. */
+.arena-ordem {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--pq-tint);
+}
+
+.arena-ordem button {
+  flex: 1;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pq-muted);
+  font-size: 12.5px;
+  font-weight: 850;
+}
+
+.arena-ordem button.on {
+  background: var(--pq-panel);
+  color: var(--pq-brand-deep);
+  box-shadow: 0 1px 2px rgba(5, 13, 9, .08);
 }
 
 .arena-review-list {
