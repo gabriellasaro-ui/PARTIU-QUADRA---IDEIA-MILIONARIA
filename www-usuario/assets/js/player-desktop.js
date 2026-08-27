@@ -476,9 +476,6 @@ async function renderExplore(root, route) {
             </span>
             <strong>${escapeHtml(arena.nome)}</strong>
             <small>${escapeHtml(arena.bairro || arena.cidade || '')}</small>
-            <span class="arena-chip__meta">
-              ${icon('layout-grid')}${arena.quadras}<b>·</b>${icon('star', 'ic ic-star')}${arena.rating || '—'}
-            </span>
           </a>`).join('')}
       </div>
     </section>` : ''}
