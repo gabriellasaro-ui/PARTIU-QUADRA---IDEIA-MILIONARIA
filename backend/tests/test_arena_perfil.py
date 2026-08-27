@@ -178,3 +178,62 @@ def test_logo_da_arena_chega_ao_card_da_quadra(client):
             linha = db.get(Arena, uuid.UUID(arena["id"]))
             linha.logo = antes
             db.commit()
+
+
+def test_comodidades_juntam_as_das_quadras_visiveis(client):
+    """As comodidades da ARENA sao a uniao das comodidades das quadras.
+
+    Nao ha campo de comodidade em Arena, e criar um obrigaria o dono a
+    cadastrar duas vezes a mesma coisa: vestiario e estacionamento sao do
+    LUGAR, e ja estao marcados nas quadras dele.
+    """
+    from app.core.database import SessionLocal
+    from app.models import Court
+
+    arena = _arena_do_seed(client)
+    corpo = _perfil(client, arena["id"]).json()["arena"]
+    alvo = corpo["quadras"][0]["id"]
+
+    with SessionLocal() as db:
+        court = db.get(Court, uuid.UUID(alvo))
+        antes = court.amenities
+        # A repetida entra so uma vez; a nova entra.
+        court.amenities = ["Vestiário", "Vestiário", "Estacionamento"]
+        db.commit()
+    try:
+        depois = _perfil(client, arena["id"]).json()["arena"]["comodidades"]
+        assert depois.count("Vestiário") == 1, "comodidade repetida nao pode duplicar"
+        assert "Estacionamento" in depois
+    finally:
+        with SessionLocal() as db:
+            court = db.get(Court, uuid.UUID(alvo))
+            court.amenities = antes
+            db.commit()
+
+
+def test_comodidade_de_quadra_pausada_nao_conta(client):
+    """Quadra fora do ar nao empresta comodidade para a vitrine: a arena
+    anunciaria uma coberta que ninguem consegue reservar."""
+    from app.core.database import SessionLocal
+    from app.models import Court
+
+    arena = _arena_do_seed(client)
+    corpo = _perfil(client, arena["id"]).json()["arena"]
+    alvo = corpo["quadras"][0]["id"]
+
+    with SessionLocal() as db:
+        court = db.get(Court, uuid.UUID(alvo))
+        antes_am, antes_ativa = court.amenities, court.is_active
+        court.amenities = ["Piscina aquecida"]
+        db.commit()
+    try:
+        assert "Piscina aquecida" in _perfil(client, arena["id"]).json()["arena"]["comodidades"]
+        with SessionLocal() as db:
+            db.get(Court, uuid.UUID(alvo)).is_active = False
+            db.commit()
+        assert "Piscina aquecida" not in _perfil(client, arena["id"]).json()["arena"]["comodidades"]
+    finally:
+        with SessionLocal() as db:
+            court = db.get(Court, uuid.UUID(alvo))
+            court.amenities, court.is_active = antes_am, antes_ativa
+            db.commit()

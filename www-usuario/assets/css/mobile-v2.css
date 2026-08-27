@@ -8221,6 +8221,5309 @@ html[data-theme="dark"] {
   padding-inline: 8px;
 }
 
+/* TOPO DO PERFIL: a logo, e o nome logo abaixo. So isso.
+
+   A primeira versao abria com a galeria ocupando a tela inteira, copiada da
+   ficha da quadra. A arena nao tem album proprio — aquelas fotos sao das
+   quadras e se repetem nos cards logo abaixo — e bastava uma delas nao
+   carregar para o perfil abrir com um retangulo vazio do tamanho do celular.
+   Quem entra aqui quer saber DE QUEM e o lugar, e quem responde isso e a
+   marca. */
+.arena-topo {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 0 20px 18px;
+  text-align: center;
+  background: var(--pq-panel);
+}
+
+/* Voltar e favoritar continuam nos cantos, na altura de sempre — sem a foto
+   por baixo eles passam a ser conteudo, e nao sobreposicao. */
+.arena-topo__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 0 4px;
+}
+
+.arena-topo__barra .back,
+.arena-topo__barra .hero-favorite {
+  position: static;
+  transform: none;
+}
+
+.arena-topo__logo {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-top: 6px;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 26px;
+  font-weight: 950;
+  letter-spacing: .5px;
+}
+
+.arena-topo__logo.tem-imagem {
+  border-color: transparent;
+}
+
+.arena-topo__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.arena-topo h1 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1.2;
+}
+
+.arena-topo__local {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.arena-topo__local .ic {
+  width: 14px;
+  height: 14px;
+}
+
+.arena-facts .ic {
+  grid-row: 1 / 3;
+  width: 18px;
+  height: 18px;
+  color: var(--pq-brand);
+}
+
+.arena-facts .arena-rating .ic {
+  color: var(--pq-gold);
+  fill: var(--pq-gold);
+}
+
+.arena-facts b {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.arena-facts small {
+  overflow: hidden;
+  color: var(--pq-muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.venue-catalog {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.venue-catalog__section,
+.venue-reviews {
+  padding: 23px 0;
+  border-bottom: 1px solid var(--pq-line);
+}
+
+.venue-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+
+.venue-section-head > div > span {
+  color: var(--pq-brand-strong);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.venue-section-head h2 {
+  margin-top: 2px;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.venue-section-head > small {
+  color: var(--pq-muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.venue-gallery-strip {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 7px;
+}
+
+.venue-gallery-thumb {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  aspect-ratio: 1.25;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  background: var(--pq-tint-strong);
+  cursor: pointer;
+}
+
+.venue-gallery-thumb:first-child {
+  aspect-ratio: auto;
+}
+
+.venue-gallery-thumb.on {
+  border-color: var(--pq-brand);
+}
+
+.venue-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.venue-amenities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 15px;
+}
+
+.venue-amenity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 50px;
+  border-bottom: 1px solid var(--pq-line);
+}
+
+.venue-amenity > span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-strong);
+}
+
+.venue-amenity .ic {
+  width: 15px;
+  height: 15px;
+}
+
+.venue-amenity strong {
+  min-width: 0;
+  font-size: 10.5px;
+  overflow-wrap: anywhere;
+}
+
+.booking-calendar {
+  width: 100%;
+  max-width: 430px;
+  margin: 2px auto 0;
+}
+
+.booking-calendar__head {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 38px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.booking-calendar__head > strong {
+  text-align: center;
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.calendar-nav {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  cursor: pointer;
+}
+
+.calendar-nav:disabled {
+  opacity: .3;
+  cursor: default;
+}
+
+.calendar-nav .ic {
+  width: 17px;
+  height: 17px;
+}
+
+.booking-calendar__weekdays,
+.booking-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.booking-calendar__weekdays {
+  margin-bottom: 6px;
+}
+
+.booking-calendar__weekdays span {
+  color: var(--pq-muted);
+  font-size: 8px;
+  font-weight: 850;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.booking-calendar__grid {
+  row-gap: 5px;
+}
+
+.calendar-day,
+.calendar-empty {
+  width: calc(100% - 4px);
+  max-width: 42px;
+  aspect-ratio: 1;
+  justify-self: center;
+}
+
+.calendar-day {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pq-ink);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.calendar-day:hover:not(:disabled) {
+  background: var(--pq-tint);
+}
+
+.calendar-day.is-today:not(.on) {
+  border-color: var(--pq-line-strong);
+  color: var(--pq-brand-strong);
+}
+
+/* Todas as datas do plano, nao so a escolhida: no mensalista a pessoa
+   precisa ver a recorrencia inteira do mes. Vem ANTES de .on para o dia
+   selecionado continuar solido por cima. */
+.calendar-day.is-plan:not(.on) {
+  border-color: var(--pq-signal);
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-strong);
+  font-weight: 800;
+}
+
+.calendar-day.on {
+  border-color: var(--pq-brand-strong);
+  background: var(--pq-brand-strong);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 138, 75, .2);
+}
+
+.calendar-day:disabled {
+  color: #c0c8c2;
+  cursor: default;
+}
+
+.book-bar__assurance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding-top: 11px;
+  border-top: 1px solid var(--pq-line);
+  color: var(--pq-brand-strong);
+}
+
+.book-bar__assurance > .ic {
+  width: 18px;
+  height: 18px;
+}
+
+.book-bar__assurance > span {
+  display: grid;
+  gap: 1px;
+}
+
+.book-bar__assurance strong {
+  font-size: 10px;
+}
+
+.book-bar__assurance small {
+  color: var(--pq-muted);
+  font-size: 8.5px;
+  line-height: 1.35;
+}
+
+.venue-reviews {
+  margin-top: 8px;
+  padding-bottom: 30px;
+  border-bottom: 0;
+  border-top: 1px solid var(--pq-line);
+}
+
+.venue-review-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+
+.venue-review-score {
+  display: grid;
+  justify-items: start;
+  min-width: 112px;
+}
+
+.venue-review-score > strong {
+  color: var(--pq-ink);
+  font-size: 31px;
+  line-height: 1;
+}
+
+.venue-review-stars {
+  display: flex;
+  gap: 2px;
+  margin-top: 5px;
+  color: var(--pq-gold);
+}
+
+.venue-review-stars .ic {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+
+.venue-review-stars .ic.is-empty {
+  color: #d5ded8;
+  fill: none;
+}
+
+.venue-review-score > small {
+  margin-top: 5px;
+  color: var(--pq-muted);
+  font-size: 8.5px;
+}
+
+.venue-review-summary > p {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
+.venue-review-summary > p .ic {
+  width: 17px;
+  height: 17px;
+  color: var(--pq-brand);
+}
+
+@media (max-width: 359px) {
+  .arena-facts > span {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .venue-gallery-strip {
+    gap: 5px;
+  }
+
+  .venue-amenities {
+    grid-template-columns: 1fr;
+  }
+
+  .venue-review-summary {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Formas esportivas: circulos nos pontos de acao, cards preservados para leitura. */
+.btn,
+.btn-mini,
+.pwa-go,
+.market-search,
+.explore-search,
+.market-shortcut,
+.availability-pulse,
+.sport-filter-chip,
+.map-filter-strip .chip,
+.filter-choice-grid label > span,
+.market-sheet__secondary {
+  border-radius: 999px;
+}
+
+.location-switch__icon,
+.market-notification,
+.market-search button,
+.explore-search button,
+.market-shortcut > span,
+.sport-item > span,
+.availability-pulse__icon,
+.favorite-float,
+.hero-favorite,
+.venue-hero .back,
+.icon-btn,
+.market-sheet__close,
+.current-location-action > span:first-child,
+.notification-list__icon,
+.filter-now > span:first-child,
+.referral-icon,
+.profile-avatar,
+.conversation-avatar {
+  border-radius: 50%;
+}
+
+.market-shortcut {
+  padding-right: 13px;
+  padding-left: 10px;
+}
+
+.venue-distance-pill,
+.venue-availability,
+.verified-label {
+  border-radius: 999px;
+}
+
+.day {
+  flex-basis: 66px;
+  min-height: 66px;
+  border-radius: 50%;
+}
+
+.slot,
+.dur {
+  border-radius: 999px;
+}
+
+.filter-now {
+  border-radius: 16px;
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .map-navbar {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .map-filter-strip {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  .leaflet-mobile-map {
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+  }
+}
+
+/* =========================================================
+   Marketplace mobile v3
+   Descoberta rapida, disponibilidade e reserva em primeiro plano.
+   ========================================================= */
+:root {
+  --pq-brand: #16a765;
+  --pq-brand-strong: #0c8b52;
+  --pq-brand-deep: #075e3a;
+  --pq-signal: #b9edcb;
+  --pq-signal-soft: #edf9f1;
+  /* Ambar de estado: "vai acontecer". Distinto de --pq-gold, que e ambar de
+     sinalizacao (estrelas, cartao amarelo, Time B) — ajustar um nao move o outro. */
+  --pq-amber: #ea580c;
+  --pq-amber-strong: #9a3412;
+  --pq-amber-soft: #ffedd5;
+  --pq-coral: #4cb77b;
+  --pq-sky: #219565;
+  --pq-app-bg: #f3f8f4;
+  --pq-panel: #ffffff;
+  --pq-ink: #143523;
+  --pq-ink-soft: #315742;
+  --pq-muted: #6b7f72;
+  --pq-line: #dce9df;
+  --pq-shadow-1: 0 2px 4px rgba(7, 94, 58, .03), 0 12px 28px rgba(7, 94, 58, .07);
+}
+
+html {
+  /* Acompanha --pq-paper: e o fundo que aparece no overscroll (o
+     "elastico") e atras da safe area. Verde ali devolvia a cor antiga
+     toda vez que alguem puxava a tela. */
+  background: var(--pq-panel);
+}
+
+body {
+  background: var(--pq-app-bg);
+  color: var(--pq-ink);
+}
+
+body.market-sheet-open .screen {
+  overflow: hidden;
+}
+
+.phone,
+.screen {
+  background: var(--pq-app-bg);
+}
+
+.phone {
+  min-height: 100dvh;
+}
+
+html[data-route="mapa"] .phone {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.screen {
+  padding-bottom: calc(var(--pq-tabbar-height) + var(--pq-safe-bottom));
+}
+
+.container {
+  padding: 20px 16px 34px;
+}
+
+.ic {
+  stroke-width: 2;
+}
+
+.location-switch:focus-visible,
+.market-notification:focus-visible,
+.market-search button:focus-visible,
+.market-shortcut:focus-visible,
+.sport-item:focus-visible,
+.availability-pulse:focus-visible,
+.sport-filter-chip:focus-visible,
+.market-sheet button:focus-visible,
+.notification-list a:focus-visible {
+  outline: 3px solid rgba(207, 255, 71, .9);
+  outline-offset: 2px;
+}
+
+.btn,
+.btn-mini,
+.pwa-go {
+  border-radius: 16px;
+  background: var(--pq-brand-strong);
+  box-shadow: none;
+}
+
+.btn-mini,
+.pwa-go {
+  border-radius: 999px;
+}
+
+.btn:hover,
+.btn-mini:hover,
+.pwa-go:hover {
+  background: var(--pq-brand-deep);
+}
+
+.btn:active,
+.btn-mini:active {
+  transform: translateY(1px);
+}
+
+.btn.outline {
+  border: 1px solid var(--pq-line);
+  background: var(--pq-panel);
+  color: var(--pq-brand-deep);
+}
+
+.btn.block {
+  min-height: 54px;
+}
+
+/* ---------- home e cabecalho de marketplace ---------- */
+.market-header {
+  position: relative;
+  padding: calc(18px + var(--pq-safe-top)) 16px 18px;
+  border-bottom: 1px solid var(--pq-line);
+  background: var(--pq-tint);
+}
+
+.market-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.location-switch {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  gap: 9px;
+  padding: 0;
+  background: transparent;
+  color: var(--pq-ink);
+  text-align: left;
+}
+
+/* Era 38px de circulo cheio para um rotulo de duas linhas: o bloco do local
+   dominava o topo da tela. Menor e sem preenchimento, ele volta a ser o que e
+   — um botao de trocar cidade, nao o assunto da tela. */
+.location-switch__icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  /* Fundo transparente: o alfinete verde sobre branco ja se le, e o circulo
+     cheio pesava mais que o proprio nome da cidade ao lado. */
+  background: transparent;
+  color: var(--pq-brand-strong);
+}
+
+.location-switch__icon .ic {
+  width: 19px;
+  height: 19px;
+}
+
+.location-switch__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.location-switch__copy small {
+  overflow: hidden;
+  color: var(--pq-brand-deep);
+  font-size: 9px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.location-switch__copy strong {
+  overflow: hidden;
+  margin-top: 2px;
+  font-size: 13.5px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-switch__chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--pq-muted);
+}
+
+.market-notification {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: var(--pq-brand-deep);
+}
+
+.market-notification .ic {
+  width: 20px;
+  height: 20px;
+}
+
+.market-notification > span {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-coral);
+}
+
+.market-notification > span[hidden] {
+  display: none;
+}
+
+.market-copy {
+  margin-top: 20px;
+}
+
+.market-copy p {
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.market-copy h1 {
+  max-width: 330px;
+  margin-top: 4px;
+  font-size: 24px;
+  line-height: 1.12;
+  font-weight: 900;
+}
+
+.market-search,
+.explore-search {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-height: 56px;
+  border: 1px solid var(--pq-line);
+  border-radius: 20px;
+  background: var(--pq-panel);
+  box-shadow: 0 8px 24px rgba(16, 24, 19, .07);
+}
+
+.market-search {
+  margin-top: 18px;
+  padding: 6px 7px 6px 15px;
+}
+
+.market-search > .ic,
+.explore-search > .ic {
+  width: 20px;
+  height: 20px;
+  color: var(--pq-brand);
+}
+
+.market-search input,
+.explore-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--pq-ink);
+  font: 650 14px var(--ui);
+}
+
+.market-search input::placeholder,
+.explore-search input::placeholder {
+  color: #89948d;
+}
+
+.market-search button,
+.explore-search button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+.market-search button {
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.market-search button .ic,
+.explore-search button .ic {
+  width: 18px;
+  height: 18px;
+}
+
+.market-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.market-shortcut {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 66px;
+  gap: 0 10px;
+  padding: 10px 11px;
+  border: 1px solid var(--pq-line);
+  border-radius: 20px;
+  background: var(--pq-tint);
+  color: var(--pq-ink);
+}
+
+.market-shortcut--now {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.market-shortcut > span {
+  display: grid;
+  grid-row: 1 / 3;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: var(--pq-brand-deep);
+}
+
+.market-shortcut--now > span {
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+}
+
+.market-shortcut .ic {
+  width: 18px;
+  height: 18px;
+}
+
+.market-shortcut strong {
+  align-self: end;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-shortcut small {
+  align-self: start;
+  margin-top: 1px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  font-weight: 650;
+}
+
+.market-shortcut--now small {
+  color: rgba(255, 255, 255, .78);
+}
+
+.market-home {
+  padding: 4px 0 30px;
+}
+
+.market-section {
+  padding: 22px 0 0;
+}
+
+.market-section__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 16px 12px;
+}
+
+.market-section__head > div {
+  min-width: 0;
+}
+
+.market-section__head span,
+.booking-title > span,
+.explore-header > div > span,
+.market-sheet__head > div > span {
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.market-section__head h2 {
+  margin-top: 2px;
+  font-size: 19px;
+  line-height: 1.18;
+  font-weight: 900;
+}
+
+.market-section__head > a {
+  flex: 0 0 auto;
+  color: var(--pq-brand-strong);
+  font-size: 11.5px;
+  font-weight: 850;
+}
+
+.sport-rail,
+.venue-rail,
+.arena-rail,
+.sport-filter-rail {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+.sport-rail::-webkit-scrollbar,
+.venue-rail::-webkit-scrollbar,
+.sport-filter-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.sport-rail {
+  gap: 9px;
+  padding: 0 16px 3px;
+}
+
+.sport-item {
+  display: flex;
+  flex: 0 1 74px;
+  align-items: center;
+  gap: 7px;
+  scroll-snap-align: start;
+  flex-direction: column;
+  color: var(--pq-ink-soft);
+  text-align: center;
+}
+
+.sport-item > span {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: var(--pq-brand);
+  box-shadow: 0 5px 14px rgba(16, 24, 19, .04);
+}
+
+/* Havia aqui um degrade decorativo tingindo o 2o, 3o e 4o circulos. Como era
+   por POSICAO e nao por esporte, o 3o ficava visivelmente mais escuro que os
+   vizinhos e lia como "selecionado" — um estado que nem existe nesta lista.
+   Alem disso mudava de esporte se a ordem mudasse. Todos iguais agora. */
+
+.sport-item .ic {
+  width: 24px;
+  height: 24px;
+}
+
+.sport-item strong {
+  width: 100%;
+  overflow: hidden;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.availability-pulse {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-height: 68px;
+  margin: 22px 16px 0;
+  padding: 11px 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-tint);
+  color: var(--pq-ink);
+}
+
+.availability-pulse__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.availability-pulse__icon .ic {
+  width: 20px;
+  height: 20px;
+}
+
+.availability-pulse > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.availability-pulse strong {
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.availability-pulse small {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.availability-pulse > .ic {
+  width: 18px;
+  height: 18px;
+  color: var(--pq-brand-strong);
+}
+
+.venue-rail {
+  gap: 12px;
+  /* scroll-padding acompanha o padding: sem ele o encaixe cola o card na
+     borda, que era a sensacao de "encostando na lateral". */
+  padding: 0 16px 6px;
+  scroll-padding-left: 16px;
+}
+
+.venue-rail .venue-card {
+  /* 78vw deixa uma espiada folgada do proximo card em vez de corta-lo
+     rente a borda da tela. */
+  flex: 0 0 min(78vw, 300px);
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+/* ---------- cards existentes, agora como produto ---------- */
+.card,
+.res-card,
+.order-card,
+.booking-card,
+.summary,
+.ticket,
+.empty,
+.pwa-prompt,
+.mini-card,
+.info-rows,
+.book-bar {
+  border-radius: 22px;
+}
+
+.venue-card {
+  overflow: hidden;
+  border: 1px solid var(--pq-line);
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+}
+
+.venue-card .photo {
+  height: 176px;
+  background: var(--pq-tint-strong);
+}
+
+.venue-card .photo::after {
+  display: none;
+}
+
+.venue-card .body {
+  padding: 15px 16px 16px;
+}
+
+.venue-distance-pill,
+.venue-availability {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 29px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.venue-distance-pill {
+  top: 10px;
+  right: 10px;
+  background: var(--pq-panel-veil);
+  color: var(--pq-brand-deep);
+}
+
+.venue-availability {
+  bottom: 10px;
+  left: 10px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+.venue-distance-pill .ic,
+.venue-availability .ic {
+  width: 13px;
+  height: 13px;
+}
+
+.favorite-float {
+  top: 10px;
+  left: 10px;
+}
+
+.favorite-float.on .ic,
+.hero-favorite.on .ic {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.venue-card-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--pq-brand-deep);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.venue-card-kicker > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.venue-card-kicker b {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  color: var(--pq-ink);
+}
+
+.venue-card-kicker .ic {
+  width: 13px;
+  height: 13px;
+  color: var(--pq-gold);
+  fill: var(--pq-gold);
+}
+
+.venue-card .body h3 {
+  margin-top: 5px;
+  font-size: 18px;
+}
+
+.venue-card .meta {
+  margin-top: 5px;
+  font-size: 11.5px;
+}
+
+.venue-card .tags {
+  margin-top: 10px;
+}
+
+.venue-card .tag {
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 9.5px;
+}
+
+.venue-card .foot {
+  margin-top: 12px;
+  padding-top: 11px;
+}
+
+.venue-card .price {
+  font-size: 19px;
+}
+
+.venue-card .price small {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.venue-card .btn-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 9px 11px;
+  font-size: 11px;
+}
+
+.venue-card .btn-mini .ic {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- explorar ---------- */
+.explore-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: calc(20px + var(--pq-safe-top)) 16px 16px;
+  border-bottom: 1px solid var(--pq-line);
+  background: var(--pq-tint);
+}
+
+.explore-header > div {
+  min-width: 0;
+}
+
+.explore-header .title {
+  margin-top: 3px;
+  font: 900 25px/1.08 var(--display);
+}
+
+.explore-header .sub {
+  overflow: hidden;
+  margin-top: 5px;
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explore-header .icon-btn {
+  width: 42px;
+  height: 42px;
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.explore-market {
+  padding-top: 14px;
+}
+
+.explore-search {
+  min-height: 54px;
+  padding: 5px 5px 5px 14px;
+  box-shadow: none;
+}
+
+.explore-search button {
+  border: 1px solid var(--pq-line);
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+.sport-filter-rail {
+  gap: 7px;
+  margin: 13px -16px 0;
+  padding: 0 16px 3px;
+}
+
+.sport-filter-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  color: var(--pq-ink-soft);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.sport-filter-chip .ic {
+  width: 15px;
+  height: 15px;
+  color: var(--pq-brand);
+}
+
+.sport-filter-chip.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.sport-filter-chip.on .ic {
+  color: #fff;
+}
+
+.result-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 16px 0 11px;
+  color: var(--pq-muted);
+  font-size: 10.5px;
+}
+
+.result-context > span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.result-context strong {
+  overflow: hidden;
+  color: var(--pq-ink-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-context .ic {
+  width: 14px;
+  height: 14px;
+  color: var(--pq-brand);
+}
+
+.result-context > a {
+  flex: 0 0 auto;
+  color: var(--pq-brand-strong);
+  font-weight: 850;
+}
+
+.explore-market [data-venue-list] .venue-card {
+  margin-bottom: 14px;
+}
+
+/* ---------- navegacao fixa ---------- */
+.tabbar {
+  min-height: calc(var(--pq-tabbar-height) + var(--pq-safe-bottom));
+  padding: 8px 8px max(8px, var(--pq-safe-bottom));
+  border-top: 1px solid var(--pq-line);
+  border-radius: 24px 24px 0 0;
+  background: var(--pq-panel-veil);
+  box-shadow: 0 -8px 24px rgba(7, 94, 58, .08);
+}
+
+.tabbar.tabbar--legacy {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tabbar > a,
+.tabbar > button {
+  min-height: 54px;
+  gap: 4px;
+  padding: 5px 2px;
+  border-radius: 16px;
+  color: var(--pq-muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.tabbar > a > .ic,
+.tabbar > button > .ic {
+  width: 21px;
+  height: 21px;
+}
+
+.tabbar > a > span,
+.tabbar > button > span {
+  font-size: 9.5px;
+}
+
+.tabbar > a.on,
+.tabbar > button.on {
+  background: transparent;
+  color: var(--pq-brand-strong);
+}
+
+.tabbar .tabbar-map {
+  position: relative;
+  z-index: 2;
+  min-height: 54px;
+  transform: none;
+  color: var(--pq-muted);
+}
+
+/* O Mapa e a acao principal da barra, e ate agora tinha o mesmo peso dos
+   outros quatro itens. Vira um circulo maior e elevado — o dedo acha sem
+   procurar, e a barra ganha um centro. Sobe 14px sobre a barra em vez de
+   flutuar solto: destacado, mas ainda parte dela. */
+.tabbar .tabbar-map > span {
+  display: grid;
+  overflow: visible;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  /* Sobe mais do que a metade da propria altura ficaria: o circulo rompe a
+     borda superior da barra e ganha relevo de verdade, sem virar um botao
+     solto boiando acima dela. */
+  margin-top: -22px;
+  border: 3px solid var(--pq-paper);
+  border-radius: 50%;
+  background: var(--pq-brand-strong);
+  box-shadow: 0 8px 18px rgba(0, 168, 90, .30);
+  color: #fff;
+}
+
+.tabbar .tabbar-map > span .ic {
+  width: 24px;
+  height: 24px;
+}
+
+.tabbar .tabbar-map em {
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.tabbar .tabbar-map.on > span {
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.tabbar .tabbar-map.on em {
+  color: var(--pq-brand-strong);
+}
+
+/* ---------- detalhe e reserva ---------- */
+.venue-hero {
+  height: 270px;
+  border-radius: 0;
+  background: var(--pq-tint-strong);
+}
+
+.venue-hero::after {
+  background: linear-gradient(180deg, rgba(6, 18, 11, .2), transparent 42%, rgba(6, 18, 11, .36));
+}
+
+.venue-hero .back,
+.venue-hero .hero-favorite {
+  top: calc(16px + var(--pq-safe-top));
+}
+
+.venue-hero .back {
+  left: 16px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+.venue-hero .hero-favorite {
+  right: 16px;
+  width: 42px;
+  height: 42px;
+}
+
+.venue-hero .venue-distance {
+  top: auto;
+  right: 16px;
+  bottom: 14px;
+  min-height: 34px;
+  border-radius: 999px;
+}
+
+.venue-hero-photo-count {
+  position: absolute;
+  z-index: 4;
+  bottom: 14px;
+  left: 16px;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 3px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, .55);
+  border-radius: 999px;
+  background: var(--pq-panel-veil);
+  color: var(--pq-ink);
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: 0 5px 18px rgba(6, 18, 11, .14);
+}
+
+.venue-hero-photo-count .ic {
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+  color: var(--pq-brand-strong);
+}
+
+.venue-hero-dots {
+  position: absolute;
+  z-index: 4;
+  bottom: 25px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transform: translateX(-50%);
+}
+
+.venue-hero-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .58);
+  box-shadow: 0 1px 5px rgba(6, 18, 11, .18);
+  transition: width .2s ease, background-color .2s ease;
+}
+
+.venue-hero-dot.on {
+  width: 20px;
+  background: var(--pq-panel);
+}
+
+.detail-head {
+  padding: 17px 16px 16px;
+  border-bottom: 1px solid var(--pq-line);
+  background: var(--pq-panel);
+}
+
+.verified-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.verified-label .ic {
+  width: 15px;
+  height: 15px;
+}
+
+.detail-head h1 {
+  margin-top: 6px;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.detail-head .meta {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.venue-proof {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 15px;
+  border-top: 1px solid var(--pq-line);
+  border-bottom: 1px solid var(--pq-line);
+  border-radius: 18px;
+  background: var(--pq-tint);
+}
+
+.venue-proof > span {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0 7px;
+  min-width: 0;
+  padding: 11px 8px 11px 0;
+}
+
+.venue-proof > span + span {
+  padding-left: 12px;
+  border-left: 1px solid var(--pq-line);
+}
+
+.venue-proof .ic {
+  grid-row: 1 / 3;
+  width: 19px;
+  height: 19px;
+  color: var(--pq-brand);
+}
+
+.venue-proof > span:first-child .ic {
+  color: var(--pq-gold);
+  fill: var(--pq-gold);
+}
+
+.venue-proof b {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.venue-proof small {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.venue-booking {
+  padding-top: 16px;
+}
+
+.venue-booking > .tags {
+  margin: 0 0 20px;
+}
+
+.booking-title {
+  margin: 0 0 12px;
+}
+
+.booking-title h2 {
+  margin-top: 2px;
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.days {
+  gap: 8px;
+  margin-right: -16px;
+  padding: 1px 16px 4px 0;
+  scroll-snap-type: x proximity;
+}
+
+.day {
+  flex: 0 0 64px;
+  min-height: 68px;
+  scroll-snap-align: start;
+  border-radius: 50%;
+  background: var(--pq-panel);
+}
+
+.day.on {
+  border-color: var(--pq-brand-strong) !important;
+  background: var(--pq-brand-strong) !important;
+  box-shadow: 0 6px 14px rgba(0, 168, 90, .2) !important;
+}
+
+.sec-head {
+  margin: 25px 0 11px;
+}
+
+.sec-head h2 {
+  font-size: 18px;
+}
+
+.legend {
+  margin-bottom: 11px;
+}
+
+.avail {
+  gap: 15px;
+}
+
+.avail-lbl {
+  margin-bottom: 7px;
+  color: var(--pq-muted);
+  font-size: 10px;
+}
+
+/* Flex em vez de grid de 3 colunas: no grid, a ultima fileira incompleta
+   encosta na esquerda e sobra buraco na direita. Flex com wrap centra o
+   que sobrou — era esse o "nao esta centralizado". */
+.avail-slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.avail-slots .slot {
+  /* calc reproduz as 3 colunas de antes, descontando os dois gaps. */
+  flex: 0 0 calc((100% - 16px) / 3);
+}
+
+.slot {
+  min-height: 50px;
+  border-radius: 999px;
+  background: var(--pq-panel);
+  font-size: 13px;
+}
+
+.avail-slots .slot.sel {
+  border-color: var(--pq-brand-strong) !important;
+  background: var(--pq-brand-strong) !important;
+  /* Estas duas faltavam so nesta arvore (a do app ja tinha): sem elas o
+     horario escolhido ficava com texto escuro sobre o verde forte, e
+     herdava o risco de .slot.busy quando vinha de um estado riscado. */
+  color: #fff !important;
+  text-decoration: none !important;
+  box-shadow: 0 5px 12px rgba(0, 168, 90, .18) !important;
+}
+
+.slot.busy {
+  border-color: var(--pq-line);
+  background: var(--pq-tint);
+  color: #a8b0aa;
+}
+
+/* Horario que ja passou: apagado, mas sem o risco de "reservado" — nao ha
+   nada ocupando ali, so o relogio andou. */
+.slot.past {
+  border-color: var(--pq-line);
+  background: var(--pq-panel);
+  color: #b9c0ba;
+  text-decoration: none;
+}
+
+/* Horario LIVRE que so nao serve de INICIO para a duracao escolhida.
+
+   Apagado, e nao tracejado: o tracejado tinha cara de "proibido" e, quando a
+   hora entrava num bloco valido, parecia que a reserva atravessava algo
+   bloqueado. Apagado nao promete nem proibe — e o que ele e. */
+.slot.nofit {
+  border-color: var(--pq-line);
+  background: var(--pq-panel);
+  color: #aeb6b0;
+  text-decoration: none;
+}
+
+/* As horas seguintes do bloco. Verde CLARO, para se lerem como "parte do que
+   voce esta reservando" sem disputar com o inicio, que e onde a escolha
+   realmente esta. */
+.slot.bloco,
+.avail-slots .slot.bloco {
+  border-color: var(--pq-brand-strong) !important;
+  background: #dcf3e5 !important;
+  color: var(--pq-brand-strong) !important;
+  text-decoration: none !important;
+  opacity: 1;
+}
+
+.dur-seg {
+  gap: 8px;
+}
+
+.dur {
+  min-height: 49px;
+  border-radius: 999px;
+  background: var(--pq-panel);
+}
+
+.dur.on {
+  border-color: var(--pq-brand-strong);
+  background: var(--pq-brand-strong);
+  box-shadow: none;
+  color: #fff;
+}
+
+.book-bar {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid var(--pq-line);
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+}
+
+.book-bar .btn {
+  background: var(--pq-brand-strong);
+}
+
+.note {
+  gap: 6px;
+  color: var(--pq-muted);
+  font-size: 10.5px;
+}
+
+.note .ic {
+  color: var(--pq-brand);
+}
+
+.booking-flow {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 2px 0 25px;
+  padding: 0;
+  list-style: none;
+}
+
+.booking-flow::before {
+  position: absolute;
+  z-index: 0;
+  top: 17px;
+  right: 12.5%;
+  left: 12.5%;
+  height: 2px;
+  background: var(--pq-tint-strong);
+  content: "";
+}
+
+.booking-flow li {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: #86948b;
+}
+
+.booking-flow li > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-paper);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.booking-flow li > span .ic {
+  width: 15px;
+  height: 15px;
+}
+
+.booking-flow li small {
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.booking-flow li.is-current,
+.booking-flow li.is-done {
+  color: var(--pq-brand-strong);
+}
+
+.booking-flow li.is-current > span {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #fff;
+  box-shadow: 0 0 0 4px #e5f5eb;
+}
+
+.booking-flow li.is-done > span {
+  border-color: var(--pq-line-strong);
+  background: var(--pq-tint);
+  color: var(--pq-brand-strong);
+}
+
+.booking-intro {
+  margin-bottom: 8px;
+}
+
+.booking-intro > span,
+.checkout-recap__eyebrow,
+.checkout-section__head span,
+.success-eyebrow {
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.booking-intro h2 {
+  margin-top: 3px;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.booking-intro p {
+  max-width: 350px;
+  margin-top: 7px;
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.booking-step {
+  padding: 23px 0;
+  border-bottom: 1px solid var(--pq-line);
+}
+
+.booking-step:last-of-type {
+  border-bottom: 0;
+}
+
+.booking-step__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.booking-step__number {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.booking-step__head small {
+  display: block;
+  color: var(--pq-muted);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.booking-step__head h2 {
+  margin-top: 1px;
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+.booking-step__status {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-strong);
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.booking-step .days {
+  margin-top: 2px;
+}
+
+.booking-step .day {
+  flex: 0 0 70px;
+  min-height: 78px;
+  padding: 8px 5px;
+  border-radius: 20px;
+}
+
+.booking-step .day .d {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.booking-step .day .n {
+  margin-top: 1px;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.booking-step .day .m {
+  margin-top: 3px;
+  color: var(--pq-muted);
+  font-size: 8.5px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.booking-step .day.on .m {
+  color: rgba(255, 255, 255, .76);
+}
+
+.booking-step .legend {
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin: -2px 0 12px 44px;
+  font-size: 9.5px;
+}
+
+.booking-step .avail {
+  gap: 17px;
+}
+
+.booking-step .avail-group {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+}
+
+.booking-step .avail-lbl {
+  margin: 14px 0 0;
+  font-size: 8.5px;
+}
+
+.booking-step .avail-slots {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.booking-step .slot {
+  min-height: 46px;
+  border-radius: 16px;
+}
+
+.booking-step .slot.sel {
+  box-shadow: 0 0 0 3px #dcefe3 !important;
+}
+
+.booking-step .dur-seg {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.booking-step .dur {
+  display: flex;
+  min-height: 62px;
+  padding: 8px 5px;
+  border-radius: 18px;
+  flex-direction: column;
+  gap: 2px;
+  /* min-height de 62px sem alinhamento deixava "1h / Jogo rapido" grudado no
+     topo, com um vao morto embaixo. */
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.booking-step .dur strong {
+  font-size: 16px;
+}
+
+.booking-step .dur span {
+  color: var(--pq-muted);
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.booking-step .dur.on span {
+  color: rgba(255, 255, 255, .78);
+}
+
+.duration-help {
+  min-height: 17px;
+  margin-top: 9px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+
+.venue-booking .book-bar {
+  position: sticky;
+  z-index: 25;
+  bottom: calc(var(--pq-tabbar-height) + var(--pq-safe-bottom) + 8px);
+  display: grid;
+  gap: 12px;
+  margin: 8px 0 14px;
+  padding: 14px;
+  border-radius: 24px;
+  border-color: var(--pq-line);
+  background: var(--pq-panel-veil);
+  box-shadow: 0 14px 34px rgba(7, 94, 58, .15);
+  backdrop-filter: blur(14px);
+}
+
+.book-bar__selection {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.book-bar__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-strong);
+}
+
+.book-bar__icon .ic {
+  width: 19px;
+  height: 19px;
+}
+
+.book-bar__selection > span:last-child {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 1fr auto;
+  gap: 1px 8px;
+}
+
+.book-bar__selection small {
+  grid-column: 1 / -1;
+  color: var(--pq-muted);
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.book-bar__selection strong,
+.book-bar__selection em {
+  min-width: 0;
+  font-size: 11px;
+  font-style: normal;
+  overflow-wrap: anywhere;
+}
+
+.book-bar__selection em {
+  color: var(--pq-muted);
+  text-align: right;
+}
+
+.book-bar__price {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--pq-line);
+}
+
+.book-bar__price > span {
+  color: var(--pq-ink-soft);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.book-bar__price small {
+  display: block;
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 8.5px;
+  font-weight: 650;
+}
+
+.book-bar__price > strong {
+  color: var(--pq-brand-deep);
+  font-size: 20px;
+}
+
+.book-bar .btn {
+  display: flex;
+  justify-content: space-between;
+  border-radius: 16px;
+}
+
+.book-bar .btn .ic {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- checkout e confirmacao ---------- */
+.navbar {
+  min-height: 76px;
+  padding: calc(16px + var(--pq-safe-top)) 16px 14px;
+  border-bottom: 1px solid var(--pq-line);
+  /* Era #f5fbf7, um branco puxado para o verde. Esta e a regra que vence
+     (vem depois da de cima no arquivo), entao e aqui que a cor tem de mudar —
+     trocar so la em cima nao surtia efeito nenhum.
+
+     Opaco, e nao translucido: com backdrop-filter: none logo abaixo, um fundo
+     transparente deixaria o conteudo passar por tras sem desfoque, e agora a
+     barra e fixa, entao passaria conteudo por baixo dela o tempo todo. */
+  background: var(--pq-panel);
+  backdrop-filter: none;
+}
+
+.navbar .title {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.navbar .sub {
+  margin-top: 2px;
+  font-size: 10.5px;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--pq-panel);
+}
+
+.checkout-mobile .mini-card {
+  padding: 0 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--pq-line);
+  border-radius: 0;
+}
+
+.checkout-mobile .mini-card img {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+}
+
+.booking-flow--checkout,
+.booking-flow--confirmation {
+  margin-top: 0;
+}
+
+.checkout-recap {
+  padding: 15px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+}
+
+.checkout-recap__eyebrow {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.checkout-recap .mini-card h3 {
+  font-size: 15px;
+}
+
+.checkout-recap .info-rows {
+  margin-top: 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.checkout-recap .info-rows .row {
+  min-height: 43px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--pq-line);
+}
+
+.checkout-recap .info-rows .row:last-child {
+  border-bottom: 0;
+}
+
+.checkout-recap .info-rows .k {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--pq-muted);
+}
+
+.checkout-recap .info-rows .k .ic {
+  width: 16px;
+  height: 16px;
+  color: var(--pq-brand);
+}
+
+.checkout-recap .info-rows .v {
+  font-size: 11.5px;
+  font-weight: 850;
+  text-align: right;
+}
+
+.checkout-section {
+  margin-top: 24px;
+}
+
+.checkout-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.checkout-section__head h2 {
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.checkout-section__head > .ic {
+  width: 22px;
+  height: 22px;
+  color: var(--pq-brand);
+}
+
+.checkout-total {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid var(--pq-line);
+  border-radius: 20px;
+  background: var(--pq-tint);
+}
+
+.checkout-total .line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  font-size: 11.5px;
+}
+
+.checkout-total .total {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--pq-line);
+  color: var(--pq-brand-deep);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.checkout-total p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--pq-muted);
+  font-size: 9px;
+}
+
+.checkout-total p .ic {
+  width: 14px;
+  height: 14px;
+  color: var(--pq-brand);
+}
+
+.pay-methods {
+  gap: 9px;
+}
+
+.method {
+  min-height: 64px;
+  padding: 11px 12px;
+  border-radius: 18px;
+  background: var(--pq-panel);
+}
+
+.method .badge-ic {
+  border-radius: 50%;
+}
+
+.method > span:nth-child(2) strong {
+  display: block;
+  font-size: 12px;
+}
+
+.method .check {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  border: 1.5px solid var(--pq-line);
+  border-radius: 50%;
+  color: transparent;
+}
+
+.method .check .ic {
+  width: 13px;
+  height: 13px;
+}
+
+.method.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-tint);
+  box-shadow: 0 0 0 3px #e4f3e9;
+}
+
+.method.on .check {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.method.is-unavailable {
+  border-color: var(--pq-line);
+  background: var(--pq-tint);
+  color: #9aa49d;
+  cursor: not-allowed;
+}
+
+.method.is-unavailable .badge-ic,
+.method.is-unavailable small {
+  color: #9aa49d;
+}
+
+.checkout-action {
+  position: static;
+  margin: 12px 0 0;
+  padding: 0 0 26px;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.checkout-action .btn {
+  display: flex;
+  min-height: 52px;
+  justify-content: space-between;
+  border-radius: 16px;
+}
+
+.checkout-action .btn .ic {
+  width: 17px;
+  height: 17px;
+}
+
+.booking-confirmation {
+  padding-top: calc(22px + var(--pq-safe-top));
+}
+
+.booking-confirmation .success {
+  min-height: auto;
+  padding-top: 14px;
+}
+
+.booking-confirmation .success .ring {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-strong);
+  box-shadow: 0 0 0 9px rgba(22, 167, 101, .09);
+}
+
+.booking-confirmation .success-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.booking-confirmation .success h2 {
+  font-size: 24px;
+}
+
+.booking-confirmation .success > p {
+  max-width: 290px;
+  margin: 6px auto 0;
+  font-size: 11.5px;
+}
+
+.booking-confirmation .ticket {
+  width: 100%;
+  margin: 23px 0 18px;
+  border-radius: 22px;
+  text-align: left;
+  box-shadow: var(--pq-shadow-1);
+}
+
+.ticket-venue {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border-bottom: 1px solid var(--pq-line);
+  background: var(--pq-tint);
+}
+
+.ticket-venue img {
+  width: 66px;
+  height: 66px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.ticket-venue span {
+  color: var(--pq-brand-strong);
+  font-size: 8.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ticket-venue h3 {
+  margin-top: 2px;
+  font-size: 14px;
+}
+
+.ticket-venue p {
+  margin-top: 3px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+}
+
+.ticket-details {
+  padding: 4px 14px;
+}
+
+.booking-code {
+  display: flex;
+  width: calc(100% - 24px);
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 3px 12px 12px;
+  padding: 11px 13px;
+  border: 1px dashed var(--pq-line-strong);
+  border-radius: 16px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  text-align: left;
+}
+
+.booking-code span {
+  display: grid;
+  gap: 2px;
+}
+
+.booking-code small {
+  color: var(--pq-muted);
+  font-size: 8px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.booking-code strong {
+  font-size: 14px;
+}
+
+.booking-code .ic {
+  width: 18px;
+  height: 18px;
+}
+
+.confirmation-actions {
+  display: grid;
+  width: 100%;
+  gap: 9px;
+}
+
+/* ---------- reservas, perfil e carteira ---------- */
+.seg {
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--pq-tint);
+}
+
+.seg-item {
+  border-radius: 999px;
+}
+
+.seg-item.on {
+  background: var(--pq-panel);
+  color: var(--pq-brand-deep);
+  box-shadow: 0 4px 12px rgba(7, 94, 58, .08);
+}
+
+.res-card {
+  border-radius: 22px;
+  background: var(--pq-panel);
+}
+
+.res-card img {
+  border-radius: 16px;
+}
+
+.mobile-wallet {
+  border-radius: 24px;
+  background: linear-gradient(145deg, var(--pq-brand-deep), var(--pq-brand-strong));
+}
+
+.mobile-wallet::after {
+  border-color: rgba(207, 255, 71, .18);
+}
+
+.wallet-primary {
+  background: var(--pq-signal);
+}
+
+.payment-list,
+.transaction-list,
+.account-menu,
+.settings-section,
+.coupon-list {
+  border-radius: 22px;
+}
+
+.profile-avatar {
+  border-radius: 50%;
+  background: var(--pq-brand);
+}
+
+.favorite-sport .ic {
+  color: var(--pq-gold);
+  fill: none;
+}
+
+.menu-icon {
+  border-radius: 50%;
+}
+
+.settings-section {
+  background: var(--pq-panel);
+}
+
+/* ---------- toast util e legivel ---------- */
+.toast {
+  right: 12px;
+  left: 12px;
+  bottom: calc(var(--pq-tabbar-height) + 6px + var(--pq-safe-bottom));
+  min-height: 52px;
+  border: 0;
+  border-radius: 18px;
+  background: rgba(7, 94, 58, .97);
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(16, 24, 19, .24);
+}
+
+.toast .ic {
+  background: var(--pq-signal);
+  color: var(--pq-ink);
+}
+
+/* ---------- paineis de acao ---------- */
+.market-sheet {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  width: min(100vw, 430px);
+  margin: 0 auto;
+}
+
+.market-sheet[hidden] {
+  display: none;
+}
+
+.market-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(7, 52, 31, .34);
+}
+
+.market-sheet__panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: min(82dvh, 720px);
+  overflow-y: auto;
+  padding: 18px 16px calc(18px + var(--pq-safe-bottom));
+  border-radius: 28px 28px 0 0;
+  background: var(--pq-panel);
+  box-shadow: 0 -18px 46px rgba(8, 15, 10, .22);
+  animation: market-sheet-in .2s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes market-sheet-in {
+  from {
+    transform: translateY(28px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.market-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+  /* Sem risco sob o titulo: a folha ja se separa do fundo pela sombra e pelo
+     canto arredondado, e a linha cortava o menu em dois blocos sem que
+     houvesse dois assuntos ali. */
+}
+
+.market-sheet__head h2 {
+  margin-top: 2px;
+  font-size: 21px;
+  line-height: 1.15;
+}
+
+.market-sheet__close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  /* Sem o circulo verde: fechar e a acao mais obvia de uma folha e nao
+     precisa de destaque nenhum. Com fundo, competia com o botao de salvar
+     logo abaixo, que e o caminho que a gente quer. A area de toque de 38px
+     continua — some a cor, nao o alvo. */
+  background: transparent;
+  color: var(--pq-muted);
+}
+
+.current-location-action {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--pq-line);
+  color: var(--pq-ink);
+  text-align: left;
+}
+
+.current-location-action > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--pq-tint);
+}
+
+.current-location-action > span:nth-child(2),
+.location-options button > span,
+.notification-list a > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.current-location-action strong,
+.location-options strong,
+.notification-list strong {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.current-location-action small,
+.location-options small,
+.notification-list small {
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 10.5px;
+}
+
+.current-location-action > .ic,
+.location-options button > .ic {
+  width: 17px;
+  height: 17px;
+  color: var(--pq-brand);
+}
+
+.market-sheet__label {
+  display: block;
+  padding: 17px 0 7px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.location-options button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  border-bottom: 1px solid var(--pq-line);
+  background: transparent;
+  color: var(--pq-ink);
+  text-align: left;
+}
+
+.notification-list a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--pq-line);
+}
+
+.notification-list__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+.notification-list__icon--success {
+  background: var(--pq-tint);
+  color: var(--pq-brand);
+}
+
+.notification-list em {
+  margin-top: 6px;
+  color: var(--pq-brand-strong);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.market-sheet__secondary {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.market-filter-form fieldset {
+  margin-top: 18px;
+  border: 0;
+}
+
+.market-filter-form legend {
+  margin-bottom: 9px;
+  color: var(--pq-ink);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.filter-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.filter-choice-grid--sports {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.filter-choice-grid label {
+  min-width: 0;
+}
+
+.filter-choice-grid input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.filter-choice-grid label > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  color: var(--pq-ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.filter-choice-grid label > span .ic {
+  width: 16px;
+  height: 16px;
+  color: var(--pq-brand);
+}
+
+.filter-choice-grid input:checked + span {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.filter-choice-grid input:checked + span .ic {
+  color: #fff;
+}
+
+.filter-choice-grid input:focus-visible + span {
+  outline: 3px solid rgba(207, 255, 71, .8);
+  outline-offset: 2px;
+}
+
+.filter-now {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.filter-now > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--pq-tint);
+}
+
+.filter-now > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.filter-now strong {
+  font-size: 12.5px;
+}
+
+.filter-now small {
+  margin-top: 2px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+}
+
+.filter-now input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.filter-switch {
+  position: relative;
+  width: 42px;
+  height: 25px;
+  border-radius: 999px;
+  background: var(--pq-line-strong);
+}
+
+.filter-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: var(--pq-panel);
+  box-shadow: 0 2px 5px rgba(16, 24, 19, .2);
+  transition: transform .16s ease;
+}
+
+.filter-now input:checked + .filter-switch {
+  background: var(--pq-brand);
+}
+
+.filter-now input:checked + .filter-switch::after {
+  transform: translateX(17px);
+}
+
+.filter-now input:focus-visible + .filter-switch {
+  outline: 3px solid rgba(207, 255, 71, .8);
+  outline-offset: 2px;
+}
+
+/* ---------- mapas ---------- */
+.map-navbar {
+  background: var(--pq-tint);
+}
+
+.map-filter-strip {
+  background: var(--pq-panel);
+}
+
+.map-filter-strip .chip {
+  min-height: 36px;
+  border-radius: 999px;
+  font-size: 10.5px;
+}
+
+.map-filter-strip .chip.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  box-shadow: none;
+}
+
+.map-price-marker span {
+  border-color: var(--pq-brand);
+}
+
+.map-price-marker span::after {
+  border-color: var(--pq-brand);
+}
+
+@media (max-width: 370px) {
+  .market-copy h1 {
+    font-size: 22px;
+  }
+
+  .market-shortcuts {
+    grid-template-columns: 1fr;
+  }
+
+  .market-shortcut {
+    min-height: 58px;
+  }
+
+  .market-shortcut strong {
+    font-size: 12px;
+  }
+
+  .venue-rail .venue-card {
+    flex-basis: 84vw;
+  }
+
+  .tabbar > a > span,
+  .tabbar > button > span,
+  .tabbar .tabbar-map em {
+    font-size: 9px;
+  }
+
+  .profile-stats {
+    gap: 5px;
+  }
+
+  .profile-stats > div {
+    padding-right: 3px;
+    padding-left: 3px;
+  }
+
+  .profile-edit-action {
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .profile-edit-action span {
+    display: none;
+  }
+
+  .res-card {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .res-card img {
+    width: 72px;
+    height: 78px;
+  }
+
+  .venue-card .foot {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .venue-card .btn-mini {
+    width: 100%;
+  }
+}
+
+@media (min-width: 600px) and (pointer: coarse) {
+  .market-header > *,
+  .market-home {
+    max-width: 760px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .venue-rail .venue-card {
+    flex-basis: 310px;
+  }
+
+  .explore-market [data-venue-list] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .explore-market [data-venue-list] .venue-card {
+    margin-bottom: 0;
+  }
+
+  .market-sheet {
+    width: 100%;
+    max-width: none;
+  }
+
+  .market-sheet__panel {
+    width: min(100%, 620px);
+    margin: 0 auto;
+  }
+}
+
+/* Controles mais calmos e meios de pagamento visualmente centralizados. */
+.pay-methods .method {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 24px;
+  align-items: center;
+  column-gap: 10px;
+}
+
+.pay-methods .method > span:nth-child(2) {
+  min-width: 0;
+  justify-self: center;
+  text-align: center;
+}
+
+.pay-methods .method .check,
+.pay-methods .method .ck {
+  justify-self: end;
+  margin-left: 0;
+}
+
+.btn,
+.btn-mini,
+.pwa-go {
+  box-shadow: 0 2px 6px rgba(7, 94, 58, .08) !important;
+}
+
+.day.on,
+.avail-slots .slot.sel,
+.method.on,
+.sport-filter-chip.on,
+.map-filter-strip .chip.on {
+  box-shadow: none !important;
+}
+
+/* ---------- clube ---------- */
+/* Reaproveita .profile-hero (identidade), .profile-stats, .res-card (pelada),
+   .payment-row (membro), .seg (presenca) e .mobile-bubbles (conversa).
+   O que segue e so o que esses idiomas nao cobrem. */
+/* Na Conversa o cabecalho e o botao de reservar so ocupam espaco — a tela
+   e para ler e escrever mensagem. */
+.clube-page:has([data-club-panel="chat"]:not([hidden])) .profile-hero,
+.clube-page:has([data-club-panel="chat"]:not([hidden])) .club-schedule {
+  display: none;
+}
+
+/* Cabecalho do clube centralizado: e uma identidade, nao um formulario —
+   o eixo central da o ar de "escudo do time". */
+.clube-page .profile-identity {
+  text-align: center;
+}
+
+.clube-page .profile-avatar-wrap {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.clube-page .profile-location {
+  justify-content: center;
+}
+
+.clube-page .profile-identity-copy p {
+  margin-top: 4px;
+  color: var(--pq-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.club-schedule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.club-schedule .ic {
+  width: 17px;
+  height: 17px;
+}
+
+/* Conversa do clube: tela de chat, nao secao de pagina. A lista come o
+   espaco livre e rola sozinha; o compositor fica preso embaixo, acima da
+   barra contextual. */
+/* A Conversa ocupa a tela inteira, do cabecalho ate a barra de baixo.
+
+   Antes a altura era calc(100dvh - 170px - ...), e os 170px eram o
+   cabecalho MAIS o hero do clube MAIS o botao de marcar pelada. So que os
+   dois ultimos ja ficam escondidos nesta aba, entao sobrava 74px de branco
+   embaixo do compositor.
+
+   Agora quem manda e o flex: a pagina preenche a tela e o painel cresce no
+   que sobrar. Nao ha numero para envelhecer quando o cabecalho mudar. */
+.clube-page:has([data-club-panel="chat"]:not([hidden])) {
+  display: flex;
+  min-height: calc(100dvh - var(--pq-tabbar-height) - var(--pq-safe-bottom));
+  flex-direction: column;
+}
+
+.clube-page:has([data-club-panel="chat"]:not([hidden])) [data-club-view] {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.club-chat-panel {
+  display: flex;
+  /* min-height: 0 para o overflow das bolhas funcionar dentro do flex */
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  margin: 0 -16px;
+}
+
+/* O display acima e regra de autor e ganha do [hidden] do navegador, entao
+   o painel da Conversa ficava desenhado por cima em TODAS as abas: quem
+   abria Peladas via as mensagens. selectClubSection marcava hidden certinho
+   e nao adiantava nada. */
+.club-chat-panel[hidden] {
+  display: none;
+}
+
+.club-chat-panel .mobile-bubbles {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: none;
+}
+
+.club-chat-panel .mobile-bubbles::-webkit-scrollbar { display: none; }
+
+.club-chat-composer {
+  flex: 0 0 auto;
+  padding: 10px 16px calc(10px + var(--pq-safe-bottom));
+  border-top: 1px solid var(--pq-line);
+  background: var(--pq-panel);
+}
+
+/* Na Conversa a pagina nao rola: quem rola e a lista de mensagens. */
+.clube-page:has([data-club-panel="chat"]:not([hidden])) .container {
+  padding-bottom: 0;
+}
+
+.bub-name {
+  margin-bottom: 3px;
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+/* Presenca dentro do card da pelada: o mesmo controle segmentado das
+   abas de reservas, so um pouco menor. */
+.pelada-card__seg {
+  margin: 12px 0 0;
+}
+
+.pelada-card__seg .seg-item {
+  padding: 8px 6px;
+  font-size: 12px;
+}
+
+.member-row__avatar {
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.member-rating {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.member-rating .ic {
+  width: 13px;
+  height: 13px;
+  color: var(--pq-gold);
+  fill: var(--pq-gold);
+}
+
+/* ── folha de agendar pelada ── */
+.pelada-kind {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  margin-bottom: 4px;
+}
+
+.pelada-kind legend {
+  margin-bottom: 8px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pelada-kind label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-panel);
+  cursor: pointer;
+}
+
+.pelada-kind label:has(input:checked) {
+  border-color: var(--pq-brand);
+  background: var(--pq-signal-soft);
+}
+
+.pelada-kind label > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.pelada-kind strong { font-size: 12.5px; font-weight: 900; }
+
+.pelada-kind small {
+  overflow: hidden;
+  margin-top: 1px;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ---------- barra contextual (clube / partida) ----------
+   Irma da .tabbar: mesma caixa fixa, mesma largura, mesmo raio, mesmo blur
+   e — de proposito — a MESMA altura. E essa igualdade que dispensa um token
+   novo: o padding-bottom da .screen, a conta de 100dvh do mapa e o offset do
+   .toast continuam todos valendo sem nenhuma outra edicao.
+
+   O gatilho e html[data-bottombar], escrito por renderClub / renderGame, e
+   nao a rota: assim o caminho de falha (sem partida, erro de montagem, sem
+   clube) devolve a navegacao normal sozinho. */
+html[data-bottombar] .tabbar { display: none; }
+
+html[data-bottombar="clube"] .contextbar--clube,
+html[data-bottombar="game"] .contextbar--game { display: grid; }
+
+.contextbar {
+  position: fixed;
+  z-index: 80;
+  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  width: min(100vw, 430px);
+  min-height: calc(var(--pq-tabbar-height) + var(--pq-safe-bottom));
+  padding: 8px 8px max(8px, var(--pq-safe-bottom));
+  transform: translateX(-50%);
+  border: 0;
+  border-top: 1px solid var(--pq-line);
+  border-radius: 24px 24px 0 0;
+  background: var(--pq-panel-veil);
+  box-shadow: 0 -8px 24px rgba(7, 94, 58, .08);
+  backdrop-filter: blur(18px) saturate(160%);
+}
+
+.contextbar__tab,
+.contextbar__primary {
+  display: flex;
+  min-height: 54px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 2px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--pq-muted);
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Contador de mensagem nova na aba Conversa. Absoluto sobre a aba, que e
+   flex em coluna — no fluxo normal ele empurraria o rotulo e mudaria a altura
+   da barra inteira quando aparecesse. */
+.contextbar__tab {
+  position: relative;
+}
+
+.contextbar__count {
+  position: absolute;
+  top: 4px;
+  right: 50%;
+  transform: translateX(20px);
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--pq-brand-strong);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 17px;
+  text-align: center;
+}
+
+.contextbar__tab .ic {
+  width: 21px;
+  height: 21px;
+}
+
+.contextbar__tab span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextbar__tab.is-active { color: var(--pq-brand-strong); }
+.contextbar__tab.is-active .ic { stroke-width: 2.4; }
+
+.contextbar__tab:active,
+.contextbar__primary:active { transform: translateY(1px); }
+
+.contextbar__tab:focus-visible,
+.contextbar__primary:focus-visible {
+  outline: 3px solid rgba(207, 255, 71, .9);
+  outline-offset: 2px;
+}
+
+/* Espaco em destaque — mesmo desenho do .tabbar-map ativo: circulo cheio na
+   cor da marca com o rotulo embaixo. E o vocabulario que o app ja tem para
+   "um espaco fala mais alto que os outros". */
+.contextbar__primary > span {
+  display: grid;
+  overflow: visible;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(7, 94, 58, .28);
+}
+
+.contextbar__primary > span .ic {
+  width: 20px;
+  height: 20px;
+}
+
+.contextbar__primary em {
+  color: var(--pq-brand-strong);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+/* Na partida as abas moram no rodape. A fileira de pilulas do topo passa a
+   ser so do desktop — o app.html nao carrega este arquivo. */
+html[data-bottombar="game"] .game-tabs { display: none; }
+
+/* ---------- plano da reserva: avulso x mensalista ----------
+   E a primeira escolha do fluxo, entao pesa mais que os passos seguintes:
+   dois cartoes lado a lado em vez de chips. */
+.plan-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.plan-option {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 14px 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 20px;
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plan-option.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-signal-soft);
+  box-shadow: 0 8px 20px rgba(7, 94, 58, .1);
+}
+
+.plan-option:active { transform: translateY(1px); }
+
+.plan-option__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--pq-surface-2, #f3f5f1);
+  color: var(--pq-brand-strong);
+}
+
+.plan-option.on .plan-option__icon {
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.plan-option__icon .ic { width: 18px; height: 18px; }
+
+.plan-option strong {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.plan-option small {
+  color: var(--pq-muted);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.plan-option em {
+  margin-top: 6px;
+  color: var(--pq-brand-deep);
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.plan-option__tag {
+  margin-top: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--pq-amber-soft, #ffedd5);
+  color: var(--pq-amber-strong, #9a3412);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.plan-option__tag[hidden] { display: none; }
+
+/* Dia da semana — o compromisso do mensalista e semanal, nao uma data */
+.weekday-choice {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weekday-choice[hidden] { display: none; }
+
+.weekday {
+  min-height: 46px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-panel);
+  color: var(--pq-ink-soft);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.weekday.on {
+  border-color: transparent;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.weekday:active { transform: translateY(1px); }
+
+/* ---------- galeria da arena: arrastavel ----------
+   Antes eram duas setas sobre a foto: ficavam no caminho do polegar e
+   escondiam parte da imagem. Arrastar e o gesto que a pessoa ja tenta. */
+.venue-hero-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.venue-hero-track::-webkit-scrollbar { display: none; }
+
+.venue-hero-track img {
+  width: 100%;
+  height: 100%;
+  flex: 0 0 100%;
+  object-fit: cover;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.venue-hero-track:focus-visible {
+  outline: 3px solid rgba(207, 255, 71, .9);
+  outline-offset: -3px;
+}
+
+/* Distancia personalizada no filtro */
+.filter-range {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  background: var(--pq-panel);
+}
+
+.filter-range[hidden] { display: none; }
+
+.filter-range input[type="range"] {
+  width: 100%;
+  accent-color: var(--pq-brand);
+}
+
+.filter-range output {
+  min-width: 56px;
+  color: var(--pq-brand-deep);
+  font-size: 13px;
+  font-weight: 900;
+  text-align: right;
+}
+
+/* ---------- mensalidade do jogador ---------- */
+.plan-card {
+  margin-bottom: 12px;
+  padding: 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 22px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+}
+
+.plan-card__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.plan-card__tag {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--pq-amber-soft, #ffedd5);
+  color: var(--pq-amber-strong, #9a3412);
+  font-size: 8.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.plan-card__head strong {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-card__when {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plan-card__when .ic {
+  width: 15px;
+  height: 15px;
+  color: var(--pq-brand-strong);
+}
+
+.plan-card__next {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--pq-signal-soft);
+}
+
+.plan-card__next small {
+  display: block;
+  color: var(--pq-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.plan-card__next strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--pq-brand-deep);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.plan-card__sessions {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-card__sessions li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--pq-line);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.plan-card__sessions li:last-child { border-bottom: 0; }
+
+.plan-card__sessions li.is-done {
+  color: var(--pq-muted);
+  text-decoration: line-through;
+}
+
+.plan-card__sessions em {
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+/* ═══════════════ Entrar, cadastro e onboarding ═══════════════ */
+
+/* Sem barra de baixo nestas telas, entao o respiro que a .screen reserva
+   para a tabbar vira buraco. */
+html[data-bottombar="none"] .screen {
+  padding-bottom: var(--pq-safe-bottom);
+}
+
+/* Mesma composicao do login da web em tela estreita: a ilustracao em retrato
+   e o FUNDO da tela inteira e o formulario flutua sobre o ceu, que e a metade
+   de cima vazia da imagem. Antes ela era uma figurinha no topo, e a tela do
+   app nao parecia com a da web. */
+.auth-page {
+  display: flex;
+  min-height: calc(100dvh - var(--pq-safe-bottom));
+  flex-direction: column;
+  /* O bloco fica no alto: a metade de baixo da ilustracao e onde estao o
+     jogador e a bola, e cobrir isso com o formulario perde a imagem. */
+  justify-content: flex-start;
+  padding: 12px 20px calc(24px + var(--pq-safe-bottom));
+  /* TRANSPARENTE. Este `#fff` era a ultima camada solida cobrindo a
+     ilustracao — a imagem estava carregada e o html::before pintado, mas
+     havia body opaco e esta pagina opaca por cima. Tres camadas, e cada uma
+     sozinha bastava para o banner nunca aparecer. */
+  background: transparent;
+}
+
+/* O fundo vive num ::before fixo, e nao em background-attachment: fixed.
+
+   Com attachment fixed, abrir o teclado encolhe a viewport visual e o
+   navegador REDIMENSIONA a imagem — era o "a imagem sobe" ao tocar no campo.
+
+   height: 100vh (e nao 100dvh) trava a altura na viewport GRANDE: o teclado
+   nao mexe em vh, entao a cena fica parada enquanto se digita. */
+/* O fundo mora na RAIZ do documento, e nao no .auth-page.
+
+   Antes ficava num ::before da propria pagina de login — e a pagina e
+   destruida e remontada a cada troca de rota. A cada remontagem o
+   pseudo-elemento nascia de novo e a imagem repintava: o efeito era a tela
+   "piscando" ao entrar no login e a cada redesenho do formulario.
+
+   <html> nunca e recriado, entao a imagem e pintada uma vez e fica. O seletor
+   por data-route casa as duas telas de acesso; o atributo ja e escrito pelo
+   roteador a cada rota. */
+/* O <body> tem fundo OPACO, e ele pinta por cima do html::before — que fica
+   em z-index: -1, atras de tudo. Era exatamente por isso que a imagem nunca
+   aparecia: o CSS estava certo, so estava embaixo de uma camada solida.
+   Nestas duas rotas o body precisa deixar passar. */
+html[data-route="entrar"] body,
+html[data-route="cadastro"] body {
+  background: transparent;
+}
+
+html[data-route="entrar"]::before,
+html[data-route="cadastro"]::before {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  height: 100vh;
+  background: var(--pq-panel) url('../images/login-hero-mobile.webp') no-repeat bottom center;
+  background-size: cover;
+}
+
+/* O card do formulario ganha fundo proprio: sobre a ilustracao, texto solto
+   fica ilegivel assim que encosta no verde. */
+.auth-page .auth-body {
+  padding: 18px 16px 20px;
+  border-radius: 20px;
+  background: var(--pq-panel-veil);
+  box-shadow: 0 12px 34px rgba(11, 61, 38, .1);
+  backdrop-filter: blur(2px);
+}
+
+.auth-back {
+  align-self: flex-start;
+}
+
+.auth-hero {
+  padding: 14px 0 16px;
+  text-align: center;
+}
+
+.auth-mark {
+  display: inline-flex;
+  width: 60px;
+  height: 60px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  margin-bottom: 16px;
+  background: var(--pq-brand);
+  color: #fff;
+}
+
+.auth-mark .ic { width: 30px; height: 30px; }
+
+.auth-hero h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.auth-hero p {
+  margin: 0;
+  color: var(--pq-muted);
+  font-size: 14px;
+}
+
+/* flex: none, e nao 1: com o fundo ilustrado, esticar o card ate o rodape
+   apagava a cena inteira atras dele. Agora ele tem a altura do conteudo e a
+   ilustracao respira embaixo, como no login da web. */
+.auth-body { flex: none; }
+
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.auth-google__mark {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: #4285f4;
+  font-weight: 800;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--pq-line);
+  content: '';
+}
+
+.auth-link {
+  display: block;
+  padding: 14px 0 2px;
+  color: var(--pq-brand-strong);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.auth-swap {
+  margin: 22px 0 0;
+  color: var(--pq-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.auth-swap a {
+  color: var(--pq-brand-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-terms {
+  margin: 14px 0 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ── Onboarding ── */
+
+.onb-page {
+  display: flex;
+  min-height: calc(100dvh - var(--pq-safe-bottom));
+  flex-direction: column;
+  /* Centraliza o CARD na tela. Antes o passo tinha flex: 1 e esticava de
+     ponta a ponta — eu havia centralizado o conteudo DENTRO de um card de
+     tela cheia, que e outra coisa e continuava com a pergunta la em cima. */
+  justify-content: center;
+  padding: 12px 20px calc(24px + var(--pq-safe-bottom));
+}
+
+.onb-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 22px;
+}
+
+.onb-progress {
+  height: 4px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--pq-line);
+}
+
+.onb-progress > span {
+  display: block;
+  width: 33.33%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pq-brand);
+  /* Transicao, e nao keyframe: transicao interpola a partir do valor atual,
+     entao a barra avanca de um passo ao outro. Um keyframe reiniciaria do
+     zero a cada troca. */
+  transition: width .28s cubic-bezier(.2, .8, .2, 1);
+}
+
+.onb-skip {
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* O passo vira um CARD centralizado na tela.
+
+   Antes era uma coluna colada no topo, com o conteudo escorrendo para baixo:
+   em aparelho alto sobrava um vazio enorme embaixo e a pergunta ficava
+   perdida la em cima. Onboarding e uma pergunta de cada vez — ela merece o
+   centro. */
+.onb-step {
+  display: flex;
+  /* Sem flex: 1. O card tem a altura do proprio conteudo e fica no meio;
+     esticar ate embaixo era o que deixava a pergunta colada no topo. */
+  flex: 0 0 auto;
+  flex-direction: column;
+  /* safe center, e nao center: com o teclado aberto ou tela baixa, `center`
+     puro corta o topo do card e o titulo some para fora da area rolavel. */
+  justify-content: safe center;
+  gap: 4px;
+  padding: 22px 18px 18px;
+  border: 1px solid var(--pq-line);
+  border-radius: 24px;
+  background: var(--pq-panel);
+  box-shadow: 0 10px 30px rgba(16, 43, 28, .06);
+  text-align: center;
+  /* Horizontal de proposito: route-in e vertical, entao a direcao sozinha
+     diz "mesmo lugar, outro passo" em vez de "outra tela". */
+  animation: pq-step-in .18s cubic-bezier(.2, .8, .2, 1);
+}
+
+/* O texto do card fica centralizado; as grades de escolha voltam ao
+   alinhamento normal, senao os rotulos das opcoes dancam no meio. */
+.onb-step .filter-choice-grid {
+  text-align: left;
+}
+
+.onb-step h1 {
+  margin-bottom: 2px;
+}
+
+.onb-step > .btn {
+  margin-top: 16px;
+}
+
+.onb-page--back .onb-step {
+  animation-name: pq-step-in-back;
+}
+
+@keyframes pq-step-in {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pq-step-in-back {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.onb-step h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.onb-step > p {
+  margin: 0 0 22px;
+  color: var(--pq-muted);
+  font-size: 14px;
+}
+
+/* .btn.block ja declara margin-top e tem duas classes; um seletor de uma
+   classe so perderia e o botao ficaria colado no conteudo. */
+.onb-step .btn.onb-next {
+  margin-top: auto;
+}
+
+/* Duas colunas, nao tres: "Meio-campo" e "Jogo de tudo" nao cabem em um
+   terco da tela e vazavam para fora do cartao. */
+.onb-page [data-onb-positions] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Onboarding: modalidade em duas colunas (nomes longos como "Futebol de
+   Campo" nao cabem em tres) e o aviso do esporte individual. */
+.onb-esportes {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onb-vazio {
+  margin: 4px 0 0;
+  color: var(--pq-muted);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.onb-levels {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+/* Cartao de nivel tem duas linhas de texto; com a altura dos chips de
+   posicao ficava apertado e o subtitulo colava no titulo. */
+.onb-levels label > span {
+  min-height: 62px;
+  padding: 12px 16px;
+  border-radius: 16px;
+}
+
+.onb-levels label span {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+/* O <small> tinha cor propria (--pq-muted) e nao herdava o branco do estado
+   selecionado: no cartao verde, "Jogo de vez em quando" ficava cinza sobre
+   verde e sumia. currentColor faz a descricao seguir o titulo nos dois
+   estados. */
+.onb-levels input:checked + span small {
+  color: rgba(255, 255, 255, .88);
+}
+
+.onb-levels label small {
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.onb-step--done {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.onb-check {
+  display: inline-flex;
+  width: 76px;
+  height: 76px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: 20px;
+  background: var(--pq-brand);
+  color: #fff;
+  /* Reusa o pop que a tela de aprovacao ja usa — mesma sensacao de "deu
+     certo", sem inventar um segundo vocabulario. */
+  animation: pq-approval-success-pop .5s cubic-bezier(.2, .9, .25, 1.25) both;
+}
+
+.onb-check .ic { width: 38px; height: 38px; stroke-width: 3; }
+
+.onb-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  margin: 20px 0;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-strong);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.onb-hint .ic { flex: 0 0 auto; width: 18px; height: 18px; }
+
+.onb-step--done .btn { width: 100%; margin-top: auto; }
+
+/* ── Resultado da busca de clube ── */
+
+/* ── Código do clube e zona de risco ── */
+
+.club-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 12px;
+  border: 1px dashed var(--pq-line);
+  border-radius: 999px;
+  margin-top: 12px;
+  background: var(--pq-paper);
+}
+
+.club-code__value {
+  color: var(--pq-brand-strong);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.club-code__btn {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: var(--pq-brand-strong);
+  cursor: pointer;
+}
+
+.club-code__btn .ic { width: 15px; height: 15px; }
+.club-code__btn:active { transform: translateY(1px); }
+
+.club-danger {
+  padding-top: 20px;
+  margin-top: 20px;
+  border-top: 1px solid var(--pq-line);
+}
+
+.club-danger__delete {
+  border-color: var(--pq-line);
+  color: var(--pq-danger);
+}
+
+.club-danger__delete:disabled {
+  border-color: var(--pq-line);
+  color: var(--pq-muted);
+  opacity: .6;
+}
+
+.club-danger__hint {
+  margin: 8px 0 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.member-remove {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: var(--pq-danger);
+  cursor: pointer;
+}
+
+.member-remove .ic { width: 16px; height: 16px; }
+
+/* Duas acoes lado a lado (promover + remover, aceitar + recusar). */
+.member-actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Aceitar pedido: a unica acao verde desta tela. Recusar fica neutra — o
+   par verde/vermelho transformaria "nao agora" em punicao. */
+.member-remove--ok {
+  border-color: var(--pq-brand-strong);
+  color: var(--pq-brand-strong);
+}
+
+/* Seletor de clube no cabecalho. So aparece com mais de um. */
+.club-switch {
+  margin-bottom: 6px;
+}
+
+.club-switch select {
+  max-width: 100%;
+  padding: 6px 30px 6px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--pq-ink);
+}
+
+/* Fila de entrada, destacada do resto do painel: e a unica coisa da tela que
+   espera uma decisao de alguem. */
+.club-requests {
+  margin-bottom: 18px;
+  padding: 12px;
+  border: 1px solid var(--pq-brand-strong);
+  border-radius: 16px;
+  background: var(--pq-tint);
+}
+
+.club-requests .mobile-section-head {
+  margin-top: 0;
+}
+
+/* Rotulo que so leitor de tela enxerga. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--pq-muted);
+  font-size: 11px;
+}
+
+/* ── Ficha de jogador no Perfil ── */
+
+.player-card {
+  padding: 16px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  margin: 16px 0;
+  background: var(--pq-panel);
+}
+
+.player-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.player-card__head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.player-card__edit {
+  border: 0;
+  background: none;
+  color: var(--pq-brand-strong);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.player-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 10px;
+}
+
+.player-card__grid span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.player-card__grid strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* baseline, e nao flex-start: com o texto como no solto, o half-leading da
+   linha empurrava as letras ~4px para baixo e o icone ficava boiando acima
+   delas. O <span> em volta do texto e o que da uma baseline para alinhar. */
+/* Convite para completar a ficha: icone, texto e SAIDA na mesma linha. */
+.ficha-convite {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-signal-soft);
+}
+
+.ficha-convite__ic {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--pq-panel);
+  color: var(--pq-brand-strong);
+}
+
+.ficha-convite__ic .ic { width: 17px; height: 17px; }
+
+.ficha-convite__txt strong {
+  display: block;
+  font-size: 13px;
+  color: var(--pq-ink);
+}
+
+.ficha-convite__txt p {
+  margin: 1px 0 0;
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* Busca de clube: o campo estava colado no cartao de resultado, e os dois
+   liam-se como um bloco so. */
+.route-page .explore-search + .payment-list {
+  margin-top: 14px;
+}
+
+.auth-error {
+  padding: 10px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 12px;
+  margin: 0 0 12px;
+  background: var(--pq-danger-soft);
+  color: var(--pq-danger);
+  font-size: 13px;
+}
+
+/* Nota da tela de Pagamento: diz por que nao ha saldo. */
+.payment-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  margin: 18px 0 0;
+  background: var(--pq-signal-soft);
+  color: var(--pq-brand-strong);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.payment-note .ic { flex: 0 0 auto; width: 17px; height: 17px; }
+
+/* Overlay de carregamento: cobre a tela inteira, cabecalho incluido. */
+.pq-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  background: var(--pq-panel);
+}
+
+/* Loading: pin de localizacao com bola de futebol, balancando.
+   Verde da marca via currentColor — trocar o token muda a animacao junto. */
+.pq-loading {
+  display: grid;
+  place-items: center;
+  color: var(--pq-brand-deep);
+}
+
+.pq-loading__pin {
+  width: 88px;
+  height: 104px;
+  overflow: visible;
+}
+
+/* Pivota na ponta do pin (32,66 no viewBox), e nao no centro da caixa: girar
+   pelo meio faria o desenho deslizar de lado em vez de balancar apoiado. */
+.pq-loading__balanco {
+  transform-origin: 32px 66px;
+  animation: pq-balanca 1.5s ease-in-out infinite;
+}
+
+/* A bola gira no proprio eixo, independente do balanco do pin. */
+.pq-loading__bola {
+  transform-origin: 32px 28px;
+  animation: pq-gira 1.5s linear infinite;
+}
+
+@keyframes pq-balanca {
+  0%, 100% { transform: rotate(-13deg); }
+  50%      { transform: rotate(13deg); }
+}
+
+@keyframes pq-gira {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Quem pediu menos movimento nao ganha pin balancando: fica parado e so
+   pulsa de leve, o suficiente para dizer "carregando". */
+@media (prefers-reduced-motion: reduce) {
+  .pq-loading__balanco,
+  .pq-loading__bola {
+    animation: pq-pulsa 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes pq-pulsa {
+    from { opacity: .4; }
+    to   { opacity: 1; }
+  }
+}
+
+/* Logo no topo do app. */
+.market-brand {
+  display: flex;
+  align-items: center;
+  padding: 4px 0 10px;
+}
+
+.market-brand .qadras-logo {
+  width: 118px;
+  height: auto;
+  color: var(--pq-ink, #0b1f16);
+}
+
+
+/* Logo do Google de verdade, colorida, no lugar do "G" em texto. */
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.auth-google__mark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+/* Campo de data: o controle nativo do Android vem com fonte e altura
+   proprias e destoa dos outros campos do formulario. */
+.field-date {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-surface);
+  color: var(--pq-ink);
+  font: inherit;
+  /* Sem isto o iOS encolhe o texto e desalinha em relacao aos vizinhos. */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Enquanto vazio, o texto "dd/mm/aaaa" tem o mesmo peso do valor preenchido
+   e parece que ja ha data escolhida. */
+.field-date:not(:valid),
+.field-date:not(:focus):in-range:placeholder-shown {
+  color: var(--pq-muted);
+}
+
+.field-date:focus {
+  border-color: var(--pq-brand);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--pq-green-soft);
+}
+
+/* O icone de calendario nativo fica na cor do sistema (azul no Android). */
+.field-date::-webkit-calendar-picker-indicator {
+  filter: grayscale(1) opacity(.55);
+  cursor: pointer;
+}
+
+/* Icones de modalidade: os PNG do Gabriel usados como MASCARA.
+
+   Sao linha preta sobre transparente. Como <img> ficariam pretos sempre —
+   sumiriam no modo escuro e brigariam com o verde do chip selecionado. Como
+   mascara, o desenho vira recorte e a cor sai de currentColor, acompanhando o
+   texto ao lado em qualquer tema. Mesma tecnica do .ic-pix.
+
+   A imagem chega por --ic-sport-img, escrito inline por sportIcon(). */
+.ic-sport {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  background-color: currentColor;
+  -webkit-mask: var(--ic-sport-img) no-repeat center / contain;
+  mask: var(--ic-sport-img) no-repeat center / contain;
+}
+
+/* No card grande de "Escolha seu jogo" o desenho respira mais. */
+.sport-item .ic-sport {
+  width: 32px;
+  height: 32px;
+}
+
+/* Nos chips de filtro ele acompanha o texto, menor. */
+.sport-filter-chip .ic-sport,
+.chip-esporte .ic-sport {
+  width: 18px;
+  height: 18px;
+}
+
+/* Estrela: PREENCHIDA em amarelo.
+
+   Antes so as 5 estrelas da avaliacao eram cheias; a estrela avulsa (nota da
+   quadra no card, nota do membro no clube) era contorno — a mesma informacao
+   com dois pesos visuais diferentes na mesma tela. Agora nota e sempre a
+   estrela cheia amarela, e vazia so quando representa ponto NAO obtido. */
+.ic-star {
+  color: var(--pq-gold);
+  fill: var(--pq-gold);
+}
+
+.ic-star.is-empty {
+  color: #d5ded8;
+  fill: none;
+}
+
+/* O BANNER DO LOGIN, quarta tentativa — e desta vez a lista inteira.
+
+   As vezes anteriores eu tornei transparentes html, body e .auth-page e o
+   banner continuou sem aparecer. O motivo: a arvore real e
+
+     body > .app-wrap > .phone > .screen > main[data-route-view] > .auth-page
+
+   e .phone e .screen pintam fundo em DOIS pontos cada uma (o bloco base e o
+   override mais abaixo, com --pq-app-bg). Bastava uma delas continuar opaca
+   para tapar o html::before, que fica em z-index -1. Consertar camada por
+   camada, descobrindo a seguinte a cada rodada, e o que fez isso voltar tres
+   vezes; entao aqui vao TODAS as camadas de uma vez, nas duas rotas. */
+html[data-route="entrar"] .app-wrap,
+html[data-route="entrar"] .phone,
+html[data-route="entrar"] .screen,
+html[data-route="cadastro"] .app-wrap,
+html[data-route="cadastro"] .phone,
+html[data-route="cadastro"] .screen {
+  background: transparent;
+}
+
+/* CENTRALIZADO, nao no topo.
+
+   A regra antiga prendia o formulario no alto para nao cobrir o jogador e a
+   bola da ilustracao. Mas a tela pedida e a do formulario flutuando no meio,
+   entao o cartao vai para o centro e a imagem passa a ser fundo mesmo. */
+html[data-route="entrar"] .auth-page,
+html[data-route="cadastro"] .auth-page {
+  justify-content: center;
+}
+
+/* Sem a barra de abas nas telas de acesso: ela reservava ~70px no rodape,
+   deslocando o cartao para cima do centro real. */
+html[data-route="entrar"] .screen,
+html[data-route="cadastro"] .screen {
+  padding-bottom: var(--pq-safe-bottom);
+}
+
+/* CABECALHO DA FOLHA FIXO.
+
+   .market-sheet__panel rola por inteiro (overflow-y: auto), e o cabecalho
+   rolava junto: em formulario longo — criar clube e o caso — o titulo e o "X"
+   saiam pela borda de cima e a folha ficava sem saida visivel. Quem nao acha o
+   X tenta o botao voltar do aparelho e cai fora da tela inteira.
+
+   O padding de cima do painel muda de dono: passa para o cabecalho, que fica
+   grudado em top: 0 com fundo proprio (senao o conteudo passa por baixo e se
+   le os dois sobrepostos). As margens negativas fazem esse fundo cobrir toda a
+   largura, incluindo o padding lateral do painel. */
+.market-sheet__panel {
+  padding-top: 0;
+}
+
+.market-sheet__head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0 -16px;
+  padding: 18px 16px 14px;
+  background: var(--pq-panel);
+}
+
+/* ─────────────────────────── MODO ESCURO ───────────────────────────────
+   Claro de fabrica, escuro por ESCOLHA — nunca automatico.
+
+   Nao ha `prefers-color-scheme` aqui de proposito. O pedido foi "modo claro de
+   fabrica e modo escuro escolha do usuario": um app que vira escuro sozinho
+   porque o Android esta escuro nao e escolha, e surpresa. Quem quiser escuro
+   liga em Configuracoes, e a escolha fica gravada.
+
+   Tudo abaixo e troca de TOKEN. Os 82 fundos claros do arquivo ja apontam para
+   --pq-panel / --pq-tint / --pq-tint-strong, entao mudar estes valores vira a
+   tela inteira sem tocar em regra nenhuma. Os quatro acentos que sobraram
+   cravados (#008f4c, #007c42, #082c1b, #c8324d) sao cores saturadas de marca e
+   de alerta — funcionam sobre fundo escuro do mesmo jeito.
+
+   Verde e escuro brigam: o verde da marca (#16a765) sobre quase-preto tem
+   contraste baixo demais para texto. Por isso a marca CLAREIA no escuro em vez
+   de manter o mesmo hex — o objetivo e ler, nao repetir o valor. */
+:root[data-theme="dark"] {
+  --pq-ink: #e8f2ec;
+  --pq-ink-soft: #b3c9bd;
+  --pq-muted: #8ba396;
+
+  /* Fundo em duas camadas: o app um degrau mais escuro que os cartoes, para o
+     cartao continuar sendo "a coisa em cima". No escuro isso e o que substitui
+     a sombra, que praticamente some. */
+  --pq-app-bg: #0e1613;
+  --pq-paper: #0e1613;
+  --pq-panel: #18211d;
+  --pq-surface: #18211d;
+  --pq-surface-2: #212b26;
+
+  --pq-tint: #1e2f26;
+  --pq-tint-strong: #263b30;
+  --pq-danger-soft: #3a1f24;
+
+  --pq-line: #2a3831;
+  --pq-line-strong: #3a4a42;
+
+  /* Marca mais clara: #16a765 sobre #18211d nao alcanca contraste de leitura. */
+  --pq-green: #35c785;
+  --pq-brand: #35c785;
+  --pq-brand-strong: #4dd598;
+  --pq-brand-deep: #7ee3b4;
+  --pq-green-dark: #7ee3b4;
+  --pq-green-soft: #1e2f26;
+  --pq-signal: #2f6b4c;
+  --pq-signal-soft: #1e2f26;
+  --pq-court: #2f6b4c;
+
+  --pq-gold: #f0b429;
+  --pq-amber-soft: #3a2c14;
+  --pq-blue: #5b8def;
+  --pq-rose: #f07f93;
+
+  /* Sombra nao aparece no escuro; o que separa e a borda. */
+  --pq-shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --pq-shadow-2: 0 18px 46px rgba(0, 0, 0, .6);
+}
+
+/* O <html> tem fundo cravado (e o que aparece no overscroll e atras da safe
+   area). Sem isto, puxar a tela no escuro mostrava uma faixa branca. */
+:root[data-theme="dark"] html,
+html[data-theme="dark"] {
+  background: #0e1613;
+}
+
+/* Fotos e mapa: no escuro o branco puro das imagens fica ofuscante. Um leve
+   rebaixamento tira o brilho sem descaracterizar a foto da quadra. */
+:root[data-theme="dark"] .venue-card img,
+:root[data-theme="dark"] .res-card img {
+  filter: brightness(.88);
+}
+
+/* O mapa NAO leva filtro: ele ja troca para o basemap escuro da CARTO
+   (dark_all). Escurecer por cima deixaria as ruas ilegiveis. */
+
+/* A barra de status do Android segue o tema pela meta theme-color, escrita
+   pelo JS; aqui fica o par visual do topo da tela. */
+:root[data-theme="dark"] .navbar {
+  background: var(--pq-app-bg);
+}
+
+/* BADGES DA QUADRA SEM O VERDE — como na versao web.
+
+   As "caracteristicas" (Grama sintetica, Iluminada, Vestiario...) vinham com
+   pastilha verde-clara e texto verde. Numa tela onde o verde ja marca preco,
+   nota, botao principal e chip selecionado, mais verde nao destaca: dilui. A
+   web resolveu isso ha tempos usando neutro com borda fina, e ali as
+   caracteristicas se leem como INFORMACAO, nao como acao.
+
+   Neutro tambem e o que sobrevive ao modo escuro sem virar mancha clara. */
+.tag,
+.venue-card .tag {
+  background: var(--pq-surface-2);
+  color: var(--pq-ink-soft);
+  border: 1px solid var(--pq-line);
+}
+
+.venue-amenity > span {
+  background: var(--pq-surface-2);
+  color: var(--pq-ink-soft);
+}
+
+.venue-amenity {
+  border-bottom: 1px solid var(--pq-line);
+}
+
+/* ONBOARDING COM AR ENTRE OS CARTOES.
+
+   As opcoes ficam numa grade de 3 colunas com gap de 7px e altura minima de
+   44px — apertado quando cada opcao e um cartao com icone e rotulo. Encostadas
+   assim, a fileira lia como um bloco unico e era dificil ver onde uma opcao
+   termina e a outra comeca, que e justamente o que a tela pede para fazer.
+
+   Mais respiro entre as opcoes, mais altura em cada uma, e mais espaco entre a
+   pergunta e a grade. O cartao cresce junto porque tem altura de conteudo. */
+.onb-step .filter-choice-grid {
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.onb-step .filter-choice-grid > * {
+  min-height: 56px;
+  padding: 10px 8px;
+}
+
+.onb-step {
+  gap: 8px;
+  padding: 26px 20px 22px;
+}
+
+.onb-step > p {
+  margin-bottom: 4px;
+}
+
+/* Em tela baixa o cartao encosta nas bordas de cima e de baixo; um respiro
+   minimo evita que ele pareca cortado. */
+.onb-page {
+  padding-top: 20px;
+  padding-bottom: calc(32px + var(--pq-safe-bottom));
+}
+
+/* Estados no escuro: os vermelhos e ambares cravados eram escuros demais para
+   fundo escuro — viravam borrao. Clareiam mantendo o mesmo significado. */
+:root[data-theme="dark"] {
+  --pq-danger: #ff8095;
+  --pq-danger-strong: #ff6b84;
+  --pq-surface-2: #212b26;
+}
+
+/* Selo de aberta/fechada — no CORPO do card, nao sobre a foto.
+
+   Sobre a foto o rotulo dependia da imagem de cada quadra: em grama clara ou
+   ceu ele sumia, e nenhuma sombra resolve isso para todas as fotos. Aqui o
+   fundo e solido e o contraste e o mesmo sempre.
+
+   O ponto colorido carrega o estado; a cor do texto fica neutra para nao
+   competir com o preco, que e a informacao que decide a compra. */
+.venue-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 6px;
+  color: var(--pq-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.venue-status > i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.venue-status.is-open > i {
+  background: var(--pq-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pq-brand) 22%, transparent);
+}
+
+.venue-status.is-closed > i {
+  background: var(--pq-line-strong);
+}
+
+/* Filtro de modalidade FLUTUANDO sobre o mapa.
+
+   Antes era uma tira fixa acima do mapa: numa tela cujo unico objetivo e ver o
+   mapa, uma faixa inteira so para escolher esporte roubava justamente o que a
+   pessoa veio ver. Agora o mapa comeca no topo e o filtro so ocupa espaco
+   quando aberto — e aceita mais de um esporte, o que a fileira de chips nao
+   permitia.
+
+   z-index 500: o Leaflet numera as proprias camadas ate 1000 no shell, mas
+   dentro dele os paineis ficam em 200-400; 500 passa por cima dos marcadores
+   sem tapar o popup (que e 700). */
+.map-filter-float {
+  position: absolute;
+  z-index: 500;
+  top: 12px;
+  left: 12px;
+  max-width: calc(100% - 24px);
+}
+
+.map-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-1);
+  color: var(--pq-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.map-filter-btn .ic {
+  width: 15px;
+  height: 15px;
+}
+
+.map-filter-btn__chev {
+  transition: transform .16s ease;
+  color: var(--pq-muted);
+}
+
+.map-filter-float.is-open .map-filter-btn__chev {
+  transform: rotate(180deg);
+}
+
+.map-filter-list {
+  position: absolute;
+  top: 46px;
+  left: 0;
+  width: max-content;
+  min-width: 210px;
+  max-height: 54dvh;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--pq-line);
+  border-radius: 16px;
+  background: var(--pq-panel);
+  box-shadow: var(--pq-shadow-2);
+}
+
+.map-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  color: var(--pq-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.map-filter-item > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.map-filter-item .ic-sport,
+.map-filter-item > .ic {
+  width: 19px;
+  height: 19px;
+  color: var(--pq-muted);
+}
+
+.map-filter-item.on {
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+}
+
+.map-filter-item.on .ic-sport,
+.map-filter-item.on > .ic {
+  color: var(--pq-brand);
+}
+
+.map-filter-item__ck {
+  flex: 0 0 auto;
+  color: var(--pq-brand);
+}
+
+/* A casca do mapa passa a ancorar o filtro flutuante. */
+.leaflet-map-shell {
+  position: relative;
+}
+
+:root[data-theme="dark"] {
+  --pq-panel-veil: rgba(24, 33, 29, .97);
+}
+
+/* CARTAO DE CLUBE NA BUSCA — estava ilegivel.
+
+   `.btn` tem `width: 100%` (faz sentido para o botao principal de uma tela) e
+   `.btn-xs` so mudava padding e fonte. Dentro da linha flex, o botao entao
+   esticava para a largura toda e esmagava a coluna de texto ate sobrar uma
+   letra: o nome do clube sumia atras do botao e o resto quebrava numa palavra
+   por linha.
+
+   Vira grade de tres colunas com papeis explicitos: escudo (fixo), texto (o
+   que estica) e acao (o tamanho do proprio rotulo). */
+.club-hit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.club-hit > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.club-hit strong {
+  overflow: hidden;
+  font-size: 13.5px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.club-hit small {
+  overflow: hidden;
+  color: var(--pq-muted);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A acao ocupa o tamanho do proprio texto, e nao a linha inteira. */
+.club-hit .btn-xs {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Filtro de modalidade encostado a ESQUERDA.
+
+   O botao flutuante ja nasce em left: 12px; o que faltava era a LISTA, que
+   abria alinhada pela borda do botao mas ficava com os rotulos centralizados
+   herdando o text-align dos cartoes de esporte. Nome de modalidade se le da
+   esquerda, como toda lista. */
+.map-filter-list,
+.map-filter-item {
+  text-align: left;
+}
+
+.map-filter-float {
+  left: 12px;
+  right: auto;
+}
+
+/* Estados do horario no modo escuro.
+
+   Os cinzas de "indisponivel" (#a8b0aa, #b9c0ba, #9aa39d) foram escolhidos
+   para APAGAR sobre fundo branco. Sobre fundo escuro eles fazem o oposto:
+   ficam mais claros que o texto normal, e a hora reservada saltava mais que a
+   livre. E o bloco verde (#dcf3e5) era uma pastilha clara acesa no meio.
+
+   Aqui a hierarquia se inverte junto com o fundo: indisponivel escurece,
+   disponivel continua legivel, e o inicio escolhido segue sendo o unico
+   elemento cheio. */
+:root[data-theme="dark"] .slot {
+  border-color: var(--pq-line);
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+}
+
+:root[data-theme="dark"] .slot.busy {
+  border-color: var(--pq-line);
+  background: var(--pq-app-bg);
+  color: #5d6b64;
+}
+
+:root[data-theme="dark"] .slot.past,
+:root[data-theme="dark"] .slot.nofit {
+  border-color: var(--pq-line);
+  background: var(--pq-app-bg);
+  color: #64726b;
+}
+
+:root[data-theme="dark"] .avail-slots .slot.sel,
+:root[data-theme="dark"] .slots .slot.sel {
+  border-color: var(--pq-brand) !important;
+  background: var(--pq-brand) !important;
+  color: #0b1a12 !important;
+}
+
+:root[data-theme="dark"] .slot.bloco,
+:root[data-theme="dark"] .avail-slots .slot.bloco {
+  border-color: var(--pq-brand) !important;
+  background: #21402f !important;
+  color: #7ee3b4 !important;
+}
+
+/* Duracao: o selecionado tem fundo cheio, entao o texto precisa ser escuro. */
+:root[data-theme="dark"] .dur.on {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #0b1a12;
+}
+
+/* CONTROLES NATIVOS (select, input, barra de rolagem).
+
+   O <select> abre uma lista desenhada pelo SISTEMA, nao pela pagina: nenhum
+   CSS nosso a alcança. Sem declarar color-scheme, o Android desenha a lista
+   clara e escreve texto claro nela — era o "drop list nao da para ler" em
+   Preferencias de jogo. Uma linha resolve os selects, os campos de texto e a
+   barra de rolagem de uma vez. */
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea {
+  background: var(--pq-surface-2);
+  color: var(--pq-ink);
+  border-color: var(--pq-line);
+}
+
+/* ── Ultimos ajustes de leitura ─────────────────────────────────────────── */
+
+/* DURACAO: o subtitulo seguia branco no cartao selecionado.
+
+   `.dur.on span` era rgba(255,255,255,.78) — feito para o verde ESCURO do modo
+   claro. No escuro o cartao selecionado tem o verde CLARO da marca, e a regra
+   do tema so escureceu o `strong`: "1h" ficava preto e "Jogo rapido" logo
+   abaixo, branco. Duas cores opostas dentro do mesmo botao. */
+:root[data-theme="dark"] .booking-step .dur.on span,
+:root[data-theme="dark"] .dur.on span {
+  color: rgba(11, 26, 18, .72);
+}
+
+/* BOTAO DE ENVIAR: o rotulo volta ao centro real.
+
+   O botao e flex centralizado e tem a seta DEPOIS do texto — entao o conjunto
+   "texto + seta" e que ficava centrado, e o texto sozinho aparecia deslocado
+   para a esquerda. Com a seta fora do fluxo, o rotulo ocupa a largura toda e
+   se centraliza de fato. */
+.checkout-action .btn {
+  position: relative;
+}
+
+.checkout-action .btn > [data-payment-cta-label] {
+  flex: 1;
+  text-align: center;
+}
+
+.checkout-action .btn > .ic {
+  position: absolute;
+  right: 16px;
+}
+
+/* ABAS DE RESERVAS: a selecionada era quase igual a folha.
+
+   `.seg` tem fundo `--mint` e `.seg-item.on` tinha `--panel`. No modo escuro os
+   dois viraram tons de verde-quase-preto separados por poucos pontos de
+   luminosidade — nao dava para ver qual aba estava ativa, so um retangulo
+   cinza um pouco diferente do outro.
+
+   Agora a ativa e VERDE cheia, nos dois temas: a aba selecionada e o unico
+   estado dessa barra que precisa ser visto de relance. */
+.seg-item.on {
+  background: var(--pq-brand);
+  box-shadow: none;
+  color: #fff;
+}
+
+:root[data-theme="dark"] .seg-item.on {
+  background: var(--pq-brand);
+  color: #0b1a12;
+}
+
+.seg-item {
+  color: var(--pq-muted);
+  transition: background .14s ease, color .14s ease;
+}
+
+/* ── NOME DA QUADRA, e o atalho para o mapa ───────────────────────────────
+   Uma arena com tres quadras aparecia tres vezes com o mesmo titulo. A linha
+   de baixo diz qual e — em corpo menor e cor de apoio, porque ela QUALIFICA o
+   nome de cima em vez de competir com ele. */
+.venue-card-quadra {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 0 0;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.venue-card-quadra .ic {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+/* O botao de mapa espelha o de favorito (mesmo tamanho, mesma altura na foto,
+   mesmo fundo translucido) e fica do lado oposto: sao dois atalhos de mesmo
+   peso sobre a mesma imagem, e alinha-los diferente pareceria descuido. */
+.venue-card-mapa {
+  position: absolute;
+  z-index: 4;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--pq-radius);
+  background: var(--pq-panel-veil);
+  color: var(--pq-brand-deep);
+  box-shadow: 0 8px 20px rgba(5, 13, 9, .2);
+}
+
+.venue-card-mapa .ic {
+  width: 20px;
+  height: 20px;
+}
+
+/* ── A QUADRA ESCOLHIDA, no mapa ──────────────────────────────────────────
+   Chegando pelo "Ver no mapa", o alfinete dela nao pode ser mais um entre os
+   outros — e a razao de a tela ter aberto. Cor da marca, texto invertido e um
+   halo que sobrevive a um mapa claro ou escuro por baixo. */
+.map-price-marker.is-destaque > span {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: #06210f;
+  box-shadow: 0 0 0 4px rgba(22, 167, 101, .28), 0 10px 22px rgba(5, 13, 9, .35);
+}
+
+/* ── PERFIL DA ARENA ───────────────────────────────────────────────────────
+   A vitrine entre a busca e a quadra. O app listava quadras soltas: uma arena
+   com tres quadras aparecia tres vezes e nao havia lugar nenhum onde ela fosse
+   uma coisa so. */
+
+/* Faixa da home. Herda o comportamento de rolagem de .sport-rail/.venue-rail
+   (declarado junto com elas la em cima) e so define o proprio ritmo. */
+.arena-rail {
+  gap: 10px;
+  padding: 0 16px 6px;
+  scroll-padding-left: 16px;
+}
+
+.arena-chip {
+  scroll-snap-align: start;
+  flex: none;
+  width: 148px;
+  display: grid;
+  gap: 2px;
+  padding: 14px 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: var(--pq-radius-lg, 16px);
+  background: var(--pq-panel);
+  text-align: center;
+  justify-items: center;
+}
+
+.arena-chip__logo {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 14px;
+  font-weight: 950;
+  overflow: hidden;
+}
+
+/* A logo do dono manda na moldura: `cover` num circulo evita a imagem
+   deformada quando ela nao e quadrada, que e o caso mais comum. */
+.arena-chip__logo.tem-imagem img,
+.arena-logo.tem-imagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.arena-logo.tem-imagem {
+  padding: 0;
+  overflow: hidden;
+}
+
+.arena-chip strong {
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.25;
+  /* Duas linhas e o teto: nome longo empurrando o resto faria os cards da
+     faixa ficarem de alturas diferentes. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.arena-chip small {
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.arena-chip__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  color: var(--pq-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.arena-chip__meta .ic {
+  width: 12px;
+  height: 12px;
+}
+
+.arena-chip__meta b {
+  opacity: .4;
+}
+
+/* ── A tela do perfil ───────────────────────────────────────────────────── */
+
+/* Tres fatos, e nao dois: a arena acrescenta "quantas quadras" aos dois que a
+   tela da quadra ja mostrava. Com o grid de duas colunas herdado, o terceiro
+   caia sozinho numa segunda linha, desalinhado do resto. */
+[data-arena-page] .arena-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+[data-arena-page] .arena-facts > span {
+  padding-inline: 8px;
+}
+
 /* Arena sem nenhuma foto de quadra: em vez do retangulo cinza, a faixa
    encolhe para o tamanho da barra de navegacao. O cabecalho logo abaixo, com
    logo e nome, ja identifica a arena sozinho. */
@@ -8239,8 +13542,25 @@ html[data-theme="dark"] {
   height: 14px;
 }
 
+[data-arena-page] .arena-facts {
+  margin: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--pq-line);
+  border-bottom: 1px solid var(--pq-line);
+  background: var(--pq-panel);
+}
+
 .arena-map-cta {
-  margin-top: 14px;
+  margin-top: 2px;
+}
+
+/* A distancia encostada no botao do mapa: o numero sozinho ("2,2 km") nao
+   dizia nada; ao lado de "Ver no mapa" ele vira o motivo de tocar. */
+.arena-map-cta__km {
+  margin-left: auto;
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 /* O bloco de identidade agora LEVA a algum lugar, entao precisa parecer que

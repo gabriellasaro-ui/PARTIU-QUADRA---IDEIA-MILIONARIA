@@ -21,7 +21,16 @@
         <span class="ava" id="arena-logo">A</span>
         <div>
           <button type="button" class="btn btn-outline" data-file-trigger="#logo-file">Trocar logo</button>
-          <input type="file" id="logo-file" accept="image/*" data-preview="#arena-logo" hidden>
+          <input type="file" id="logo-file" accept="image/*" data-preview="#arena-logo"
+                 data-valor="[name=logo]" hidden>
+          <!-- A LOGO ESCOLHIDA PRECISA CHEGAR AO SUBMIT.
+               O <input type=file> nao entra no FormData como texto, e a versao
+               anterior so pintava a previa e dava "Logo atualizado" — nada era
+               enviado, e no F5 seguinte a logo tinha sumido. Aqui o data URL
+               fica guardado num campo do proprio formulario, entao ele viaja
+               junto com o resto. Nasce vazio de proposito: vazio significa
+               "nao mexi na logo", e o submit nao manda o campo. -->
+          <input type="hidden" name="logo" value="">
           <div class="av-meta">PNG ou JPG, até 2&nbsp;MB</div>
         </div>
       </div>

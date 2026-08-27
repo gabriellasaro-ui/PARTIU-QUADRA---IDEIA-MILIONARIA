@@ -833,43 +833,6 @@ async function renderArena(root, route) {
 
   const favoriteIds = await venueService.favoriteIds();
 
-  /* GALERIA: as fotos das quadras servem de album da arena. Sem nenhuma, a
-     faixa fica escondida em vez de mostrar um retangulo cinza — o cabecalho
-     com logo e nome ja identifica a arena sozinho. */
-  const fotos = Array.isArray(arena.fotos) ? arena.fotos.filter(Boolean) : [];
-  const track = root.querySelector('[data-arena-track]');
-  const heroEl = root.querySelector('.arena-hero');
-  if (fotos.length) {
-    track.innerHTML = fotos.map((foto, i) => `
-      <img src="${escapeHtml(foto)}" alt="${escapeHtml(arena.nome)} — foto ${i + 1}" loading="${i ? 'lazy' : 'eager'}">`).join('');
-    bindHeroTrack(root, track, fotos.length);
-    root.querySelector('[data-arena-photo-count]').textContent = fotos.length;
-    root.querySelector('[data-arena-photo-current]').textContent = '1';
-    root.querySelector('[data-arena-gallery]').innerHTML = fotos.map((foto, i) => `
-      <button type="button" class="venue-hero-dot ${i === 0 ? 'on' : ''}"
-              data-gallery-index="${i}" aria-label="Ver foto ${i + 1} de ${fotos.length}"></button>`).join('');
-
-    /* FOTO MORTA NAO VIRA RETANGULO CINZA NO TOPO DA VITRINE.
-
-       A galeria da arena junta as fotos de todas as quadras, entao basta UMA
-       hospedagem que expirou para a primeira imagem do perfil ser um vazio com
-       o texto alternativo atravessado. O `error` de <img> nao borbulha — dai o
-       `capture: true` — e quem falhou sai da faixa junto com a bolinha dele.
-       Se todas morrerem, a faixa encolhe como se nao houvesse foto nenhuma. */
-    track.addEventListener('error', (evento) => {
-      const img = evento.target;
-      if (img?.tagName !== 'IMG') return;
-      const indice = [...track.children].indexOf(img);
-      img.remove();
-      root.querySelectorAll('[data-arena-gallery] .venue-hero-dot')[indice]?.remove();
-      const restantes = track.children.length;
-      root.querySelector('[data-arena-photo-count]').textContent = restantes;
-      if (!restantes) heroEl?.classList.add('sem-foto');
-    }, { capture: true });
-  } else {
-    heroEl?.classList.add('sem-foto');
-  }
-
   root.querySelector('[data-arena-distance]').textContent = `${formatDistance(arena.distancia)} km`;
   root.querySelector('[data-arena-name]').textContent = arena.nome;
   /* Bairro e cidade — nunca a rua. Sem bairro cadastrado o backend ja devolve
@@ -901,6 +864,22 @@ async function renderArena(root, route) {
     const texto = String(arena.descricao || '').trim();
     sobre.hidden = !texto;
     if (texto) root.querySelector('[data-arena-descricao]').textContent = texto;
+  }
+
+  /* COMODIDADES: o que o LUGAR tem, juntando o que esta marcado nas quadras.
+     Some quando nenhuma quadra tem nada marcado — titulo com area vazia
+     embaixo faz parecer que a tela quebrou. */
+  const secaoComodidades = root.querySelector('[data-arena-comodidades-section]');
+  const comodidades = arena.comodidades || [];
+  if (secaoComodidades) {
+    secaoComodidades.hidden = !comodidades.length;
+    if (comodidades.length) {
+      root.querySelector('[data-arena-comodidades]').innerHTML = comodidades.map((item) => `
+        <div class="venue-amenity">
+          <span>${icon(amenityIcon(item))}</span>
+          <strong>${escapeHtml(displayText(item))}</strong>
+        </div>`).join('');
+    }
   }
 
   const lista = root.querySelector('[data-arena-court-list]');

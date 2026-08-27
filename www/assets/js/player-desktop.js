@@ -997,37 +997,24 @@ async function renderArena(root, route) {
   root.innerHTML = `
     <a href="#quadras" class="back-link">${icon('arrow-left', 'ic sm')}Voltar para explorar</a>
 
-    ${fotos.length ? `
-    <section class="desktop-booking-hero">
-      <div class="desktop-venue-gallery__grid">
-        <img class="desktop-venue-gallery__main" data-player-gallery-hero src="${escapeHtml(fotos[0])}" alt="${escapeHtml(arena.nome)}" decoding="async" fetchpriority="high">
-        <div class="desktop-venue-gallery__side">
-          ${fotos.slice(1, 3).map((foto, i) => `
-            <button type="button" data-player-gallery-image="${escapeHtml(foto)}" aria-label="Abrir foto ${i + 2}">
-              <img src="${escapeHtml(foto)}" alt="" loading="lazy" decoding="async">
-            </button>`).join('')}
-        </div>
-      </div>
-      <div class="desktop-booking-hero__badges">
-        <span>${icon('images', 'ic sm')}${fotos.length} fotos</span>
-        <span>${icon('navigation', 'ic sm')}${Number(arena.distancia).toLocaleString('pt-BR')} km</span>
-      </div>
-      <button type="button" class="fav-heart ${favorita ? 'on' : ''}" data-player-favorite="${arena.id}" aria-label="Salvar nos favoritos">
-        ${icon('heart', 'ic fill')}
-      </button>
-    </section>` : ''}
-
-    <section class="desktop-arena-identity">
+    <!-- Topo: a LOGO e o NOME logo abaixo. A galeria de fotos saiu daqui —
+         a arena nao tem album proprio (as fotos sao das quadras e se repetem
+         nos cards abaixo) e bastava uma nao carregar para o perfil abrir com
+         um retangulo vazio ocupando a tela. -->
+    <section class="desktop-arena-identity desktop-arena-identity--perfil">
       <span class="desktop-arena-logo${arena.logo ? ' tem-imagem' : ''}" aria-hidden="true">${
         arena.logo
           ? `<img src="${escapeHtml(arena.logo)}" alt="">`
           : escapeHtml(venueInitials(arena.nome))
       }</span>
       <div class="desktop-arena-identity__copy">
-        <span>${icon('badge-check', 'ic sm')}Arena verificada</span>
         <h1>${escapeHtml(arena.nome)}</h1>
         <p>${icon('map-pin', 'ic sm')}${escapeHtml([arena.bairro, arena.cidade].filter(Boolean).join(' · '))}</p>
+        <span>${icon('badge-check', 'ic sm')}Arena verificada</span>
       </div>
+      <button type="button" class="fav-heart ${favorita ? 'on' : ''}" data-player-favorite="${arena.id}" aria-label="Salvar nos favoritos">
+        ${icon('heart', 'ic fill')}
+      </button>
       <div class="desktop-arena-facts">
         <span>${icon('star', 'ic sm')}<b>${arena.rating || '—'}</b><small>${arena.reviews || 0} avaliações</small></span>
         <span>${icon('layout-grid', 'ic sm')}<b>${arena.totalQuadras}</b><small>para alugar</small></span>
@@ -1039,6 +1026,18 @@ async function renderArena(root, route) {
     <section class="arena-bloco">
       <h2>Sobre a arena</h2>
       <p class="arena-sobre">${escapeHtml(arena.descricao)}</p>
+    </section>` : ''}
+
+    ${(arena.comodidades || []).length ? `
+    <section class="arena-bloco">
+      <h2>O que a arena tem</h2>
+      <!-- Mesmo desenho de comodidade da ficha da quadra (.amenity): a lista
+           e a mesma coisa, e um segundo estilo so para esta tela seria dois
+           jeitos de mostrar o mesmo dado. -->
+      <div class="amenities">
+        ${arena.comodidades.map((item) => `
+          <div class="amenity"><span>${icon(amenityIcon(item), 'ic sm')}</span>${escapeHtml(displayText(item))}</div>`).join('')}
+      </div>
     </section>` : ''}
 
     <section class="arena-bloco">

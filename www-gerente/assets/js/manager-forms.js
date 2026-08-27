@@ -481,6 +481,23 @@ export async function renderManagerSettings(root) {
       if (form.elements[campo]) form.elements[campo].value = dados[campo] ?? '';
     });
 
+  /* A LOGO GRAVADA APARECE AO ABRIR. Sem isto o circulo mostrava a inicial do
+     nome mesmo com logo no banco, e o dono achava que nunca tinha subido —
+     era a mesma impressao de "nao salvou" que o campo nao enviado ja causava.
+     O <input hidden> continua vazio: ele significa "escolhi uma nova agora". */
+  const alvoLogo = document.querySelector('#arena-logo');
+  if (alvoLogo) {
+    if (dados.logo) {
+      alvoLogo.style.backgroundImage = `url(${dados.logo})`;
+      alvoLogo.style.backgroundSize = 'cover';
+      alvoLogo.style.backgroundPosition = 'center';
+      alvoLogo.textContent = '';
+    } else {
+      alvoLogo.style.backgroundImage = '';
+      alvoLogo.textContent = (dados.nome || 'A').trim().charAt(0).toUpperCase();
+    }
+  }
+
   // Contagem real das quadras ativas — no template antigo era "2" fixo, e
   // desencontrava de Minhas quadras assim que a arena pausasse uma.
   const listaQuadras = API_BASE_URL ? (await loadCourts()).quadras : courts();
@@ -970,7 +987,16 @@ export function initManagerForms() {
             cidade: String(d.get('cidade') ?? ''),
             estado: String(d.get('estado') ?? ''),
             telefone: String(d.get('telefone') ?? ''),
-            email: String(d.get('email') ?? '')
+            email: String(d.get('email') ?? ''),
+            /* LOGO: so vai quando o dono escolheu uma agora.
+               No backend, `logo: ""` REMOVE a logo gravada. Como o campo
+               nasce vazio a cada carga da tela, manda-lo sempre apagaria a
+               logo em todo salvamento de qualquer outro campo — o dono
+               trocaria o telefone e perderia a marca sem entender por que.
+               `undefined` some do JSON, e o backend so mexe no que recebe.
+               (Remover a logo de proposito ainda nao tem botao; quando tiver,
+               ele precisa mandar string vazia explicitamente.) */
+            ...(String(d.get('logo') ?? '') ? { logo: String(d.get('logo')) } : {})
             // `pixChave` saiu junto com o cartao de Recebimento: mandar um
             // campo que a tela nao coleta apagaria a chave ja gravada.
           });

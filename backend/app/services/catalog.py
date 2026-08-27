@@ -293,6 +293,21 @@ def get_arena_profile(db: Session, arena_id, *, lat=None, lng=None) -> dict | No
     precos = [q["price"] for q in quadras if q["price"] is not None]
     esportes = sorted({q["sport"] for q in quadras if q["sport"]})
 
+    # COMODIDADES DA ARENA = a uniao das comodidades das quadras.
+    #
+    # Nao ha campo de comodidade em Arena, e criar um obrigaria o dono a
+    # cadastrar duas vezes a mesma coisa. Vestiario, estacionamento e bar sao
+    # do LUGAR, e ja estao marcados nas quadras dele — aqui elas so se juntam.
+    #
+    # Sem `sorted`: a ordem em que o dono marcou costuma pôr o que ele
+    # considera importante primeiro, e ordenar por alfabeto jogaria
+    # "Estacionamento" na frente de "Vestiario" sem nenhum motivo.
+    comodidades: list[str] = []
+    for court, _ in rows:
+        for item in (court.amenities or []):
+            if item and item not in comodidades:
+                comodidades.append(item)
+
     return {
         "id": str(arena.id),
         "nome": arena.name,
@@ -310,6 +325,7 @@ def get_arena_profile(db: Session, arena_id, *, lat=None, lng=None) -> dict | No
         "totalQuadras": len(quadras),
         "precoMin": min(precos) if precos else None,
         "esportes": esportes,
+        "comodidades": comodidades,
         "avaliacoes": [
             {
                 "author": autor,

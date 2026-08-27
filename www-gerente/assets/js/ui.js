@@ -309,13 +309,31 @@
     var target = document.querySelector(inp.getAttribute('data-preview'));
     var reader = new FileReader();
     reader.onload = function () {
-      if (!target) return;
-      target.style.backgroundImage = 'url(' + reader.result + ')';
-      target.style.backgroundSize = 'cover';
-      target.style.backgroundPosition = 'center';
-      target.textContent = '';
+      if (target) {
+        target.style.backgroundImage = 'url(' + reader.result + ')';
+        target.style.backgroundSize = 'cover';
+        target.style.backgroundPosition = 'center';
+        target.textContent = '';
+      }
+      /* O VALOR VAI PARA UM CAMPO DO FORMULARIO.
+
+         Antes isto so pintava a previa. O <input type=file> nao vira texto no
+         FormData e ninguem lia o arquivo em lugar nenhum: o dono escolhia a
+         logo, via a imagem aparecer, recebia "Logo atualizado" e no proximo F5
+         estava tudo como antes. O campo apontado por `data-valor` guarda o
+         data URL e viaja no submit junto com o resto. */
+      var campo = inp.getAttribute('data-valor');
+      var destino = campo && (inp.form || document).querySelector(campo);
+      if (destino) {
+        destino.value = reader.result;
+        // A barra de salvar escuta `change`; sem isto o formulario continuaria
+        // "limpo" e o botao de salvar nem apareceria.
+        destino.dispatchEvent(new Event('change', { bubbles: true }));
+      }
     };
     reader.readAsDataURL(f);
-    toast('Logo atualizado');
+    /* O toast dizia "Logo atualizado" no instante da escolha — afirmava que
+       algo tinha sido gravado quando nada tinha. Agora ele diz o que falta. */
+    toast('Logo escolhida. Salve para aplicar.');
   });
 })();

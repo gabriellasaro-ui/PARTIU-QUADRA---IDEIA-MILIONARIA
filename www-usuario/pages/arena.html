@@ -1,61 +1,62 @@
 <!-- PERFIL DA ARENA — a vitrine entre a busca e a quadra.
 
-     O app listava quadras soltas: uma arena com tres quadras aparecia tres
-     vezes na lista e nao havia lugar nenhum onde ela fosse uma coisa so. Aqui
-     ela se apresenta — logo, descricao, avaliacoes — e mostra o catalogo do
-     que tem para alugar.
+     O topo e A LOGO E O NOME LOGO ABAIXO. So isso.
+
+     A primeira versao abria com a galeria de fotos ocupando a tela inteira, do
+     jeito da ficha da quadra. Errado por dois motivos: a arena nao tem album
+     proprio (as fotos sao das quadras, e elas ja aparecem nos cards logo
+     abaixo, repetidas), e quando uma dessas fotos nao carrega o perfil abre com
+     um retangulo vazio do tamanho do celular. Quem entra aqui quer saber DE
+     QUEM e o lugar; e a marca que responde isso, nao uma foto de campo igual a
+     de todo mundo.
 
      O QUE ESTA TELA NAO TEM, de proposito: telefone, WhatsApp, e-mail e rua.
-     Quem sai daqui com o contato fecha por fora e a reserva nao acontece. A
-     mesma regra ja vale para o chat, que so abre depois da reserva paga.
-     Localizacao aqui e bairro/cidade mais o NOSSO mapa. O backend nem envia
-     esses campos (`catalog.get_arena_profile`), entao nao ha o que esquecer
-     de esconder. -->
+     Quem sai daqui com o contato fecha por fora e a reserva nao acontece — a
+     mesma regra do chat, que so abre depois da reserva paga. O backend nem
+     envia esses campos. -->
 <div class="route-page" data-arena-page>
-  <div class="hero venue-hero arena-hero">
-    <a data-voltar class="back" href="#quadras" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
-    <!-- Favoritar ja opera por arena no banco (`UserFavorite.arena_id`): e
-         aqui, na arena, que o botao sempre pertenceu. -->
-    <button class="hero-favorite" type="button" data-favorite-toggle aria-label="Salvar nos favoritos">
-      <i class="ic" data-lucide="heart"></i>
-    </button>
-    <span class="pill tr venue-distance"><i class="ic" data-lucide="navigation"></i><span data-arena-distance></span></span>
-    <div class="venue-hero-track" data-arena-track tabindex="0" aria-label="Fotos da arena"></div>
-    <span class="venue-hero-photo-count">
-      <i class="ic" data-lucide="images"></i>
-      <b data-arena-photo-current>1</b>/<span data-arena-photo-count></span>
-    </span>
-    <div class="venue-hero-dots" data-arena-gallery aria-label="Fotos da arena"></div>
+  <header class="arena-topo">
+    <div class="arena-topo__barra">
+      <a data-voltar class="back" href="#quadras" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
+      <!-- Favoritar ja opera por arena no banco (`UserFavorite.arena_id`): e
+           aqui que o botao sempre pertenceu. -->
+      <button class="hero-favorite" type="button" data-favorite-toggle aria-label="Salvar nos favoritos">
+        <i class="ic" data-lucide="heart"></i>
+      </button>
+    </div>
+
+    <span class="arena-topo__logo" data-arena-logo aria-hidden="true"></span>
+    <h1 data-arena-name></h1>
+    <p class="arena-topo__local"><i class="ic" data-lucide="map-pin"></i><span data-arena-local></span></p>
+    <span class="verified-label"><i class="ic" data-lucide="badge-check"></i>Arena verificada</span>
+  </header>
+
+  <div class="arena-facts">
+    <span class="arena-rating"><i class="ic" data-lucide="star"></i><b data-arena-rating></b><small data-arena-reviews></small></span>
+    <span><i class="ic" data-lucide="layout-grid"></i><b data-arena-courts></b><small>para alugar</small></span>
+    <span><i class="ic" data-lucide="circle-dollar-sign"></i><b data-arena-price></b><small>a partir de</small></span>
   </div>
 
-  <div class="detail-head">
-    <div class="arena-identity">
-      <!-- A logo real, quando existe. `Arena.logo` ja estava no banco e o
-           painel do gerente ja deixava o dono subir — o que faltava era o
-           campo chegar ate aqui. Sem logo, cai nas iniciais do nome. -->
-      <span class="arena-logo" data-arena-logo aria-hidden="true"></span>
-      <div class="arena-identity__copy">
-        <span class="verified-label"><i class="ic" data-lucide="badge-check"></i>Arena verificada</span>
-        <h1 data-arena-name></h1>
-        <p class="meta"><i class="ic" data-lucide="map-pin"></i><span data-arena-local></span></p>
-      </div>
-    </div>
-    <div class="arena-facts">
-      <span class="arena-rating"><i class="ic" data-lucide="star"></i><b data-arena-rating></b><small data-arena-reviews></small></span>
-      <span><i class="ic" data-lucide="layout-grid"></i><b data-arena-courts></b><small>para alugar</small></span>
-      <span><i class="ic" data-lucide="circle-dollar-sign"></i><b data-arena-price></b><small>a partir de</small></span>
-    </div>
+  <div class="container arena-body">
     <!-- "2,2 km" nao responde a pergunta que a pessoa faz, que e "isso e longe
          DE MIM?". O mapa responde de olhar — e e o nosso, nao o de fora. -->
     <a class="btn btn-soft block arena-map-cta" data-arena-map href="#mapa">
       <i class="ic" data-lucide="map"></i>Ver no mapa
+      <span class="arena-map-cta__km" data-arena-distance></span>
     </a>
-  </div>
 
-  <div class="container arena-body">
     <section class="arena-section" data-arena-sobre hidden>
       <div class="venue-section-head"><h2>Sobre a arena</h2></div>
       <p class="arena-sobre" data-arena-descricao></p>
+    </section>
+
+    <!-- COMODIDADES DA ARENA: a uniao das comodidades das quadras.
+
+         Vestiario, estacionamento e bar sao do LUGAR, e o dono ja marca isso
+         em cada quadra. Juntar aqui evita pedir o mesmo cadastro duas vezes. -->
+    <section class="arena-section" data-arena-comodidades-section hidden>
+      <div class="venue-section-head"><h2>O que a arena tem</h2></div>
+      <div class="venue-amenities" data-arena-comodidades></div>
     </section>
 
     <section class="arena-section">
