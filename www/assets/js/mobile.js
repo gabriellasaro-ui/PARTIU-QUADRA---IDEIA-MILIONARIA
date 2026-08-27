@@ -812,13 +812,55 @@ async function renderExplore(root, route) {
   if (venues.length) {
     list.innerHTML = venues.map((venue) => venueCard(venue)).join('');
   } else {
-    list.innerHTML = `
-      <div class="empty">
-        <div class="empty-ic">${icon('search-x', 'ic lg')}</div>
-        <h3>Nenhuma quadra nesse filtro</h3>
-        <p>Tente aumentar a distância ou trocar o esporte.</p>
-        <a href="#quadras" class="btn block">Limpar filtros</a>
-      </div>`;
+    /* VAZIO POR DISTANCIA E VAZIO POR FILTRO SAO COISAS DIFERENTES.
+
+       O estado anterior dizia "Nenhuma quadra nesse filtro" e oferecia "Limpar
+       filtros" — que volta para `#quadras`, ou seja, para o raio PADRAO de
+       5 km. Quando o motivo era a distancia, o unico botao da tela levava
+       exatamente ao mesmo resultado vazio, quantas vezes fosse tocado.
+
+       Aconteceu de verdade: arena a 11,5 km de quem procurava, raio em 5 km, e
+       a tela dizendo "filtro" sem dizer QUAL nem oferecer o que resolve.
+
+       Agora, se ha quadra fora do raio, a tela diz a distancia real da mais
+       perto e o botao ABRE o raio ate ela — o proximo degrau da escala que a
+       inclui. O texto de filtro fica so para quando o corte foi mesmo esporte
+       ou busca. */
+    const foraDoRaio = listedVenues
+      .filter((v) => !sport || (v.esporte || v.sport) === sport)
+      .map((v) => Number(v.distancia ?? v.distance))
+      .filter((d) => Number.isFinite(d))
+      .sort((a, b) => a - b);
+    const maisPerto = foraDoRaio[0];
+
+    if (maisPerto !== undefined && maisPerto > Number(radius)) {
+      const proximo = RAIOS_MAPA.find((r) => r >= maisPerto) || Math.ceil(maisPerto);
+      const q = new URLSearchParams({ local, raio: String(proximo) });
+      if (term) q.set('q', term);
+      if (sport) q.set('esporte', sport);
+      if (now) q.set('agora', '1');
+      list.innerHTML = `
+        <div class="empty">
+          <div class="empty-ic">${icon('navigation', 'ic lg')}</div>
+          <!-- Sem local escolhido, a variavel carrega o texto do proprio
+               botao ("Escolher local") e a frase sairia "Nada em ate 5 km de
+               Escolher local". Nesse caso o titulo fica sem o complemento.
+
+               (Nada de crase neste comentario: ele vive DENTRO de um template
+               literal, e uma crase aqui fecha a string e derruba a tela.) -->
+          <h3>Nada em até ${radius} km${/escolher/i.test(local) ? '' : ' de ' + escapeHtml(displayText(local))}</h3>
+          <p>A quadra mais perto está a ${formatDistance(maisPerto)} km.</p>
+          <a href="#quadras?${q}" class="btn block">Procurar em até ${proximo} km</a>
+        </div>`;
+    } else {
+      list.innerHTML = `
+        <div class="empty">
+          <div class="empty-ic">${icon('search-x', 'ic lg')}</div>
+          <h3>Nenhuma quadra nesse filtro</h3>
+          <p>Tente trocar o esporte ou limpar a busca.</p>
+          <a href="#quadras" class="btn block">Limpar filtros</a>
+        </div>`;
+    }
   }
 }
 
