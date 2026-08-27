@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Entrar - Qadras Gerente</title>
-  <meta name="theme-color" content="#1b7a3e">
+  <meta name="theme-color" content="#9bcf33">
   <link rel="apple-touch-icon" href="./assets/icons/apple-touch-180.png">
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/icons/favicon-32.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,51 +16,79 @@
   <link rel="stylesheet" href="./assets/css/sistema.css">
   <script src="./assets/vendor/lucide/lucide.min.js" defer></script>
   <style>
+    /* TUDO EM TOKEN, e nao em cor fixa.
+
+       Esta folha nasceu com o cartao cravado em claro (#fff, #e3e8e3, texto
+       sem cor declarada) — mas o painel abre no ESCURO por padrao. O titulo e
+       os rotulos herdavam `--pq-ink`, que no escuro e uma tinta CLARA, e
+       sumiam sobre o cartao branco: 1,12:1. Os campos, sem cor nem fundo
+       declarados, caiam no padrao do navegador e apareciam cinza-chumbo no
+       meio de um cartao branco.
+
+       O logo tambem tinha o verde antigo (#1b7a3e) cravado aqui: como e CSS
+       embutido no HTML, ficou de fora da troca de paleta, que varreu os
+       arquivos .css. Era o ultimo esmeralda do projeto.
+
+       Em token, a tela acompanha o tema em vez de brigar com ele. */
     .gerente-login {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px;
-      background: radial-gradient(1200px 500px at 50% -10%, #e7f5ed, transparent 60%), #f4f6f4;
+      background:
+        radial-gradient(1200px 500px at 50% -10%, var(--pq-tint), transparent 60%),
+        var(--pq-app-bg);
     }
     .gerente-login__card {
       width: 100%;
       max-width: 400px;
-      background: #fff;
-      border: 1px solid #e3e8e3;
+      background: var(--pq-panel);
+      border: 1px solid var(--pq-line);
       border-radius: 16px;
       padding: 32px;
-      box-shadow: 0 18px 40px -24px rgba(23, 43, 31, 0.25);
+      box-shadow: 0 18px 40px -24px rgba(10, 16, 6, .35);
     }
     .gerente-login__logo {
       width: 52px;
       height: 52px;
       border-radius: 14px;
-      background: #1b7a3e;
+      background: var(--pq-brand);
       display: grid;
       place-items: center;
-      color: #fff;
+      color: var(--pq-on-brand, #1f2e0b);
       font-weight: 800;
       font-size: 20px;
       margin-bottom: 20px;
     }
-    .gerente-login h1 { font-size: 22px; margin: 0 0 4px; }
-    .gerente-login p.lead { color: #66705f; margin: 0 0 24px; font-size: 14px; }
-    .gerente-login label { display: block; font-weight: 600; font-size: 13px; margin: 14px 0 6px; }
+    .gerente-login h1 { font-size: 22px; margin: 0 0 4px; color: var(--pq-ink); }
+    .gerente-login p.lead { color: var(--pq-muted); margin: 0 0 24px; font-size: 14px; }
+    .gerente-login label {
+      display: block; font-weight: 600; font-size: 13px; margin: 14px 0 6px;
+      color: var(--pq-ink);
+    }
     .gerente-login input[type="email"],
     .gerente-login input[type="password"] {
       width: 100%;
       padding: 12px 14px;
-      border: 1px solid #d7ddd6;
+      border: 1px solid var(--pq-line);
       border-radius: 10px;
       font-size: 15px;
+      /* Sem estes dois o campo caia no padrao do navegador — que segue o tema
+         do SISTEMA, e nao o da pagina. */
+      background: var(--pq-panel);
+      color: var(--pq-ink);
+    }
+    .gerente-login input[type="email"]:focus,
+    .gerente-login input[type="password"]:focus {
+      outline: none;
+      border-color: var(--pq-brand);
     }
     .gerente-login .btn { margin-top: 22px; width: 100%; }
-    .gerente-login .error { color: #b42318; font-size: 13px; margin-top: 12px; min-height: 18px; }
+    .gerente-login .error { color: var(--pq-danger); font-size: 13px; margin-top: 12px; min-height: 18px; }
     .gerente-login .hint {
-      margin-top: 18px; padding-top: 16px; border-top: 1px solid #edf0ec;
-      font-size: 12px; color: #8a9187;
+      margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--pq-line);
+      font-size: 12px; color: var(--pq-muted);
     }
   </style>
   <!-- TEMA ANTES DA PRIMEIRA PINTURA.
