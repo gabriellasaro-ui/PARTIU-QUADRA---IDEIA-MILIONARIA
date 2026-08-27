@@ -3716,3 +3716,21 @@ html[data-manager-app] .expediente__dica .ic {
 @media (min-width: 561px) {
   html[data-manager-app] .expediente__dica { display: block; }
 }
+
+/* O aviso que LEVA a algum lugar mostra que leva. */
+html[data-manager-app] .notif.abre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+html[data-manager-app] .notif.abre:hover {
+  background: var(--pq-tint);
+}
+
+html[data-manager-app] .notif__seta {
+  margin-left: auto;
+  flex: none;
+  color: var(--pq-muted);
+}

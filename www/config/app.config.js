@@ -1,12 +1,36 @@
-/* Configuracao real do app (jogador). Default: backend de desenvolvimento
-   em http://localhost:8000 (o FastAPI serve este frontend no mesmo origin).
+/* Configuracao real do app (jogador) para o webDir do Capacitor.
 
-   Em producao troque API_BASE_URL por https://api.qadras.com.br e ajuste
-   REQUIRE_LOGIN se precisar (por padrao o login vira obrigatorio com a API
-   ligada). APP_PUBLIC_URL = base publica do app para links de convite; vazio
-   enquanto nao ha dominio publico. */
+   API_BASE_URL EM DUAS SITUACOES, e por um motivo pratico:
+
+   No APK a pagina e servida pelo Capacitor em http://localhost/, e "localhost"
+   dentro do celular e o proprio celular — o backend nao esta la. Por isso o
+   endereco precisa ser o IP da maquina na LAN, e ele fica compilado no APK.
+
+   No NAVEGADOR o mesmo IP e desnecessario e vira armadilha: o IP da LAN muda
+   ao trocar de rede, e ai o painel aberto em localhost:5176 tenta falar com
+   um IP que nao existe mais e "nao carrega nada". Isso ja custou varias
+   rodadas de investigacao. Servido por HTTP, a pagina passa a falar com o
+   MESMO host que a serviu, na porta 8000 — mudou de rede, continua funcionando
+   sem editar arquivo nenhum.
+
+   Em producao troque a constante por https://api.qadras.com.br.
+
+   ATENCAO: o IP abaixo ainda vale para o APK. Confira com ipconfig quando o
+   aparelho nao conectar — e a primeira coisa a olhar. */
+const IP_DA_LAN = 'http://192.168.0.19:8000';
+
+function enderecoDaApi() {
+  const nativo = Boolean(window.Capacitor && window.Capacitor.isNativePlatform
+    && window.Capacitor.isNativePlatform());
+  if (nativo) return IP_DA_LAN;
+  if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol) && location.hostname) {
+    return `${location.protocol}//${location.hostname}:8000`;
+  }
+  return IP_DA_LAN;
+}
+
 window.__PQ_CONFIG__ = {
-  API_BASE_URL: 'http://localhost:8000',
+  API_BASE_URL: enderecoDaApi(),
   STORAGE_PREFIX: 'pq',
   REQUIRE_LOGIN: true,
   APP_PUBLIC_URL: '',

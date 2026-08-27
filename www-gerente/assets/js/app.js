@@ -445,19 +445,62 @@ async function carregarNotificacoes() {
     /* NAO LIDA ganha marca propria. Sem isso a lista e um historico e o dono
        reler tudo para achar o que chegou depois da ultima visita. */
     const naoLida = !n.readAt;
-    return `<article class="notif${naoLida ? ' nova' : ''}">
+    const destino = destinoDaNotificacao(n);
+    /* AVISO QUE NAO LEVA A LUGAR NENHUM E SO UM CARTAZ.
+
+       "Nova solicitacao de reserva" existe para o dono DECIDIR — e a decisao
+       mora em #reserva/<id>, que ja existe. Ate agora era preciso ler o
+       codigo, fechar a folha, abrir Reservas e procurar na lista. O aviso
+       agora abre a propria reserva. */
+    const etiqueta = destino ? 'a' : 'article';
+    const atributos = destino
+      ? ` href="${destino}" data-notif-abrir="${escaparTexto(String(n.id))}"`
+      : '';
+    return `<${etiqueta} class="notif${naoLida ? ' nova' : ''}${destino ? ' abre' : ''}"${atributos}>
       <span class="notif__ic"><i class="ic sm" data-lucide="${ICONE_NOTIF[familia] || 'bell'}"></i></span>
       <div>
         <strong>${escaparTexto(n.title)}</strong>
         <small>${escaparTexto(n.body)}</small>
         <time>${escaparTexto(tempoRelativo(n.createdAt))}</time>
       </div>
-    </article>`;
+      ${destino ? '<i class="ic sm notif__seta" data-lucide="chevron-right"></i>' : ''}
+    </${etiqueta}>`;
   }).join('');
   window.pqRefreshIcons?.(lista);
 }
 
+/* Para onde cada aviso leva.
+
+   O `data` da notificacao ja carrega `bookingId` desde a Fase 7 — nada disso
+   precisa de campo novo no servidor. Sem destino conhecido, o item continua
+   sendo um <article> comum: melhor nao levar a lugar nenhum do que levar ao
+   lugar errado. */
+function destinoDaNotificacao(n) {
+  const dados = n.data || {};
+  const familia = String(n.type || '').split('.')[0];
+  if (dados.bookingId && (familia === 'booking' || familia === 'reserva' || familia === 'payment')) {
+    return `#reserva/${encodeURIComponent(dados.bookingId)}`;
+  }
+  if (familia === 'message') return '#mensagens';
+  if (familia === 'review') return '#avaliacoes';
+  return '';
+}
+
 function initFolhaMenu() {
+  /* TOCAR NO AVISO: marca lido, fecha a folha e deixa o link seguir.
+
+     Sem `preventDefault`: o href e um hash, e deixar o navegador navegar
+     mantem o botao Voltar funcionando. A marcacao vai sem `await` de
+     proposito — travar a navegacao esperando a rede faria o toque parecer
+     morto quando a conexao esta ruim. */
+  document.addEventListener('click', (event) => {
+    const aviso = event.target.closest('[data-notif-abrir]');
+    if (!aviso) return;
+    venueService.marcarNotificacaoLida?.(aviso.dataset.notifAbrir)?.catch?.(() => {});
+    aviso.classList.remove('nova');
+    fecharFolha(aviso.closest('.mgr-sheet'));
+  });
+
   document.addEventListener('click', async (event) => {
     const abrir = event.target.closest('[data-sheet-open]');
     if (abrir) {

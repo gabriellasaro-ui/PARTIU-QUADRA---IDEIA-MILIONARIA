@@ -691,7 +691,14 @@ function renderMobile(root, eventos, segunda) {
     return `<section class="manager-agenda-day-panel" id="agenda-panel-${i}" data-agenda-panel="${i}"
       role="tabpanel" aria-labelledby="agenda-tab-${i}" ${escondido}>
       <header>
-        <div><span>${dia}, dia ${String(diaDe(i).getDate()).padStart(2, '0')}</span><strong>Agenda do dia</strong></div>
+        <!-- "Agenda do dia" saiu daqui.
+
+             Ela aparecia em TODO bloco de dia — sete vezes na mesma rolagem,
+             sempre logo abaixo de "SEG, DIA 24", que ja diz exatamente isso.
+             Somada ao "Agenda" do cabecalho fixo, a palavra se repetia oito
+             vezes numa tela. A data vira o titulo do bloco, que e o dado que
+             muda de um para o outro. -->
+        <strong>${dia}, dia ${String(diaDe(i).getDate()).padStart(2, '0')}</strong>
         <span>${doDia.length} ${doDia.length === 1 ? 'reserva' : 'reservas'} - ${escapeHtml(formatCurrency(receitaDia))}</span>
       </header>
       <div class="manager-day-bookings">${

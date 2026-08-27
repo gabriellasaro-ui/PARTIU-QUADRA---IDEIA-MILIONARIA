@@ -46,6 +46,13 @@ export const venueService = {
     return api.post('/api/notifications/read-all', {});
   },
 
+  /* Abrir o aviso e o gesto que o marca como lido — o mesmo contrato que a
+     conversa ja usa. A rota existe desde a Fase 7 e ninguem chamava. */
+  async marcarNotificacaoLida(id) {
+    if (!API_BASE_URL || !id) return null;
+    return api.post(`/api/notifications/${encodeURIComponent(id)}/read`, {});
+  },
+
   /* HORARIOS DE UMA QUADRA NUM DIA — a mesma rota que o app do jogador chama.
 
      Usar a rota do jogador aqui e o ponto: as duas telas passam a ver a mesma

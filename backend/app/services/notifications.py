@@ -43,40 +43,50 @@ logger = logging.getLogger(__name__)
 _PUSH_TASK = "app.workers.tasks.enviar_notificacao_push"
 
 # Evento -> titulo, quem recebe (player = dono da reserva; owner = dono da arena).
+"""CADA PAPEL RECEBE O QUE E DELE, E COM O TEXTO DELE.
+
+Antes havia UM texto por evento, entregue a quem estivesse na lista de
+destinatarios. O dono da arena recebia, na caixa dele, "Sua reserva PQ-45734 em
+Arena Bola na Rede foi paga e enviada a arena" — a notificacao do JOGADOR, na
+voz do jogador, falando de uma reserva que nao e dele. E chegava colada na
+"Nova solicitacao de reserva", que e a correta: o mesmo evento, duas vezes, uma
+delas escrita para outra pessoa.
+
+Agora o destinatario e a mensagem andam juntos: cada papel tem titulo e corpo
+proprios, e quem nao precisa saber simplesmente nao esta na tabela.
+
+`payment.confirmed` perdeu o dono de proposito. Ele ja recebe
+`reserva.solicitada` no mesmo instante (services/bookings.py), que e a que pede
+acao dele. Duas linhas para o mesmo fato so ensinam a ignorar as duas.
+"""
 _BOOKING_NOTIFS: dict[str, dict] = {
     NOTIF_PAYMENT_CONFIRMED: {
-        "title": "Pagamento confirmado",
-        "recipients": ("player", "owner"),
+        "player": ("Pagamento confirmado",
+                   "Sua reserva {code} em {arena} foi paga e enviada à arena."),
     },
     NOTIF_BOOKING_APPROVED: {
-        "title": "Reserva confirmada",
-        "recipients": ("player",),
+        "player": ("Reserva confirmada",
+                   "Sua reserva {code} em {arena} foi confirmada pela arena."),
     },
     NOTIF_BOOKING_REJECTED: {
-        "title": "Reserva não aceita",
-        "recipients": ("player",),
+        "player": ("Reserva não aceita",
+                   "A arena não aceitou sua reserva {code} em {arena}."),
     },
     NOTIF_BOOKING_CANCELLED: {
-        "title": "Reserva cancelada",
-        "recipients": ("player", "owner"),
+        "player": ("Reserva cancelada",
+                   "Sua reserva {code} em {arena} foi cancelada."),
+        # O dono precisa saber: o horario voltou a ficar livre para vender.
+        "owner": ("Horário liberado",
+                  "A reserva {code} foi cancelada e o horário voltou a ficar livre."),
     },
     NOTIF_BOOKING_COMPLETED: {
-        "title": "Reserva concluída",
-        "recipients": ("player",),
+        "player": ("Reserva concluída",
+                   "Sua reserva {code} em {arena} foi concluída. Avalie sua experiência!"),
     },
     NOTIF_BOOKING_EXPIRED: {
-        "title": "Reserva expirada",
-        "recipients": ("player",),
+        "player": ("Reserva expirada",
+                   "O prazo da reserva {code} em {arena} expirou."),
     },
-}
-
-_BOOKING_BODIES: dict[str, str] = {
-    NOTIF_PAYMENT_CONFIRMED: "Sua reserva {code} em {arena} foi paga e enviada à arena.",
-    NOTIF_BOOKING_APPROVED: "Sua reserva {code} em {arena} foi confirmada pela arena.",
-    NOTIF_BOOKING_REJECTED: "A arena não aceitou sua reserva {code} em {arena}.",
-    NOTIF_BOOKING_CANCELLED: "A reserva {code} em {arena} foi cancelada.",
-    NOTIF_BOOKING_COMPLETED: "Sua reserva {code} em {arena} foi concluída. Avalie sua experiência!",
-    NOTIF_BOOKING_EXPIRED: "O prazo da reserva {code} em {arena} expirou.",
 }
 
 
@@ -225,11 +235,6 @@ def notify_booking_event(db: Session, booking: Booking, event_type: str) -> None
         return
     arena = db.get(Arena, booking.arena_id)
     arena_name = arena.name if arena else ""
-    recipients: set = set()
-    for who in cfg["recipients"]:
-        uid = booking.user_id if who == "player" else (arena.owner_id if arena else None)
-        if uid:
-            recipients.add(uid)
     data = {
         "bookingId": str(booking.id),
         "bookingCode": booking.code,
@@ -237,17 +242,23 @@ def notify_booking_event(db: Session, booking: Booking, event_type: str) -> None
         "arenaName": arena_name,
         "event": event_type,
     }
-    body = _BOOKING_BODIES.get(event_type, "").format(code=booking.code, arena=arena_name)
-    for uid in recipients:
+
+    for papel, (titulo, molde) in cfg.items():
+        uid = booking.user_id if papel == "player" else (arena.owner_id if arena else None)
+        if not uid:
+            continue
+        # Dono que reserva na propria arena receberia as duas versoes do mesmo
+        # fato, uma como jogador e outra como dono.
+        if papel == "owner" and uid == booking.user_id:
+            continue
+        corpo = molde.format(code=booking.code, arena=arena_name)
         # A linha in-app continua sendo criada mesmo com o aviso desligado: o
         # interruptor e sobre INTERROMPER a pessoa (push), nao sobre esconder o
         # historico dela dentro do app.
         if quer_receber(db, uid, event_type):
-            emit_notification(
-                db, uid, type=event_type, title=cfg["title"], body=body, data=data
-            )
+            emit_notification(db, uid, type=event_type, title=titulo, body=corpo, data=data)
         else:
-            notify_user(db, uid, type=event_type, title=cfg["title"], body=body, data=data)
+            notify_user(db, uid, type=event_type, title=titulo, body=corpo, data=data)
             db.commit()
 
 

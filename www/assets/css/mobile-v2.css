@@ -3494,7 +3494,7 @@ button .ic,
   --pq-amber-soft: #ffedd5;
   --pq-coral: #90b74c;
   --pq-sky: #6a9521;
-  --pq-app-bg: #f5fce6;
+  --pq-app-bg: #ffffff;
   --pq-panel: #ffffff;
   --pq-ink: #1f2e0b;
   --pq-ink-soft: #495731;
@@ -3599,7 +3599,13 @@ html[data-route="mapa"] .phone {
   position: relative;
   padding: calc(18px + var(--pq-safe-top)) 16px 18px;
   border-bottom: 1px solid var(--pq-line);
-  background: var(--pq-tint);
+  /* Fundo do PAINEL (branco), e nao o tint.
+
+     Este era o "verde bem claro" da tela. Trocar o proprio `--pq-tint` levaria
+     junto chips, pilulas e avatares, que contam com ele para se separar do
+     branco — e todos sumiriam. A borda de baixo, que ja existia, e o que
+     continua separando o cabecalho do conteudo. */
+  background: var(--pq-panel);
 }
 
 .market-nav {
@@ -4203,7 +4209,9 @@ html[data-route="mapa"] .phone {
   gap: 16px;
   padding: calc(20px + var(--pq-safe-top)) 16px 16px;
   border-bottom: 1px solid var(--pq-line);
-  background: var(--pq-tint);
+  /* Branco, como o cabecalho da home: era este o "verde bem claro"
+     da tela. A borda de baixo continua separando do conteudo. */
+  background: var(--pq-panel);
 }
 
 .explore-header > div {
@@ -8836,7 +8844,7 @@ html[data-theme="dark"] {
   --pq-amber-soft: #ffedd5;
   --pq-coral: #90b74c;
   --pq-sky: #6a9521;
-  --pq-app-bg: #f5fce6;
+  --pq-app-bg: #ffffff;
   --pq-panel: #ffffff;
   --pq-ink: #1f2e0b;
   --pq-ink-soft: #495731;
@@ -8941,7 +8949,13 @@ html[data-route="mapa"] .phone {
   position: relative;
   padding: calc(18px + var(--pq-safe-top)) 16px 18px;
   border-bottom: 1px solid var(--pq-line);
-  background: var(--pq-tint);
+  /* Fundo do PAINEL (branco), e nao o tint.
+
+     Este era o "verde bem claro" da tela. Trocar o proprio `--pq-tint` levaria
+     junto chips, pilulas e avatares, que contam com ele para se separar do
+     branco — e todos sumiriam. A borda de baixo, que ja existia, e o que
+     continua separando o cabecalho do conteudo. */
+  background: var(--pq-panel);
 }
 
 .market-nav {
@@ -9545,7 +9559,9 @@ html[data-route="mapa"] .phone {
   gap: 16px;
   padding: calc(20px + var(--pq-safe-top)) 16px 16px;
   border-bottom: 1px solid var(--pq-line);
-  background: var(--pq-tint);
+  /* Branco, como o cabecalho da home: era este o "verde bem claro"
+     da tela. A borda de baixo continua separando do conteudo. */
+  background: var(--pq-panel);
 }
 
 .explore-header > div {
@@ -14188,4 +14204,22 @@ html[data-theme="dark"] .leaflet-tile-pane {
 .venue-grid .empty .empty-ic .ic {
   width: 42px;
   height: 42px;
+}
+
+/* A reserva citada pela notificacao pisca ao chegar: sem isso a pessoa cai
+   numa lista e tem de procurar qual era. */
+.res-card.is-alvo {
+  outline: 2px solid var(--pq-brand);
+  outline-offset: 3px;
+  border-radius: var(--pq-radius-lg, 18px);
+  animation: alvo-piscar 2.4s ease;
+}
+
+@keyframes alvo-piscar {
+  0%, 100% { outline-color: var(--pq-brand); }
+  50% { outline-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .res-card.is-alvo { animation: none; }
 }

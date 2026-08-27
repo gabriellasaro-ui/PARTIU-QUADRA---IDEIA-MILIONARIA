@@ -8,7 +8,11 @@
      componente compartilhado, entao os dois descem para ca — a folha esconde
      um ou outro conforme a largura. -->
 <section class="manager-finance-command">
-  <div><span>Visao financeira</span><h2>Receitas da arena</h2></div>
+  <!-- O par "Visao financeira / Receitas da arena" saiu: o cabecalho fixo da
+       rota ja escreve "Financeiro / Receitas e pagamentos" a poucos pixels
+       daqui. Eram duas vezes a mesma frase, uma embaixo da outra, comendo a
+       primeira dobra da tela no celular. Sobra o seletor de periodo, que e o
+       que esta secao realmente faz. -->
   <div class="period" data-seg aria-label="Periodo financeiro">
     <button type="button" data-finance-period="hoje">Hoje</button>
     <button type="button" class="on" data-finance-period="7d">7 dias</button>

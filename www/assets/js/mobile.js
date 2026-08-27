@@ -196,6 +196,15 @@ const DESTINO_NOTIFICACAO = {
   pelada: '#clube'
 };
 
+/* O aviso leva ate a RESERVA citada, e nao so ate a aba.
+
+   O `data` da notificacao ja traz `bookingId` desde a Fase 7 — e so usar. */
+function destinoDoAviso(n, familia) {
+  const id = (n.data || {}).bookingId;
+  const base = DESTINO_NOTIFICACAO[familia] || '#reservas';
+  return id && base === '#reservas' ? `#reservas?r=${encodeURIComponent(id)}` : base;
+}
+
 function quandoFoi(iso) {
   if (!iso) return '';
   const minutos = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -228,7 +237,7 @@ async function renderNotificacoes() {
     const familia = String(n.type || '').split('.')[0];
     const naoLida = !n.readAt;
     return `
-      <a href="${DESTINO_NOTIFICACAO[familia] || '#reservas'}" data-sheet-close data-notif-id="${escapeHtml(String(n.id))}"${naoLida ? ' class="is-nova"' : ''}>
+      <a href="${destinoDoAviso(n, familia)}" data-sheet-close data-notif-id="${escapeHtml(String(n.id))}"${naoLida ? ' class="is-nova"' : ''}>
         <span class="notification-list__icon"><i class="ic" data-lucide="${ICONE_NOTIFICACAO[familia] || 'bell'}"></i></span>
         <span>
           <strong>${escapeHtml(n.title || '')}</strong>
@@ -568,7 +577,7 @@ function reservationCard(reservation, venue) {
   const local = [esporte, bairro].filter(Boolean).join(' - ');
   return `
     <a href="${alvo ? `#quadra/${alvo}` : '#reservas'}" data-status="${escapeHtml(reservation.group || 'proxima')}">
-      <article class="res-card">
+      <article class="res-card" data-reserva-id="${escapeHtml(String(reservation.id || reservation.code || ''))}">
         <img src="${escapeHtml(foto)}" alt="${escapeHtml(nome)}" loading="lazy">
         <div class="res-info">
           <strong>${escapeHtml(nome)}</strong>
@@ -2211,6 +2220,28 @@ async function renderReservations(root) {
      [data-empty] ("Nada por aqui") continuava escondido mesmo sem card nenhum,
      deixando um retangulo em branco no lugar da explicacao. */
   aplicarAbaDeReservas(root);
+
+  /* VINDO DE UMA NOTIFICACAO: leva ate a reserva, e nao so ate a lista.
+
+     O app do jogador nao tem tela por reserva — a lista E a tela. Entao o
+     aviso aponta para `#reservas?r=<id>` e aqui a reserva citada e trazida
+     para a vista e destacada por um instante. Sem isso, "sua reserva foi
+     confirmada" jogava a pessoa numa lista onde ela teria de procurar qual.
+
+     A aba precisa ser respeitada antes: se a reserva citada estiver em
+     "Anteriores" e a aba ativa for "Proximas", o card existe mas esta oculto,
+     e rolar ate ele nao mostraria nada. */
+  const alvo = new URLSearchParams((location.hash.split('?')[1] || '')).get('r');
+  if (alvo) {
+    const card = root.querySelector(`[data-reserva-id="${CSS.escape(alvo)}"]`);
+    if (card) {
+      const aba = card.closest('[hidden]');
+      if (aba) aba.hidden = false;
+      card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      card.classList.add('is-alvo');
+      setTimeout(() => card.classList.remove('is-alvo'), 2600);
+    }
+  }
 }
 
 /* Espelha o que ui.js faz no clique, para o primeiro desenho. */
@@ -3621,6 +3652,15 @@ export function initMobileActions() {
           useCurrentLocation.disabled = false;
         });
       return;
+    }
+
+    /* Tocar num aviso o marca como lido no SERVIDOR. Sem `await` e sem
+       preventDefault: o href e um hash, e travar a navegacao esperando a rede
+       faria o toque parecer morto numa conexao ruim. */
+    const avisoTocado = event.target.closest('[data-notif-id]');
+    if (avisoTocado) {
+      notificationService.markRead?.(avisoTocado.dataset.notifId)?.catch?.(() => {});
+      avisoTocado.classList.remove('is-nova');
     }
 
     const markNotifications = event.target.closest('[data-mark-notifications]');
