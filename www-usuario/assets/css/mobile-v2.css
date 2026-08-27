@@ -14038,3 +14038,114 @@ html[data-theme="dark"] .leaflet-tile-pane {
   transform: translateY(-50%);
   color: var(--pq-on-brand);
 }
+
+/* == GRADE DO EXPLORAR ===================================================
+   O card de busca media 358x380 numa coluna so: 2,2 por tela. Numa cidade com
+   muitas arenas isso vira uma lista sem fim para achar a quadra certa.
+
+   Em duas colunas o card cai para 173px e cabe o essencial — foto, esporte,
+   nota, nome e preco. O que sai e o que so servia no formato grande: as
+   pilulas de comodidade, o selo de aberta e o rotulo do botao, que vira so a
+   seta. `auto-fill` com minimo de 160px deixa a grade acrescentar colunas
+   sozinha em tela larga, sem media query nova. */
+.venue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.venue-grid .venue-card {
+  border-radius: 18px;
+}
+
+/* Foto mais baixa: era 176px, mais da metade da altura do card. */
+.venue-grid .venue-card .photo {
+  height: 104px;
+}
+
+.venue-grid .venue-card .body {
+  padding: 10px 11px 12px;
+}
+
+.venue-grid .venue-card h3 {
+  font-size: 14.5px;
+  line-height: 1.2;
+  /* Duas linhas no maximo: nome longo nao pode empurrar o preco para fora do
+     alinhamento com o card ao lado. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.venue-grid .venue-card .meta {
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+.venue-grid .venue-card .venue-card-quadra {
+  font-size: 11px;
+}
+
+/* Some o que so cabia no card grande. */
+.venue-grid .venue-card .tags,
+.venue-grid .venue-card .venue-status,
+.venue-grid .venue-card .venue-distance-pill {
+  display: none;
+}
+
+.venue-grid .venue-card .venue-card-kicker {
+  font-size: 9.5px;
+}
+
+.venue-grid .venue-card .foot {
+  margin-top: 9px;
+  padding-top: 9px;
+  gap: 6px;
+}
+
+.venue-grid .venue-card .price {
+  font-size: 15px;
+}
+
+.venue-grid .venue-card .price small {
+  font-size: 10px;
+}
+
+/* O botao vira so a seta: "Ver horarios" nao cabe ao lado do preco em 173px,
+   e o card inteiro ja e o link.
+
+   `font-size: 0` para esconder o rotulo, e nao um seletor de filho: no
+   template o texto e um NO SOLTO (`${action}${icon(...)}`), sem elemento em
+   volta — `> :not(.ic)` nao alcanca no de texto, e o resultado foi "Ver
+   horarios" transbordando por cima do preco. A fonte volta ao normal no
+   icone, que e filho de verdade. */
+.venue-grid .venue-card .btn-mini {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  flex: none;
+  font-size: 0;
+  line-height: 0;
+}
+
+.venue-grid .venue-card .btn-mini .ic {
+  width: 17px;
+  height: 17px;
+  font-size: 1rem;
+}
+
+/* O atalho do mapa encolhe junto, para nao cobrir um terco da foto. */
+.venue-grid .venue-card-mapa {
+  top: 8px;
+  left: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 11px;
+}
+
+.venue-grid .venue-card-mapa .ic {
+  width: 16px;
+  height: 16px;
+}

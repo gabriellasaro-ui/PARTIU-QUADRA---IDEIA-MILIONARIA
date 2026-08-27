@@ -41,6 +41,15 @@
       <span><i class="ic" data-lucide="navigation"></i><strong data-current-location>Goiânia, GO</strong></span>
       <a href="#mapa">Ver mapa</a>
     </div>
-    <div data-venue-list></div>
+    <!-- GRADE, e nao lista.
+
+         Em coluna unica o card media 358x380 e so 2,2 cabiam na tela: com uma
+         cidade de arenas, achar a certa viraria rolagem sem fim. Em duas
+         colunas cada card fica com 173px, que ainda comporta foto, nome, nota
+         e preco — e a tela passa a mostrar quatro de uma vez.
+
+         `auto-fill` com minimo de 160px: em celular largo, tablet ou desktop a
+         propria grade acrescenta colunas sozinha, sem media query nova. -->
+    <div class="venue-grid" data-venue-list></div>
   </div>
 </div>
