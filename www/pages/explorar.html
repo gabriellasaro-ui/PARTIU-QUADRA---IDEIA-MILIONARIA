@@ -21,12 +21,22 @@
            a URL sem esporte. Valor vazio ja e descartado pelo laco acima. -->
       <input type="hidden" name="esporte" value="" data-search-sport>
       <input type="hidden" name="agora" value="1" data-search-now disabled>
+      <!-- FUNIL, e nao os controles deslizantes.
+
+           `sliders-horizontal` e o icone de ajustes/preferencias em quase todo
+           app — quem bate o olho le "configuracoes", nao "filtrar". O funil e
+           o simbolo universal de filtro e nao divide significado com nada. -->
       <button type="button" aria-label="Abrir filtros" data-sheet-open="filter-sheet" aria-expanded="false">
-        <i class="ic" data-lucide="sliders-horizontal"></i>
+        <i class="ic" data-lucide="funnel"></i>
       </button>
     </form>
 
-    <div class="sport-filter-rail" data-sport-filters></div>
+    <!-- A fileira de chips de esporte saiu.
+
+         Ela repetia, em forma de atalho, o mesmo filtro que a folha ao lado ja
+         oferece — e ocupava a linha logo abaixo da busca, empurrando os
+         resultados para baixo em toda visita. Quem quer filtrar por esporte
+         abre o funil; quem chegou pela home ja veio com o esporte na URL. -->
     <div class="result-context">
       <span><i class="ic" data-lucide="navigation"></i><strong data-current-location>Goiânia, GO</strong></span>
       <a href="#mapa">Ver mapa</a>

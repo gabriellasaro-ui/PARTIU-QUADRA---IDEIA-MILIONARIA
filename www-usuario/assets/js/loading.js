@@ -24,7 +24,7 @@ export function loadingHTML(rotulo = 'Carregando') {
            CSS) para ele pivotar onde encosta no chao. -->
       <g class="pq-loading__balanco">
         <path d="${PIN}" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
-        <g class="pq-loading__bola" fill="none" stroke="#12261c" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round">
+        <g class="pq-loading__bola" fill="none" stroke="#1f2612" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round">
           <circle cx="32" cy="28" r="13.6" fill="#fff"/>
           <path d="${BOLA_CENTRO}"/>
           <path d="${BOLA_COSTURAS}"/>

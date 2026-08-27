@@ -794,13 +794,19 @@ async function renderExplore(root, route) {
   });
 
   const persistentQuery = `${term ? `&q=${encodeURIComponent(term)}` : ''}${now ? '&agora=1' : ''}`;
-  root.querySelector('[data-sport-filters]').innerHTML = [
-    `<a class="sport-filter-chip ${sport ? '' : 'on'}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}${persistentQuery}">${sportIcon('outros')}Todos</a>`,
-    ...sports.map((item) => {
-      const on = item === sport ? 'on' : '';
-      return `<a class="sport-filter-chip ${on}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}&esporte=${encodeURIComponent(item)}${persistentQuery}">${sportIcon(item)}${escapeHtml(item)}</a>`;
-    })
-  ].join('');
+  /* A fileira de chips de esporte saiu da tela: repetia o filtro que a folha
+     ao lado ja faz, e comia a linha logo abaixo da busca. O `querySelector`
+     opcional fica porque outras telas ainda montam este mesmo fragmento. */
+  const chipsEsporte = root.querySelector('[data-sport-filters]');
+  if (chipsEsporte) {
+    chipsEsporte.innerHTML = [
+      `<a class="sport-filter-chip ${sport ? '' : 'on'}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}${persistentQuery}">${sportIcon('outros')}Todos</a>`,
+      ...sports.map((item) => {
+        const on = item === sport ? 'on' : '';
+        return `<a class="sport-filter-chip ${on}" href="#quadras?local=${encodeURIComponent(local)}&raio=${radius}&esporte=${encodeURIComponent(item)}${persistentQuery}">${sportIcon(item)}${escapeHtml(item)}</a>`;
+      })
+    ].join('');
+  }
 
   const list = root.querySelector('[data-venue-list]');
   if (venues.length) {

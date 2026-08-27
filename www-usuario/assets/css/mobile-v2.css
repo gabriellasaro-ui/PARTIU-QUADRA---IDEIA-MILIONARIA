@@ -7386,7 +7386,10 @@ html[data-route="cadastro"]::before {
   z-index: 9000;
   display: grid;
   place-items: center;
-  background: var(--pq-panel);
+  /* O fundo do APP, e nao branco: com a marca em lime, a tela de carregamento
+     branca aparecia como um retangulo claro entre duas telas lime — parecia
+     que so ela tinha ficado para tras na troca de cor. */
+  background: var(--pq-app-bg);
 }
 
 /* Loading: pin de localizacao com bola de futebol, balancando.
@@ -12719,7 +12722,10 @@ html[data-route="cadastro"]::before {
   z-index: 9000;
   display: grid;
   place-items: center;
-  background: var(--pq-panel);
+  /* O fundo do APP, e nao branco: com a marca em lime, a tela de carregamento
+     branca aparecia como um retangulo claro entre duas telas lime — parecia
+     que so ela tinha ficado para tras na troca de cor. */
+  background: var(--pq-app-bg);
 }
 
 /* Loading: pin de localizacao com bola de futebol, balancando.
