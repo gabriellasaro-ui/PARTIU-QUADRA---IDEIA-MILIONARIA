@@ -840,10 +840,13 @@ async function renderArena(root, route) {
   root.querySelector('[data-arena-local]').textContent =
     [arena.bairro, arena.cidade].filter(Boolean).join(' · ') || 'Localização não informada';
   root.querySelector('[data-arena-rating]').textContent = arena.rating || '—';
-  root.querySelector('[data-arena-reviews]').textContent = `${arena.reviews || 0} avaliações`;
+  root.querySelector('[data-arena-reviews]').textContent =
+    arena.reviews ? `${arena.reviews} avaliações` : 'sem avaliações';
   root.querySelector('[data-arena-courts]').textContent = arena.totalQuadras;
   root.querySelector('[data-arena-price]').textContent =
     arena.precoMin != null ? formatCurrency(arena.precoMin) : '—';
+  const estrelas = root.querySelector('[data-arena-stars]');
+  if (estrelas) estrelas.innerHTML = ratingStars(Math.round(arena.rating || 0));
 
   /* A LOGO REAL, e nao as iniciais.
 
@@ -875,10 +878,7 @@ async function renderArena(root, route) {
     secaoComodidades.hidden = !comodidades.length;
     if (comodidades.length) {
       root.querySelector('[data-arena-comodidades]').innerHTML = comodidades.map((item) => `
-        <div class="venue-amenity">
-          <span>${icon(amenityIcon(item))}</span>
-          <strong>${escapeHtml(displayText(item))}</strong>
-        </div>`).join('');
+        <span class="arena-comodidade">${icon(amenityIcon(item))}${escapeHtml(displayText(item))}</span>`).join('');
     }
   }
 
@@ -897,22 +897,51 @@ async function renderArena(root, route) {
     rotulo.textContent = arena.totalQuadras === 1 ? '1 quadra' : `${arena.totalQuadras} quadras`;
   }
 
+  /* AVALIACOES: resumo primeiro, depois os comentarios.
+
+     A nota media e o que a pessoa procura; os comentarios sao a explicacao
+     dela. A lista antiga despejava as dez de uma vez numa coluna sem
+     separacao — a tela virava um paredao de texto e as quadras, que sao o que
+     se vem fazer aqui, ficavam a uma rolagem de distancia da conclusao.
+
+     Tres de cara, o resto sob demanda. */
   const secaoReviews = root.querySelector('[data-arena-reviews-section]');
   const avaliacoes = arena.avaliacoes || [];
   if (secaoReviews) {
     secaoReviews.hidden = !avaliacoes.length;
     if (avaliacoes.length) {
+      root.querySelector('[data-arena-review-media]').textContent = arena.rating || '—';
+      root.querySelector('[data-arena-review-stars]').innerHTML = ratingStars(Math.round(arena.rating || 0));
       root.querySelector('[data-arena-review-count]').textContent =
-        `${arena.reviews} no total`;
-      root.querySelector('[data-arena-review-list]').innerHTML = avaliacoes.map((review) => `
-        <article class="venue-review">
+        arena.reviews === 1 ? '1 avaliação' : `${arena.reviews} avaliações`;
+
+      const cartao = (review) => `
+        <article class="arena-review">
           <header>
-            <span class="venue-review__avatar" aria-hidden="true">${escapeHtml(String(review.author || '?').slice(0, 1))}</span>
-            <div><strong>${escapeHtml(review.author)}</strong><small>${escapeHtml(review.date)}</small></div>
-            <span class="venue-review__stars" aria-label="${review.rating} de 5 estrelas">${ratingStars(review.rating)}</span>
+            <span class="arena-review__avatar" aria-hidden="true">${escapeHtml(String(review.author || '?').slice(0, 1))}</span>
+            <div>
+              <strong>${escapeHtml(review.author)}</strong>
+              <small>${escapeHtml(review.date)}</small>
+            </div>
+            <span class="arena-review__estrelas" aria-label="${review.rating} de 5 estrelas">${ratingStars(review.rating)}</span>
           </header>
           <p>${escapeHtml(review.text)}</p>
-        </article>`).join('');
+        </article>`;
+
+      const lista = root.querySelector('[data-arena-review-list]');
+      const botao = root.querySelector('[data-arena-review-mais]');
+      const VISIVEIS = 3;
+      lista.innerHTML = avaliacoes.slice(0, VISIVEIS).map(cartao).join('');
+      if (botao) {
+        const restantes = avaliacoes.length - VISIVEIS;
+        botao.hidden = restantes <= 0;
+        botao.textContent = `Ver mais ${restantes} ${restantes === 1 ? 'avaliação' : 'avaliações'}`;
+        botao.onclick = () => {
+          lista.innerHTML = avaliacoes.map(cartao).join('');
+          botao.hidden = true;
+          window.pqRefreshIcons?.(lista);
+        };
+      }
     }
   }
 

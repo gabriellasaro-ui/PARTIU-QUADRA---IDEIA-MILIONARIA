@@ -650,7 +650,8 @@ async function renderVenue(root, route) {
           : escapeHtml(venueInitials(venue.arenaName || venue.name))
       }</span>
       <div class="desktop-arena-identity__copy">
-        <span>${icon('badge-check', 'ic sm')}Arena verificada</span>
+        <!-- Selo "Arena verificada" removido: nao ha verificacao nenhuma
+             por tras dele. -->
         <h1>${escapeHtml(venue.arenaName || venue.name)}</h1>
         <p>${icon('map-pin', 'ic sm')}${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</p>
       </div>
@@ -1010,17 +1011,31 @@ async function renderArena(root, route) {
       <div class="desktop-arena-identity__copy">
         <h1>${escapeHtml(arena.nome)}</h1>
         <p>${icon('map-pin', 'ic sm')}${escapeHtml([arena.bairro, arena.cidade].filter(Boolean).join(' · '))}</p>
-        <span>${icon('badge-check', 'ic sm')}Arena verificada</span>
+        <!-- O selo "Arena verificada" saiu: nao ha campo de verificacao no
+             banco nem processo por tras dele. Era um sinal de confianca
+             afirmando algo que o produto nao faz, bem onde a pessoa decide
+             gastar dinheiro. Volta quando houver criterio de verdade. -->
       </div>
       <button type="button" class="fav-heart ${favorita ? 'on' : ''}" data-player-favorite="${arena.id}" aria-label="Salvar nos favoritos">
         ${icon('heart', 'ic fill')}
       </button>
-      <div class="desktop-arena-facts">
-        <span>${icon('star', 'ic sm')}<b>${arena.rating || '—'}</b><small>${arena.reviews || 0} avaliações</small></span>
-        <span>${icon('layout-grid', 'ic sm')}<b>${arena.totalQuadras}</b><small>para alugar</small></span>
-        <span>${icon('circle-dollar-sign', 'ic sm')}<b>${arena.precoMin != null ? money(arena.precoMin) : '—'}</b><small>a partir de</small></span>
-      </div>
     </section>
+
+    <!-- Os numeros que decidem a escolha, em corpo grande e em cartao. Antes
+         eram tres rotulos de 11px numa faixa fina. -->
+    <div class="arena-numeros">
+      <div>
+        <b>${arena.rating || '—'}</b>
+        <span class="arena-numeros__estrelas">${'★'.repeat(Math.round(arena.rating || 0))}${'☆'.repeat(Math.max(0, 5 - Math.round(arena.rating || 0)))}</span>
+        <small>${arena.reviews ? arena.reviews + ' avaliações' : 'sem avaliações'}</small>
+      </div>
+      <div><b>${arena.totalQuadras}</b><small>quadras</small></div>
+      <div><b>${arena.precoMin != null ? money(arena.precoMin) : '—'}</b><small>a partir de, por hora</small></div>
+      <a class="arena-numeros__mapa" href="#mapa?arena=${escapeHtml(String(arena.id))}">
+        ${icon('map', 'ic sm')}Ver no mapa
+        <b>${Number(arena.distancia).toLocaleString('pt-BR')} km</b>
+      </a>
+    </div>
 
     ${String(arena.descricao || '').trim() ? `
     <section class="arena-bloco">
@@ -1034,9 +1049,9 @@ async function renderArena(root, route) {
       <!-- Mesmo desenho de comodidade da ficha da quadra (.amenity): a lista
            e a mesma coisa, e um segundo estilo so para esta tela seria dois
            jeitos de mostrar o mesmo dado. -->
-      <div class="amenities">
+      <div class="arena-comodidades">
         ${arena.comodidades.map((item) => `
-          <div class="amenity"><span>${icon(amenityIcon(item), 'ic sm')}</span>${escapeHtml(displayText(item))}</div>`).join('')}
+          <span class="arena-comodidade">${icon(amenityIcon(item), 'ic sm')}${escapeHtml(displayText(item))}</span>`).join('')}
       </div>
     </section>` : ''}
 
@@ -1049,14 +1064,26 @@ async function renderArena(root, route) {
 
     ${(arena.avaliacoes || []).length ? `
     <section class="arena-bloco">
-      <h2>Avaliações <small>${arena.reviews} no total</small></h2>
-      <div class="desktop-review-list">
+      <h2>Avaliações</h2>
+      <!-- Resumo antes da lista: a nota media e o que a pessoa procura, e os
+           comentarios sao a explicacao dela. -->
+      <div class="arena-nota">
+        <div class="arena-nota__valor">
+          <b>${arena.rating || '—'}</b>
+          <span>${'★'.repeat(Math.round(arena.rating || 0))}${'☆'.repeat(Math.max(0, 5 - Math.round(arena.rating || 0)))}</span>
+        </div>
+        <p>${arena.reviews === 1 ? '1 avaliação' : arena.reviews + ' avaliações'}</p>
+      </div>
+      <div class="arena-review-list">
         ${arena.avaliacoes.map((review) => `
-          <article class="venue-review">
+          <article class="arena-review">
             <header>
-              <span class="venue-review__avatar" aria-hidden="true">${escapeHtml(String(review.author || '?').slice(0, 1))}</span>
-              <div><strong>${escapeHtml(review.author)}</strong><small>${escapeHtml(review.date)}</small></div>
-              <span class="venue-review__stars">${'★'.repeat(review.rating)}${'☆'.repeat(Math.max(0, 5 - review.rating))}</span>
+              <span class="arena-review__avatar" aria-hidden="true">${escapeHtml(String(review.author || '?').slice(0, 1))}</span>
+              <div>
+                <strong>${escapeHtml(review.author)}</strong>
+                <small>${escapeHtml(review.date)}</small>
+              </div>
+              <span class="arena-review__estrelas">${'★'.repeat(review.rating)}${'☆'.repeat(Math.max(0, 5 - review.rating))}</span>
             </header>
             <p>${escapeHtml(review.text)}</p>
           </article>`).join('')}

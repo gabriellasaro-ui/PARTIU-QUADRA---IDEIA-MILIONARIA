@@ -4381,3 +4381,199 @@ html[data-player-desktop] .desktop-arena-identity--perfil .fav-heart {
 .arena-bloco .amenities {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
+
+/* ══ PERFIL DA ARENA (web) — numeros que se leem e cartoes com raio ══════
+   Refeito depois do retorno: "informacoes muito pequenas", "ta quadrado".
+   Os numeros que decidem a compra estavam em 11px numa faixa fina, e cada
+   secao era texto solto entre linhas horizontais — nada tinha forma de
+   cartao. */
+
+.arena-numeros {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 18px 22px;
+  border-radius: 18px;
+  background: var(--pq-panel);
+  border: 1px solid var(--pq-line);
+}
+
+.arena-numeros > div {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.arena-numeros > div + div {
+  border-left: 1px solid var(--pq-line);
+}
+
+.arena-numeros b {
+  font-size: 25px;
+  font-weight: 950;
+  line-height: 1.1;
+  letter-spacing: -.5px;
+}
+
+.arena-numeros small {
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.arena-numeros__estrelas {
+  color: var(--pq-warning, #f5a524);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.arena-numeros__mapa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--pq-brand);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.arena-numeros__mapa b {
+  font-size: 12px;
+  font-weight: 800;
+  opacity: .85;
+}
+
+.arena-comodidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.arena-comodidade {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.arena-nota {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: var(--pq-panel);
+  border: 1px solid var(--pq-line);
+}
+
+.arena-nota__valor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.arena-nota__valor b {
+  font-size: 34px;
+  font-weight: 950;
+  letter-spacing: -1px;
+}
+
+.arena-nota__valor span {
+  color: var(--pq-warning, #f5a524);
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+.arena-nota p {
+  margin: 0 0 0 auto;
+  color: var(--pq-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Cartoes de avaliacao, e nao uma coluna de texto corrido. */
+.arena-review-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.arena-review {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--pq-panel);
+  border: 1px solid var(--pq-line);
+}
+
+.arena-review header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.arena-review header > div {
+  display: grid;
+  min-width: 0;
+}
+
+.arena-review header strong {
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.arena-review header small {
+  color: var(--pq-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.arena-review__avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-weight: 900;
+}
+
+.arena-review__estrelas {
+  margin-left: auto;
+  color: var(--pq-warning, #f5a524);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.arena-review p {
+  margin: 0;
+  color: var(--pq-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* As secoes ganham raio e fundo: antes eram linhas horizontais separando
+   texto solto, e a pagina lia como documento em vez de vitrine. */
+.arena-bloco {
+  margin-top: 22px;
+  padding: 22px;
+  border: 1px solid var(--pq-line);
+  border-top: 1px solid var(--pq-line);
+  border-radius: 20px;
+  background: var(--pq-panel-2, transparent);
+}

@@ -476,7 +476,17 @@ export async function renderManagerSettings(root) {
       `<option${dados.esporte === s ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
   }
 
-  ['nome', 'descricao', 'endereco', 'telefone', 'email', 'pixTipo', 'pixChave', 'pixTitular']
+  /* `bairro` FALTAVA NESTA LISTA, e isso APAGAVA o bairro.
+
+     O campo ficava vazio ao abrir a tela, e o submit manda
+     `bairro: String(d.get('bairro') ?? '')` — string vazia. Ou seja: bastava
+     entrar em Configuracoes, trocar QUALQUER coisa (o telefone, a logo) e
+     salvar, para o bairro da arena ser zerado no banco. E o bairro e o campo
+     por onde o jogador procura ("quadra na Savassi") e o que posiciona a arena
+     no mapa: sumia sem nada na tela dizendo que sumiu.
+
+     Foi assim que a arena virou "Belo Horizonte · Belo Horizonte" no app. */
+  ['nome', 'descricao', 'endereco', 'bairro', 'telefone', 'email', 'pixTipo', 'pixChave', 'pixTitular']
     .forEach((campo) => {
       if (form.elements[campo]) form.elements[campo].value = dados[campo] ?? '';
     });

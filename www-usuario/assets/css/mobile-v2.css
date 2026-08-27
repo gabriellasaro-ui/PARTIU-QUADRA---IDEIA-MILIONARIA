@@ -8221,31 +8221,39 @@ html[data-theme="dark"] {
   padding-inline: 8px;
 }
 
-/* TOPO DO PERFIL: a logo, e o nome logo abaixo. So isso.
+/* == TOPO DO PERFIL DA ARENA =============================================
 
-   A primeira versao abria com a galeria ocupando a tela inteira, copiada da
-   ficha da quadra. A arena nao tem album proprio — aquelas fotos sao das
-   quadras e se repetem nos cards logo abaixo — e bastava uma delas nao
-   carregar para o perfil abrir com um retangulo vazio do tamanho do celular.
-   Quem entra aqui quer saber DE QUEM e o lugar, e quem responde isso e a
-   marca. */
+   A logo, e o nome LOGO ABAIXO.
+
+   Nao ha galeria: a arena nao tem album proprio (as fotos sao das quadras e se
+   repetem nos cards abaixo), e bastava uma nao carregar para o perfil abrir
+   com um retangulo vazio do tamanho do celular. Quem entra aqui quer saber DE
+   QUEM e o lugar.
+
+   Refeito depois do retorno "informacoes muito pequenas / ta quadrado": logo e
+   nome maiores, e o cabecalho ganhou raio embaixo para nao terminar num corte
+   reto atravessando a tela. */
+.arena-page {
+  background: var(--pq-app-bg);
+}
+
 .arena-topo {
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding: 0 20px 18px;
+  gap: 4px;
+  padding: 0 20px 20px;
   text-align: center;
   background: var(--pq-panel);
+  border-bottom-left-radius: 22px;
+  border-bottom-right-radius: 22px;
 }
 
-/* Voltar e favoritar continuam nos cantos, na altura de sempre — sem a foto
-   por baixo eles passam a ser conteudo, e nao sobreposicao. */
 .arena-topo__barra {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 10px 0 4px;
+  padding: 10px 0 2px;
 }
 
 .arena-topo__barra .back,
@@ -8257,15 +8265,15 @@ html[data-theme="dark"] {
 .arena-topo__logo {
   display: grid;
   place-items: center;
-  width: 84px;
-  height: 84px;
-  margin-top: 6px;
+  width: 96px;
+  height: 96px;
+  margin-top: 4px;
   border: 1px solid var(--pq-line);
   border-radius: 50%;
   overflow: hidden;
   background: var(--pq-tint);
   color: var(--pq-brand-deep);
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 950;
   letter-spacing: .5px;
 }
@@ -8281,10 +8289,11 @@ html[data-theme="dark"] {
 }
 
 .arena-topo h1 {
-  margin: 6px 0 0;
-  font-size: 22px;
+  margin: 10px 0 0;
+  font-size: 25px;
   font-weight: 950;
-  line-height: 1.2;
+  line-height: 1.15;
+  letter-spacing: -.3px;
 }
 
 .arena-topo__local {
@@ -8293,14 +8302,15 @@ html[data-theme="dark"] {
   gap: 5px;
   margin: 0;
   color: var(--pq-muted);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
 }
 
 .arena-topo__local .ic {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
 }
+
 
 .arena-facts .ic {
   grid-row: 1 / 3;
@@ -13511,109 +13521,306 @@ html[data-theme="dark"] {
   opacity: .4;
 }
 
-/* ── A tela do perfil ───────────────────────────────────────────────────── */
+/* == CORPO DO PERFIL DA ARENA ============================================
 
-/* Tres fatos, e nao dois: a arena acrescenta "quantas quadras" aos dois que a
-   tela da quadra ja mostrava. Com o grid de duas colunas herdado, o terceiro
-   caia sozinho numa segunda linha, desalinhado do resto. */
-[data-arena-page] .arena-facts {
+   "Informacoes muito pequenas" e "ta quadrado" eram duas coisas reais: os
+   numeros que decidem a compra (nota, quantas quadras, a partir de quanto)
+   estavam em 11px numa faixa de borda a borda, e cada secao era texto solto
+   entre linhas horizontais — nada tinha forma de cartao, entao a tela lia como
+   documento em vez de vitrine. */
+
+.arena-body {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+  padding-bottom: 26px;
+}
+
+/* -- Os numeros que decidem ------------------------------------------- */
+.arena-numeros {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-[data-arena-page] .arena-facts > span {
-  padding-inline: 8px;
-}
-
-/* Arena sem nenhuma foto de quadra: em vez do retangulo cinza, a faixa
-   encolhe para o tamanho da barra de navegacao. O cabecalho logo abaixo, com
-   logo e nome, ja identifica a arena sozinho. */
-.arena-hero.sem-foto {
-  min-height: 92px;
-  background: var(--pq-tint);
-}
-
-.arena-hero.sem-foto .venue-hero-photo-count,
-.arena-hero.sem-foto .venue-hero-dots {
-  display: none;
-}
-
-.arena-facts .ic {
-  width: 14px;
-  height: 14px;
-}
-
-[data-arena-page] .arena-facts {
-  margin: 0;
-  padding: 12px 16px;
-  border-top: 1px solid var(--pq-line);
-  border-bottom: 1px solid var(--pq-line);
+  padding: 15px 8px;
+  border-radius: 18px;
   background: var(--pq-panel);
+  box-shadow: 0 1px 3px rgba(5, 13, 9, .05);
+  text-align: center;
 }
 
+.arena-numeros > div {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 0 6px;
+}
+
+.arena-numeros > div + div {
+  border-left: 1px solid var(--pq-line);
+}
+
+.arena-numeros b {
+  font-size: 21px;
+  font-weight: 950;
+  line-height: 1.1;
+  letter-spacing: -.4px;
+}
+
+.arena-numeros small {
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.arena-numeros__estrelas {
+  display: flex;
+  gap: 1px;
+}
+
+.arena-numeros__estrelas .ic {
+  width: 11px;
+  height: 11px;
+  color: var(--pq-warning, #f5a524);
+  fill: currentColor;
+}
+
+.arena-numeros__estrelas .ic.is-empty {
+  fill: none;
+  opacity: .35;
+}
+
+/* -- Ver no mapa ------------------------------------------------------- */
 .arena-map-cta {
-  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--pq-brand);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 850;
 }
 
-/* A distancia encostada no botao do mapa: o numero sozinho ("2,2 km") nao
-   dizia nada; ao lado de "Ver no mapa" ele vira o motivo de tocar. */
-.arena-map-cta__km {
+.arena-map-cta .ic {
+  width: 19px;
+  height: 19px;
+}
+
+.arena-map-cta b {
   margin-left: auto;
+  font-size: 13px;
+  font-weight: 800;
+  opacity: .85;
+}
+
+.arena-map-cta__seta {
+  margin-left: 0;
+  opacity: .8;
+}
+
+/* -- Secoes ------------------------------------------------------------ */
+.arena-cartao {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--pq-panel);
+  box-shadow: 0 1px 3px rgba(5, 13, 9, .05);
+}
+
+.arena-cartao h2,
+.arena-secao h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 16.5px;
+  font-weight: 900;
+  letter-spacing: -.2px;
+}
+
+.arena-cartao h2 small,
+.arena-secao h2 small {
   color: var(--pq-muted);
   font-size: 12px;
   font-weight: 800;
 }
 
-/* O bloco de identidade agora LEVA a algum lugar, entao precisa parecer que
-   leva: a seta faz o trabalho que em lista se faz com o chevron da direita. */
-.arena-identity.is-link {
-  position: relative;
-  padding-right: 26px;
-  cursor: pointer;
-}
-
-.arena-identity__seta {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  color: var(--pq-muted);
-}
-
-.arena-identity__seta .ic {
-  width: 18px;
-  height: 18px;
-}
-
-.arena-body {
+.arena-secao {
   display: grid;
-  gap: 22px;
-  padding-top: 18px;
+  gap: 12px;
+  margin-top: 6px;
 }
 
-.arena-section {
+.arena-sobre {
+  margin: 0;
+  color: var(--pq-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Comodidade vira pilula: sao rotulos curtos, e a grade de duas colunas da
+   ficha da quadra deixava metade da linha vazia. */
+.arena-comodidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.arena-comodidade {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.arena-comodidade .ic {
+  width: 15px;
+  height: 15px;
+}
+
+.arena-court-list {
   display: grid;
   gap: 12px;
 }
 
-.arena-sobre {
+/* -- Avaliacoes -------------------------------------------------------- */
+.arena-nota {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--pq-panel);
+  box-shadow: 0 1px 3px rgba(5, 13, 9, .05);
+}
+
+.arena-nota__valor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* As estrelas precisam do proprio flex: `ratingStars` devolve <i> soltos, e
+   dentro de um <span> normal eles empilhavam na vertical. */
+.arena-nota__valor > span {
+  display: flex;
+  gap: 2px;
+}
+
+.arena-nota__valor b {
+  font-size: 30px;
+  font-weight: 950;
+  letter-spacing: -1px;
+}
+
+.arena-nota__valor .ic {
+  width: 15px;
+  height: 15px;
+  color: var(--pq-warning, #f5a524);
+  fill: currentColor;
+}
+
+.arena-nota__valor .ic.is-empty {
+  fill: none;
+  opacity: .35;
+}
+
+.arena-nota p {
+  margin: 0 0 0 auto;
+  color: var(--pq-muted);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.arena-review-list {
+  display: grid;
+  gap: 10px;
+}
+
+.arena-review {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--pq-panel);
+  box-shadow: 0 1px 3px rgba(5, 13, 9, .05);
+}
+
+.arena-review header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.arena-review header > div {
+  display: grid;
+  min-width: 0;
+}
+
+.arena-review header strong {
+  font-size: 13.5px;
+  font-weight: 850;
+}
+
+.arena-review header small {
+  color: var(--pq-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.arena-review__avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.arena-review__estrelas {
+  display: flex;
+  gap: 1px;
+  margin-left: auto;
+}
+
+.arena-review__estrelas .ic {
+  width: 12px;
+  height: 12px;
+  color: var(--pq-warning, #f5a524);
+  fill: currentColor;
+}
+
+.arena-review__estrelas .ic.is-empty {
+  fill: none;
+  opacity: .3;
+}
+
+.arena-review p {
   margin: 0;
   color: var(--pq-muted);
   font-size: 13.5px;
   line-height: 1.55;
 }
 
-.section-count {
-  color: var(--pq-muted);
-  font-size: 12px;
-  font-weight: 800;
+.arena-review-mais {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-panel);
+  color: var(--pq-brand-deep);
+  font-size: 13.5px;
+  font-weight: 850;
 }
 
-/* Uma coluna: dentro do perfil os cards sao o conteudo principal da tela, e
-   nao uma faixa lateral por onde se passa o dedo. */
-.arena-court-list {
-  display: grid;
-  gap: 12px;
-}
 
 /* Foto que nao carregou: o lugar dela vira um icone discreto, e nao um vazio
    com o texto alternativo atravessado. */

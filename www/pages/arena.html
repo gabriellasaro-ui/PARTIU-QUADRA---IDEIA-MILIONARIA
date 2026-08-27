@@ -1,25 +1,25 @@
 <!-- PERFIL DA ARENA — a vitrine entre a busca e a quadra.
 
-     O topo e A LOGO E O NOME LOGO ABAIXO. So isso.
+     O topo e A LOGO E O NOME LOGO ABAIXO.
 
-     A primeira versao abria com a galeria de fotos ocupando a tela inteira, do
-     jeito da ficha da quadra. Errado por dois motivos: a arena nao tem album
-     proprio (as fotos sao das quadras, e elas ja aparecem nos cards logo
-     abaixo, repetidas), e quando uma dessas fotos nao carrega o perfil abre com
-     um retangulo vazio do tamanho do celular. Quem entra aqui quer saber DE
-     QUEM e o lugar; e a marca que responde isso, nao uma foto de campo igual a
-     de todo mundo.
+     Nao ha galeria aqui: a arena nao tem album proprio (as fotos sao das
+     quadras e se repetem nos cards abaixo), e bastava uma nao carregar para o
+     perfil abrir com um retangulo vazio do tamanho do celular. Quem entra aqui
+     quer saber DE QUEM e o lugar.
 
-     O QUE ESTA TELA NAO TEM, de proposito: telefone, WhatsApp, e-mail e rua.
-     Quem sai daqui com o contato fecha por fora e a reserva nao acontece — a
-     mesma regra do chat, que so abre depois da reserva paga. O backend nem
-     envia esses campos. -->
-<div class="route-page" data-arena-page>
+     SAIU O SELO "ARENA VERIFICADA". Nao existe campo de verificacao no banco
+     nem processo nenhum por tras dele — era um selo de confianca afirmando
+     algo que o produto nao faz. Enquanto nao houver um criterio de verdade
+     (documento conferido, visita, o que for), o selo mente para quem esta
+     decidindo onde gastar dinheiro.
+
+     E nao ha telefone, WhatsApp, e-mail nem rua: quem sai daqui com o contato
+     fecha por fora e a reserva nao acontece. O backend nem envia esses campos. -->
+<div class="route-page arena-page" data-arena-page>
   <header class="arena-topo">
     <div class="arena-topo__barra">
       <a data-voltar class="back" href="#quadras" aria-label="Voltar"><i class="ic" data-lucide="chevron-left"></i></a>
-      <!-- Favoritar ja opera por arena no banco (`UserFavorite.arena_id`): e
-           aqui que o botao sempre pertenceu. -->
+      <!-- Favoritar ja opera por arena no banco (`UserFavorite.arena_id`). -->
       <button class="hero-favorite" type="button" data-favorite-toggle aria-label="Salvar nos favoritos">
         <i class="ic" data-lucide="heart"></i>
       </button>
@@ -28,53 +28,70 @@
     <span class="arena-topo__logo" data-arena-logo aria-hidden="true"></span>
     <h1 data-arena-name></h1>
     <p class="arena-topo__local"><i class="ic" data-lucide="map-pin"></i><span data-arena-local></span></p>
-    <span class="verified-label"><i class="ic" data-lucide="badge-check"></i>Arena verificada</span>
   </header>
 
-  <div class="arena-facts">
-    <span class="arena-rating"><i class="ic" data-lucide="star"></i><b data-arena-rating></b><small data-arena-reviews></small></span>
-    <span><i class="ic" data-lucide="layout-grid"></i><b data-arena-courts></b><small>para alugar</small></span>
-    <span><i class="ic" data-lucide="circle-dollar-sign"></i><b data-arena-price></b><small>a partir de</small></span>
-  </div>
-
   <div class="container arena-body">
+    <!-- Os numeros que decidem: nota, quantas quadras, e a partir de quanto.
+         Em cartao e em corpo grande — antes eram tres linhas de 11px que
+         ninguem lia. -->
+    <div class="arena-numeros">
+      <div>
+        <b data-arena-rating></b>
+        <span class="arena-numeros__estrelas" data-arena-stars aria-hidden="true"></span>
+        <small data-arena-reviews></small>
+      </div>
+      <div>
+        <b data-arena-courts></b>
+        <small>quadras</small>
+      </div>
+      <div>
+        <b data-arena-price></b>
+        <small>a partir de</small>
+      </div>
+    </div>
+
     <!-- "2,2 km" nao responde a pergunta que a pessoa faz, que e "isso e longe
          DE MIM?". O mapa responde de olhar — e e o nosso, nao o de fora. -->
-    <a class="btn btn-soft block arena-map-cta" data-arena-map href="#mapa">
-      <i class="ic" data-lucide="map"></i>Ver no mapa
-      <span class="arena-map-cta__km" data-arena-distance></span>
+    <a class="arena-map-cta" data-arena-map href="#mapa">
+      <i class="ic" data-lucide="map"></i>
+      <span>Ver no mapa</span>
+      <b data-arena-distance></b>
+      <i class="ic arena-map-cta__seta" data-lucide="chevron-right"></i>
     </a>
 
-    <section class="arena-section" data-arena-sobre hidden>
-      <div class="venue-section-head"><h2>Sobre a arena</h2></div>
+    <section class="arena-cartao" data-arena-sobre hidden>
+      <h2>Sobre a arena</h2>
       <p class="arena-sobre" data-arena-descricao></p>
     </section>
 
-    <!-- COMODIDADES DA ARENA: a uniao das comodidades das quadras.
-
-         Vestiario, estacionamento e bar sao do LUGAR, e o dono ja marca isso
-         em cada quadra. Juntar aqui evita pedir o mesmo cadastro duas vezes. -->
-    <section class="arena-section" data-arena-comodidades-section hidden>
-      <div class="venue-section-head"><h2>O que a arena tem</h2></div>
-      <div class="venue-amenities" data-arena-comodidades></div>
+    <!-- COMODIDADES DA ARENA: a uniao do que esta marcado nas quadras.
+         Vestiario e estacionamento sao do LUGAR, e o dono ja cadastra isso em
+         cada quadra — pedir de novo garantiria que os dois divergissem. -->
+    <section class="arena-cartao" data-arena-comodidades-section hidden>
+      <h2>O que a arena tem</h2>
+      <div class="arena-comodidades" data-arena-comodidades></div>
     </section>
 
-    <section class="arena-section">
-      <div class="venue-section-head">
-        <h2>Quadras disponíveis</h2>
-        <span class="section-count" data-arena-courts-label></span>
-      </div>
+    <section class="arena-secao">
+      <h2>Quadras disponíveis <small data-arena-courts-label></small></h2>
       <!-- Os mesmos cards da busca, sem o nome da arena repetido: aqui ele
            esta no topo da tela e sairia identico em todos eles. -->
       <div class="arena-court-list" data-arena-court-list></div>
     </section>
 
-    <section class="arena-section" data-arena-reviews-section hidden>
-      <div class="venue-section-head">
-        <h2>Avaliações</h2>
-        <span class="section-count" data-arena-review-count></span>
+    <section class="arena-secao" data-arena-reviews-section hidden>
+      <h2>Avaliações</h2>
+      <!-- Resumo antes da lista: a nota media e o que a pessoa quer primeiro;
+           os comentarios sao a explicacao dela. -->
+      <div class="arena-nota">
+        <div class="arena-nota__valor">
+          <b data-arena-review-media></b>
+          <span data-arena-review-stars aria-hidden="true"></span>
+        </div>
+        <p data-arena-review-count></p>
       </div>
-      <div class="venue-review-list" data-arena-review-list></div>
+      <div class="arena-review-list" data-arena-review-list></div>
+      <button type="button" class="arena-review-mais" data-arena-review-mais hidden></button>
     </section>
   </div>
 </div>
