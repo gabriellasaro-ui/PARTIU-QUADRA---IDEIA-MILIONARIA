@@ -501,9 +501,19 @@
 
 .game-player {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* A TERCEIRA COLUNA EXISTE MESMO SEM SELO.
+
+     Com `auto`, o card de quem ainda nao confirmou nao tinha terceira coluna e
+     o nome esticava ate a borda; o de quem confirmou parava antes. Lado a
+     lado, os nomes terminavam em pontos diferentes e a lista parecia
+     desalinhada a cada jogador que entrava. `minmax(0, 108px)` reserva o
+     espaco do selo em todos, entao a coluna do nome tem sempre a mesma
+     largura. */
+  grid-template-columns: 34px minmax(0, 1fr) minmax(0, 108px);
   align-items: center;
   gap: 10px;
+  /* Altura igual em todos, com ou sem selo: a lista e lida de relance. */
+  min-height: 60px;
   padding: 10px 13px;
   border: 1px solid var(--pq-line);
   border-radius: 18px;
@@ -537,15 +547,44 @@
 
 .game-player__meta {
   display: flex;
+  align-items: center;
   gap: 6px;
   overflow: hidden;
   margin-top: 2px;
   color: var(--pq-muted);
-  font-size: 9.5px;
+  /* 9,5px era pequeno demais para posicao e nota — o dado que diferencia um
+     jogador do outro saia menor que qualquer outra coisa da tela. */
+  font-size: 11.5px;
   white-space: nowrap;
 }
 
+/* A ESTRELA NAO PODE MANDAR NA LINHA.
+
+   `.ic` sem tamanho declarado herda o padrao do sprite — no meio de um texto
+   de 9,5px ela saia com quase o triplo da altura, esticava a linha e empurrava
+   a NOTA para uma segunda linha, embaixo do proprio icone. O card ficava com
+   duas alturas diferentes conforme o jogador tivesse ou nao horario de
+   confirmacao, e a lista inteira desalinhava. */
+.game-player__meta .ic {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  color: var(--pq-gold, #a06400);
+}
+
+/* Cada pedaco da meta e uma unidade: sem isso "4.8" se separa da estrela. */
+.game-player__meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
 .game-player__badge {
+  /* Encostado a direita e do tamanho do texto: com a coluna reservada em
+     108px ele esticava ate a borda e virava um bloco maior que o proprio
+     rotulo. */
+  justify-self: end;
   flex-shrink: 0;
   padding: 4px 8px;
   border-radius: 999px;
@@ -1705,4 +1744,18 @@ body.is-tv-open { overflow: hidden; }
 
 .game-card__countdown small {
   font-size: 9.5px;
+}
+
+/* Bloco de envio da avaliacao — entrou no lugar das fotos da partida. */
+.game-rating-envio {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.game-rating__aviso {
+  margin: 0;
+  color: var(--pq-muted);
+  font-size: 13px;
+  text-align: center;
 }

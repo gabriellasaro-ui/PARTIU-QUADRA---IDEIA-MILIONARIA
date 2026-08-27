@@ -129,6 +129,10 @@ def _match_dict(db: Session, match: Match, user, booking=None, arena=None) -> di
     return {
         "id": str(match.id),
         "reservationCode": booking.code if booking else "",
+        # O ID da reserva, e nao so o codigo: a avaliacao do pos-jogo precisa
+        # dele para chamar POST /api/reservas/{id}/avaliar. Ate agora a tela
+        # tinha as estrelas e nenhum jeito de enviar a nota.
+        "reservationId": str(booking.id) if booking else "",
         "venueId": str(match.arena_id),
         "venueName": match.venue_name,
         "venueImage": (arena.logo or "") if arena else "",

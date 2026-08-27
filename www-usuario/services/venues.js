@@ -503,6 +503,16 @@ export const venueService = {
     return null;
   },
 
+  /* Avaliar a arena depois do jogo. Uma por reserva — o backend devolve 409 na
+     segunda, e a tela do pos-jogo trata isso. */
+  async avaliarReserva(reservaId, nota, comentario) {
+    if (!API_BASE_URL || !reservaId) return null;
+    return api.post(`/api/reservas/${encodeURIComponent(reservaId)}/avaliar`, {
+      nota: Number(nota),
+      comentario: comentario || null
+    });
+  },
+
   async getActiveMatch() {
     if (API_BASE_URL) return api.get('/api/partidas/ativa');
     const match = clone(ACTIVE_MATCH);

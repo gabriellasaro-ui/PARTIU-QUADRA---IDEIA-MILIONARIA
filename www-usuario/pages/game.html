@@ -174,14 +174,23 @@
           <div class="game-rating__stars" data-rating="organizacao"></div>
         </div>
 
-        <div class="game-section-title">
-          Fotos da partida
-          <span id="gamePhotoCount">0</span>
-        </div>
-        <div class="game-photo-grid" id="gamePhotoGrid">
-          <button class="game-photo-add game-photo-item" id="gamePhotoAdd" type="button">
-            <i class="ic" data-lucide="plus"></i>
+        <!-- FOTOS DA PARTIDA: removidas a pedido.
+
+             Elas nunca saiam do aparelho: `URL.createObjectURL` cria um
+             endereco temporario na memoria do navegador, que morre ao fechar o
+             app. Nao havia upload, nem lugar no servidor para guardar. Era uma
+             etapa a mais no fim do jogo, entregando um album que se apagava
+             sozinho.
+
+             No lugar dela fica a avaliacao — que ate agora tambem nao saia
+             daqui: as estrelas so acendiam por CSS e a nota nunca era enviada,
+             embora POST /api/reservas/{id}/avaliar exista desde a Fase 3. -->
+        <div class="game-rating-envio" id="gameRatingEnvio">
+          <button class="game-btn game-btn--primary" id="gameEnviarAvaliacao" type="button">
+            <i class="ic" data-lucide="send"></i>
+            Enviar avaliação
           </button>
+          <p class="game-rating__aviso" id="gameRatingAviso" hidden></p>
         </div>
 
         <div class="game-actions">

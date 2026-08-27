@@ -565,15 +565,35 @@ def mensalista_sessions(db: Session, manager, booking_id) -> list[dict]:
     booking, court, _, _ = _get_arena_booking(db, arena, booking_id)
     if booking.plan != PLAN_MENSALISTA or not booking.group_id:
         raise HTTPException(status_code=404, detail="Mensalista não encontrado")
+    grupo = repo.group_bookings(db, booking.group_id)
+
+    """R$ 0,00 NAS SESSOES ERA VERDADE NO BANCO E MENTIRA NA TELA.
+
+    O mensalista e cobrado UMA vez, no mes: a primeira reserva do grupo leva o
+    valor inteiro e as outras tres ficam com subtotal zero. A tela mostrava
+    isso cru — "R$ 480,00" na primeira linha e "R$ 0,00" nas seguintes — e
+    lido de fora parece que tres jogos sairam de graca, ou que o sistema
+    perdeu o valor. O dono abriu o plano e viu exatamente isso.
+
+    As sessoes nao sao gratis: estao incluidas no mes. Entao cada linha passa a
+    mostrar QUANTO ELA VALE DENTRO DO PLANO — o total dividido pelas sessoes —
+    e a soma da coluna volta a bater com o que foi cobrado. `valorPlano` vai
+    junto para a tela poder dizer de onde sai o numero, em vez de o dono ter de
+    adivinhar por que a conta fecha.
+    """
+    total_cents = sum(b.subtotal_cents or 0 for b in grupo)
+    por_sessao = round(total_cents / len(grupo) / 100, 2) if grupo else 0.0
+
     sessions = []
-    for s in repo.group_bookings(db, booking.group_id):
+    for s in grupo:
         local = _as_local(s.start_at)
         sessions.append({
             "id": str(s.id),
             "data": local.strftime("%d/%m/%Y"),
             "dataValue": local.strftime("%Y-%m-%d"),
             "hora": f"{local.strftime('%H:%M')} – {_as_local(s.end_at).strftime('%H:%M')}",
-            "valor": s.subtotal_cents / 100,
+            "valor": por_sessao,
+            "valorPlano": round(total_cents / 100, 2),
             "status": _STATUS_LABEL.get(s.status, s.status),
             "statusClass": _STATUS_CLASS.get(s.status, "pendente"),
         })

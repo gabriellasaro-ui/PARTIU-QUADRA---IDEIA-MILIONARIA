@@ -250,23 +250,11 @@ function updatePostGame(m) {
   initStars($id('gameRatingQuadra').querySelector('.game-rating__stars'));
   initStars($id('gameRatingOrganizacao').querySelector('.game-rating__stars'));
 
-  if (m.photos && m.photos.length > 0) {
-    renderPhotos(m.photos);
-  }
-}
-
-function renderPhotos(photos) {
-  const grid = $id('gamePhotoGrid');
-  const addBtn = grid.querySelector('.game-photo-add');
-  grid.innerHTML = '';
-  photos.forEach(url => {
-    const div = document.createElement('div');
-    div.className = 'game-photo-item';
-    div.innerHTML = `<img src="${url}" alt="Foto da partida">`;
-    grid.appendChild(div);
-  });
-  grid.appendChild(addBtn);
-  $id('gamePhotoCount').textContent = photos.length;
+  /* Sem reserva ligada a partida nao ha o que avaliar: o endpoint e por
+     reserva. Esconder o bloco e melhor do que oferecer um botao que responde
+     404. */
+  const envio = $id('gameRatingEnvio');
+  if (envio) envio.hidden = !m.reservationId;
 }
 
 function switchPhase(phase) {
@@ -947,20 +935,36 @@ function bindEvents() {
   $('gameTvBtn')?.addEventListener('click', openTvMode);
   qsa('[data-game-tv-close]').forEach((btn) => btn.addEventListener('click', closeTvMode));
 
-  $('gamePhotoAdd')?.addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = true;
-    input.onchange = async (e) => {
-      if (!match) return;
-      const files = Array.from(e.target.files);
-      match.photos = match.photos || [];
-      files.forEach(f => match.photos.push(URL.createObjectURL(f)));
-      renderPhotos(match.photos);
-      window.pqToast?.(`${files.length} foto(s) adicionada(s)`);
-    };
-    input.click();
+  /* ENVIAR A AVALIACAO — o que a etapa da foto virou.
+
+     As estrelas existiam desde sempre e nao saiam da tela: `initStars` so
+     alternava uma classe de CSS. A rota POST /api/reservas/{id}/avaliar existe
+     desde a Fase 3 e ninguem chamava. A nota que o jogador dava a arena morria
+     no aparelho dele — e a media que aparece na busca nunca via aquele voto.
+
+     Uma avaliacao por reserva e regra do backend: repetir devolve 409, e a
+     tela diz isso em vez de deixar o dedo batendo no botao. */
+  $('gameEnviarAvaliacao')?.addEventListener('click', async (ev) => {
+    if (!match?.reservationId) return;
+    const estrelas = document.querySelectorAll('#gameRatingQuadra .game-rating__star.active');
+    const aviso = $id('gameRatingAviso');
+    const dizer = (texto) => { if (aviso) { aviso.hidden = false; aviso.textContent = texto; } };
+
+    if (!estrelas.length) { dizer('Escolha de 1 a 5 estrelas para a quadra.'); return; }
+
+    const botao = ev.currentTarget;
+    botao.disabled = true;
+    try {
+      await venueService.avaliarReserva(match.reservationId, estrelas.length);
+      dizer('Avaliação enviada. Obrigado!');
+      botao.hidden = true;
+      window.pqToast?.('Avaliação enviada');
+    } catch (erro) {
+      dizer(erro?.status === 409
+        ? 'Você já avaliou esta partida.'
+        : (erro?.message || 'Não foi possível enviar agora.'));
+      botao.disabled = false;
+    }
   });
 
   $('gameShareResult')?.addEventListener('click', () => {
