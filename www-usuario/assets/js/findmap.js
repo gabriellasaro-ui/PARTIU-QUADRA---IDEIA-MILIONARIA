@@ -23,9 +23,9 @@
     var base = el.dataset.detailBase || '/quadra/';
 
     var map = L.map(el, { scrollWheelZoom: false, zoomControl: true }).setView([ulat, ulng], 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      subdomains: 'abcd', maxZoom: 19
+    // OpenStreetMap direto: a CARTO passou a pedir chave de API.
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap', maxZoom: 19
     }).addTo(map);
 
     var pts = [[ulat, ulng]];

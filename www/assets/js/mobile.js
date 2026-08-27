@@ -1080,13 +1080,23 @@ async function renderMap(root, route) {
 
   /* O mapa e IMAGEM, nao CSS: nenhum token o alcanca. No escuro, o basemap
      claro virava uma placa branca ofuscante ocupando a tela inteira — o unico
-     retangulo aceso num app escuro. A CARTO publica o par escuro do mesmo
-     mapa, entao e so trocar a variante e as ruas continuam iguais. */
-  const temaEscuro = document.documentElement.getAttribute('data-theme') === 'dark';
-  const variante = temaEscuro ? 'dark_all' : 'light_all';
-  window.L.tileLayer(`https://{s}.basemaps.cartocdn.com/${variante}/{z}/{x}/{y}{r}.png`, {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: 'abcd',
+     retangulo aceso num app escuro.
+
+     A CARTO SAIU: comecou a pedir chave de API. Um mapa que depende de conta
+     em servico de terceiro e um mapa que pode apagar sozinho no dia em que a
+     cota virar, sem ninguem mexer no codigo. Os tiles agora vem direto do
+     OpenStreetMap, que nao pede chave nenhuma.
+
+     A troca custou o par claro/escuro pronto que a CARTO publicava. O escuro
+     passa a ser um FILTRO CSS sobre os tiles (`html[data-theme=dark]
+     .leaflet-tile-pane`): inverter e girar o matiz devolve um mapa escuro com
+     as ruas no lugar, e o filtro pega so o painel dos tiles — marcadores e
+     popups ficam intactos, porque vivem em paineis irmaos.
+
+     Sem `{s}` e sem `{r}`: o OSM aposentou os subdominios a,b,c e nao serve
+     tile @2x. Deixar os dois pedaços na URL daria 404 em toda imagem. */
+  window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
     maxZoom: 19
   }).addTo(activeMobileMap);
   window.L.control.zoom({ position: 'topright' }).addTo(activeMobileMap);

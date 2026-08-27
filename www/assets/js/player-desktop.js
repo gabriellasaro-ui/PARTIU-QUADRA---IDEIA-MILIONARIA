@@ -534,9 +534,11 @@ function initExploreMap(root) {
   desktopMap?.remove();
   const venues = JSON.parse(root.dataset.mapVenues || '[]');
   desktopMap = window.L.map(mapElement).setView(coordenadaAtual(), zoomParaRaio(raioKm()));
-  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: 'abcd',
+  /* Tiles do OpenStreetMap: a CARTO passou a pedir chave de API, e mapa preso
+     a conta de terceiro apaga sozinho no dia em que a cota virar. Sem `{s}`
+     (subdominios aposentados) e sem `{r}` (nao ha tile @2x). */
+  window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
     maxZoom: 19
   }).addTo(desktopMap);
   const bounds = [coordenadaAtual()];

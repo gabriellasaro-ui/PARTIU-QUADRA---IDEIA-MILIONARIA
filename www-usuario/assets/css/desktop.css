@@ -4320,3 +4320,21 @@ html[data-player-desktop] .desktop-arena-identity--perfil .fav-heart {
   color: var(--pq-brand-deep);
   box-shadow: 0 1px 2px rgba(5, 13, 9, .08);
 }
+
+/* == MAPA ESCURO SEM DEPENDER DE TERCEIRO ================================
+
+   A CARTO publicava um par claro/escuro do mesmo mapa e bastava trocar a
+   variante. Ela saiu (passou a pedir chave de API) e o OpenStreetMap so tem a
+   versao clara — que, num app escuro, vira a unica placa acesa da tela.
+
+   O filtro resolve no cliente: inverter deixa o fundo escuro e o texto claro,
+   e girar o matiz em 180 graus devolve as cores para o lado certo (sem isso a
+   vegetacao fica rosa e a agua laranja). Brilho e contraste baixos tiram o
+   cinza-chiclete que a inversao pura produz.
+
+   `.leaflet-tile-pane` E NAO o mapa inteiro: marcadores, popups e controles
+   vivem em paineis irmaos e continuam com as cores da marca. Filtrar o
+   container inverteria o verde dos alfinetes junto. */
+html[data-theme="dark"] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.9);
+}
