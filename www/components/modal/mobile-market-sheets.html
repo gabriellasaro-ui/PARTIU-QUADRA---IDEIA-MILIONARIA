@@ -39,16 +39,18 @@
         <i class="ic" data-lucide="x"></i>
       </button>
     </header>
-    <div class="notification-list">
-      <a href="#reservas" data-sheet-close>
-        <span class="notification-list__icon notification-list__icon--success"><i class="ic" data-lucide="circle-check"></i></span>
-        <span><strong>Reserva confirmada</strong><small>Arena Bola na Rede, hoje às 19:00</small><em>Agora</em></span>
-      </a>
-      <a href="#quadras?agora=1" data-sheet-close>
-        <span class="notification-list__icon"><i class="ic" data-lucide="zap"></i></span>
-        <span><strong>Abriu um horário perto de você</strong><small>Beach Point Arena liberou 20:00</small><em>Há 12 min</em></span>
-      </a>
-    </div>
+    <!-- LISTA VAZIA NO HTML, preenchida por renderNotificacoes.
+
+         Aqui havia duas notificacoes escritas a mao — "Reserva confirmada na
+         Arena Bola na Rede" e "Beach Point Arena liberou 20:00". Elas
+         apareciam para todo mundo, em toda conta, sempre iguais, inclusive
+         para quem nunca tinha reservado nada. E o pior tipo de dado falso: o
+         que parece informacao pessoal. Alguem podia abrir o app achando que
+         tinha uma reserva confirmada que nao existe.
+
+         O backend ja tem /api/notifications desde a Fase 7. Agora e ele que
+         manda, e sem notificacao nenhuma a folha diz isso. -->
+    <div class="notification-list" data-notification-list></div>
     <button class="market-sheet__secondary" type="button" data-mark-notifications>Marcar todas como lidas</button>
   </section>
 </div>

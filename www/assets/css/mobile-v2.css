@@ -853,8 +853,37 @@ button .ic,
   box-shadow: 0 8px 24px rgba(5, 13, 9, .14) !important;
 }
 
+/* O FUNDO TAMBEM PRECISA DE TOKEN, e nao so a cor do texto.
+
+   O Leaflet cor o fundo de `.leaflet-bar a` em `#fff` no CSS dele. Aqui so a
+   cor do texto vinha de token, entao no tema escuro o resultado era texto
+   claro sobre fundo branco: os sinais de + e - sumiam e o controle virava uma
+   pastilha branca cega no canto do mapa.
+
+   E o filtro que escurece os tiles nao alcanca isto de proposito — ele pega
+   `.leaflet-tile-pane`, e os controles vivem noutro painel. Se alcancasse,
+   inverteria os marcadores da marca junto. */
 .leaflet-control-zoom a {
+  background: var(--pq-panel) !important;
   color: var(--pq-ink) !important;
+}
+
+.leaflet-control-zoom a:hover,
+.leaflet-control-zoom a:focus-visible {
+  background: var(--pq-tint) !important;
+}
+
+/* A linha entre o + e o - tambem e fixa no Leaflet (#ccc). */
+.leaflet-control-zoom a + a {
+  border-top-color: var(--pq-line) !important;
+}
+
+/* Zoom no limite: o Leaflet marca o botao como desabilitado e pinta o texto
+   de cinza claro, que no escuro some. */
+.leaflet-control-zoom a.leaflet-disabled {
+  background: var(--pq-panel) !important;
+  color: var(--pq-muted) !important;
+  opacity: .45;
 }
 
 /* Creditos do mapa: botao "i" fechado, caixa de texto aberto.
@@ -13942,4 +13971,41 @@ html[data-theme="dark"] {
    container inverteria o verde dos alfinetes junto. */
 html[data-theme="dark"] .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.9);
+}
+
+/* Folha de notificacoes vazia ou com falha: diz o que esta acontecendo em vez
+   de deixar um retangulo em branco. */
+.notification-list__vazio {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 26px 18px;
+  color: var(--pq-muted);
+  font-size: 13.5px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.notification-list__vazio .ic {
+  width: 26px;
+  height: 26px;
+  opacity: .5;
+}
+
+/* Nao lida ganha um ponto: sem isso, abrir a folha nao dizia o que e novidade. */
+.notification-list a.is-nova {
+  position: relative;
+}
+
+.notification-list a.is-nova::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  transform: translateY(-50%);
 }

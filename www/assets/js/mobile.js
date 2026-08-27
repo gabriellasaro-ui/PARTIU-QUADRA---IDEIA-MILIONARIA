@@ -163,6 +163,83 @@ registrarFecharSobreposicao(() => {
   return true;
 });
 
+/* NOTIFICACOES DE VERDADE, vindas de /api/notifications.
+
+   A folha trazia duas escritas a mao no HTML: "Reserva confirmada na Arena
+   Bola na Rede, hoje as 19:00" e "Beach Point Arena liberou 20:00". Iguais
+   para toda conta, sempre, inclusive para quem nunca reservou nada — e do tipo
+   que se parece com informacao pessoal, entao alguem podia abrir o app
+   acreditando ter uma reserva que nao existe.
+
+   O icone sai da FAMILIA do tipo (o que vem antes do ponto em
+   "booking.approved"): quem le nao precisa distinguir doze icones, precisa
+   saber se e reserva, dinheiro ou conversa. Mesma tabela que o painel do
+   gerente ja usa. */
+const ICONE_NOTIFICACAO = {
+  booking: 'clipboard-check',
+  payment: 'banknote',
+  message: 'messages-square',
+  review: 'star',
+  reserva: 'clipboard-check',
+  clube: 'users',
+  pelada: 'users'
+};
+
+/* Para onde cada familia leva ao tocar. Notificacao que nao vai a lugar nenhum
+   e so um aviso que ocupa espaco. */
+const DESTINO_NOTIFICACAO = {
+  booking: '#reservas',
+  payment: '#reservas',
+  reserva: '#reservas',
+  message: '#mensagens',
+  clube: '#clube',
+  pelada: '#clube'
+};
+
+function quandoFoi(iso) {
+  if (!iso) return '';
+  const minutos = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutos < 1) return 'Agora';
+  if (minutos < 60) return `Há ${minutos} min`;
+  const horas = Math.round(minutos / 60);
+  if (horas < 24) return `Há ${horas} h`;
+  const dias = Math.round(horas / 24);
+  return dias === 1 ? 'Ontem' : `Há ${dias} dias`;
+}
+
+async function renderNotificacoes() {
+  const lista = document.querySelector('[data-notification-list]');
+  if (!lista) return;
+
+  let itens = [];
+  try {
+    itens = await notificationService.list(30);
+  } catch (error) {
+    lista.innerHTML = `<p class="notification-list__vazio">${icon('wifi-off')}Não foi possível carregar agora.</p>`;
+    return;
+  }
+
+  if (!itens.length) {
+    lista.innerHTML = `<p class="notification-list__vazio">${icon('bell-off')}Nada por aqui ainda. Avisos das suas reservas aparecem aqui.</p>`;
+    return;
+  }
+
+  lista.innerHTML = itens.map((n) => {
+    const familia = String(n.type || '').split('.')[0];
+    const naoLida = !n.readAt;
+    return `
+      <a href="${DESTINO_NOTIFICACAO[familia] || '#reservas'}" data-sheet-close data-notif-id="${escapeHtml(String(n.id))}"${naoLida ? ' class="is-nova"' : ''}>
+        <span class="notification-list__icon"><i class="ic" data-lucide="${ICONE_NOTIFICACAO[familia] || 'bell'}"></i></span>
+        <span>
+          <strong>${escapeHtml(n.title || '')}</strong>
+          <small>${escapeHtml(n.body || '')}</small>
+          <em>${escapeHtml(quandoFoi(n.createdAt))}</em>
+        </span>
+      </a>`;
+  }).join('');
+  window.pqRefreshIcons?.(lista);
+}
+
 function openMarketSheet(sheetId) {
   const sheet = document.getElementById(sheetId);
   if (!sheet) return;
@@ -172,6 +249,9 @@ function openMarketSheet(sheetId) {
   });
   sheet.hidden = false;
   document.body.classList.add('market-sheet-open');
+  // A lista e buscada ao ABRIR, e nao no boot: assim ela nunca mostra o que
+  // chegou antes da ultima vez que a pessoa olhou.
+  if (sheetId === 'notifications-sheet') renderNotificacoes();
   document.querySelectorAll(`[data-sheet-open="${sheetId}"]`).forEach((trigger) => {
     trigger.setAttribute('aria-expanded', 'true');
   });
@@ -3497,6 +3577,10 @@ export function initMobileActions() {
 
     const markNotifications = event.target.closest('[data-mark-notifications]');
     if (markNotifications) {
+      /* Marca no SERVIDOR, e nao so no aparelho. A marca local sozinha some no
+         proximo login e nao acompanha quem usa o app em dois lugares — e o
+         contador do topo continuaria aceso do outro lado. */
+      notificationService.markAllRead().catch(() => {});
       storage.set('notifications_read', true);
       syncMarketplaceState(document);
       closeMarketSheet(markNotifications.closest('[data-market-sheet]'));
