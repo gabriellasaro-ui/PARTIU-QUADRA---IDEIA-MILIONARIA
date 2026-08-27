@@ -8129,26 +8129,31 @@ html[data-theme="dark"] {
   scroll-padding-left: 16px;
 }
 
+/* SEM CAIXA: e o circulo da logo com o nome embaixo.
+
+   Um retangulo com raio continua sendo um retangulo — aumentar o raio
+   duas vezes nao resolveu porque o problema era a caixa existir. Tirando
+   borda, fundo e padding sobra a forma que ja era redonda: a logo. O nome
+   e o bairro viram legenda dela, e a faixa deixa de ser uma fileira de
+   caixinhas para virar uma fileira de marcas. */
 .arena-chip {
   scroll-snap-align: start;
   flex: none;
-  width: 148px;
+  width: 104px;
   display: grid;
-  gap: 2px;
-  padding: 14px 12px;
-  border: 1px solid var(--pq-line);
-  border-radius: 20px;
-  background: var(--pq-panel);
-  text-align: center;
   justify-items: center;
+  gap: 2px;
+  padding: 4px 0 2px;
+  text-align: center;
 }
 
 .arena-chip__logo {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  margin-bottom: 6px;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 8px;
+  border: 1px solid var(--pq-line);
   border-radius: 50%;
   background: var(--pq-tint);
   color: var(--pq-brand-deep);
@@ -13442,26 +13447,31 @@ html[data-theme="dark"] {
   scroll-padding-left: 16px;
 }
 
+/* SEM CAIXA: e o circulo da logo com o nome embaixo.
+
+   Um retangulo com raio continua sendo um retangulo — aumentar o raio
+   duas vezes nao resolveu porque o problema era a caixa existir. Tirando
+   borda, fundo e padding sobra a forma que ja era redonda: a logo. O nome
+   e o bairro viram legenda dela, e a faixa deixa de ser uma fileira de
+   caixinhas para virar uma fileira de marcas. */
 .arena-chip {
   scroll-snap-align: start;
   flex: none;
-  width: 148px;
+  width: 104px;
   display: grid;
-  gap: 2px;
-  padding: 14px 12px;
-  border: 1px solid var(--pq-line);
-  border-radius: 20px;
-  background: var(--pq-panel);
-  text-align: center;
   justify-items: center;
+  gap: 2px;
+  padding: 4px 0 2px;
+  text-align: center;
 }
 
 .arena-chip__logo {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  margin-bottom: 6px;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 8px;
+  border: 1px solid var(--pq-line);
   border-radius: 50%;
   background: var(--pq-tint);
   color: var(--pq-brand-deep);
