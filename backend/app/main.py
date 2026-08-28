@@ -201,6 +201,17 @@ def health():
         "app": settings.app_name,
         "version": settings.app_version,
         "environment": settings.environment,
+        # QUANTAS ROTAS ESTE BUILD TEM.
+        #
+        # Existe para responder "o deploy pegou?" numa consulta so. Sem isso a
+        # unica forma de saber era baixar o /openapi.json e comparar a lista
+        # com a local — coisa que ja fizemos tres vezes seguidas, e nas tres o
+        # servidor no ar era mais antigo do que se imaginava.
+        #
+        # E automatico de proposito: um numero de versao cravado a mao so
+        # avisa quando alguem lembra de subi-lo, que e justamente quando nao
+        # avisa. Nao vaza nada — /openapi.json ja e publico.
+        "rotas": len(app.openapi().get("paths", {})),
     }
 
 
