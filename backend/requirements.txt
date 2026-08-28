@@ -27,6 +27,17 @@ requests==2.32.3
 # estiver configurado. O provider mock nao importa firebase-admin.
 firebase-admin==6.5.0
 
+# Cliente HTTP para os servicos de terceiro: ViaCEP (endereco), BrasilAPI
+# (CNPJ + CNAE) e Resend (codigo de verificacao por e-mail).
+#
+# ⚠️ ESTAVA FALTANDO, e o modo de falhar foi o pior possivel: aqui o httpx
+# entra na venv de carona com o TestClient do pytest, entao TUDO passava em
+# desenvolvimento. No container, que instala so este arquivo, o
+# `import httpx` estourava e as tres rotas respondiam 500 — busca de CEP,
+# consulta de CNPJ e envio de codigo. Dependencia de producao nao pode
+# depender de ferramenta de teste para existir.
+httpx==0.28.1
+
 # Rate limiting (Fase 12) — slowapi + limits com storage no Redis
 # (in_memory_fallback_enabled=True quando o Redis cai).
 slowapi==0.1.9
