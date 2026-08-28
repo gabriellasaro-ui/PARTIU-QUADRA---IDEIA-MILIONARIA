@@ -60,6 +60,18 @@
       justify-content: center;
       padding: 24px;
       background: #fff;
+
+      /* UMA medida para painel, arte e recuo do cartao. Os tres precisam bater
+         no mesmo pixel: um valor a menos na arte e sobra uma faixa de verde
+         antes do divisor; um a mais no recuo e o cartao pousa sobre a cena.
+
+         O TETO DE 960px nao e estetica, e nitidez. O PNG original da arte tem
+         941px de largura — esse e o teto real. Com o painel em 58% de uma tela
+         de 1920 ele pedia 1114px e o navegador esticava 1,30x, que numa
+         ilustracao chapada aparece como borda mole (foi o que voce viu). Em
+         960 a arte e desenhada em tamanho praticamente nativo em qualquer
+         monitor, inclusive ultrawide. */
+      --painel: min(50%, 960px);
     }
 
     /* O PAINEL DA ESQUERDA — a moldura da cena.
@@ -75,7 +87,7 @@
       content: '';
       position: absolute;
       inset: 0 auto 0 0;
-      width: 58%;
+      width: var(--painel);
       border-right: 1px solid var(--pq-line);
       background: var(--pq-panel-2);
     }
@@ -105,7 +117,7 @@
     .gerente-login__art {
       position: absolute;
       inset: 0 auto 0 0;
-      width: 58%;
+      width: var(--painel);
       /* A arte nao pode roubar clique do formulario. */
       pointer-events: none;
       /* SEM z-index — nem mesmo 0.
@@ -137,7 +149,7 @@
          `margin-left: 58%` do login do jogador. Encostado a direita, como
          estava antes, ele ficava desgarrado num canto. */
       html[data-manager-app] body.gerente-login {
-        padding-left: 58%;
+        padding-left: var(--painel);
         padding-right: clamp(24px, 4vw, 64px);
       }
     }
