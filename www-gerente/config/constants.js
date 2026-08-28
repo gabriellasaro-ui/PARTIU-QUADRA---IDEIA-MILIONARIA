@@ -4,6 +4,9 @@ export const APP_NAME = 'Qadras';
 export const APP_VERSION = '0.1.0';
 export const API_BASE_URL = runtimeConfig.API_BASE_URL || '';
 export const STORAGE_PREFIX = runtimeConfig.STORAGE_PREFIX || 'pq';
+/* Vazio = login com Google desligado (o front nem baixa o script do Google).
+   Precisa bater com GOOGLE_CLIENT_ID do backend, que e quem valida. */
+export const GOOGLE_CLIENT_ID = runtimeConfig.GOOGLE_CLIENT_ID || '';
 export const DEFAULT_LOCALE = 'pt-BR';
 export const DEFAULT_CURRENCY = 'BRL';
 /* Duas taxas, porque a cobranca e dos dois lados.

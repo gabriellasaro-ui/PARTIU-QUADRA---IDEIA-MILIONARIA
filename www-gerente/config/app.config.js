@@ -31,5 +31,13 @@ function enderecoDaApi() {
 
 window.__PQ_CONFIG__ = {
   API_BASE_URL: enderecoDaApi(),
-  STORAGE_PREFIX: 'pqg'
+  STORAGE_PREFIX: 'pqg',
+  /* MESMO projeto Google do app do jogador — um so client ID para a conta
+     inteira. O que muda entre os dois nao e a credencial, e a ORIGEM: o
+     Google so devolve token para origens autorizadas no console, e o painel
+     roda numa porta diferente. Sem a origem do painel na lista, o botao
+     aparece e o clique nao volta.
+
+     Vazio desliga o Google inteiro: nao baixa o script, nao faz um request. */
+  GOOGLE_CLIENT_ID: '784118699391-qa8qouo0o9lkurjsum3medpq0hpsdkp8.apps.googleusercontent.com'
 };

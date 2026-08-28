@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 from ..models import (
     PROVIDER_GOOGLE,
     PROVIDER_PASSWORD,
+    ROLE_ADMIN,
     ROLE_GERENTE,
     ROLE_JOGADOR,
     User,
@@ -225,8 +226,22 @@ def google(request: Request, payload: GoogleRequest, db: Session = Depends(get_d
     if not email:
         raise _auth_error("O Google não retornou e-mail para esta conta")
 
+    do_painel = (payload.contexto or "").strip().lower() == "gerente"
+
     user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if not user:
+        # NO PAINEL DA ARENA, "nao existe" nao vira "crio agora".
+        #
+        # Conta de gerente nao nasce de um clique: ela precisa de CNPJ,
+        # endereco e do aceite da comissao. Criar aqui produziria um usuario com
+        # papel de JOGADOR e, dois passos depois, um 403 no painel que ninguem
+        # consegue explicar — a pessoa "entrou", afinal.
+        if do_painel:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Não encontramos uma arena com esta conta Google. "
+                       "Cadastre sua arena para começar.",
+            )
         user = User(
             email=email,
             name=(info.get("name") or "").strip() or email.split("@")[0],
@@ -239,6 +254,15 @@ def google(request: Request, payload: GoogleRequest, db: Session = Depends(get_d
         return _issue_session(db, user, is_new=True)
     if user.deleted_at:
         raise _auth_error("Conta desativada")
+
+    # Conta existe, mas e de jogador: o painel nao e para ela. A mensagem diz
+    # QUAL das duas portas ela errou, senao a pessoa fica tentando a mesma.
+    if do_painel and user.role not in (ROLE_GERENTE, ROLE_ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Esta conta Google é de jogador. Para gerenciar uma quadra, "
+                   "cadastre sua arena.",
+        )
 
     # A foto do Google e um link que muda: a pessoa troca o avatar la e o
     # nosso vira 404. Antes so gravavamos na criacao, entao quem ja tinha

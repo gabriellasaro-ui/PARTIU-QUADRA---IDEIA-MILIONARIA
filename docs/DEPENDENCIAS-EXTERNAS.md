@@ -104,6 +104,27 @@ endpoint responde 503. No cliente, `www-usuario/services/google-auth.js` tem
 3. Autorizar os domínios do app (ex.: `qadras.com.br`) e e-mails de teste no
    consent screen enquanto o app não for aprovado pela Google.
 
+#### ⚠️ O painel do gerente é uma ORIGEM a mais
+
+O login com Google agora existe também em `www-gerente/login.html`, com o
+**mesmo client ID** do app do jogador — a credencial é a mesma, o que muda é a
+origem. O Google só devolve token para origens que estão na lista, e o painel
+roda em outra porta/domínio.
+
+Em **Authorized JavaScript origins** do client Web precisa haver uma linha para
+cada porta em uso, não só a do jogador:
+
+```
+http://localhost:5176        app do jogador (dev)
+http://localhost:5175        painel do gerente (dev)
+http://192.168.x.x:5175      painel na LAN, se for testar de outro aparelho
+https://gerente.qadras.com.br    produção
+```
+
+Falta a origem? O sintoma engana: **o botão aparece normalmente** (ele é
+desenhado só no cliente) e o erro só chega no clique, como `origin_mismatch` no
+console. Quem estiver testando lê "não aconteceu nada".
+
 ### B.2 Backend (env var)
 
 | Variável | Valor |
@@ -112,8 +133,15 @@ endpoint responde 503. No cliente, `www-usuario/services/google-auth.js` tem
 
 ### B.3 Cliente
 
-- Web: implementar **Google Identity Services** (`accounts.id.initialize`) em
-  `services/google-auth.js` e setar `GOOGLE_READY = true`.
+- Web: **feito** nas duas pontas. `services/google-auth.js` existe em
+  `www-usuario/` e em `www-gerente/` (mesmo arquivo), e `GOOGLE_READY` deriva de
+  `GOOGLE_CLIENT_ID` — vazio desliga tudo e nem baixa o script do Google.
+- **Painel do gerente: só ENTRA, não cadastra.** O pedido leva
+  `contexto: "gerente"`, e com ele o backend deixa de criar conta para e-mail
+  desconhecido: responde 404 ("cadastre sua arena") ou 403 se a conta for de
+  jogador. Sem isso, um dono clicando no painel ganharia em silêncio uma conta
+  de **jogador** presa ao e-mail dele — e o e-mail já estaria tomado quando
+  fosse cadastrar a arena de verdade.
 - App mobile: instalar **`@codetrix-studio/capacitor-google-auth`** (Fase 11).
 
 ---

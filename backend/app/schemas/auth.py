@@ -76,6 +76,14 @@ class GoogleRequest(BaseModel):
     e o servidor. O cliente nunca decide quem a pessoa e."""
 
     idToken: str
+    #: De qual porta veio o clique: "jogador" (app do jogador) ou "gerente"
+    #: (painel da arena). NAO e permissao — quem decide o papel continua sendo
+    #: o banco. Serve para o caso "conta nao existe": no app do jogador criar na
+    #: hora e o certo, no painel da arena e o errado, porque conta de gerente so
+    #: nasce com CNPJ, endereco e aceite da comissao. Sem isso, um dono clicando
+    #: "Entrar com Google" no painel ganharia em silencio uma conta de JOGADOR e
+    #: bateria de cara num 403 sem entender por que.
+    contexto: str = "jogador"
 
 
 class OnboardingRequest(BaseModel):
