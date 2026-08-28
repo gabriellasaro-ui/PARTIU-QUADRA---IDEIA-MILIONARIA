@@ -7,7 +7,13 @@ import authService from '../../services/auth.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import { aplicarTema } from '../../services/tema.js';
 
-aplicarTema();
+/* CLARO fixo nesta pagina, e nao o tema guardado.
+
+   `aplicarTema()` sem argumento REMOVE o data-theme quando a preferencia
+   salva e escura — e a pagina de login, que so funciona no claro (a
+   ilustracao depende de `mix-blend-mode: multiply`), voltaria ao escuro
+   logo depois de pintar. O tema da pessoa continua valendo no painel. */
+aplicarTema('light');
 
 /* O <script> do Lucide vem com `defer`, entao pode nao ter rodado quando este
    modulo executa. Sem esta chamada os <i data-lucide> ficam vazios e o cartao

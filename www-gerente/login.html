@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-manager-app data-guest-page>
+<html lang="pt-br" data-manager-app data-guest-page data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -38,116 +38,120 @@
        folha declarava desde o inicio nunca chegou a aparecer; medi no
        navegador (`backgroundImage` computado vinha `none`) ao investigar por
        que a ilustracao nao pintava no celular. */
+    /* CLARA SEMPRE, e nao acompanhando o tema do painel.
+
+       Esta e a mesma decisao do login do jogador, e ela e o que faz a
+       ilustracao funcionar. A arte tem ceu branco; para ele sumir no fundo em
+       vez de virar um retangulo colado, o unico recurso limpo e
+       `mix-blend-mode: multiply` — que ESCURECE. Sobre o #111409 do tema
+       escuro, multiply come a cena inteira.
+
+       Tentei o contrario antes: manter a pagina escura e contornar com
+       mascara radial e brilho reduzido. Ficou um holofote no meio do nada. A
+       porta de entrada nao precisa herdar o tema do painel — ela vem ANTES de
+       qualquer preferencia, e e igual para todo mundo. O tema volta a valer
+       depois do login, onde a pessoa escolheu. */
     html[data-manager-app] body.gerente-login {
       position: relative;
-      /* So no eixo X. Com `overflow: hidden` cheio, tela baixa (celular
-         pequeno, ou teclado aberto empurrando a viewport) cortava o fim do
-         formulario SEM deixar rolar ate ele — e o botao Entrar sumia. A arte
-         nunca transborda na vertical: esta ancorada em bottom: 0. */
       overflow-x: hidden;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px;
-      background:
-        radial-gradient(1200px 500px at 50% -10%, var(--pq-tint), transparent 60%),
-        var(--pq-app-bg);
+      background: #fff;
+    }
+
+    /* O PAINEL DA ESQUERDA — a moldura da cena.
+
+       Sem ele a ilustracao flutua no branco e precisa de mascara para nao
+       terminar em aresta. Com ele a aresta e INTENCIONAL: vira o divisor entre
+       "a arena" e "o formulario", e a arte so encosta nele.
+
+       O fio e a propria borda direita do painel. Um elemento a parte para a
+       linha teria de ficar alinhado ao painel em toda largura, e qualquer
+       arredondamento deixaria os dois fora de registro. */
+    html[data-manager-app] body.gerente-login::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 58%;
+      border-right: 1px solid var(--pq-line);
+      background: var(--pq-panel-2);
     }
 
     /* ── A ILUSTRACAO ──────────────────────────────────────────────────────
 
-       Em tela larga ela ocupa a metade esquerda e o cartao vai para a direita;
-       em tela estreita sai do fluxo e vira o fundo da pagina. Mesmo desenho do
-       login do jogador (player-web.css), com UMA diferenca que muda tudo: o
-       painel do gerente abre no ESCURO.
+       Ancorada no pe do painel, com `mix-blend-mode: multiply`: o ceu branco
+       da cena absorve o tom do painel e a emenda de cima desaparece sozinha.
+       E por isso que nao ha mascara aqui — a versao anterior tinha uma, e ela
+       so existia para consertar um problema que o painel claro nao cria.
 
-       O jogador usa `mix-blend-mode: multiply` para o ceu branco da cena
-       absorver o painel. Multiply escurece — sobre o #111409 do tema escuro ele
-       comeria a ilustracao inteira. Entao o blend e so no claro; no escuro a
-       arte fica normal, com brilho reduzido para nao virar um bloco aceso no
-       meio de uma tela preta.
-
-       A MASCARA existe porque a arte e um RETANGULO e a pagina nao. Sem ela a
-       cena termina em aresta reta dos dois lados — em cima, onde o ceu vira uma
-       faixa cortada, e na direita, no meio do gramado, que e o corte mais
-       visivel. Um radial ancorado no canto de baixo resolve os dois de uma vez.
-
-       Tentei antes com dois gradientes lineares e `mask-composite: intersect`;
-       medi no navegador e a segunda camada nao mordia — o pixel saltava de 130
-       para 20 em dez pixels, ou seja, continuava corte seco. Uma camada so nao
-       depende de composicao e da para conferir de olho.
-
-       Os numeros (45% opaco, transparente em 88%) foram calibrados medindo o
-       pixel na borda ate o degrade chegar ao fundo ANTES do fim do elemento —
-       com 88% ele fecha por volta de 800px numa tela de 1440, e a arte encosta
-       aos 979. Sobrando degrade, o corte reaparece. */
+       A largura bate com os 58% do painel de proposito: um pixel a menos e
+       sobra uma faixa de verde entre a arte e o divisor. */
     .gerente-login__art {
       position: absolute;
       left: 0;
       bottom: 0;
-      /* 68% da a cena inteira em tela larga, mas nunca invade os ~500px que o
-         cartao precisa: em 1000px de largura a arte cede e para na metade. */
-      width: min(68%, calc(100% - 500px));
-      /* A arte nao pode roubar clique do formulario que passa por cima dela. */
+      width: 58%;
+      /* A arte nao pode roubar clique do formulario. */
       pointer-events: none;
-      z-index: 0;
+      /* SEM z-index — nem mesmo 0.
+
+         Valor numerico em elemento posicionado cria contexto de empilhamento, e
+         isso ISOLA o mix-blend-mode: a imagem passa a mesclar com o proprio
+         container em vez do painel, e a emenda reta no topo do ceu reaparece.
+         Foi exatamente o que aconteceu aqui — e o CSS do login do jogador ja
+         documentava a armadilha. Posicionada e sem z-index, ela ja pinta depois
+         do ::before; o cartao fica por cima pelo z-index dele. */
     }
 
     .gerente-login__art img {
       display: block;
       width: 100%;
       height: auto;
-      -webkit-mask-image: radial-gradient(95% 118% at 16% 100%, #000 45%, transparent 88%);
-      mask-image: radial-gradient(95% 118% at 16% 100%, #000 45%, transparent 88%);
-      /* No escuro a cena e clara demais e viraria um bloco aceso sobre o
-         #111409; o brilho reduzido a assenta sem apagar o verde. */
-      filter: brightness(.78) saturate(1.05);
-    }
-
-    :root[data-theme="light"] .gerente-login__art img {
       mix-blend-mode: multiply;
-      filter: none;
     }
 
     /* O cartao por cima da arte, sempre. */
     .gerente-login__card { position: relative; z-index: 1; }
 
     @media (min-width: 900px) {
-      /* Cartao encostado a direita: centrado, ele pousaria em cima da cena. */
+      /* O cartao centra no que SOBRA depois do painel. `padding-left: 58%`
+         empurra a caixa de conteudo para onde o painel termina, e o
+         `justify-content: center` que ja existe faz o resto — igual ao
+         `margin-left: 58%` do login do jogador. Encostado a direita, como
+         estava antes, ele ficava desgarrado num canto. */
       html[data-manager-app] body.gerente-login {
-        justify-content: flex-end;
-        padding-right: clamp(24px, 7vw, 110px);
+        padding-left: 58%;
+        padding-right: clamp(24px, 4vw, 64px);
       }
     }
 
     @media (max-width: 899px) {
-      /* Espremida a cena vira um borrao e ainda rouba altura do formulario.
-         Vira fundo de pagina, ancorada EMBAIXO — e a parte de baixo (o dono, a
-         bola, o portao) que conta a historia; o ceu e enchimento, e e ele que
-         some primeiro quando a tela e baixa. */
+      /* Espremidos, painel e arte viram uma tira sem leitura. A cena passa a
+         ser o fundo da pagina inteira, ancorada EMBAIXO — e a parte de baixo
+         (o dono, a bola, o portao) que conta a historia; o ceu e enchimento, e
+         e ele que some primeiro quando a tela e baixa. */
+      html[data-manager-app] body.gerente-login::before { display: none; }
       .gerente-login__art { display: none; }
 
       html[data-manager-app] body.gerente-login {
-        /* Cartao CENTRADO (pedido do dono). Cheguei a subi-lo para o topo para
-           liberar a cena — mas o cartao no topo com espaco morto embaixo le
-           como pagina desalinhada, e a ilustracao aqui e ambiente, nao assunto.
-           Centrado, ela emoldura o formulario pelas quatro bordas. */
+        padding-left: 24px;
         background:
-          linear-gradient(to bottom, var(--pq-app-bg) 0%,
-                          color-mix(in srgb, var(--pq-app-bg) 55%, transparent) 34%,
-                          transparent 58%),
+          linear-gradient(to bottom, #fff 0%, rgba(255, 255, 255, .55) 34%, transparent 58%),
           url('./assets/images/login-hero-mobile.webp') no-repeat bottom center / cover,
-          var(--pq-app-bg);
+          #fff;
       }
 
       /* Sobre a ilustracao, texto solto fica ilegivel assim que encosta no
          verde: o cartao ganha um veu proprio. */
       html[data-manager-app] body.gerente-login .gerente-login__card {
-        background: color-mix(in srgb, var(--pq-panel) 92%, transparent);
+        background: rgba(255, 255, 255, .93);
         backdrop-filter: blur(3px);
       }
     }
+
     .gerente-login__card {
       width: 100%;
       max-width: 400px;
