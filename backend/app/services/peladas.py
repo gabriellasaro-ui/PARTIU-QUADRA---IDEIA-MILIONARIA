@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..core.timezone import TZ, now_local
 from ..core.ws import publish_user_event
+from ..models.club import CLUB_ROLES_GESTAO
 from ..models import (
     ATTENDANCE_NAO,
     ATTENDANCE_SIM,
@@ -191,10 +192,29 @@ def create_from_booking(db: Session, user, body) -> tuple[list[dict], bool]:
     if booking.status not in _ELIGIBLE:
         raise HTTPException(status_code=409, detail="Reserva não pode virar pelada neste estado")
 
-    if body.clubId:
-        club = clubs_repo.get_club(db, body.clubId)
-        if club is None or not clubs_repo.is_member(db, club.id, user.id):
+    # O CLUBE JA VEIO NA RESERVA — a pelada apenas HERDA.
+    #
+    # Antes a escolha era feita duas vezes: uma no checkout (que grava na
+    # reserva e e o que o dono da quadra ve ao aprovar) e outra aqui. Duas
+    # fontes para o mesmo fato divergem: bastava a segunda tela falhar para o
+    # gerente ver "Bola Murcha" e a pelada nascer avulsa, sem avisar ninguem.
+    #
+    # `body.clubId` continua valendo para a reserva que NAO nasceu com clube —
+    # o caso de quem marcou pessoal e depois decidiu chamar a turma. E ai a
+    # checagem de cargo e a mesma da reserva: convocar o clube e ato de gestao.
+    escolhido = booking.club_id or body.clubId
+    if escolhido:
+        club = clubs_repo.get_club(db, escolhido)
+        if club is None:
+            raise HTTPException(status_code=404, detail="Clube não encontrado")
+        membro = clubs_repo.get_member(db, club.id, user.id)
+        if membro is None:
             raise HTTPException(status_code=403, detail="Você não faz parte deste clube")
+        if membro.role not in CLUB_ROLES_GESTAO:
+            raise HTTPException(
+                status_code=403,
+                detail="Só o dono e os gerentes do clube podem marcar jogo em nome dele.",
+            )
     else:
         club = None
     kind = PELADA_KIND_CLUBE if club is not None else PELADA_KIND_AVULSA
@@ -284,8 +304,19 @@ def definir_clube(db: Session, user, pelada_id, club_id):
 
     if club_id:
         club = clubs_repo.get_club(db, club_id)
-        if club is None or not clubs_repo.is_member(db, club.id, user.id):
+        if club is None:
+            raise HTTPException(status_code=404, detail="Clube não encontrado")
+        # Mesma regra da criacao: apontar a pelada para um clube CONVOCA a
+        # turma — sai aviso para todo mundo. Sem o cargo aqui, a porta que se
+        # fechou na reserva ficaria aberta um passo depois.
+        membro = clubs_repo.get_member(db, club.id, user.id)
+        if membro is None:
             raise HTTPException(status_code=403, detail="Você não faz parte deste clube")
+        if membro.role not in CLUB_ROLES_GESTAO:
+            raise HTTPException(
+                status_code=403,
+                detail="Só o dono e os gerentes do clube podem convocar a turma.",
+            )
         pelada.club_id = club.id
         pelada.kind = PELADA_KIND_CLUBE
     else:

@@ -1937,18 +1937,38 @@ async function montarEscolhaDeClubeNoCheckout(raiz) {
      eu escrevi. Errado: some tambem a INFORMACAO de que a pelada vai ser so
      dela, e quem procurava a escolha (voce) concluia que ela nao existia. Sem
      clube, a linha diz o que vai acontecer e oferece o caminho para ter um. */
+  /* SO OS CLUBES QUE ELA MANDA.
+
+     Marcar quadra pelo clube compromete a turma: data, horario e, no
+     mensalista, quatro semanas. Quem faz isso e dono ou gerente; jogador so
+     responde se vai. O backend recusa de qualquer jeito (403) — o filtro aqui
+     e para a pessoa nao escolher um clube e levar o nao no fim do checkout.
+
+     Estar em clube SEM mandar nele nao esconde a pergunta: a linha explica
+     que a pelada fica so dela e por que, o que e diferente de nao ter clube
+     nenhum. Some a explicacao, sobra a impressao de que o app ignorou o clube. */
+  const GESTAO = new Set(['dono', 'admin']);
+  const daGestao = clubes.filter((c) => GESTAO.has(c.myRole));
+  const soJogador = clubes.length - daGestao.length;
+
   caixa.hidden = false;
   const opcoes = caixa.querySelector('[data-checkout-clube-opcoes]');
   opcoes.innerHTML = [
     '<button type="button" class="pelada-clube__op on" data-clube="">Sem clube</button>',
-    ...clubes.map((c) => `<button type="button" class="pelada-clube__op" data-clube="${escapeHtml(String(c.id))}">${escapeHtml(c.name || c.nome || 'Clube')}</button>`)
+    ...daGestao.map((c) => `<button type="button" class="pelada-clube__op" data-clube="${escapeHtml(String(c.id))}">${escapeHtml(c.name || c.nome || 'Clube')}</button>`)
   ].join('');
 
   const aviso = caixa.querySelector('.checkout-clube__sub');
   if (aviso) {
-    aviso.innerHTML = clubes.length
-      ? 'O clube escolhido recebe o aviso e confirma presença. Sem clube, a pelada fica só sua.'
-      : 'Você ainda não está em um clube, então esta pelada fica só sua. <a href="#clubes">Procurar um clube</a>';
+    if (daGestao.length) {
+      aviso.innerHTML = 'O clube escolhido recebe o aviso e confirma presença. Sem clube, a pelada fica só sua.';
+    } else if (soJogador) {
+      aviso.innerHTML = soJogador === 1
+        ? 'No seu clube você é jogador, e quem marca em nome dele é o dono ou um gerente. Esta pelada fica só sua.'
+        : 'Nos seus clubes você é jogador, e quem marca em nome deles é o dono ou um gerente. Esta pelada fica só sua.';
+    } else {
+      aviso.innerHTML = 'Você ainda não está em um clube, então esta pelada fica só sua. <a href="#clubes">Procurar um clube</a>';
+    }
   }
 
   opcoes.addEventListener('click', (evento) => {
@@ -2213,7 +2233,10 @@ async function renderConfirmation(root, route) {
 
   if (API_BASE_URL) {
     try {
-      const submit = await submitPlayerReservation(context);
+      /* A escolha do checkout entra no pedido. `context` e montado antes da
+         pessoa escolher o clube, entao o valor e anexado aqui, no momento do
+         envio — e nao la atras, quando ainda era nulo. */
+      const submit = await submitPlayerReservation({ ...context, clubeId: clubeEscolhidoParaPelada });
       apiReserva = submit.reserva;
       if (apiReserva) {
         code = apiReserva.code || code;

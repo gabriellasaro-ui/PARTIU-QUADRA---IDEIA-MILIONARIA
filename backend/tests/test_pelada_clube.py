@@ -49,7 +49,14 @@ def _pelada_avulsa(client, headers):
     return r.json()["peladas"][0]
 
 
-def _clube_com_dois(client, dono_headers, membro_id):
+def _clube_com_dois(client, dono_headers, membro_id, cargo="admin"):
+    """Cria o clube e poe a segunda pessoa nele com o CARGO pedido.
+
+    O padrao e `admin` — o "gerente" do clube — porque convocar a turma passou
+    a ser ato de gestao: marcar quadra compromete todo mundo com data, horario
+    e, no mensalista, quatro semanas. `membro` serve aos testes que provam a
+    recusa.
+    """
     r = client.post("/api/clubes", json={
         "name": f"Clube {uuid.uuid4().hex[:5]}", "sport": "Futebol Society",
         "city": "Belo Horizonte", "state": "MG",
@@ -60,7 +67,7 @@ def _clube_com_dois(client, dono_headers, membro_id):
     from app.core.database import SessionLocal
     from app.models import ClubMember
     with SessionLocal() as db:
-        db.add(ClubMember(club_id=uuid.UUID(clube["id"]), user_id=uuid.UUID(membro_id), role="membro"))
+        db.add(ClubMember(club_id=uuid.UUID(clube["id"]), user_id=uuid.UUID(membro_id), role=cargo))
         db.commit()
     return clube
 
@@ -111,6 +118,32 @@ def test_apontar_para_o_clube_avisa_a_turma(client):
     assert r.status_code == 200
     assert r.json()["pelada"]["kind"] == "avulsa"
     assert convocacoes() == antes + 1
+
+
+def test_membro_comum_nao_convoca_a_turma(client):
+    """Jogador so responde se vai; quem chama e a gestao.
+
+    Marcar quadra em nome do clube compromete todo mundo — e no mensalista sao
+    quatro semanas. Se qualquer membro pudesse fazer isso, o clube viraria um
+    canal por onde qualquer um convoca (e cobra) a turma inteira.
+    """
+    from app.core.database import SessionLocal
+    from app.models import User
+
+    organizador = _login(client, "gabriel@email.com")
+    eu = client.get("/api/perfil", headers=organizador).json()
+    meu_id = eu.get("id") or eu.get("perfil", {}).get("id")
+
+    dono = _login(client, "joao@email.com")
+    clube = _clube_com_dois(client, dono, meu_id, cargo="membro")
+    pelada = _pelada_avulsa(client, organizador)
+
+    r = client.patch(f"/api/peladas/{pelada['id']}", json={"clubId": clube["id"]},
+                     headers=organizador)
+    assert r.status_code == 403, r.text
+    # A mensagem tem de dizer QUAL cargo falta — senao a pessoa fica
+    # procurando um convite que ela ja tem.
+    assert "gerentes" in r.json()["detail"].lower()
 
 
 def test_so_o_organizador_muda_o_clube(client):

@@ -57,6 +57,14 @@ export const mapBooking = (b) => {
     sessoes: b.sessoes || [],
     cls: STATUS_CLS[status] || b.statusClass || 'pendente',
     plan: b.plan,
+    /* DE QUEM E O JOGO. `null` quando a reserva e de pessoa fisica.
+
+       ⚠️ Este mapa reescreve a reserva CAMPO A CAMPO, e tudo que nao esta
+       listado aqui e descartado em silencio. O backend ja mandava `clube`, a
+       linha ja sabia desenha-lo, e mesmo assim nao aparecia nada — o dado
+       morria nesta funcao, sem erro nenhum. Campo novo no backend precisa
+       passar por aqui. */
+    clube: b.clube || null,
     source: b.source,
     statusAt: b.statusAt
   };

@@ -43,9 +43,23 @@ function linha(r) {
     : `<a href="./dashboard.html#reserva/${r.id}" class="btn btn-soft btn-xs">Ver detalhes</a>`;
 
   return `<article class="manager-booking-row${r.status === 'Solicitada' ? ' is-request' : ''}" data-status="${escapeHtml(r.cls)}">
+    <!-- DE QUEM E O JOGO.
+
+         Um nome de pessoa nao diz nada ao dono da quadra — "Gabriel Lasaro" e
+         so mais um. Quando a reserva e de um clube, e o CLUBE que passa a
+         encabecar a linha, com a pessoa logo abaixo como quem responde por
+         ele. Num mensalista isso muda a decisao: ceder quatro quintas para um
+         clube que ja joga ali e outra coisa. -->
     <div class="manager-booking-person">
-      <span class="manager-avatar">${escapeHtml(inicial(r.cliente))}</span>
-      <div><strong>${escapeHtml(r.cliente)}</strong><small>${escapeHtml(r.telefone)}</small></div>
+      <span class="manager-avatar${r.clube ? ' is-clube' : ''}">${r.clube
+        ? icone('users')
+        : escapeHtml(inicial(r.cliente))}</span>
+      <div>
+        <strong>${escapeHtml(r.clube ? r.clube.nome : r.cliente)}</strong>
+        <small>${r.clube
+          ? `${escapeHtml(r.cliente)} · ${escapeHtml(r.telefone)}`
+          : escapeHtml(r.telefone)}</small>
+      </div>
     </div>
     <div class="manager-booking-fact"><span>Quadra</span><strong>${escapeHtml(r.quadra)}</strong></div>
     <!-- MENSALISTA E AVULSO PRECISAM SE DISTINGUIR AQUI.

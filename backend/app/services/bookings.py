@@ -393,6 +393,39 @@ def _transition_group(
 
 # --- Criacao ---------------------------------------------------------------
 
+def _clube_para_reserva(db: Session, user, club_id):
+    """O clube da reserva, conferindo o cargo — ou None quando nao ha clube.
+
+    Erros separados de proposito: "voce nao faz parte" e "voce e so jogador"
+    sao problemas diferentes, e mandar a mesma frase nos dois casos faria o
+    membro ficar procurando um convite que ele ja tem.
+    """
+    if not club_id:
+        return None
+
+    from ..models.club import CLUB_ROLES_GESTAO
+    from ..repositories import clubs as clubs_repo
+
+    clube = clubs_repo.get_club(db, club_id)
+    if clube is None:
+        raise HTTPException(status_code=404, detail="Clube não encontrado")
+    membro = clubs_repo.get_member(db, clube.id, user.id)
+    if membro is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não faz parte deste clube.",
+        )
+    if membro.role not in CLUB_ROLES_GESTAO:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Só o dono e os gerentes do clube podem marcar quadra em nome "
+                "dele. Peça para alguém da gestão reservar."
+            ),
+        )
+    return clube
+
+
 def create_booking(
     db: Session,
     *,
@@ -404,6 +437,7 @@ def create_booking(
     plan: str = PLAN_AVULSO,
     weekday: int | None = None,
     payment_method: str = "pix",
+    club_id=None,
     idempotency_key: str | None = None,
 ) -> tuple[list[Booking], bool]:
     """Cria a reserva (ou o grupo mensalista) e retorna (bookings, replay)."""
@@ -443,6 +477,15 @@ def create_booking(
     # O card do jogador ja mostrava `preco x 4` nesse caso, entao o valor
     # cobrado passa a ser o MESMO que ele leu antes de tocar em reservar —
     # cobrar diferente do que estava na tela seria pior do que o 500.
+    # RESERVA EM NOME DO CLUBE: so quem manda nele.
+    #
+    # Marcar quadra e comprometer a turma inteira — data, horario e, no
+    # mensalista, quatro semanas. Se qualquer membro pudesse fazer isso, o
+    # clube viraria um canal por onde qualquer um convoca (e cobra) todo mundo.
+    # Cargos ja existem no modelo: dono e admin mandam, membro so responde se
+    # vai. A checagem e AQUI, no servico, e nao na tela — tela some, rota fica.
+    clube = _clube_para_reserva(db, user, club_id)
+
     amounts = compute_quote(preco_base(court, plan), dur, plan=plan)
     group_id = uuid.uuid4() if plan == PLAN_MENSALISTA else None
 
@@ -469,6 +512,7 @@ def create_booking(
             payment_method=payment_method,
             quote_snapshot=amounts,
             group_id=group_id,
+            club_id=clube.id if clube else None,
             is_session=is_session,
             idempotency_key=idempotency_key if index == 0 else None,
             source="app",

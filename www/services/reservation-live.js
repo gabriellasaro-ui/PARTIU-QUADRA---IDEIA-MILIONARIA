@@ -39,7 +39,14 @@ export async function submitPlayerReservation(context, idempotencyKey) {
       dur: context.duration,
       plano: context.plan || 'avulso',
       dia: context.plan === 'mensalista' ? context.weekday : null,
-      pagamento: context.method === 'wallet' ? 'pix' : context.method
+      pagamento: context.method === 'wallet' ? 'pix' : context.method,
+      /* O CLUBE VIAJA COM A RESERVA, e nao so com a pelada.
+
+         A pelada so nasce depois de a arena aprovar — e e NA HORA DE APROVAR
+         que o dono da quadra precisa saber de quem e o jogo: "Bola Murcha FC,
+         toda quinta" e uma decisao diferente de um nome solto que ele nunca
+         viu. Mandar so na pelada faria a informacao chegar tarde demais. */
+      clubeId: context.clubeId || null
     },
     { headers: { 'Idempotency-Key': key } }
   );

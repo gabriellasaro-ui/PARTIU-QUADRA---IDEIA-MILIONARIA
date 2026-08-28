@@ -3926,3 +3926,12 @@ html[data-manager-app] .manager-primeira .btn { flex: 0 0 auto; }
   }
   html[data-manager-app] .manager-primeira .btn { width: 100%; }
 }
+
+/* O avatar da linha vira ICONE quando a reserva e de um clube — a inicial de
+   uma pessoa ali seria a inicial errada, porque quem encabeca a linha passou a
+   ser o clube, nao ela. */
+html[data-manager-app] .manager-avatar.is-clube {
+  background: var(--pq-brand);
+  color: var(--pq-on-brand, #1f2e0b);
+}
+html[data-manager-app] .manager-avatar.is-clube .ic { width: 16px; height: 16px; }

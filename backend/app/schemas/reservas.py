@@ -23,6 +23,10 @@ class BookingCreate(BaseModel):
     plano: str = "avulso"
     dia: int | None = Field(default=None, ge=0, le=6)
     pagamento: str = "pix"
+    #: Marcar EM NOME de um clube. Vazio = reserva pessoal, que segue sendo a
+    #: maioria. Quem pode usar isto e so dono/gerente do clube — a checagem
+    #: esta no servico, nao aqui: schema valida forma, nao permissao.
+    clubeId: str | None = None
 
 
 class ReviewCreate(BaseModel):

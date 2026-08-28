@@ -112,6 +112,16 @@ class Booking(Base):
     quote_snapshot: Mapped[dict | None] = mapped_column(JSONVariant)
     coupon_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     group_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))  # mensalista
+    #: Clube que esta por tras desta reserva, quando ha um.
+    #:
+    #: A pelada ja tinha `club_id`, mas ela so NASCE depois da arena aprovar —
+    #: e e justamente NA HORA DE APROVAR que o dono da quadra precisa saber de
+    #: quem e o jogo. "Pelada do Bola Murcha, toda quinta" e uma decisao
+    #: diferente de um nome solto que ele nunca viu.
+    #:
+    #: Por isso o clube viaja com a RESERVA, do checkout ate a fila do gerente,
+    #: e a pelada apenas herda dele depois.
+    club_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True)
     # Sessao filha de mensalista: reserva as semanas 2-4 (total_cents = 0),
     # segura o slot e nao aparece sozinha na lista do jogador.
     is_session: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")

@@ -60,6 +60,7 @@ def criar_reserva(
         plan=body.plano,
         weekday=body.dia,
         payment_method=body.pagamento,
+        club_id=body.clubeId,
         idempotency_key=idempotency_key,
     )
     return {"reservas": [svc.serialize(db, b) for b in created], "replay": replay}

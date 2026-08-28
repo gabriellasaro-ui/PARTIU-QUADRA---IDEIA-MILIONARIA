@@ -114,7 +114,7 @@ _DIAS_SEMANA = [
 SESSOES_NO_MES = 4
 
 
-def serialize_booking(booking: Booking, court: Court, arena: Arena, user, sessoes=None) -> dict:
+def serialize_booking(booking: Booking, court: Court, arena: Arena, user, sessoes=None, clube=None) -> dict:
     local = _as_local(booking.start_at)
     local_end = _as_local(booking.end_at)
 
@@ -159,6 +159,13 @@ def serialize_booking(booking: Booking, court: Court, arena: Arena, user, sessoe
         "statusClass": _STATUS_CLASS.get(booking.status, "pendente"),
         "statusAt": _as_local(booking.updated_at).isoformat() if booking.updated_at else None,
         "plan": booking.plan,
+        # DE QUEM E O JOGO.
+        #
+        # Um nome de pessoa nao diz nada ao dono da quadra: "Gabriel Lasaro" e
+        # so mais um. "Bola Murcha FC · 18 membros" e outra conversa —
+        # especialmente num mensalista, onde ele esta cedendo quatro semanas.
+        # Clube que ja joga ali toda quinta e o cliente que ele quer manter.
+        "clube": ({"id": str(clube.id), "nome": clube.name} if clube else None),
         # COMO ESTE COMPROMISSO SE REPETE.
         #
         # A tela do dono mostrava so a data — "03/09/2026 · 18:00 – 20:00" —
@@ -488,9 +495,22 @@ def list_reservas(
                 for x in repo.group_bookings(db, grupo)
             ]
 
+    """Os clubes da pagina, tambem em UMA consulta.
+
+    Mesma razao das datas acima: buscar por linha daria uma ida ao banco por
+    reserva. Sao poucos clubes distintos numa pagina de 20."""
+    clubes_por_id: dict = {}
+    ids_clube = {b.club_id for b, _, _, _ in linhas if b.club_id}
+    if ids_clube:
+        from ..models.club import Club
+        for clube in db.execute(select(Club).where(Club.id.in_(ids_clube))).scalars():
+            clubes_por_id[clube.id] = clube
+
     return {
         "reservas": [
-            serialize_booking(b, c, a, u, sessoes=datas_por_grupo.get(b.group_id))
+            serialize_booking(b, c, a, u,
+                              sessoes=datas_por_grupo.get(b.group_id),
+                              clube=clubes_por_id.get(b.club_id))
             for b, c, a, u in linhas
         ],
         "total": total,
