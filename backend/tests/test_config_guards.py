@@ -57,6 +57,12 @@ def _producao_valida(**extra):
         payment_provider="mercadopago",
         mercadopago_access_token="APP_USR-token-de-producao",
         payment_webhook_secret="segredo-do-webhook",
+        # Producao valida passou a exigir tambem o envio real do codigo de
+        # verificacao: o provedor "log" DEVOLVE o codigo na resposta HTTP, o
+        # que anula a verificacao inteira. A guarda esta em
+        # core/config.py e tem teste proprio em test_verificacao.py.
+        verification_provider="resend",
+        resend_api_key="re_chave-de-teste",
     )
     base.update(extra)
     return Settings(**base)

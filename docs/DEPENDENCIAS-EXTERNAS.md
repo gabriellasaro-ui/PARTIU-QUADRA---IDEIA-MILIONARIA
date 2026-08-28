@@ -146,6 +146,45 @@ console. Quem estiver testando lê "não aconteceu nada".
 
 ---
 
+## G. E-mail transacional (Resend) — código de verificação
+
+**Status:** o fluxo inteiro **já funciona**; falta só a entrega real. Em dev o
+provedor `log` escreve o código no log do servidor **e o devolve na resposta**,
+o que permite testar o cadastro de arena de ponta a ponta sem contratar nada.
+
+⚠️ **`VERIFICATION_PROVIDER=log` não sobe em produção** — a config recusa
+iniciar, com mensagem explicando. Ele entrega o código a quem pedir, o que
+anularia a verificação inteira. É o tipo de atalho de desenvolvimento que
+subiria sem ninguém notar.
+
+### G.1 O que você precisa fazer
+
+1. Criar conta em <https://resend.com> (o plano grátis dá 3.000 e-mails/mês,
+   mais que suficiente para começar).
+2. **Domains → Add Domain** → `qadras.com.br`, e criar os registros DNS que
+   ele mostrar (SPF + DKIM). Sem domínio verificado o Resend recusa o envio.
+3. **API Keys → Create** → copiar a chave (`re_...`).
+
+### G.2 Backend (env vars no EasyPanel)
+
+| Variável | Valor |
+|---|---|
+| `VERIFICATION_PROVIDER` | `resend` |
+| `RESEND_API_KEY` | a chave `re_...` |
+| `EMAIL_REMETENTE` | `Qadras <nao-responda@qadras.com.br>` — do domínio verificado |
+
+### G.3 O que já está pronto no código
+
+- Código de 6 dígitos, **guardado com hash** (um dump de suporte não entrega
+  contas), válido por 10 minutos.
+- **3 tentativas e o código queima**; 60s de espera entre reenvios. Sem essas
+  duas regras, 6 dígitos caem em força bruta em minutos.
+- Um código vivo por canal: pedir de novo mata o anterior.
+- `channel` já contempla **WhatsApp** — o que falta para ele não é coluna nem
+  código, é a aprovação da Meta (Business API + template).
+
+---
+
 ## C. Provedor de pagamento (Mercado Pago)
 
 **Status:** implementado em `backend/app/services/payments/mercadopago.py`.

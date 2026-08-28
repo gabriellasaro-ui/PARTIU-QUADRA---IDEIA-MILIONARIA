@@ -76,6 +76,11 @@ class User(Base):
     )
     rating: Mapped[float | None] = mapped_column(Float)
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    #: QUANDO foi verificado, e nao um booleano. Data permite reexigir a
+    #: verificacao no futuro (troca de e-mail, politica nova) e responde
+    #: "desde quando" numa disputa; um `true` nao responde nada.
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    phone_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

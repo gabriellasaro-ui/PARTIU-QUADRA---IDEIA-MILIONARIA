@@ -442,3 +442,110 @@ html[data-player-desktop] .web-brand .qadras-logo { --logo-h: 27px; }
 .sb-logo .qadras-logo { --logo-h: 23px; }
 .sb-logo .mark { display: none; }
 .app.collapsed .sb-logo .mark { display: grid; }
+
+/* ══════════ SOLICITACOES DE ARENA ═════════════════════════════════════════
+
+   Ficha por ficha, e nao linha de tabela. A decisao aqui nao e "qual ordenar
+   por", e "esta arena existe e esta apta" — e isso se responde olhando CNPJ,
+   endereco e foto JUNTOS. Numa tabela, cada um desses vira uma coluna estreita
+   e a leitura se perde. */
+
+.admin-nav-num {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--pq-brand, #9bcf33);
+  color: var(--pq-on-brand, #1f2e0b);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.sol {
+  padding: 18px;
+  border: 1px solid var(--pq-line, #e3eecd);
+  border-radius: 14px;
+  margin-top: 14px;
+  background: var(--pq-panel, #fff);
+}
+
+.sol__topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.sol__topo strong { display: block; font-size: 16px; }
+.sol__topo small { color: var(--pq-muted, #606b56); font-size: 12.5px; }
+
+.sol__grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 18px;
+  margin: 0 0 14px;
+}
+.sol__grade dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--pq-muted, #606b56);
+}
+.sol__grade dd {
+  margin: 3px 0 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--pq-ink, #1f2e0b);
+}
+.sol__grade dd small { color: var(--pq-muted, #606b56); font-size: 12px; }
+
+/* CNAE 9311 destacado: e o sinal mais barato de que aquilo e mesmo uma quadra.
+   Destaque, e NAO decisao — quadra no CNPJ do restaurante da familia e comum
+   demais para virar recusa automatica. Quem decide e quem le. */
+.sol__cnae.is-bom dd {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--pq-signal, #ddf2a8);
+  color: var(--pq-brand-deep, #3f5c11);
+  font-weight: 700;
+}
+
+.sol__dores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+.sol__dores span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--pq-tint, #ecf9cd);
+  color: var(--pq-ink-soft, #495731);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sol__fotos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.sol__fotos img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+.sol__semfoto { margin: 0 0 14px; font-size: 13px; }
+
+.sol__acoes {
+  display: flex;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pq-line, #e3eecd);
+}

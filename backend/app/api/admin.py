@@ -11,8 +11,11 @@ from sqlalchemy.orm import Session
 from ..auth.deps import get_current_admin
 from ..core.database import get_db
 from ..models import User
+from pydantic import BaseModel
+
 from ..schemas.admin import PauseBody, ReactivateBody
 from ..services import admin as svc
+from ..services import arena_onboarding as onb
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -94,6 +97,48 @@ def reativar_arena(
     db: Session = Depends(get_db),
 ):
     return svc.reactivate_arena(db, user, aid, body.motivo)
+
+
+# ── Solicitacoes de entrada de arena ───────────────────────────────────────
+#
+# A fila que decide quem entra no Qadras. Sem tela aqui, aprovar seria um
+# UPDATE no banco na mao — e a solicitacao parada e arena perdida.
+
+class RecusaBody(BaseModel):
+    motivo: str = ""
+
+
+@router.get("/solicitacoes")
+def solicitacoes(
+    situacao: str | None = Query(default=None),
+    user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Sem `situacao`, so as ABERTAS — que e a fila de trabalho.
+
+    Listar tudo por padrao afogaria a tela em fichas ja decididas assim que o
+    primeiro mes passasse.
+    """
+    return {"solicitacoes": onb.listar(db, situacao=situacao)}
+
+
+@router.post("/solicitacoes/{app_id}/aprovar")
+def aprovar_solicitacao(
+    app_id: str,
+    user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    return onb.aprovar(db, user, app_id)
+
+
+@router.post("/solicitacoes/{app_id}/recusar")
+def recusar_solicitacao(
+    app_id: str,
+    body: RecusaBody,
+    user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    return onb.recusar(db, user, app_id, body.motivo)
 
 
 @router.get("/auditoria")

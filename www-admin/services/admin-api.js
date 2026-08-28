@@ -40,6 +40,22 @@ export const adminService = {
     return api.post(`/api/admin/arenas/${encodeURIComponent(id)}/reactivate`, { motivo: motivo || '' });
   },
 
+  /* Sem `situacao`, o backend devolve so as ABERTAS — que e a fila de
+     trabalho. Listar tudo por padrao afogaria a tela em fichas ja decididas
+     assim que o primeiro mes passasse. */
+  async solicitacoes(situacao = '') {
+    const q = situacao ? `?situacao=${encodeURIComponent(situacao)}` : '';
+    return api.get(`/api/admin/solicitacoes${q}`);
+  },
+
+  async aprovarSolicitacao(id) {
+    return api.post(`/api/admin/solicitacoes/${encodeURIComponent(id)}/aprovar`, {});
+  },
+
+  async recusarSolicitacao(id, motivo) {
+    return api.post(`/api/admin/solicitacoes/${encodeURIComponent(id)}/recusar`, { motivo });
+  },
+
   async auditoria() {
     return api.get('/api/admin/auditoria?limit=50');
   }

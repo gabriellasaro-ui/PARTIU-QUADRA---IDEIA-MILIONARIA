@@ -1,0 +1,371 @@
+/* Cadastro da arena — oito passos numa pagina so.
+
+   TUDO EM TOKEN. Esta pagina abre no CLARO fixo (como o login: e porta de
+   entrada, vem antes de qualquer preferencia), mas os tokens continuam sendo a
+   fonte das cores — cor cravada aqui e o que ja deixou esta parte do projeto
+   de fora de uma troca de paleta inteira uma vez.
+
+   Um passo por vez, alternado por `hidden`. Nada de animacao de entrada: o
+   conteudo muda de altura entre passos e a transicao vira solavanco. */
+
+.cad {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(900px 420px at 50% -8%, var(--pq-tint), transparent 62%),
+    #fff;
+  color: var(--pq-ink);
+}
+
+.cad-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px max(20px, calc((100% - 1120px) / 2));
+}
+.cad-marca { display: flex; color: var(--pq-ink); }
+.cad-marca .qadras-logo { --logo-h: 24px; }
+.cad-sair {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pq-muted);
+}
+.cad-sair:hover { color: var(--pq-brand-deep); }
+
+.cad-palco {
+  display: flex;
+  justify-content: center;
+  padding: 8px 20px 56px;
+}
+
+.cad-caixa {
+  width: 100%;
+  max-width: 520px;
+  padding: 30px 28px 28px;
+  border: 1px solid var(--pq-line);
+  border-radius: 18px;
+  background: var(--pq-panel);
+  box-shadow: 0 20px 46px -28px rgba(10, 16, 6, .3);
+}
+
+/* ── Progresso ─────────────────────────────────────────────────────────────
+   O unico lugar da tela que responde "falta quanto". Sem ele oito telas
+   parecem nao terminar, e a desistencia acontece no meio, sem aviso. */
+.cad-progresso {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--pq-line);
+  overflow: hidden;
+}
+.cad-progresso span {
+  display: block;
+  height: 100%;
+  width: 12%;
+  border-radius: 999px;
+  background: var(--pq-brand);
+  transition: width .28s ease;
+}
+.cad-passo-num {
+  margin: 10px 0 18px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--pq-muted);
+}
+
+/* ── Passos ───────────────────────────────────────────────────────────── */
+.cad-passo h1 {
+  margin: 0 0 8px;
+  font-size: 23px;
+  line-height: 1.22;
+  color: var(--pq-ink);
+}
+.cad-lead {
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--pq-muted);
+}
+.cad-lead strong { color: var(--pq-ink); }
+
+.cad-passo label,
+.cad-rotulo {
+  display: block;
+  margin: 16px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pq-ink);
+}
+.cad-passo label em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--pq-muted);
+}
+
+.cad-passo input[type="text"],
+.cad-passo input[type="email"],
+.cad-passo input[type="password"],
+.cad-passo input[type="number"],
+.cad-passo input:not([type]),
+.cad-passo select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 10px;
+  font-size: 15px;
+  /* Sem estes dois o campo cai no padrao do NAVEGADOR, que segue o tema do
+     sistema e nao o da pagina — cinza-chumbo no meio de um cartao branco. */
+  background: var(--pq-panel);
+  color: var(--pq-ink);
+}
+.cad-passo input:focus,
+.cad-passo select:focus {
+  outline: none;
+  border-color: var(--pq-brand);
+}
+
+.cad-codigo {
+  font-size: 26px !important;
+  letter-spacing: .38em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.cad-linha {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+/* Duas colunas iguais quando os dois lados sao campos (numero+complemento,
+   estado+cidade), e nao campo+botao. */
+.cad-linha:has(> div) { grid-template-columns: 1fr 1fr; }
+.cad-linha > div { min-width: 0; }
+.cad-linha > div label:first-child { margin-top: 0; }
+.cad-linha .btn { white-space: nowrap; }
+
+.cad-avanca { width: 100%; margin-top: 22px; }
+
+.cad-link {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pq-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.cad-link:hover { color: var(--pq-brand-deep); }
+
+/* ── Avisos ───────────────────────────────────────────────────────────── */
+.cad-erro,
+.cad-aviso {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.cad-erro {
+  margin-bottom: 16px;
+  background: var(--pq-danger-soft);
+  color: var(--pq-danger);
+  border: 1px solid color-mix(in srgb, var(--pq-danger) 26%, transparent);
+}
+.cad-aviso {
+  background: var(--pq-tint);
+  color: var(--pq-ink-soft);
+}
+.cad-aviso.is-erro {
+  background: var(--pq-danger-soft);
+  color: var(--pq-danger);
+}
+.cad-aviso.is-bom {
+  background: var(--pq-signal);
+  color: var(--pq-brand-deep);
+}
+
+/* Caixa que so existe fora de producao, mostrando o codigo gerado. Marcada
+   visualmente como coisa de desenvolvimento para nunca ser confundida com
+   interface de verdade. */
+.cad-dica-dev {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px dashed var(--pq-line-strong);
+  border-radius: 10px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--pq-muted);
+}
+
+/* ── Escolhas (esportes, dores) ───────────────────────────────────────── */
+.cad-escolhas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cad-escolha {
+  padding: 9px 14px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  background: var(--pq-panel);
+  color: var(--pq-ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .12s, background .12s, color .12s;
+}
+.cad-escolha:hover { border-color: var(--pq-brand); }
+.cad-escolha[aria-pressed="true"] {
+  border-color: var(--pq-brand);
+  background: var(--pq-brand);
+  color: var(--pq-on-brand, #1f2e0b);
+}
+
+/* ── Fotos ────────────────────────────────────────────────────────────── */
+.cad-fotos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+}
+.cad-foto,
+.cad-foto-add {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cad-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cad-foto button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(17, 20, 9, .72);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cad-foto-add {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  border: 1.5px dashed var(--pq-line-strong);
+  background: var(--pq-tint);
+  color: var(--pq-muted);
+  font-size: 22px;
+  cursor: pointer;
+}
+.cad-foto-add:hover { border-color: var(--pq-brand); color: var(--pq-brand-deep); }
+
+/* ── Acerto ───────────────────────────────────────────────────────────── */
+.cad-acordo {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--pq-line);
+  border-radius: 14px;
+  background: var(--pq-tint);
+}
+.cad-taxa {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--pq-brand-deep);
+}
+.cad-acordo p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pq-ink-soft);
+}
+
+.cad-check {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0 0 !important;
+  font-weight: 500 !important;
+  font-size: 13.5px !important;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.cad-check input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex: 0 0 auto;
+  accent-color: var(--pq-brand);
+}
+.cad-check a { color: var(--pq-brand-deep); font-weight: 600; text-decoration: underline; }
+
+/* ── Fim ──────────────────────────────────────────────────────────────── */
+.cad-fim { text-align: center; }
+.cad-check-ok {
+  display: inline-grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: var(--pq-brand);
+  color: var(--pq-on-brand, #1f2e0b);
+}
+.cad-check-ok .ic { width: 28px; height: 28px; }
+
+.cad-proximos {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.cad-proximos li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--pq-line);
+  font-size: 13.5px;
+  color: var(--pq-ink-soft);
+}
+.cad-proximos .ic {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: var(--pq-brand-deep);
+}
+
+.cad-motivo {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--pq-danger-soft);
+  color: var(--pq-danger);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .cad-palco { padding: 4px 14px 40px; }
+  .cad-caixa {
+    padding: 22px 18px 22px;
+    border: 0;
+    border-radius: 14px;
+    box-shadow: none;
+  }
+  .cad-passo h1 { font-size: 21px; }
+  /* Empilha: numero+complemento e estado+cidade ficam apertados demais lado a
+     lado numa tela de 360px, e o select de cidade corta o nome. */
+  .cad-linha:has(> div) { grid-template-columns: 1fr; }
+}

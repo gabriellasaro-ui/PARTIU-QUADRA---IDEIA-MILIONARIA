@@ -81,6 +81,17 @@ class Settings(BaseSettings):
     payment_provider: str = "mock"
     payment_mock_confirm_seconds: int = 15
 
+    # Verificacao de contato por codigo.
+    #
+    # "log" escreve o codigo no log do servidor e o devolve na resposta — so
+    # fora de producao, e a guarda de producao abaixo cobra o contrario. E o
+    # que permite o cadastro inteiro funcionar de ponta a ponta antes de haver
+    # provedor de e-mail contratado.
+    verification_provider: str = "log"
+    resend_api_key: str = ""
+    #: Precisa ser de um dominio verificado no provedor, senao ele recusa.
+    email_remetente: str = "Qadras <nao-responda@qadras.com.br>"
+
     # Adquirente (Mercado Pago). O access token da acesso total a conta: vive
     # so no .env, que e gitignored, e nunca aparece em log.
     #
@@ -149,6 +160,20 @@ class Settings(BaseSettings):
                         "cobrancas seriam simuladas e o dinheiro nunca "
                         "entraria. Use o token de producao (APP_USR-...)."
                     )
+            verif = self.verification_provider.strip().lower()
+            if verif == "log":
+                raise ValueError(
+                    "VERIFICATION_PROVIDER=log nao pode em producao: o "
+                    "provedor 'log' DEVOLVE o codigo na resposta HTTP, ou "
+                    "seja, entrega a chave a quem pedir. Configure o envio "
+                    "real (VERIFICATION_PROVIDER=resend + RESEND_API_KEY)."
+                )
+            if verif == "resend" and not self.resend_api_key.strip():
+                raise ValueError(
+                    "RESEND_API_KEY vazio com VERIFICATION_PROVIDER=resend: "
+                    "nenhum codigo sairia, e todo cadastro de arena morreria "
+                    "na tela de confirmar o e-mail."
+                )
             if not self.payment_webhook_secret.strip():
                 raise ValueError(
                     "PAYMENT_WEBHOOK_SECRET vazio em producao: sem ele "

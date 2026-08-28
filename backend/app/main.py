@@ -33,6 +33,7 @@ from .api import (
     peladas,
     partidas,
     admin,
+    onboarding,
 )
 from .core.config import settings
 from .core.database import check_database
@@ -171,6 +172,7 @@ app.add_middleware(RequestLogMiddleware)
 app.include_router(localidades.router)
 app.include_router(quadras.router)
 app.include_router(arenas.router)
+app.include_router(onboarding.router)
 app.include_router(reservas.router)
 app.include_router(mensagens.router)
 app.include_router(gerente.router)

@@ -13,6 +13,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from ..core.database import Base
 from ._types import JSONVariant
 
+#: Situacao na triagem da Qadras. Ver o comentario de `Arena.status`.
+ARENA_EM_ANALISE = "em_analise"
+ARENA_APROVADA = "aprovada"
+ARENA_RECUSADA = "recusada"
+
 
 class Arena(Base):
     __tablename__ = "arenas"
@@ -46,6 +51,18 @@ class Arena(Base):
     lng: Mapped[float | None] = mapped_column(Float)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    #: TRIAGEM, que nao e a mesma coisa que `is_active`.
+    #:
+    #: `is_active` e pausa operacional — o dono fecha para reforma e reabre.
+    #: `status` diz se a Qadras ja aceitou esta arena. Arena aprovada e pausada
+    #: existe; arena nunca aprovada nao pode aparecer para jogador nenhum, e
+    #: sem os dois campos separados uma pausa viraria "reprovada" e vice-versa.
+    #:
+    #: server_default 'aprovada': as arenas que ja existem entraram antes de
+    #: haver triagem, e sem isso todas sumiriam do app na primeira migracao.
+    status: Mapped[str] = mapped_column(
+        String(20), default=ARENA_APROVADA, server_default=ARENA_APROVADA, index=True
+    )
     boosted_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     settings: Mapped[dict | None] = mapped_column(JSONVariant)
 

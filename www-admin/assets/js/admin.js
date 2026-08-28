@@ -12,8 +12,14 @@ import { VENUES, CLUBS, PELADAS, INITIAL_RESERVATIONS, USERS, PLATFORM_BOOKINGS 
 import { API_BASE_URL, ARENA_FEE_RATE, SERVICE_FEE_RATE } from '../../config/constants.js';
 import storage from '../../storage/storage.js';
 import { formatCurrency } from '../../utils/formatters.js';
-import adminService from '../services/admin-api.js';
-import authService from '../services/auth.js';
+/* ⚠️ ../../ e nao ../ — este arquivo esta em assets/js/, e os servicos na
+   RAIZ do www-admin. Com um nivel a menos os dois caem em
+   /assets/services/*.js, que nao existe: o modulo inteiro falha ao carregar e
+   o painel nao desenha NADA. Nao havia erro visivel porque o que sobra na tela
+   e o HTML estatico do index.html, que ja tem titulo e menu — dava para abrir
+   o painel e achar que ele so estava vazio. */
+import adminService from '../../services/admin-api.js';
+import authService from '../../services/auth.js';
 
 /* Com API_BASE_URL preenchido as telas consomem o /api/admin/* (visao geral,
    arenas, reservas, clubes e pessoas) e o painel exige login de admin. Sem
@@ -34,7 +40,8 @@ const TITLES = {
   arenas: ['Arenas', 'Quem oferece quadra na plataforma'],
   reservas: ['Reservas', 'Todo volume que passou pelo app'],
   clubes: ['Clubes', 'Os grupos que organizam pelada recorrente'],
-  pessoas: ['Pessoas', 'Quem se cadastrou e quem anda sumido']
+  pessoas: ['Pessoas', 'Quem se cadastrou e quem anda sumido'],
+  solicitacoes: ['Solicitações', 'Quem quer entrar — e o que dá para conferir']
 };
 
 function escapeHtml(value) {
@@ -574,12 +581,111 @@ async function viewPessoasApi() {
   </section>`;
 }
 
+/* ══════════ SOLICITACOES DE ARENA ═══════════════════════════════════════
+
+   A fila que decide quem entra no Qadras. Cada ficha traz o que dá para
+   CONFERIR sem sair da tela: CNPJ com situacao e CNAE, endereco, quantas
+   quadras, e a dor declarada.
+
+   O CNAE e o sinal mais barato de que aquilo e mesmo uma quadra — 9311-5/00 e
+   "gestao de instalacoes esportivas". Ele aparece destacado quando bate, mas
+   NAO decide sozinho: quadra registrada no CNPJ do restaurante da familia e
+   comum demais para virar recusa automatica. Quem decide e quem le. */
+
+function cnpjBonito(v) {
+  const d = String(v || '').replace(/\D/g, '');
+  if (d.length !== 14) return v || '—';
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
+const DORES_ROTULO = {
+  horarios_vagos: 'Horários vagos',
+  sem_previsao: 'Não sabe quem vem',
+  calote: 'Calote / desmarque',
+  caderno: 'Controle no caderno',
+  divulgacao: 'Pouca divulgação',
+  cobranca: 'Perde tempo cobrando'
+};
+
+async function viewSolicitacoes() {
+  const data = await adminService.solicitacoes();
+  const fila = data.solicitacoes || [];
+  atualizarContadorFila(fila.length);
+
+  if (!fila.length) {
+    return `<section class="panel">
+      <h2>Solicitações</h2>
+      <p class="muted">Nenhuma solicitação esperando. Quando uma arena se cadastrar, ela aparece aqui.</p>
+    </section>`;
+  }
+
+  return `<section class="panel">
+    <h2>Esperando análise <span class="muted">· ${fila.length}</span></h2>
+    ${fila.map((s) => `
+      <article class="sol">
+        <header class="sol__topo">
+          <div>
+            <strong>${escapeHtml(s.arenaNome || 'Sem nome')}</strong>
+            <small>${escapeHtml(s.bairro || '')}${s.bairro && s.cidade ? ' · ' : ''}${escapeHtml(s.cidade || '')}${s.estado ? '/' + escapeHtml(s.estado) : ''}</small>
+          </div>
+          <span class="tag tag--pendente">${escapeHtml(s.status)}</span>
+        </header>
+
+        <dl class="sol__grade">
+          <div><dt>CNPJ</dt><dd>${escapeHtml(cnpjBonito(s.cnpj))}</dd></div>
+          <div><dt>Razão social</dt><dd>${escapeHtml(s.razaoSocial || '—')}</dd></div>
+          <div><dt>Situação</dt><dd>${escapeHtml(s.cnpjSituacao || '—')}</dd></div>
+          <div class="sol__cnae ${/9311/.test(s.cnpjCnae || '') ? 'is-bom' : ''}">
+            <dt>Atividade (CNAE)</dt><dd>${escapeHtml(s.cnpjCnae || 'não consultada')}</dd>
+          </div>
+          <div><dt>Endereço</dt><dd>${escapeHtml([s.endereco, s.numero].filter(Boolean).join(', ') || '—')}<br><small>CEP ${escapeHtml(s.cep || '—')}</small></dd></div>
+          <div><dt>Contato</dt><dd>${escapeHtml(s.contatoNome || '—')}<br><small>${escapeHtml(s.contatoTelefone || '')} · ${escapeHtml(s.contatoEmail || '')}</small></dd></div>
+          <div><dt>Quadras</dt><dd>${s.quantasQuadras ?? '—'}${(s.esportes || []).length ? ' · ' + escapeHtml((s.esportes || []).join(', ')) : ''}</dd></div>
+          <div><dt>Faturamento</dt><dd>${escapeHtml(s.faturamento || 'não informado')}</dd></div>
+        </dl>
+
+        ${(s.dores || []).length ? `<p class="sol__dores">${(s.dores || [])
+          .map((d) => `<span>${escapeHtml(DORES_ROTULO[d] || d)}</span>`).join('')}</p>` : ''}
+
+        ${(s.fotos || []).length ? `<div class="sol__fotos">${(s.fotos || [])
+          .map((src) => `<img src="${escapeHtml(src)}" alt="" loading="lazy">`).join('')}</div>`
+          : '<p class="muted sol__semfoto">Sem fotos enviadas.</p>'}
+
+        <footer class="sol__acoes admin-actions">
+          <button type="button" class="admin-action--reactivate" data-sol="aprovar" data-id="${escapeHtml(s.id)}">Aprovar</button>
+          <button type="button" class="admin-action--pause" data-sol="recusar" data-id="${escapeHtml(s.id)}">Recusar…</button>
+        </footer>
+      </article>`).join('')}
+  </section>`;
+}
+
+/* O numero de pendentes no MENU. Carregado no boot e refeito a cada acao —
+   sem ele a fila so e vista por quem lembra de clicar. */
+async function atualizarContadorFila(quantos) {
+  const alvo = document.querySelector('[data-fila-num]');
+  if (!alvo) return;
+  if (quantos === undefined) {
+    if (!viaApi) return;
+    try {
+      quantos = ((await adminService.solicitacoes()).solicitacoes || []).length;
+    } catch { return; }
+  }
+  alvo.textContent = String(quantos);
+  alvo.hidden = !quantos;
+}
+
 const VIEWS = {
   visao: () => (viaApi ? viewVisaoApi() : viewVisaoMock()),
   arenas: () => (viaApi ? viewArenasApi() : viewArenasMock()),
   reservas: () => (viaApi ? viewReservasApi() : viewReservasMock()),
   clubes: () => (viaApi ? viewClubesApi() : viewClubesMock()),
-  pessoas: () => (viaApi ? viewPessoasApi() : viewPessoasMock())
+  pessoas: () => (viaApi ? viewPessoasApi() : viewPessoasMock()),
+  /* Sem versao mock: solicitacao so existe com backend. Com o mock ligado, a
+     tela diz isso em vez de fingir uma fila vazia — que se leria como "ninguem
+     se cadastrou ainda". */
+  solicitacoes: () => (viaApi
+    ? viewSolicitacoes()
+    : '<section class="panel"><h2>Solicitações</h2><p class="muted">Esta tela precisa do backend conectado.</p></section>')
 };
 
 /* Token de render: dois renders em sequencia (ex.: digitar e clicar num
@@ -635,6 +741,33 @@ document.addEventListener('click', (event) => {
       .then(() => render())
       .catch((error) => {
         alert(error.message || 'Não foi possível concluir a ação');
+        render();
+      });
+    return;
+  }
+
+  const sol = event.target.closest('button[data-sol]');
+  if (sol) {
+    const acao = sol.dataset.sol;
+    let motivo = '';
+    if (acao === 'recusar') {
+      /* Motivo OBRIGATORIO na recusa — o backend tambem cobra, mas pedir aqui
+         evita a viagem so para levar um 422. O texto vai inteiro para o dono
+         da quadra: recusa sem motivo vira uma ligacao que ninguem sabe
+         responder. */
+      motivo = prompt('Por que esta solicitação não passou? O dono da quadra vai ler exatamente este texto.') || '';
+      if (!motivo.trim()) return;
+    } else if (!confirm('Aprovar? A arena passa a existir e o dono recebe acesso ao painel.')) {
+      return;
+    }
+    sol.setAttribute('disabled', 'disabled');
+    (acao === 'aprovar'
+      ? adminService.aprovarSolicitacao(sol.dataset.id)
+      : adminService.recusarSolicitacao(sol.dataset.id, motivo)
+    )
+      .then(() => { atualizarContadorFila(); render(); })
+      .catch((error) => {
+        alert(error.message || 'Não foi possível concluir');
         render();
       });
     return;
@@ -699,3 +832,7 @@ if (viaApi) {
 }
 
 render();
+/* O contador da fila e carregado FORA do render: ele precisa aparecer mesmo
+   quando a tela aberta e outra — a graca do numero no menu e justamente
+   avisar quem nao estava olhando para la. */
+atualizarContadorFila();
