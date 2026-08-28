@@ -131,16 +131,32 @@ def compute_quote(price_cents: int, duration_h: int, *, plan: str = PLAN_AVULSO)
     }
 
 
+def preco_base(court, plan: str) -> int:
+    """O preco que serve de base para o plano escolhido.
+
+    EXISTE PARA NAO HAVER DUAS CONTAS. Este calculo estava escrito duas vezes —
+    uma no orcamento da tela de pagamento e outra na criacao da reserva — e so
+    a segunda ganhou o fallback de mensalidade ausente. O resultado foi o pior
+    tipo de divergencia: o checkout mostrava "Total R$ 0,00" e o botao dizia
+    "Enviar solicitacao - R$ 0,00", enquanto a reserva, se chegasse a ser
+    criada, sairia com o valor certo. O jogador via de graca o que nao era.
+
+    `price_monthly_cents` e opcional no cadastro da quadra. Sem ele, a
+    mensalidade e o preco da hora x 4 semanas — que e exatamente o que o card
+    do jogador ja mostrava antes de ele tocar em reservar. Cobrar diferente do
+    que estava na tela seria pior do que o zero.
+    """
+    if plan == PLAN_MENSALISTA:
+        return court.price_monthly_cents or (court.price_cents * MONTHLY_SESSIONS)
+    return court.price_cents
+
+
 def quote_booking(db: Session, *, court_id, date: str, hora: str, dur: int, plan: str) -> dict:
     row = venues_repo.get_visible_court(db, court_id)
     if not row:
         raise HTTPException(status_code=404, detail="Quadra nao encontrada")
     court, _ = row
-    amounts = compute_quote(
-        court.price_monthly_cents if plan == PLAN_MENSALISTA else court.price_cents,
-        dur,
-        plan=plan,
-    )
+    amounts = compute_quote(preco_base(court, plan), dur, plan=plan)
     return {
         "quadraId": str(court.id),
         "plan": plan,
@@ -411,10 +427,7 @@ def create_booking(
     # O card do jogador ja mostrava `preco x 4` nesse caso, entao o valor
     # cobrado passa a ser o MESMO que ele leu antes de tocar em reservar —
     # cobrar diferente do que estava na tela seria pior do que o 500.
-    price_base = court.price_cents
-    if plan == PLAN_MENSALISTA:
-        price_base = court.price_monthly_cents or (court.price_cents * MONTHLY_SESSIONS)
-    amounts = compute_quote(price_base, dur, plan=plan)
+    amounts = compute_quote(preco_base(court, plan), dur, plan=plan)
     group_id = uuid.uuid4() if plan == PLAN_MENSALISTA else None
 
     created: list[Booking] = []

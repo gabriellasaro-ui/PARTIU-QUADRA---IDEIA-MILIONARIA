@@ -101,9 +101,39 @@ def _client_phone(booking: Booking, user) -> str:
     return getattr(user, "phone", None) or ""
 
 
+# Um mensalista trava um horario por semana: quatro sessoes no mes. O mesmo
+# numero que services/bookings.py usa para criar as sessoes.
+SESSOES_NO_MES = 4
+
+
 def serialize_booking(booking: Booking, court: Court, arena: Arena, user) -> dict:
     local = _as_local(booking.start_at)
     local_end = _as_local(booking.end_at)
+
+    """SESSAO DE MENSALISTA NAO E R$ 0,00 — ela esta inclusa no mes.
+
+    O plano e cobrado UMA vez: a reserva-pai leva o valor do mes e as tres
+    sessoes seguintes ficam com subtotal zero no banco. Isso e correto para a
+    contabilidade e ILEGIVEL na tela: em "Proximas reservas" o dono via
+    "05/09 R$ 480,00", "12/09 R$ 0,00", "19/09 R$ 0,00" — tres jogos que
+    parecem de graca, ou um sistema que perdeu o valor.
+
+    Aqui a sessao passa a mostrar quanto ela vale DENTRO do plano. O numero e
+    de exibicao e nao muda nada do que foi cobrado: os totais do financeiro
+    somam `subtotal_cents` direto do banco (repo.revenue_for_period), sem
+    passar por este serializer. E a fila de Reservas do painel esconde as
+    sessoes (`semSessoes`), entao nao ha risco de somar o mes duas vezes.
+    """
+    valor = booking.subtotal_cents / 100
+    total = booking.total_cents / 100
+    if booking.plan == PLAN_MENSALISTA and booking.is_session and not booking.subtotal_cents:
+        # A parcela sai da QUADRA, que o serializer ja recebe: a mensalidade
+        # dividida pelas sessoes do mes. Sem mensalidade cadastrada vale a
+        # mesma regra do resto do sistema — o preco da hora.
+        mensal = (court.price_monthly_cents or (court.price_cents * SESSOES_NO_MES)) if court else 0
+        valor = round(mensal / SESSOES_NO_MES / 100, 2)
+        total = valor
+
     return {
         "id": str(booking.id),
         "code": booking.code,
@@ -114,8 +144,8 @@ def serialize_booking(booking: Booking, court: Court, arena: Arena, user) -> dic
         "data": local.strftime("%d/%m/%Y"),
         "dataValue": local.strftime("%Y-%m-%d"),
         "hora": f"{local.strftime('%H:%M')} – {local_end.strftime('%H:%M')}",
-        "valor": booking.subtotal_cents / 100,
-        "total": booking.total_cents / 100,
+        "valor": valor,
+        "total": total,
         "repasse": round(booking.subtotal_cents * (1 - settings.arena_fee_rate) / 100, 2),
         "status": _STATUS_LABEL.get(booking.status, booking.status),
         "statusClass": _STATUS_CLASS.get(booking.status, "pendente"),
@@ -363,6 +393,7 @@ def list_reservas(
     status_filtro: str | None = None,
     q: str | None = None,
     plano: str | None = None,
+    sem_sessoes: bool = False,
     de: str | None = None,
     ate: str | None = None,
     pagina: int = 1,
@@ -387,6 +418,7 @@ def list_reservas(
         status=status_filtro or None,
         q=q or None,
         plano=plano or None,
+        sem_sessoes=sem_sessoes,
         de=inicio, ate=fim,
         limit=por_pagina,
         offset=(pagina - 1) * por_pagina,
@@ -583,6 +615,7 @@ def mensalista_sessions(db: Session, manager, booking_id) -> list[dict]:
     """
     total_cents = sum(b.subtotal_cents or 0 for b in grupo)
     por_sessao = round(total_cents / len(grupo) / 100, 2) if grupo else 0.0
+    valor_plano = round(total_cents / 100, 2)
 
     sessions = []
     for s in grupo:
@@ -593,7 +626,7 @@ def mensalista_sessions(db: Session, manager, booking_id) -> list[dict]:
             "dataValue": local.strftime("%Y-%m-%d"),
             "hora": f"{local.strftime('%H:%M')} – {_as_local(s.end_at).strftime('%H:%M')}",
             "valor": por_sessao,
-            "valorPlano": round(total_cents / 100, 2),
+            "valorPlano": valor_plano,
             "status": _STATUS_LABEL.get(s.status, s.status),
             "statusClass": _STATUS_CLASS.get(s.status, "pendente"),
         })

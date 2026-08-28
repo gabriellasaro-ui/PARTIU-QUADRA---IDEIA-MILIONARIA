@@ -3119,7 +3119,17 @@ html[data-manager-app] .topbar-marca { display: none; }
     row-gap: var(--e1);
   }
 
-  html[data-manager-app] .topbar .pt { order: 3; flex: 1 0 100%; }
+  /* O TITULO DA ROTA SAI DA BARRA NO CELULAR.
+
+     Na largura de telefone ele virava uma SEGUNDA LINHA sob a logo —
+     "Dashboard / Arena Bola na Rede" — e logo abaixo a propria tela abre com
+     "Arena Bola na Rede" em corpo grande. O nome aparecia duas vezes com
+     poucos pixels entre eles, e a faixa comia a primeira dobra inteira num
+     aparelho onde ela e o que mais falta.
+
+     No desktop ele fica: la a barra e larga, o titulo cabe na mesma linha e
+     nao ha eco logo abaixo. */
+  html[data-manager-app] .topbar .pt { display: none; }
   html[data-manager-app] .topbar .actions { margin-left: auto; }
 }
 
@@ -3733,4 +3743,52 @@ html[data-manager-app] .notif__seta {
   margin-left: auto;
   flex: none;
   color: var(--pq-muted);
+}
+
+/* ══ ATALHOS E ICONES DO PAINEL — ajuste pedido ═══════════════════════════
+
+   1. O ICONE DO KPI perde a moldura verde. Ela desenhava um quadradinho de
+      fundo atras de cada icone, e com tres KPIs lado a lado eram tres blocos
+      verdes competindo com o NUMERO, que e o dado da tela. O icone sozinho
+      basta para dizer do que se trata.
+
+   2. O ATALHO fica verde POR INTEIRO. Antes era um cartao branco com um
+      quadradinho verde no canto — a cor marcava o icone e nao a acao. Pintado
+      inteiro, cada atalho vira um alvo de toque com peso proprio, que e o que
+      "Central da arena" faz: levar para outro lugar.
+
+   Sobre o lime, o texto e escuro (`--pq-on-brand`): branco daria 1,85:1.
+   Estas regras entram depois das de manager-app.css e casam a mesma
+   especificidade de la, com o prefixo [data-manager-view] onde ele existe. */
+
+html[data-manager-app] .manager-dashboard-kpi > span {
+  background: transparent;
+  color: var(--pq-brand-deep);
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a {
+  border-color: transparent;
+  background: var(--pq-brand);
+  color: var(--pq-on-brand, #1f2e0b);
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a strong,
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a small {
+  color: var(--pq-on-brand, #1f2e0b);
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a small {
+  opacity: .78;
+}
+
+/* O quadradinho do icone tambem sai: dentro de um cartao ja verde ele viraria
+   uma mancha mais clara sem funcao. */
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a > span {
+  background: transparent;
+  color: var(--pq-on-brand, #1f2e0b);
+}
+
+html[data-manager-app][data-manager-view="dashboard"] .manager-tools a:hover {
+  border-color: transparent;
+  background: var(--pq-brand-strong);
 }

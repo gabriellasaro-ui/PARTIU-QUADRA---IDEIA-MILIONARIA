@@ -50,6 +50,10 @@ def listar_reservas(
     status: str | None = Query(default=None),
     q: str | None = Query(default=None),
     plano: str | None = Query(default=None, description="avulso | mensalista"),
+    semSessoes: bool = Query(
+        default=False,
+        description="Esconde as sessoes filhas do mensalista (ficam so as reservas-pai)",
+    ),
     de: str | None = Query(default=None, description="AAAA-MM-DD"),
     ate: str | None = Query(default=None, description="AAAA-MM-DD, inclusivo"),
     pagina: int = Query(default=1, ge=1),
@@ -66,6 +70,7 @@ def listar_reservas(
     return svc.list_reservas(
         db, user,
         status_filtro=status, q=q, plano=plano,
+        sem_sessoes=semSessoes,
         de=de, ate=ate, pagina=pagina, por_pagina=porPagina,
     )
 

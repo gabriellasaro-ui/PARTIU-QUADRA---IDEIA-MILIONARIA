@@ -64,6 +64,7 @@ def list_arena_bookings(
     status: str | None = None,
     q: str | None = None,
     plano: str | None = None,
+    sem_sessoes: bool = False,
     de: datetime | None = None,
     ate: datetime | None = None,
     limit: int = 200,
@@ -88,6 +89,11 @@ def list_arena_bookings(
         stmt = stmt.where(Booking.status == status)
     if plano:
         stmt = stmt.where(Booking.plan == plano)
+    if sem_sessoes:
+        # As 3 sessoes filhas do mensalista sao o MESMO compromisso da reserva
+        # pai, ja listada. Sem este corte, um plano vira quatro linhas iguais e
+        # a fila de decisao do dono fica ilegivel.
+        stmt = stmt.where(Booking.is_session.is_(False))
     if de is not None:
         stmt = stmt.where(Booking.start_at >= _utc_naive(de))
     if ate is not None:

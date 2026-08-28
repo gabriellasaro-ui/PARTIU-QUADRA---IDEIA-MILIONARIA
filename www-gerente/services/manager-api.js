@@ -168,11 +168,14 @@ export const managerService = {
      lista: sem o total, a tela nao tem como numerar as paginas nem dizer
      quantas reservas existem. Antes vinha uma lista cortada em 200 linhas sem
      avisar do corte. */
-  async reservas({ pagina = 1, porPagina = 20, status, q, plano, de, ate } = {}) {
+  async reservas({ pagina = 1, porPagina = 20, status, q, plano, semSessoes, de, ate } = {}) {
     const p = new URLSearchParams({ pagina: String(pagina), porPagina: String(porPagina) });
     if (status) p.set('status', status);
     if (q) p.set('q', q);
     if (plano) p.set('plano', plano);
+    /* Esconde as 3 sessoes filhas do mensalista: sao o mesmo compromisso da
+       reserva-pai e virariam quatro linhas iguais na fila do dono. */
+    if (semSessoes) p.set('semSessoes', 'true');
     if (de) p.set('de', de);
     if (ate) p.set('ate', ate);
     const data = await api.get(`/api/gerente/reservas?${p}`);

@@ -60,10 +60,19 @@ export async function renderManagerReservations(root) {
      Filtrar no cliente sobre uma pagina de 20 daria um resultado ridiculo:
      "nenhuma reserva" porque o que se procura esta na pagina 4. Quem pagina
      tem de filtrar do mesmo lado. */
+  /* MENSALISTA TAMBEM ENTRA NESTA FILA.
+
+     O filtro era `plano: 'avulso'`, entao uma solicitacao de mensalista nao
+     aparecia aqui — nem em "Pendentes". Ela chegava so como notificacao, e a
+     tela onde o dono APROVA nao a mostrava: o pedido ficava esperando uma
+     decisao que nao tinha onde ser tomada.
+
+     `semSessoes` corta as 3 sessoes filhas: elas sao o mesmo compromisso da
+     reserva-pai e virariam quatro linhas iguais na fila. */
   const resposta = await loadBookings({
     pagina,
     porPagina: POR_PAGINA,
-    plano: 'avulso',
+    semSessoes: true,
     status: filtro || undefined,
     q: busca.trim() || undefined,
     de: de || undefined,
@@ -99,7 +108,7 @@ export async function renderManagerReservations(root) {
      mil — e o dono confere o proprio caixa por esse numero. Vem de uma consulta
      separada, sem paginar, porque totalizador nao pagina. */
   const resumo = await loadBookings({
-    porPagina: 100, plano: 'avulso',
+    porPagina: 100, semSessoes: true,
     de: de || undefined, ate: ate || undefined
   });
   set('[data-booking-volume]', formatCurrency(
