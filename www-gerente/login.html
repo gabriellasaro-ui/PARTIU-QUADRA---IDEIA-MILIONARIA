@@ -82,17 +82,29 @@
 
     /* ── A ILUSTRACAO ──────────────────────────────────────────────────────
 
-       Ancorada no pe do painel, com `mix-blend-mode: multiply`: o ceu branco
-       da cena absorve o tom do painel e a emenda de cima desaparece sozinha.
-       E por isso que nao ha mascara aqui — a versao anterior tinha uma, e ela
-       so existia para consertar um problema que o painel claro nao cria.
+       ELA PREENCHE O PAINEL INTEIRO, e nao so o pe dele.
 
-       A largura bate com os 58% do painel de proposito: um pixel a menos e
-       sobra uma faixa de verde entre a arte e o divisor. */
+       Com a arte deitada ancorada embaixo — que e como o login do jogador faz —
+       sobrava metade do painel em verde chapado, e a tela parecia inacabada. Lá
+       aquilo funciona porque o ceu da cena e quase todo vazio e dissolve
+       devagar; aqui a arte tem horizonte definido (predios, arvores) e o corte
+       vira um bloco.
+
+       Entao aqui entra a arte VERTICAL — a mesma do celular. O painel e uma
+       coluna (835x900 numa tela de 1440), e uma imagem em retrato cobre isso
+       sem faixa vazia. Nome de arquivo "mobile" e so a origem dela; a forma e
+       que importa.
+
+       `object-position: center 60%` foi escolhido comparando os quatro cortes
+       lado a lado: com 100% (embaixo) a cabeca do dono fica de fora e sobra
+       calcada; com 40% sobra ceu e os pes saem. Em 60% cabem o dono inteiro, a
+       bola, a placa e o campo.
+
+       O `multiply` continua: o ceu absorve o tom do painel, entao nao ha
+       emenda no topo mesmo com a imagem encostando na borda. */
     .gerente-login__art {
       position: absolute;
-      left: 0;
-      bottom: 0;
+      inset: 0 auto 0 0;
       width: 58%;
       /* A arte nao pode roubar clique do formulario. */
       pointer-events: none;
@@ -109,7 +121,9 @@
     .gerente-login__art img {
       display: block;
       width: 100%;
-      height: auto;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 60%;
       mix-blend-mode: multiply;
     }
 
@@ -353,7 +367,7 @@
        nada ouvindo a descricao da cena, e o titulo do cartao ja diz onde a
        pessoa esta. width/height evitam o pulo de layout enquanto ela carrega. -->
   <div class="gerente-login__art" aria-hidden="true">
-    <img src="./assets/images/login-hero.webp" alt="" width="1280" height="720">
+    <img src="./assets/images/login-hero-mobile.webp" alt="" width="854" height="1517">
   </div>
 
   <main class="gerente-login__card">
