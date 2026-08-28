@@ -72,6 +72,11 @@ TRANSITIONS: dict[str, dict[str, set[str]]] = {
         STATUS_PAYMENT_FAILED: {ROLE_SISTEMA},
         STATUS_CANCELLED: {ROLE_JOGADOR, ROLE_GERENTE, ROLE_ADMIN},
         STATUS_EXPIRED: {ROLE_SISTEMA},
+        # Recusar um mensalista alcanca as SESSOES, que nunca foram pagas
+        # separado (total 0) e por isso estao aqui, e nao em `requested`. Sem
+        # esta aresta a recusa parava no pai e as semanas seguintes seguiam
+        # ocupando a quadra.
+        STATUS_REJECTED: {ROLE_GERENTE},
     },
     STATUS_PAYMENT_CONFIRMED: {
         STATUS_REQUESTED: {ROLE_SISTEMA},
@@ -899,7 +904,12 @@ def approve_booking(db: Session, manager, booking_id) -> Booking:
 def reject_booking(db: Session, manager, booking_id, reason: str | None = None) -> Booking:
     booking, _, arena = get_reservation(db, manager, booking_id)
     manager_owns_arena(db, manager, arena)
-    _transition_booking(
+    # Grupo, nao a linha: a arena esta dizendo nao ao mensalista inteiro. Com
+    # `_transition_booking` so o pai virava `rejected` e as tres sessoes
+    # seguiam `pending_payment` — segurando a quadra por tres semanas para uma
+    # reserva que ninguem aprovou, e sem nada na tela denunciando isso: o dono
+    # ve "ocupado" e conclui que vendeu.
+    _transition_group(
         db, booking, STATUS_REJECTED, actor_id=manager.id, actor_role=ROLE_GERENTE, reason=reason
     )
     db.commit()
@@ -938,6 +948,14 @@ def expire_stale(db: Session, *, now: datetime | None = None) -> int:
     targets = db.execute(
         select(Booking).where(
             Booking.status.in_([STATUS_PENDING_PAYMENT, STATUS_REQUESTED]),
+            # Sessao de mensalista nao expira sozinha. Ela nao tem pagamento
+            # proprio (total 0) e fica em `pending_payment` mesmo depois do pai
+            # ser pago e aprovado — para a varredura isso parecia abandono, e
+            # 15 min apos a criacao ela expirava LEVANDO O GRUPO, inclusive um
+            # pai `confirmed`. Como confirmed -> expired nao existe no mapa, o
+            # que saia dali era uma excecao no meio do laco de manutencao.
+            # Quem manda na vida da sessao e o pai, via _transition_group.
+            Booking.is_session.is_(False),
         )
     ).scalars().all()
     count = 0
