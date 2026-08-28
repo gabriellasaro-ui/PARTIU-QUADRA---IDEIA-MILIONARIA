@@ -1925,16 +1925,31 @@ async function montarEscolhaDeClubeNoCheckout(raiz) {
   try {
     clubes = (await venueService.myClubs?.()) || [];
   } catch (erro) {
-    return;
+    /* Sem resposta do servidor a pergunta continua na tela com "Sem clube"
+       marcado — que e o que vai acontecer de qualquer jeito. Esconder aqui
+       faria a escolha desaparecer por causa de uma falha de rede. */
+    clubes = [];
   }
-  if (!clubes.length) return;
 
+  /* A PERGUNTA APARECE SEMPRE, mesmo para quem nao esta em clube nenhum.
+
+     Antes ela sumia nesse caso — "pergunta sem resposta possivel", foi o que
+     eu escrevi. Errado: some tambem a INFORMACAO de que a pelada vai ser so
+     dela, e quem procurava a escolha (voce) concluia que ela nao existia. Sem
+     clube, a linha diz o que vai acontecer e oferece o caminho para ter um. */
   caixa.hidden = false;
   const opcoes = caixa.querySelector('[data-checkout-clube-opcoes]');
   opcoes.innerHTML = [
     '<button type="button" class="pelada-clube__op on" data-clube="">Sem clube</button>',
     ...clubes.map((c) => `<button type="button" class="pelada-clube__op" data-clube="${escapeHtml(String(c.id))}">${escapeHtml(c.name || c.nome || 'Clube')}</button>`)
   ].join('');
+
+  const aviso = caixa.querySelector('.checkout-clube__sub');
+  if (aviso) {
+    aviso.innerHTML = clubes.length
+      ? 'O clube escolhido recebe o aviso e confirma presença. Sem clube, a pelada fica só sua.'
+      : 'Você ainda não está em um clube, então esta pelada fica só sua. <a href="#clubes">Procurar um clube</a>';
+  }
 
   opcoes.addEventListener('click', (evento) => {
     const botao = evento.target.closest('[data-clube]');

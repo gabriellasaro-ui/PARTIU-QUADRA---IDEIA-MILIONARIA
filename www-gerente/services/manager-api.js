@@ -54,6 +54,7 @@ export const mapBooking = (b) => {
     status,
     // `plan` ja existe logo abaixo; aqui entra so o que faltava.
     recorrencia: b.recorrencia,
+    sessoes: b.sessoes || [],
     cls: STATUS_CLS[status] || b.statusClass || 'pendente',
     plan: b.plan,
     source: b.source,

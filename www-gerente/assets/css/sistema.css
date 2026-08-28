@@ -3795,18 +3795,63 @@ html[data-manager-app][data-manager-view="dashboard"] .manager-tools a:hover {
 
 /* Plano e recorrencia embaixo da data: mensalista de toda quinta era
    indistinguivel de um avulso de um dia so. */
+/* A PILULA NAO PODE QUEBRAR EM TRES LINHAS.
+
+   Ela nasceu dentro da coluna estreita da data e o texto empilhou:
+   "Mensalista" / "· toda" / "quinta", com o icone perdido no meio. Agora ela
+   ocupa a largura do bloco, o texto nao quebra e o icone fica fixo. */
+html[data-manager-app] .manager-booking-fact--data {
+  display: grid;
+  /* UMA coluna, explicitamente.
+
+     `.manager-booking-fact` ja e um grid de DUAS colunas (rotulo a esquerda,
+     valor a direita), e sem redeclarar aqui a pilula caia na coluna estreita
+     de 86px: "Mensalista · toda quinta" precisa de 130px e vazava por cima do
+     resto. Nao adiantou mexer no `overflow` do texto — o limite era a coluna,
+     nao a truncagem. */
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: 3px;
+}
+
 html[data-manager-app] .manager-booking-plano {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 3px;
-  padding: 2px 8px;
+  gap: 5px;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 3px 10px;
   border-radius: 999px;
   background: var(--pq-tint);
   color: var(--pq-brand-deep);
   font-size: var(--t-micro);
   font-style: normal;
   font-weight: 800;
+  white-space: nowrap;
+}
+
+/* SEM truncagem aqui: o bloco da data tem 332px e a frase inteira cabe. Com
+   `overflow: hidden` o item flex ganhava min-width zero e o texto encolhia
+   para 49px — "Mensalista · toda quinta" virava "Mensa...". */
+html[data-manager-app] .manager-booking-plano > span {
+  flex: none;
+}
+
+/* As datas do plano: o dono aprova QUATRO dias, e precisa ver quais. */
+html[data-manager-app] .manager-booking-datas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+html[data-manager-app] .manager-booking-datas b {
+  padding: 2px 7px;
+  border: 1px solid var(--pq-line);
+  border-radius: 999px;
+  color: var(--pq-muted);
+  font-size: var(--t-micro);
+  font-weight: 700;
 }
 
 html[data-manager-app] .manager-booking-plano .ic { width: 12px; height: 12px; }
@@ -3815,4 +3860,20 @@ html[data-manager-app] .manager-booking-plano.is-avulso {
   background: transparent;
   color: var(--pq-muted);
   padding-left: 0;
+}
+
+/* O quadradinho verde atras do icone sai de TODOS os KPIs, e nao so os do
+   inicio: na tela de Reservas eram outros tres blocos competindo com o numero.
+   O seletor cobre as variantes que cada tela usa. */
+/* O seletor certo da tela de Reservas: os KPIs de la vivem em
+   `.manager-reservation-overview article > span`, e nao nas classes que eu
+   tinha chutado — descobri inspecionando o elemento, e nao lendo o CSS. */
+html[data-manager-app] .manager-reservation-overview article > span,
+html[data-manager-app] .manager-booking-stats > div > span,
+html[data-manager-app] .manager-stat > span,
+html[data-manager-app] .manager-kpi > span,
+html[data-manager-app] .kpi > span,
+html[data-manager-app] .manager-finance-metrics > div > span {
+  background: transparent;
+  color: var(--pq-brand-deep);
 }

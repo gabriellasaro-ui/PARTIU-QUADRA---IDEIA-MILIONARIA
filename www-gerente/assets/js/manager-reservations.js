@@ -52,12 +52,16 @@ function linha(r) {
 
          A linha mostrava so a data, entao um mensalista de toda quinta era
          igual a um avulso de um dia. O dono aprovava sem saber que estava
-         cedendo o horario por quatro semanas seguidas. -->
-    <div class="manager-booking-fact">
+         cedendo o horario por quatro semanas.
+
+         E "toda quinta" diz o PADRAO, nao o compromisso: quem aprova esta
+         cedendo quatro datas concretas, entao elas vem logo abaixo. -->
+    <div class="manager-booking-fact manager-booking-fact--data">
       <span>Data e horário</span>
       <strong>${escapeHtml(r.data)} · <span class="num">${escapeHtml(r.hora)}</span></strong>
       ${r.plan === 'mensalista'
-        ? `<em class="manager-booking-plano">${icone('repeat')}Mensalista${r.recorrencia ? ` · ${escapeHtml(r.recorrencia)}` : ''}</em>`
+        ? `<em class="manager-booking-plano">${icone('repeat')}<span>Mensalista${r.recorrencia ? ` · ${escapeHtml(r.recorrencia)}` : ''}</span></em>
+           ${(r.sessoes || []).length ? `<span class="manager-booking-datas">${r.sessoes.map((d) => `<b>${escapeHtml(d)}</b>`).join('')}</span>` : ''}`
         : '<em class="manager-booking-plano is-avulso">Avulsa · 1 dia</em>'}
     </div>
     <div class="manager-booking-fact"><span>Valor</span><strong class="num">${formatCurrency(r.valor)}</strong></div>

@@ -113,7 +113,7 @@ _DIAS_SEMANA = [
 SESSOES_NO_MES = 4
 
 
-def serialize_booking(booking: Booking, court: Court, arena: Arena, user) -> dict:
+def serialize_booking(booking: Booking, court: Court, arena: Arena, user, sessoes=None) -> dict:
     local = _as_local(booking.start_at)
     local_end = _as_local(booking.end_at)
 
@@ -169,6 +169,12 @@ def serialize_booking(booking: Booking, court: Court, arena: Arena, user) -> dic
             if booking.plan == PLAN_MENSALISTA and booking.weekday is not None
             else None
         ),
+        # OS DIAS QUE ELE ESTA PEDINDO.
+        #
+        # "toda quinta" diz o padrao, nao o compromisso: o dono aprova quatro
+        # datas concretas e precisa ver quais sao antes de dizer sim. Sem elas,
+        # descobrir que uma cai num feriado ou num torneio so acontece depois.
+        "sessoes": sessoes or [],
         "source": booking.source,
     }
 
@@ -442,8 +448,25 @@ def list_reservas(
         offset=(pagina - 1) * por_pagina,
         com_total=True,
     )
+    """As datas do mensalista vem em UMA consulta para a pagina inteira.
+
+    Buscar por reserva daria uma consulta por linha — 20 idas ao banco para
+    desenhar uma tela. Aqui os grupos da pagina sao pedidos de uma vez."""
+    grupos = [b.group_id for b, _, _, _ in linhas
+              if b.plan == PLAN_MENSALISTA and not b.is_session and b.group_id]
+    datas_por_grupo: dict = {}
+    if grupos:
+        for grupo in set(grupos):
+            datas_por_grupo[grupo] = [
+                _as_local(x.start_at).strftime("%d/%m")
+                for x in repo.group_bookings(db, grupo)
+            ]
+
     return {
-        "reservas": [serialize_booking(b, c, a, u) for b, c, a, u in linhas],
+        "reservas": [
+            serialize_booking(b, c, a, u, sessoes=datas_por_grupo.get(b.group_id))
+            for b, c, a, u in linhas
+        ],
         "total": total,
         "pagina": pagina,
         "porPagina": por_pagina,
