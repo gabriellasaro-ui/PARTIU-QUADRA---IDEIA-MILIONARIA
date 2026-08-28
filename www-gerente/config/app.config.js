@@ -1,32 +1,41 @@
 /* Configuracao real do app do gerente para o webDir do Capacitor.
 
-   API_BASE_URL EM DUAS SITUACOES, e por um motivo pratico:
+   DOIS DESTINOS, e o motivo de cada um:
 
-   No APK a pagina e servida pelo Capacitor em http://localhost/, e "localhost"
-   dentro do celular e o proprio celular — o backend nao esta la. Por isso o
-   endereco precisa ser o IP da maquina na LAN, e ele fica compilado no APK.
+   NO APK -> a API HOSPEDADA (https://api.qadras.com.br).
+   O endereco fica compilado dentro do APK, e o IP da LAN muda toda vez que a
+   maquina troca de rede — cada troca exigia recompilar e reinstalar, e o
+   sintoma era sempre o mesmo "o app nao abre". Com um dominio fixo esse
+   problema deixa de existir.
 
-   No NAVEGADOR o mesmo IP e desnecessario e vira armadilha: o IP da LAN muda
-   ao trocar de rede, e ai o painel aberto em localhost:5175 tenta falar com
-   um IP que nao existe mais e "nao carrega nada". Isso ja custou varias
-   rodadas de investigacao. Servido por HTTP, a pagina passa a falar com o
-   MESMO host que a serviu, na porta 8000 — mudou de rede, continua funcionando
-   sem editar arquivo nenhum.
+   NO NAVEGADOR -> o backend da propria maquina, na porta 8000.
+   E onde se desenvolve: o erro aparece no log do servidor na hora, e um teste
+   nao escreve no banco de producao. Servido por HTTP, a pagina fala com o
+   MESMO host que a serviu — mudou de rede, continua funcionando sem editar
+   arquivo nenhum.
 
-   Em producao troque a constante por https://api.qadras.com.br.
+   ATENCAO CORS: o Capacitor serve a pagina de http://localhost dentro do
+   aparelho, e e ESSA a origem que chega na API. Se ela nao estiver em
+   CORS_ORIGINS no servidor, TODO request e bloqueado pelo navegador e o
+   sintoma volta a ser "nao conecta" — igual ao do IP errado, e por um motivo
+   completamente diferente. Ver docs/DEPENDENCIAS-EXTERNAS.md, secao E.2. */
+const API_HOSPEDADA = 'https://api.qadras.com.br';
 
-   ATENCAO: o IP abaixo ainda vale para o APK. Confira com ipconfig quando o
-   aparelho nao conectar — e a primeira coisa a olhar. */
+/* So para depurar o APK contra o backend desta maquina: troque NO_APK para
+   IP_DA_LAN, confira o IP com ipconfig e recompile. */
 const IP_DA_LAN = 'http://192.168.0.19:8000';
+const NO_APK = API_HOSPEDADA;
 
 function enderecoDaApi() {
   const nativo = Boolean(window.Capacitor && window.Capacitor.isNativePlatform
     && window.Capacitor.isNativePlatform());
-  if (nativo) return IP_DA_LAN;
+  if (nativo) return NO_APK;
   if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol) && location.hostname) {
     return `${location.protocol}//${location.hostname}:8000`;
   }
-  return IP_DA_LAN;
+  /* Aberto por file:// (raro, mas acontece ao abrir o HTML direto): sem host
+     para derivar, a hospedada e a unica que responde de qualquer lugar. */
+  return API_HOSPEDADA;
 }
 
 window.__PQ_CONFIG__ = {

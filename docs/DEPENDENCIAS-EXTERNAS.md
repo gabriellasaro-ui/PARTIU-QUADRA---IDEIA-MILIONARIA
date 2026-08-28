@@ -257,8 +257,31 @@ Criar os 4 registros **A** apontando para o IP do VPS:
 | `admin.qadras.com.br` | painel admin |
 
 - **SSL:** o Traefik do EasyPanel emite Let's Encrypt automaticamente.
-- **CORS:** preencher `CORS_ORIGINS` com os 3 subdomínios
-  (ver `backend/.env.example`).
+- **CORS:** preencher `CORS_ORIGINS` com os 3 subdomínios **e com as origens
+  dos APKs** (ver `backend/.env.example`).
+
+#### ⚠️ O APK não manda o domínio do site como origem
+
+Os dois aplicativos agora falam com `https://api.qadras.com.br` — o endereço
+fica compilado dentro do APK, e era isso que quebrava a cada troca de rede.
+
+Só que dentro do aparelho a página é servida pelo Capacitor, não pelo site.
+A origem que chega na API é:
+
+| Plataforma | Origem enviada |
+|---|---|
+| Android (`androidScheme: "http"`) | `http://localhost` |
+| iOS | `capacitor://localhost` |
+
+Se as duas não estiverem em `CORS_ORIGINS`, o WebView bloqueia **todos** os
+requests e o sintoma é exatamente o mesmo de um IP errado — "o app não
+conecta" — por um motivo completamente diferente. Confira com:
+
+```bash
+curl -si -X OPTIONS https://api.qadras.com.br/api/quadras   -H "Origin: http://localhost" -H "Access-Control-Request-Method: GET"   | grep -i access-control-allow-origin
+```
+
+Sem linha de resposta = bloqueado.
 
 ### E.3 Variáveis por app (mesmo conjunto nos 3 apps)
 
