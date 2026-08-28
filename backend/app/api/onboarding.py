@@ -17,6 +17,7 @@ As duas de verificacao levam limite de taxa: codigo de 6 digitos e o alvo mais
 obvio de forca bruta que existe numa API.
 """
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
+from starlette.responses import Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
@@ -31,6 +32,19 @@ from ..services import verificacao
 from ..services.documentos import consultar_cnpj
 
 router = APIRouter(tags=["onboarding"])
+
+# ⚠️ TODO ENDPOINT COM @limiter.limit PRECISA DE `response: Response = None`.
+#
+# O limitador roda com `headers_enabled=True` — ele escreve os cabecalhos de
+# limite NA RESPOSTA, e para isso procura um parametro chamado `response` na
+# assinatura. Sem ele, o endpoint estoura com 500.
+#
+# Isso NAO aparece em desenvolvimento: `RATE_LIMIT_ENABLED=false` no .env e nos
+# testes desliga o limitador, e o decorador vira um no-op. A suite inteira
+# passa verde e o endpoint quebra so no servidor. Foi exatamente o que
+# aconteceu aqui — 262 testes passando e 500 na VPS.
+#
+# Todos os endpoints limitados de api/auth.py ja carregam esse parametro.
 
 
 # ── Verificacao ────────────────────────────────────────────────────────────
@@ -52,6 +66,7 @@ def enviar_codigo(
     body: EnviarCodigo,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    response: Response = None,
 ):
     # Sem destino, o proprio e-mail da conta. E o caso comum: a pessoa acabou
     # de criar a conta e so quer confirmar o endereco que ja digitou.
@@ -66,6 +81,7 @@ def conferir_codigo(
     body: ConferirCodigo,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    response: Response = None,
 ):
     return verificacao.conferir(db, user, body.codigo, body.canal)
 
@@ -85,7 +101,8 @@ class Aceites(BaseModel):
 
 @router.post("/api/arenas/solicitacao")
 @limiter.limit(LIMIT_AUTH_IP)
-def comecar(request: Request, body: ComecarCadastro, db: Session = Depends(get_db)):
+def comecar(request: Request, body: ComecarCadastro, db: Session = Depends(get_db),
+            response: Response = None):
     """Cria a conta do dono e a ficha em rascunho, e ja devolve sessao.
 
     Sessao aqui e o que faz "salvar a cada passo" existir: sem token, os passos

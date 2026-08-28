@@ -150,3 +150,40 @@ def test_logo_recusa_esquema_perigoso(client):
     h = _gerente(client)
     r = client.patch("/api/gerente/perfil", headers=h, json={"logo": "javascript:alert(1)"})
     assert r.status_code == 422
+
+
+def test_dono_consegue_corrigir_o_pino_da_arena(client, login):
+    """O painel deixava trocar bairro e cidade mas NAO a coordenada.
+
+    A arena mudava de endereco na ficha e o pino ficava no lugar antigo para
+    sempre — e o mapa e o unico caminho que o jogador tem ate la, porque a
+    gente nao entrega o endereco. Corrigir o bairro sem corrigir o pino manda
+    a pessoa para a rua errada.
+    """
+    ger = login("dono@arenabolanarede.com.br")
+
+    r = client.patch("/api/gerente/perfil", json={
+        "bairro": "Savassi", "cidade": "Belo Horizonte", "estado": "MG",
+        "lat": -19.9386, "lng": -43.9333,
+    }, headers=ger)
+    assert r.status_code == 200, r.text
+
+    perfil = client.get("/api/gerente/perfil", headers=ger).json()
+    assert perfil["bairro"] == "Savassi"
+    assert round(perfil["lat"], 4) == -19.9386
+    assert round(perfil["lng"], 4) == -43.9333
+
+
+def test_meia_coordenada_nao_entra(client, login):
+    """Latitude nova com longitude velha poe o pino no meio do nada — pior do
+    que nao ter pino, porque parece certo."""
+    ger = login("dono@arenabolanarede.com.br")
+    antes = client.get("/api/gerente/perfil", headers=ger).json()
+
+    r = client.patch("/api/gerente/perfil", json={"lat": -23.5}, headers=ger)
+    assert r.status_code == 200, r.text
+    depois = client.get("/api/gerente/perfil", headers=ger).json()
+    assert depois["lat"] == antes["lat"], "meia coordenada nao pode ser gravada"
+
+    fora = client.patch("/api/gerente/perfil", json={"lat": 999, "lng": 999}, headers=ger)
+    assert fora.status_code == 422, fora.text

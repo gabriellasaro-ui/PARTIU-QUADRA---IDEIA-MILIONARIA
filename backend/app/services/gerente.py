@@ -1331,6 +1331,10 @@ def arena_profile(db: Session, manager) -> dict:
         "telefone": arena.phone or "",
         "email": arena.email or "",
         "pixChave": arena.pix_key or "",
+        # Devolvido para o painel poder MOSTRAR o pino atual antes de mexer
+        # nele — corrigir uma coordenada as cegas nao e correcao, e chute.
+        "lat": arena.lat,
+        "lng": arena.lng,
         "ativo": arena.is_active,
         # A logo nao era nem lida nem gravada: o painel tinha o botao "Trocar
         # logo" e nada acontecia. Mesma falha que parece sucesso da ficha do
@@ -1361,6 +1365,13 @@ def update_arena_profile(db: Session, manager, body) -> dict:
         arena.logo = _validar_logo(body.logo)
     if body.pixChave is not None:
         arena.pix_key = body.pixChave
+    # Os dois JUNTOS ou nenhum: meia coordenada poe o pino no meio do oceano,
+    # e "latitude certa, longitude velha" e pior do que nao ter pino.
+    if body.lat is not None and body.lng is not None:
+        if not (-90 <= body.lat <= 90 and -180 <= body.lng <= 180):
+            raise HTTPException(status_code=422, detail="Coordenada fora do mapa")
+        arena.lat = body.lat
+        arena.lng = body.lng
     db.commit()
     return arena_profile(db, manager)
 

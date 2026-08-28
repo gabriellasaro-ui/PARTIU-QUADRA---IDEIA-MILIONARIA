@@ -129,6 +129,14 @@ class ArenaProfileUpdate(BaseModel):
     #: Data URL ou URL http. String vazia remove a logo e volta para a inicial
     #: do nome da arena.
     logo: Optional[str] = None
+    #: ONDE A ARENA FICA DE VERDADE.
+    #:
+    #: Faltava, e o buraco era grande: o painel deixava trocar bairro e cidade
+    #: mas NAO a coordenada, entao a arena mudava de endereco na ficha e o
+    #: pino continuava no lugar antigo para sempre. E o mapa e o unico caminho
+    #: que o jogador tem ate la — a gente nao entrega o endereco.
+    lat: Optional[float] = None
+    lng: Optional[float] = None
 
 
 class ExpedienteDia(BaseModel):
