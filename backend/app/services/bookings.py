@@ -113,15 +113,26 @@ def _uuid_or_404(booking_id) -> uuid.UUID:
 # --- Cotacao --------------------------------------------------------------
 
 def compute_quote(price_cents: int, duration_h: int, *, plan: str = PLAN_AVULSO) -> dict:
-    """Preco em centavos. Avulso: preco da hora x duracao. Mensalista: a base
-    ja e o preco do mes (1h/semana x 4 semanas), multiplicada pela duracao."""
+    """Preco em centavos, sempre base x duracao.
+
+    A DURACAO VALE PARA O MENSALISTA TAMBEM, e isto era um bug de dinheiro.
+
+    O codigo dizia `base = price_cents if plan == PLAN_MENSALISTA else ...`, ou
+    seja, ignorava a duracao no plano mensal — enquanto a propria docstring
+    daqui afirmava "multiplicada pela duracao". A tela do app calculava certo
+    (multiplicava) e o servidor calculava errado: o jogador escolhia 2h por
+    semana, via "Continuar - R$ 1.046,40", avancava e o checkout dizia
+    "R$ 523,20". Metade. A arena receberia metade do horario que cede.
+
+    A mensalidade cadastrada e pelo padrao de 1h/semana. Quem trava duas horas
+    por semana ocupa o dobro da quadra e paga o dobro — que e o que o card e a
+    tela de escolha ja mostravam.
+    """
     dur = max(1, min(3, int(duration_h or 1)))
     # `or 0` como rede: preco ausente vira zero e o erro aparece no valor, que
     # e visivel, em vez de virar 500 no meio da criacao da reserva.
     price_cents = int(price_cents or 0)
-    base = price_cents if plan == PLAN_MENSALISTA else price_cents * dur
-    if plan == PLAN_AVULSO:
-        base = price_cents * dur
+    base = price_cents * dur
     fee = round(base * settings.player_fee_rate)
     return {
         "subtotal_cents": base,

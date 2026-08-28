@@ -101,6 +101,13 @@ def _client_phone(booking: Booking, user) -> str:
     return getattr(user, "phone", None) or ""
 
 
+# Nomes na forma que a frase pede: "toda quinta", "todo sabado".
+_DIAS_SEMANA = [
+    "toda segunda", "toda terça", "toda quarta", "toda quinta",
+    "toda sexta", "todo sábado", "todo domingo",
+]
+
+
 # Um mensalista trava um horario por semana: quatro sessoes no mes. O mesmo
 # numero que services/bookings.py usa para criar as sessoes.
 SESSOES_NO_MES = 4
@@ -151,6 +158,17 @@ def serialize_booking(booking: Booking, court: Court, arena: Arena, user) -> dic
         "statusClass": _STATUS_CLASS.get(booking.status, "pendente"),
         "statusAt": _as_local(booking.updated_at).isoformat() if booking.updated_at else None,
         "plan": booking.plan,
+        # COMO ESTE COMPROMISSO SE REPETE.
+        #
+        # A tela do dono mostrava so a data — "03/09/2026 · 18:00 – 20:00" —
+        # e um mensalista de toda quinta era indistinguivel de um avulso de um
+        # dia so. O dono aprovava sem saber que estava cedendo o horario por
+        # quatro semanas.
+        "recorrencia": (
+            _DIAS_SEMANA[booking.weekday]
+            if booking.plan == PLAN_MENSALISTA and booking.weekday is not None
+            else None
+        ),
         "source": booking.source,
     }
 

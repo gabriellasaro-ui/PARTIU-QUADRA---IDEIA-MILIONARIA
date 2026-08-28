@@ -126,3 +126,56 @@ def test_mensalidade_ausente_vira_quatro_vezes_a_hora(client):
             court = db.get(Court, _uuid.UUID(quadra["id"]))
             court.price_monthly_cents = anterior
             db.commit()
+
+
+def test_duracao_multiplica_a_mensalidade(client):
+    """2h por semana custa o dobro de 1h por semana.
+
+    O calculo do servidor IGNORAVA a duracao no plano mensal — enquanto a
+    propria docstring dele dizia "multiplicada pela duracao" e a tela do app
+    multiplicava. O jogador escolhia 2h/semana, via "Continuar - R$ 1.046,40",
+    avancava, e o checkout dizia "R$ 523,20": metade. A arena receberia metade
+    do horario que cede.
+    """
+    from app.services.bookings import compute_quote
+
+    uma = compute_quote(48000, 1, plan="mensalista")
+    duas = compute_quote(48000, 2, plan="mensalista")
+    tres = compute_quote(48000, 3, plan="mensalista")
+
+    assert duas["subtotal_cents"] == uma["subtotal_cents"] * 2
+    assert tres["subtotal_cents"] == uma["subtotal_cents"] * 3
+    # A taxa acompanha a base, senao o total desanda junto.
+    assert duas["total_cents"] == duas["subtotal_cents"] + duas["service_fee_cents"]
+
+
+def test_orcamento_e_criacao_cobram_o_mesmo(client):
+    """O preco que a tela mostra e o preco que a reserva grava.
+
+    Eram DUAS contas — uma no orcamento do checkout e outra na criacao — e so a
+    segunda tinha o fallback de mensalidade ausente. O checkout mostrava
+    "Total R$ 0,00" e o botao "Enviar solicitacao - R$ 0,00", enquanto a
+    reserva sairia com o valor certo: o jogador via de graca o que nao era.
+    """
+    from datetime import date, timedelta
+
+    headers = _login_jogador(client)
+    quadra = _quadra_visivel(client)
+    dia = (date.today() + timedelta(days=21)).isoformat()
+
+    orcamento = client.post("/api/reservas/quote", json={
+        "quadraId": quadra["id"], "data": dia, "hora": "16:00", "dur": 2, "plano": "mensalista",
+    }, headers=headers)
+    assert orcamento.status_code == 200, orcamento.text
+    previsto = orcamento.json()["quote"]["total_cents"]
+    assert previsto > 0, "orcamento zerado e o defeito que este teste existe para pegar"
+
+    r = client.post("/api/reservas", json={
+        "quadraId": quadra["id"], "hora": "16:00", "dur": 2,
+        "plano": "mensalista", "dia": (date.today().weekday() + 5) % 7, "pagamento": "pix",
+    }, headers={**headers, "Idempotency-Key": f"orc-{date.today()}"})
+    assert r.status_code == 200, r.text
+    reserva = r.json()["reservas"][0]
+    # O serializer do jogador expoe subtotal + taxa, e nao um campo "total".
+    cobrado = round((reserva["subtotal"] + reserva["serviceFee"]) * 100)
+    assert cobrado == previsto, f"checkout {previsto} != reserva {cobrado}"

@@ -14289,3 +14289,15 @@ html[data-theme="dark"] .leaflet-tile-pane {
   background: var(--pq-tint);
   color: var(--pq-brand-deep);
 }
+
+/* A pergunta do clube no checkout usa as mesmas pilulas da confirmacao. */
+.checkout-clube {
+  margin-top: 14px;
+}
+
+.checkout-clube__sub {
+  margin: 0 0 10px;
+  color: var(--pq-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}

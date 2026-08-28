@@ -61,6 +61,23 @@
       </div>
     </section>
 
+    <!-- DE QUEM E ESTA PELADA — perguntado ANTES de enviar o pedido.
+
+         A escolha nascia depois, na tela de confirmacao, e so aparecia se a
+         arena aprovasse: quem estava em dois clubes decidia tarde, e quem
+         parava antes da aprovacao nunca via a pergunta. Aqui ela fica no
+         mesmo lugar onde a pessoa ja esta decidindo a reserva.
+
+         Nasce escondida: `renderPayment` so mostra a secao para quem esta em
+         algum clube. Pergunta sem resposta possivel e so mais um passo. -->
+    <section class="checkout-clube" data-checkout-clube hidden>
+      <div class="section-head">
+        <div><span>Quem joga</span><h2>Para qual clube?</h2></div>
+      </div>
+      <p class="checkout-clube__sub">O clube escolhido recebe o aviso e confirma presença. Sem clube, a pelada fica só sua.</p>
+      <div class="pelada-clube__opcoes" data-checkout-clube-opcoes></div>
+    </section>
+
     <div class="approval-policy">
       <span><i class="ic" data-lucide="timer"></i></span>
       <div>

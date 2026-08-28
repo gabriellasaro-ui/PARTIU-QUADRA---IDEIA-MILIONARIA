@@ -32,6 +32,10 @@ function escapeHtml(value) {
 
 const inicial = (nome) => String(nome || '?').charAt(0).toUpperCase();
 
+/* Icone inline: o sprite do Lucide so e resolvido depois, por pqRefreshIcons,
+   e a linha e reescrita a cada filtro. */
+const icone = (nome) => `<i class="ic sm" data-lucide="${nome}"></i>`;
+
 function linha(r) {
   const acoes = r.status === 'Solicitada'
     ? `<button type="button" class="btn btn-danger btn-xs" data-booking-refuse="${r.id}">Recusar</button>
@@ -44,7 +48,18 @@ function linha(r) {
       <div><strong>${escapeHtml(r.cliente)}</strong><small>${escapeHtml(r.telefone)}</small></div>
     </div>
     <div class="manager-booking-fact"><span>Quadra</span><strong>${escapeHtml(r.quadra)}</strong></div>
-    <div class="manager-booking-fact"><span>Data e horário</span><strong>${escapeHtml(r.data)} · <span class="num">${escapeHtml(r.hora)}</span></strong></div>
+    <!-- MENSALISTA E AVULSO PRECISAM SE DISTINGUIR AQUI.
+
+         A linha mostrava so a data, entao um mensalista de toda quinta era
+         igual a um avulso de um dia. O dono aprovava sem saber que estava
+         cedendo o horario por quatro semanas seguidas. -->
+    <div class="manager-booking-fact">
+      <span>Data e horário</span>
+      <strong>${escapeHtml(r.data)} · <span class="num">${escapeHtml(r.hora)}</span></strong>
+      ${r.plan === 'mensalista'
+        ? `<em class="manager-booking-plano">${icone('repeat')}Mensalista${r.recorrencia ? ` · ${escapeHtml(r.recorrencia)}` : ''}</em>`
+        : '<em class="manager-booking-plano is-avulso">Avulsa · 1 dia</em>'}
+    </div>
     <div class="manager-booking-fact"><span>Valor</span><strong class="num">${formatCurrency(r.valor)}</strong></div>
     <div class="manager-booking-status"><span class="status ${escapeHtml(r.cls)}">${escapeHtml(r.status)}</span></div>
     <div class="manager-booking-actions">${acoes}</div>

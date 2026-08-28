@@ -1741,6 +1741,7 @@ function syncMobilePaymentChoice(root, requestedMethod = 'pix') {
 }
 
 async function renderPayment(root, route) {
+  montarEscolhaDeClubeNoCheckout(root);
   const context = await bookingContext(route);
   if (!context) {
     location.hash = 'quadras';
@@ -1901,6 +1902,48 @@ async function montarEscolhaDeClube(raiz, peladas) {
   });
 }
 
+/* O CLUBE ESCOLHIDO NO CHECKOUT.
+
+   Guardado aqui, e nao no `context` da rota, porque a criacao das peladas
+   acontece depois — quando a arena aprova — e o contexto daquela tela ja
+   passou. Zerado a cada visita ao checkout para nao vazar a escolha de uma
+   reserva para a seguinte. */
+let clubeEscolhidoParaPelada = null;
+
+/* A pergunta "de qual clube?" no proprio checkout.
+
+   Ela nascia depois, na tela de confirmacao, e so aparecia se a arena
+   aprovasse: quem estava em dois clubes decidia tarde, e quem parava antes da
+   aprovacao nunca via a pergunta. Aqui ela fica onde a pessoa ja esta
+   decidindo a reserva. Some para quem nao esta em clube nenhum. */
+async function montarEscolhaDeClubeNoCheckout(raiz) {
+  clubeEscolhidoParaPelada = null;
+  const caixa = raiz.querySelector('[data-checkout-clube]');
+  if (!caixa) return;
+
+  let clubes = [];
+  try {
+    clubes = (await venueService.myClubs?.()) || [];
+  } catch (erro) {
+    return;
+  }
+  if (!clubes.length) return;
+
+  caixa.hidden = false;
+  const opcoes = caixa.querySelector('[data-checkout-clube-opcoes]');
+  opcoes.innerHTML = [
+    '<button type="button" class="pelada-clube__op on" data-clube="">Sem clube</button>',
+    ...clubes.map((c) => `<button type="button" class="pelada-clube__op" data-clube="${escapeHtml(String(c.id))}">${escapeHtml(c.name || c.nome || 'Clube')}</button>`)
+  ].join('');
+
+  opcoes.addEventListener('click', (evento) => {
+    const botao = evento.target.closest('[data-clube]');
+    if (!botao) return;
+    opcoes.querySelectorAll('[data-clube]').forEach((b) => b.classList.toggle('on', b === botao));
+    clubeEscolhidoParaPelada = botao.dataset.clube || null;
+  });
+}
+
 async function criarPeladasDaReserva(context, code) {
   /* A PELADA NASCE AVULSA, e o clube e escolhido depois.
 
@@ -1929,8 +1972,10 @@ async function criarPeladasDaReserva(context, code) {
   const criadas = [];
   for (const dateISO of sessoes) {
     const resposta = await venueService.savePelada({
-      clubId: null,
-      kind: 'avulsa',
+      // A escolha feita no checkout. Sem clube = avulsa, que nao avisa
+      // ninguem; com clube, o backend ja convoca a turma na criacao.
+      clubId: clubeEscolhidoParaPelada,
+      kind: clubeEscolhidoParaPelada ? 'clube' : 'avulsa',
       title: titulo,
       venueId: venue.id,
       venueName: venue.name,
@@ -2114,7 +2159,6 @@ async function renderConfirmation(root, route) {
         </div>
       </div>`;
     refreshApprovalIcons();
-    montarEscolhaDeClube(content, peladasCriadas);
   }
 
   async function renderRejected(reason = 'declined') {

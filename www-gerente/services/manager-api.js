@@ -52,6 +52,8 @@ export const mapBooking = (b) => {
     total: b.total,
     repasse: b.repasse,
     status,
+    // `plan` ja existe logo abaixo; aqui entra so o que faltava.
+    recorrencia: b.recorrencia,
     cls: STATUS_CLS[status] || b.statusClass || 'pendente',
     plan: b.plan,
     source: b.source,

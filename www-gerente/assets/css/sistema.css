@@ -3792,3 +3792,27 @@ html[data-manager-app][data-manager-view="dashboard"] .manager-tools a:hover {
   border-color: transparent;
   background: var(--pq-brand-strong);
 }
+
+/* Plano e recorrencia embaixo da data: mensalista de toda quinta era
+   indistinguivel de um avulso de um dia so. */
+html[data-manager-app] .manager-booking-plano {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--pq-tint);
+  color: var(--pq-brand-deep);
+  font-size: var(--t-micro);
+  font-style: normal;
+  font-weight: 800;
+}
+
+html[data-manager-app] .manager-booking-plano .ic { width: 12px; height: 12px; }
+
+html[data-manager-app] .manager-booking-plano.is-avulso {
+  background: transparent;
+  color: var(--pq-muted);
+  padding-left: 0;
+}
