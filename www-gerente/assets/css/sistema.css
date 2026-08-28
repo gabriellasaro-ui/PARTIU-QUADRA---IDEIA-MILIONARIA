@@ -3877,3 +3877,52 @@ html[data-manager-app] .manager-finance-metrics > div > span {
   background: transparent;
   color: var(--pq-brand-deep);
 }
+
+/* ══════════ PRIMEIRA QUADRA ═══════════════════════════════════════════════
+
+   O cartao que aparece entre "arena aprovada" e "arena funcionando". Vem
+   ANTES dos numeros de proposito: naquele momento todos eles sao zero, e o
+   unico ato util da tela e cadastrar a quadra. Some sozinho quando ela existe
+   — o backend manda `primeiraQuadra: null` e o front so esconde. */
+html[data-manager-app] .manager-primeira {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--pq-brand);
+  border-radius: 14px;
+  background: var(--pq-tint);
+}
+html[data-manager-app] .manager-primeira__ico {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--pq-brand);
+  color: var(--pq-on-brand, #1f2e0b);
+}
+html[data-manager-app] .manager-primeira__txt { flex: 1 1 auto; min-width: 0; }
+html[data-manager-app] .manager-primeira__txt strong {
+  display: block;
+  font-size: 15px;
+  color: var(--pq-ink);
+}
+html[data-manager-app] .manager-primeira__txt p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--pq-ink-soft);
+}
+html[data-manager-app] .manager-primeira .btn { flex: 0 0 auto; }
+
+@media (max-width: 640px) {
+  /* Empilha: com 44px de icone mais o botao, a frase fica com 60px de largura
+     no celular e quebra palavra por linha. */
+  html[data-manager-app] .manager-primeira {
+    flex-wrap: wrap;
+  }
+  html[data-manager-app] .manager-primeira .btn { width: 100%; }
+}

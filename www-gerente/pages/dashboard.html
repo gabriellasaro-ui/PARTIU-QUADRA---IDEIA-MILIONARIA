@@ -6,7 +6,11 @@
 <section class="manager-welcome">
   <div class="manager-welcome__copy">
     <span class="manager-eyebrow"><i></i> Operação ativa</span>
-    <h2>Arena Bola na Rede</h2>
+    <!-- O nome vem do /api/gerente/dashboard. Estava CRAVADO como "Arena Bola
+         na Rede", que e a arena do seed: todo dono novo abria o painel e via o
+         nome de OUTRA arena no cabecalho — e a primeira conclusao razoavel e
+         que entrou na conta errada. -->
+    <h2 data-arena-nome>Arena Bola na Rede</h2>
     <p>Veja o que precisa da sua atenção e mantenha a agenda rodando sem perder reservas.</p>
   </div>
   <div class="manager-welcome__actions">
@@ -18,6 +22,22 @@
     </a>
     
   </div>
+</section>
+
+<!-- PRIMEIRA QUADRA — so aparece quando a arena nao tem NENHUMA.
+
+     A arena nasce na aprovacao sem quadra: o dono entra e ve faturamento zero,
+     ocupacao zero e agenda vazia. E a tela que parece defeito, e nada nela diz
+     o que fazer. Este cartao e a unica coisa acionavel do painel nesse
+     momento, entao ele vem antes dos numeros — que sao todos zero e nao
+     ajudam ninguem. Some sozinho assim que existir uma quadra. -->
+<section class="manager-primeira" data-primeira-quadra hidden>
+  <span class="manager-primeira__ico"><i class="ic" data-lucide="goal"></i></span>
+  <div class="manager-primeira__txt">
+    <strong>Sua arena está aprovada. Falta cadastrar a quadra.</strong>
+    <p data-primeira-linha>Enquanto não houver uma quadra, ninguém consegue reservar nada — e é por isso que os números abaixo estão zerados.</p>
+  </div>
+  <a class="btn btn-primary" href="./dashboard.html#quadras" data-primeira-cta>Cadastrar quadra</a>
 </section>
 
 <section class="manager-dashboard-kpis" aria-label="Resumo operacional">

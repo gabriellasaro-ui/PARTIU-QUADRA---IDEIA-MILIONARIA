@@ -134,6 +134,30 @@ async def _laco_manutencao() -> None:
 async def lifespan(application: FastAPI):
     manager.start_subscriber()
 
+    # ATALHOS DE DESENVOLVIMENTO, GRITADOS NO BOOT.
+    #
+    # As guardas de `Settings` so valem quando ENVIRONMENT=production. Um
+    # servidor publico rodando como "staging" — que e o caso enquanto pagamento
+    # e e-mail nao sao reais — passa por elas em silencio, e e ai que um atalho
+    # fica meses no ar sem ninguem lembrar. Aqui ele aparece a cada partida.
+    if settings.environment.strip().lower() != "production":
+        avisos = []
+        if settings.verification_provider.strip().lower() == "log":
+            avisos.append(
+                "VERIFICATION_PROVIDER=log: o codigo de verificacao volta na "
+                "RESPOSTA HTTP. Qualquer pessoa confirma o proprio e-mail sem "
+                "receber e-mail nenhum."
+            )
+        if settings.payment_provider.strip().lower() == "mock":
+            avisos.append(
+                "PAYMENT_PROVIDER=mock: cobranca e confirmada sem dinheiro "
+                "entrar."
+            )
+        for aviso in avisos:
+            logging.getLogger("app.boot").warning(
+                "[ENVIRONMENT=%s] %s", settings.environment, aviso
+            )
+
     # So com o provedor mock. Producao nem chega aqui: Settings recusa o boot
     # com PAYMENT_PROVIDER=mock.
     manutencao = None

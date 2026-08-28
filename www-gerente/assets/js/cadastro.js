@@ -203,6 +203,11 @@ function ligarEscolhas() {
 // ── Fotos ──────────────────────────────────────────────────────────────────
 
 const MAX_FOTOS = 6;
+/* Duas, e nao uma: a tela pede fachada E quadra pelo nome, e com uma so fica
+   ambiguo qual foi enviada. CNPJ e endereco nao provam que existe uma quadra
+   ali — os dois cabem num lote vazio. A foto e o unico material que prova, e e
+   gratuita para quem de fato tem a quadra. */
+const MIN_FOTOS = 2;
 
 function pintarFotos() {
   const raiz = $('[data-fotos]');
@@ -215,6 +220,18 @@ function pintarFotos() {
   const add = estado.fotos.length < MAX_FOTOS
     ? '<button type="button" class="cad-foto-add" data-add>+</button>' : '';
   raiz.innerHTML = cartoes + add;
+
+  /* Diz quantas FALTAM, e nao "envie fotos". O botao continua clicavel: barrar
+     antes de tentar esconde o motivo, e a pessoa fica olhando para um botao
+     apagado sem saber o que ele quer. */
+  const falta = $('[data-fotos-falta]');
+  if (falta) {
+    const faltam = MIN_FOTOS - estado.fotos.length;
+    falta.hidden = faltam <= 0;
+    falta.textContent = faltam === MIN_FOTOS
+      ? 'Envie 2 fotos para continuar: a fachada e a quadra.'
+      : `Falta ${faltam} foto.`;
+  }
 }
 
 /* Reduz ANTES de mandar. Foto de celular tem 4 MB; seis delas viram 24 MB de
@@ -415,6 +432,10 @@ function dadosDoPasso(n) {
 }
 
 async function gravarPasso(n, botao) {
+  if (n === 7 && estado.fotos.length < MIN_FOTOS) {
+    erro(`Envie ${MIN_FOTOS} fotos — a fachada e a quadra — para continuar.`);
+    return;
+  }
   await comBotao(botao, async () => {
     try {
       await api.patch(`/api/arenas/solicitacao/passo/${n}`, dadosDoPasso(n));
@@ -456,11 +477,6 @@ document.addEventListener('click', (ev) => {
   else if (acao === 'reenviar') comBotao(botao, pedirCodigo);
   else if (acao === 'buscar-cep') comBotao(botao, buscarCep);
   else if (acao === 'passo') gravarPasso(Number(botao.dataset.n), botao);
-  /* "Envio depois" TAMBEM grava o passo 7 (com as fotos que houver, ou
-     nenhuma). Sem isso o servidor continuava em step=7 e, ao voltar depois de
-     fechar o app, o cadastro reabria no passo de fotos em vez do acerto — a
-     pessoa refazia um passo que ja tinha decidido pular. */
-  else if (acao === 'pular-fotos') gravarPasso(7, botao);
   else if (acao === 'enviar') enviar(botao);
   else if (acao === 'corrigir') mostrar(3);
   else if (acao === 'abre-termos') { ev.preventDefault(); }

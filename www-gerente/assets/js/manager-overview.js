@@ -277,6 +277,28 @@ export function initGraficoDashboard() {
   });
 }
 
+/* O cartao de primeira quadra.
+
+   `primeiraQuadra` vem NULO quando ja existe quadra — entao a ausencia do
+   dado e a propria condicao de esconder, sem o front precisar contar nada. A
+   frase usa o que o dono declarou no cadastro: repetir de volta o numero que
+   ele acabou de informar mostra que alguem leu a ficha. */
+function pintarPrimeiraQuadra(root, dados) {
+  const bloco = root.querySelector('[data-primeira-quadra]');
+  if (!bloco) return;
+  bloco.hidden = !dados;
+  if (!dados) return;
+
+  const quantas = Number(dados.declarouQuantas) || 1;
+  const linha = bloco.querySelector('[data-primeira-linha]');
+  if (linha && quantas > 1) {
+    linha.textContent = `Você informou ${quantas} quadras no cadastro. Comece por uma — `
+      + 'enquanto não houver nenhuma, ninguém consegue reservar, e é por isso que os números abaixo estão zerados.';
+  }
+  window.lucide?.createIcons?.();
+}
+
+
 export async function renderManagerOverview(root) {
   // Sem guard de tudo-ou-nada: cada bloco confere o proprio elemento. Assim
   // um pedaco ausente nao derruba os outros em silencio.
@@ -300,6 +322,15 @@ export async function renderManagerOverview(root) {
     receitaHoje = data.kpis.find((k) => k.cls === 'hoje')?.valor ?? 0;
     ocupacao = data.ocupacao;
     proximas = data.proximas;
+    pintarPrimeiraQuadra(root, data.primeiraQuadra);
+    /* O nome REAL da arena, no cabecalho e na barra de cima. Sem isto, o
+       painel de qualquer dono novo mostra o nome da arena do seed. */
+    const nome = data.arena?.name;
+    if (nome) {
+      set(root, '[data-arena-nome]', nome);
+      const sub = document.querySelector('[data-page-sub]');
+      if (sub) sub.textContent = nome;
+    }
   } else {
     const reservas = ARENA_BOOKINGS;
     bruto = reservas.reduce((t, r) => t + Number(r.valor || 0), 0);

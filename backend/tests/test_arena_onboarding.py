@@ -53,15 +53,18 @@ def _verificar_email(client, token):
     assert r.status_code == 200, r.text
 
 
-def _preencher(client, token, **troca):
+def _preencher(client, token, troca=None):
     passos = {
         3: {"arena_name": "Arena Teste FC", "cnpj": "11.444.777/0001-61"},
         4: {"cep": "30140071", "address": "Rua Teste", "number": "100",
             "neighborhood": "Savassi", "city": "Belo Horizonte", "state": "MG"},
         5: {"contact_name": "Dono da Quadra", "contact_phone": "31999990000"},
         6: {"court_count": 2, "sports": ["society"], "pains": ["horarios_vagos"]},
+        # Fotos sao obrigatorias: sao o unico material que responde "existe uma
+        # quadra ali?" — CNPJ e endereco cabem num lote vazio.
+        7: {"photos": ["data:image/jpeg;base64,AAAA", "data:image/jpeg;base64,BBBB"]},
     }
-    passos.update(troca)
+    passos.update(troca or {})
     for n, dados in passos.items():
         r = client.patch(f"/api/arenas/solicitacao/passo/{n}", json=dados, headers=_hdr(token))
         assert r.status_code == 200, (n, r.text)
@@ -131,6 +134,29 @@ def test_envio_diz_o_que_falta(client):
     detalhe = r.json()["detail"]
     # Tem de NOMEAR o que falta: "dados incompletos" manda procurar em 8 telas.
     assert "CNPJ" in detalhe and "CEP" in detalhe, detalhe
+
+
+def test_envio_exige_fotos(client):
+    """Sem foto nao da para dizer se a quadra existe.
+
+    CNPJ e endereco cabem os dois num lote vazio; a fachada e a quadra sao o
+    unico material que responde a pergunta da triagem — e sao gratuitas de
+    produzir para quem de fato tem a quadra.
+    """
+    sessao, _ = _comecar(client)
+    t = sessao["token"]
+    _verificar_email(client, t)
+    _preencher(client, t, {7: {"photos": []}})
+
+    r = client.post("/api/arenas/solicitacao/enviar", headers=_hdr(t))
+    assert r.status_code == 422, r.text
+    detalhe = r.json()["detail"].lower()
+    assert "fotos" in detalhe and "fachada" in detalhe, detalhe
+
+    # Uma so tambem nao: a tela pede as duas pelo nome.
+    client.patch("/api/arenas/solicitacao/passo/7",
+                 json={"photos": ["data:image/jpeg;base64,AAAA"]}, headers=_hdr(t))
+    assert client.post("/api/arenas/solicitacao/enviar", headers=_hdr(t)).status_code == 422
 
 
 def test_aprovar_cria_a_arena_e_so_entao(client, db_session, login):

@@ -55,9 +55,7 @@ CAMPOS_POR_PASSO = {
     7: ("photos",),
 }
 
-#: Sem estes a ficha nao da para analisar. Fotos ficam DE FORA de proposito:
-#: sao o sinal mais forte, mas exigir upload no celular com internet ruim
-#: derruba cadastro — quem analisa cobra depois se precisar.
+#: Sem estes a ficha nao da para analisar.
 OBRIGATORIOS = {
     "arena_name": "o nome da quadra",
     "cnpj": "o CNPJ",
@@ -66,6 +64,20 @@ OBRIGATORIOS = {
     "city": "a cidade",
     "contact_phone": "o telefone de contato",
 }
+
+#: FOTOS SAO OBRIGATORIAS, e duas.
+#:
+#: Cheguei a deixar opcional com medo de derrubar cadastro no 4G. Mas a
+#: pergunta que a triagem precisa responder e "esta quadra existe e e de
+#: futebol" — e CNPJ e endereco nao respondem isso sozinhos: os dois podem
+#: apontar para o CNPJ da familia e um lote vazio. A foto da FACHADA e da
+#: QUADRA sao o unico material que responde, e sao gratuitas de produzir para
+#: quem realmente tem uma quadra. Quem nao tem, e exatamente quem se quer
+#: barrar.
+#:
+#: Duas, e nao uma, porque a tela pede as duas pelo nome. Uma so deixaria
+#: ambiguo qual foi enviada.
+MIN_FOTOS = 2
 
 
 def _ficha_dict(ficha: ArenaApplication) -> dict:
@@ -227,6 +239,14 @@ def enviar(db: Session, user) -> dict:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Ainda falta preencher: " + ", ".join(faltando) + ".",
+        )
+    if len(ficha.photos or []) < MIN_FOTOS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"Envie {MIN_FOTOS} fotos: uma da fachada e uma da quadra. "
+                "É o que confirma que a quadra existe."
+            ),
         )
     if not ficha.terms_accepted_at or not ficha.fee_accepted_at:
         raise HTTPException(

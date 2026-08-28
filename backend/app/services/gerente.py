@@ -9,13 +9,14 @@ import uuid
 from datetime import datetime, time, timedelta, timezone
 
 from fastapi import HTTPException, status
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..core.config import settings
 from ..core.cache import bump_catalog_version
 from ..core.timezone import TZ, now_local, utc_now
 from ..models import (
+    ArenaApplication,
     ACTIVE_STATUSES,
     Arena,
     Booking,
@@ -287,6 +288,31 @@ def dashboard(db: Session, manager) -> dict:
         "aguardando_pagamento": pending_pay,
         "proximas": proximas,
         "data_hoje": now_local().strftime("%d/%m/%Y"),
+        # PRIMEIRA QUADRA — o buraco entre "aprovada" e "funcionando".
+        #
+        # A arena nasce na aprovacao SEM quadra nenhuma: o dono entra e ve
+        # faturamento zero, ocupacao zero, agenda vazia. E exatamente a tela
+        # que parece defeito, e ele nao tem como adivinhar que o que falta e
+        # cadastrar uma quadra.
+        #
+        # Vem junto o que ele JA DECLAROU no cadastro (quantas quadras, quais
+        # esportes) para o formulario abrir preenchido — perguntar de novo o
+        # que ele acabou de responder e o jeito mais rapido de parecer que
+        # ninguem leu.
+        "primeiraQuadra": _primeira_quadra(db, arena, courts),
+    }
+
+
+def _primeira_quadra(db: Session, arena, courts) -> dict | None:
+    """None quando ja ha quadra: nada a sugerir, e o painel some com o cartao."""
+    if courts:
+        return None
+    ficha = db.execute(
+        select(ArenaApplication).where(ArenaApplication.arena_id == arena.id)
+    ).scalar_one_or_none()
+    return {
+        "declarouQuantas": (ficha.court_count if ficha else None) or 1,
+        "declarouEsportes": (ficha.sports if ficha else None) or [],
     }
 
 
