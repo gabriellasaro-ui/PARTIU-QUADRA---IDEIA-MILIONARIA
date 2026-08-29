@@ -39,7 +39,7 @@ from .core.config import settings
 from .core.database import check_database
 from .core.logging import setup_logging
 from .core.ratelimit import limiter
-from .core.redis import ping_redis
+from .core.redis import ping_redis, redis_call, redis_client
 from .core.ws import manager
 from .middleware.request_log import RequestLogMiddleware
 
@@ -51,7 +51,12 @@ logger = logging.getLogger(__name__)
 #: De quanto em quanto tempo a manutencao roda. Nao e o tempo de espera de
 #: nada: quem manda nisso e payment_mock_confirm_seconds e
 #: booking_payment_expire_minutes.
-INTERVALO_MANUTENCAO_S = 5.0
+INTERVALO_MANUTENCAO_S = float(os.environ.get("MANUTENCAO_INTERVALO_S", "5"))
+
+#: Quanto a folga do "dono" do laco dura. Tres ciclos: se o worker que estava
+#: varrendo morrer, outro assume em ate ~3 intervalos, sem dois varrendo junto.
+_LEASE_MANUTENCAO_S = int(INTERVALO_MANUTENCAO_S * 3) + 1
+_CHAVE_MANUTENCAO = "qadras:manutencao:dono"
 
 
 def _rodar_manutencao() -> dict:
@@ -118,6 +123,8 @@ async def _laco_manutencao() -> None:
     """
     while True:
         await asyncio.sleep(INTERVALO_MANUTENCAO_S)
+        if not _sou_o_dono_da_manutencao():
+            continue
         try:
             feito = await asyncio.to_thread(_rodar_manutencao)
             if any(feito.values()):
@@ -128,6 +135,46 @@ async def _laco_manutencao() -> None:
             # Uma falha aqui nao pode derrubar o servidor: o proximo ciclo
             # tenta de novo daqui a pouco.
             logger.warning("Falha na manutencao de reservas", exc_info=True)
+
+
+def _sou_o_dono_da_manutencao() -> bool:
+    """UM worker varre, e nao todos.
+
+    `lifespan` roda em CADA worker do uvicorn, entao o laco nascia N vezes: com
+    UVICORN_WORKERS=2 sao duas varreduras completas do banco a cada intervalo,
+    cinco conexoes cada — e o custo cresce junto com o numero de workers, que e
+    justamente o que se aumenta quando o servidor esta apertado. Piorar sob
+    carga e a forma mais cara de errar.
+
+    E nao era so desperdicio: duas varreduras simultaneas podem notificar a
+    mesma pelada duas vezes, porque a leitura e a escrita nao sao atomicas
+    entre si.
+
+    O dono e quem segura uma folga curta no Redis, renovada a cada ciclo. Sem
+    Redis (dev), todo mundo e dono — e ali so ha um worker mesmo.
+    """
+    dono = redis_call(
+        lambda: redis_client.set(
+            _CHAVE_MANUTENCAO, manager.worker_id, nx=True, ex=_LEASE_MANUTENCAO_S
+        ),
+        default=None,
+    )
+    if dono:
+        return True
+    atual = redis_call(lambda: redis_client.get(_CHAVE_MANUTENCAO), default=None)
+    if atual is None:
+        # Redis fora: melhor varrer do que deixar reserva presa para sempre.
+        return True
+    if isinstance(atual, bytes):
+        atual = atual.decode()
+    if atual == manager.worker_id:
+        # Renova a folga: enquanto este worker viver, ele segue sendo o dono.
+        redis_call(
+            lambda: redis_client.expire(_CHAVE_MANUTENCAO, _LEASE_MANUTENCAO_S),
+            default=None,
+        )
+        return True
+    return False
 
 
 @asynccontextmanager
