@@ -311,6 +311,7 @@ A origem que chega na API é:
 |---|---|
 | Android (`androidScheme: "http"`) | `http://localhost` |
 | iOS | `capacitor://localhost` |
+| Painel do admin (roda local, não é hospedado) | `http://localhost:5177` |
 
 Se as duas não estiverem em `CORS_ORIGINS`, o WebView bloqueia **todos** os
 requests e o sintoma é exatamente o mesmo de um IP errado — "o app não

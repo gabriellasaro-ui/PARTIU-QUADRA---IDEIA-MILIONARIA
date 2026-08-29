@@ -77,7 +77,21 @@ DEMO_PASSWORD = "qadras123"
 # Se RESET_ADMIN_PASSWORD=true, a senha e regenerada e atualizada no banco.
 _reset_admin = str(getattr(settings, "reset_admin_password", "")).lower() in ("true", "1", "yes")
 
-if settings.environment == "production":
+_admin_escolhida = (getattr(settings, "admin_password", "") or "").strip()
+
+if _admin_escolhida:
+    # Escolhida por quem sobe o servidor: um deploy, sem pescar senha em log.
+    # NAO vai para o log — quem a definiu ja a conhece, e log de container
+    # costuma ser lido por mais gente do que se imagina.
+    _admin_password = _admin_escolhida
+    import logging
+    logging.getLogger("app.seed").warning(
+        "Senha do admin vinda de ADMIN_PASSWORD (nao sera exibida)."
+    )
+elif settings.environment == "production":
+    # Sorteada. Aparece UMA vez, no boot — se ninguem estiver olhando naquele
+    # instante, o painel do admin fica inacessivel e so um novo deploy
+    # reimprime. Preencha ADMIN_PASSWORD para nao depender disso.
     _admin_password = secrets.token_urlsafe(16)
     import logging
     if _reset_admin:
@@ -88,7 +102,8 @@ if settings.environment == "production":
     else:
         logging.getLogger("app.seed").warning(
             "SENHA DO ADMIN (producao): %s  —  "
-            "guarde esta senha; ela NAO sera exibida novamente.",
+            "guarde esta senha; ela NAO sera exibida novamente. "
+            "Prefira definir ADMIN_PASSWORD e nao depender do log.",
             _admin_password,
         )
 else:

@@ -81,6 +81,21 @@ class Settings(BaseSettings):
     payment_provider: str = "mock"
     payment_mock_confirm_seconds: int = 15
 
+    # SENHA DO ADMIN, definida por quem sobe o servidor.
+    #
+    # Sem isto, em producao o seed SORTEIA a senha e a imprime UMA VEZ no log
+    # do boot. Se ninguem estava olhando naquele instante — que e o normal — o
+    # painel do admin fica inacessivel, e a unica saida vira um segundo deploy
+    # so para reimprimir a senha. Foi exatamente o que aconteceu aqui.
+    #
+    # Com ADMIN_PASSWORD preenchida, a senha e a que voce escolheu: um deploy,
+    # sem pescar nada em log. Use junto de RESET_ADMIN_PASSWORD=true para
+    # trocar a de uma instalacao que ja existe.
+    #
+    # Vazia mantem o sorteio, que continua sendo o padrao seguro para quem
+    # sobe sem configurar nada.
+    admin_password: str = ""
+
     # Verificacao de contato por codigo.
     #
     # "log" escreve o codigo no log do servidor e o devolve na resposta — so
