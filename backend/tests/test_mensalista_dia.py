@@ -27,6 +27,28 @@ def _login_jogador(client) -> dict:
     return {"Authorization": f"Bearer {r.json()['token']}"}
 
 
+def _hora_livre(client, quadra_id, dia) -> str:
+    """Uma hora livre nas QUATRO semanas daquele dia da semana.
+
+    O banco da suite e compartilhado e vai acumulando reservas dos outros
+    arquivos. Hora fixa aqui vira teste que quebra por ORDEM DE EXECUCAO — e
+    quando quebra, a mensagem fala de "horario ja reservado", que nao tem
+    relacao nenhuma com o preco do mensalista, que e o que este arquivo mede.
+    Perguntar a grade e o unico jeito estavel.
+    """
+    hoje = date.today()
+    primeira = hoje + timedelta(days=(dia - hoje.weekday()) % 7 or 7)
+    livres = None
+    for i in range(4):
+        quando = primeira + timedelta(weeks=i)
+        r = client.get(f"/api/quadras/{quadra_id}/horarios?data={quando}")
+        assert r.status_code == 200, r.text
+        agora = {s["hour"] for s in r.json()["horarios"] if s["status"] == "free"}
+        livres = agora if livres is None else (livres & agora)
+    assert livres, f"nenhuma hora livre nas 4 semanas de weekday={dia}"
+    return sorted(livres)[-1]
+
+
 def _criar_mensalista(client, headers, quadra_id, dia, hora="19:00"):
     return client.post(
         "/api/reservas",
@@ -118,7 +140,9 @@ def test_mensalidade_ausente_vira_quatro_vezes_a_hora(client):
         court.price_monthly_cents = None
         db.commit()
     try:
-        r = _criar_mensalista(client, headers, quadra["id"], (date.today().weekday() + 4) % 7)
+        dia = (date.today().weekday() + 4) % 7
+        r = _criar_mensalista(client, headers, quadra["id"], dia,
+                              hora=_hora_livre(client, quadra["id"], dia))
         assert r.status_code == 200, r.text
         assert r.json()["reservas"][0]["subtotal"] == quadra["price"] * 4
     finally:

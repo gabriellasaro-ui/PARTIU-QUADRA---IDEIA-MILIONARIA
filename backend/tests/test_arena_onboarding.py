@@ -278,3 +278,44 @@ def test_aceite_guarda_a_taxa_vigente_e_nao_um_booleano(client, db_session):
     # concordou — a taxa da config vai mudar.
     assert ficha.fee_rate_snapshot == settings.arena_fee_rate
     assert ficha.terms_version, "a versao dos termos tem de ficar registrada"
+
+
+def test_arena_que_ja_existia_continua_visivel(client, db_session):
+    """A coluna `status` nasceu com server_default='aprovada' por um motivo.
+
+    As arenas que ja estavam no ar entraram ANTES de existir triagem. Sem o
+    default elas nasceriam com status vazio na migracao e sumiriam do app
+    inteiro — uma coluna nova derrubando o catalogo de quem ja era cliente.
+
+    O teste olha os dois lados: a coluna no banco E a resposta publica, porque
+    o `status` so importa se ele de fato governa o que o jogador ve.
+    """
+    from app.models import ARENA_APROVADA
+
+    arenas = db_session.query(Arena).all()
+    assert arenas, "o seed precisa de ao menos uma arena"
+    sem_status = [a.name for a in arenas if a.status != ARENA_APROVADA]
+    assert not sem_status, f"arenas que perderiam a visibilidade: {sem_status}"
+
+    r = client.get("/api/quadras")
+    assert r.status_code == 200, r.text
+    assert r.json().get("quadras"), "o catalogo ficou vazio depois da migracao"
+
+
+def test_gerente_sem_arena_nao_cai_num_painel_vazio(client):
+    """Quem tem ficha mas ainda nao tem arena nao tem painel para ver.
+
+    O dashboard responde 404 nesse caso, e e o que permite o login desviar para
+    o cadastro em vez de abrir um painel com tudo zerado — a tela que parece
+    defeito e nao explica que o cadastro nem foi aprovado.
+    """
+    sessao, _ = _comecar(client)
+    t = sessao["token"]
+
+    r = client.get("/api/gerente/dashboard", headers=_hdr(t))
+    assert r.status_code == 404, r.text
+
+    # E a ficha dele responde, que e o que o login consulta para decidir.
+    ficha = client.get("/api/arenas/solicitacao/minha", headers=_hdr(t))
+    assert ficha.status_code == 200
+    assert ficha.json()["status"] != "aprovada"

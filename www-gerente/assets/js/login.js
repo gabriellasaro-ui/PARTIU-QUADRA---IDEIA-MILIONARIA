@@ -3,6 +3,7 @@
    Com API_BASE_URL vazio o botao nao faz nada e avisa: sem backend nao ha
    sessao valida. Com backend, o /api/auth/login devolve { token, user } e a
    pessoa segue para o dashboard. */
+import api from '../../services/api.js';
 import authService from '../../services/auth.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import { aplicarTema } from '../../services/tema.js';
@@ -27,10 +28,47 @@ if (document.readyState === 'loading') {
   desenharIcones();
 }
 
-function redirect() {
+/* PARA ONDE O GERENTE VAI DEPOIS DE ENTRAR.
+
+   Nao e sempre o painel. Desde que existe cadastro de arena, um gerente pode
+   ter conta e NAO ter arena: a ficha esta em rascunho, esperando analise, ou
+   foi recusada. Mandar essa pessoa para o dashboard a deixa num painel que nao
+   tem arena para mostrar — faturamento zero, agenda vazia, e nada na tela
+   dizendo que o cadastro dela ainda nem foi aprovado. E a tela que parece
+   defeito.
+
+   A pergunta e uma so: existe ficha, e ela ja virou arena?
+
+     404          -> nao ha ficha: e dono de arena antigo, vai para o painel
+     aprovada     -> a arena existe, vai para o painel
+     qualquer outra -> volta para o cadastro, que sabe abrir no passo certo
+                       (ou na tela de "recebemos seu pedido")
+
+   `next=` continua mandando quando alguem chegou aqui por uma rota protegida:
+   ali a pessoa pediu um lugar especifico. */
+async function destinoDoGerente() {
   const params = new URLSearchParams(location.search);
-  const next = params.get('next') || './dashboard.html';
-  location.assign(next);
+  const pedido = params.get('next');
+  if (pedido) return pedido;
+
+  const user = authService.currentUser();
+  if (user && user.role !== 'gerente') return './dashboard.html';
+
+  try {
+    const ficha = await api.get('/api/arenas/solicitacao/minha');
+    return ficha.status === 'aprovada' ? './dashboard.html' : './cadastro.html';
+  } catch (erro) {
+    /* 404 e o caminho NORMAL de quem ja tem arena — nao ha ficha porque a
+       conta nasceu antes do cadastro existir. Qualquer outra falha (rede,
+       servidor fora) tambem cai aqui, e mandar para o painel e a escolha
+       segura: ele mostra o proprio erro, enquanto o cadastro reabriria um
+       formulario que a pessoa talvez ja tenha enviado. */
+    return './dashboard.html';
+  }
+}
+
+async function redirect() {
+  location.assign(await destinoDoGerente());
 }
 
 if (authService.hasSession()) {
