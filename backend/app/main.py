@@ -205,10 +205,12 @@ async def lifespan(application: FastAPI):
                 "[ENVIRONMENT=%s] %s", settings.environment, aviso
             )
 
-    # So com o provedor mock. Producao nem chega aqui: Settings recusa o boot
-    # com PAYMENT_PROVIDER=mock.
+    # O loop in-process substitui o Celery beat APENAS em desenvolvimento,
+    # onde nao ha worker de pe. Em producao/staging quem executa as tarefas
+    # periodicas (expirar, concluir, convocar, encerrar) e o Celery beat —
+    # rodar aqui junto duplicaria o trabalho e levava a CPU da VPS a 900%.
     manutencao = None
-    if settings.payment_provider.strip().lower() == "mock":
+    if settings.environment.strip().lower() == "development":
         manutencao = asyncio.create_task(_laco_manutencao())
 
     yield

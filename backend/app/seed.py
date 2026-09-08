@@ -704,14 +704,14 @@ def _seed_settlements(db) -> int:
         last_monday - timedelta(days=7), time(0, 0), tzinfo=TZ
     ).astimezone(timezone.utc).replace(tzinfo=None)
     subtotal = 440_000  # R$4.400
-    gross = round(subtotal * 1.09)  # +9% fee do jogador
+    gross = round(subtotal * (1 + settings.player_fee_rate))  # fee do jogador ~9% do total
     db.add(Settlement(
         id=uuid.uuid4(),
         arena_id=arena.id,
         period_start=week_start,
         period_end=week_start + timedelta(days=7),
         gross_cents=gross,
-        commission_cents=round(subtotal * 0.12),  # 9% jogador + 3% arena
+        commission_cents=round(subtotal * (settings.player_fee_rate + settings.arena_fee_rate)),  # jogador + arena
         net_cents=round(subtotal * 0.97),
         bookings_count=8,
         status=SETTLEMENT_PAID,

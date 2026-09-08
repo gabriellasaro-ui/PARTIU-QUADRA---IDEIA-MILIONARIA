@@ -60,10 +60,10 @@ class Settings(BaseSettings):
     # para validar o idToken real. Vazio => endpoint /api/auth/google responde 503.
     google_client_id: str = ""
 
-    # Taxas (decisao fixada: 9% do jogador POR CIMA do preco + 3% da arena
-    # POR DENTRO do repasse). R$120 -> jogador paga R$130,80; arena recebe
-    # R$116,40; Qadras fica R$14,40.
-    player_fee_rate: float = 0.09
+    # Taxas: 9% do QUE O JOGADOR PAGA (taxa sobre o total: com subtotal R$100,
+    # o jogador paga R$109,89 e a taxa e R$9,89) + 3% da arena POR DENTRO do
+    # repasse. player_fee_rate = 0.09 / (1 - 0.09) = 0.0989011.
+    player_fee_rate: float = 0.0989011  # 9% do total pago (taxa/total = 0.09)
     arena_fee_rate: float = 0.03
     booking_payment_expire_minutes: int = 15
     booking_approval_expire_minutes: int = 15

@@ -220,7 +220,7 @@
       }
 
       var subtotal = Math.round(price * state.duration * 100) / 100;
-      var feeRate = parseFloat(root.dataset.feeRate || '0.09');
+      var feeRate = parseFloat(root.dataset.feeRate || '0.0989011');
       var serviceFee = Math.round(subtotal * feeRate * 100) / 100;
       var total = Math.round((subtotal + serviceFee) * 100) / 100;
       var start = pad(state.hour);

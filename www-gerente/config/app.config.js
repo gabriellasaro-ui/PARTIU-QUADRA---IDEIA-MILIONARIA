@@ -31,7 +31,12 @@ function enderecoDaApi() {
     && window.Capacitor.isNativePlatform());
   if (nativo) return NO_APK;
   if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol) && location.hostname) {
-    return `${location.protocol}//${location.hostname}:8000`;
+    const host = location.hostname;
+    // So em dev local a API vive na porta 8000. Fora dela (producao/staging,
+    // servido por HTTPS/443) a API e a hospedada.
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `${location.protocol}//${host}:8000`;
+    }
   }
   /* Aberto por file:// (raro, mas acontece ao abrir o HTML direto): sem host
      para derivar, a hospedada e a unica que responde de qualquer lugar. */

@@ -16,7 +16,7 @@ export const DEFAULT_CURRENCY = 'BRL';
    SERVICE_FEE_RATE continua exportado apontando para a taxa do jogador —
    e a que o checkout usa, e havia consumidor demais para renomear de uma
    vez sem risco. */
-export const PLAYER_FEE_RATE = 0.09;
+export const PLAYER_FEE_RATE = 0.0989011;
 export const ARENA_FEE_RATE = 0.03;
 export const SERVICE_FEE_RATE = PLAYER_FEE_RATE;
 
