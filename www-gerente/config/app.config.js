@@ -8,11 +8,9 @@
    sintoma era sempre o mesmo "o app nao abre". Com um dominio fixo esse
    problema deixa de existir.
 
-   NO NAVEGADOR -> o backend da propria maquina, na porta 8000.
-   E onde se desenvolve: o erro aparece no log do servidor na hora, e um teste
-   nao escreve no banco de producao. Servido por HTTP, a pagina fala com o
-   MESMO host que a serviu — mudou de rede, continua funcionando sem editar
-   arquivo nenhum.
+   NO NAVEGADOR -> a mesma API HOSPEDADA (https://api.qadras.com.br).
+   Assim o painel aberto em localhost usa as rotas reais da VPS sem exigir
+   que um backend esteja rodando nesta maquina.
 
    ATENCAO CORS: o Capacitor serve a pagina de http://localhost dentro do
    aparelho, e e ESSA a origem que chega na API. Se ela nao estiver em
@@ -20,6 +18,7 @@
    sintoma volta a ser "nao conecta" — igual ao do IP errado, e por um motivo
    completamente diferente. Ver docs/DEPENDENCIAS-EXTERNAS.md, secao E.2. */
 const API_HOSPEDADA = 'https://api.qadras.com.br';
+const USAR_API_LOCAL_NO_NAVEGADOR = false;
 
 /* So para depurar o APK contra o backend desta maquina: troque NO_APK para
    IP_DA_LAN, confira o IP com ipconfig e recompile. */
@@ -34,7 +33,7 @@ function enderecoDaApi() {
     const host = location.hostname;
     // So em dev local a API vive na porta 8000. Fora dela (producao/staging,
     // servido por HTTPS/443) a API e a hospedada.
-    if (host === 'localhost' || host === '127.0.0.1') {
+    if (USAR_API_LOCAL_NO_NAVEGADOR && (host === 'localhost' || host === '127.0.0.1')) {
       return `${location.protocol}//${host}:8000`;
     }
   }

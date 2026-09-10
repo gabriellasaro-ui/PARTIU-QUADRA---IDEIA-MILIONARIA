@@ -1,0 +1,173 @@
+/* Login exclusivo da experiencia web do jogador. O login do app continua na
+   rota interna #entrar e nao carrega esta folha. */
+@media (min-width: 901px) {
+  html[data-player-desktop] .web-login-page {
+    --login-panel: clamp(430px, 32vw, 520px);
+    min-height: 100vh;
+    overflow: hidden;
+    background: #f8faf6;
+  }
+
+  html[data-player-desktop] .web-login-page::before { display: none; }
+
+  html[data-player-desktop] .web-login-main {
+    width: var(--login-panel);
+    height: 100vh;
+    min-height: 100vh;
+    margin: 0;
+    padding: clamp(48px, 5vw, 76px);
+    justify-content: center;
+    background: #fbfcfa;
+    box-shadow: 18px 0 54px rgba(7, 54, 33, .12);
+    overflow-y: auto;
+  }
+
+  html[data-player-desktop] .web-login-card {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  html[data-player-desktop] .web-login-card::before { display: none; }
+
+  html[data-player-desktop] .web-login-card h1 {
+    margin: 0 0 7px;
+    color: #143523;
+    font-size: clamp(29px, 2.2vw, 36px);
+    letter-spacing: -.9px;
+  }
+
+  html[data-player-desktop] .web-login-card > p {
+    margin: 0 0 62px;
+    color: #6b7c70;
+    font-size: 13.5px;
+  }
+
+  html[data-player-desktop] .web-login-card .inp { margin-bottom: 16px; }
+
+  html[data-player-desktop] .web-login-card .inp label {
+    margin-bottom: 7px;
+    color: #294b38;
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+
+  html[data-player-desktop] .web-login-card .inp input {
+    min-height: 49px;
+    border-color: #dce8d2;
+    border-radius: 11px;
+    background-color: #eef5e8;
+    color: #143523;
+  }
+
+  html[data-player-desktop] .web-login-card .inp input:focus {
+    border-color: #16a765;
+    box-shadow: 0 0 0 3px rgba(22, 167, 101, .13);
+  }
+
+  html[data-player-desktop] .web-login-card .btn {
+    min-height: 50px;
+    margin-top: 10px;
+    border: 0;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #9bd631, #82c51f);
+    color: #143523;
+    box-shadow: 0 12px 24px rgba(80, 133, 22, .18);
+  }
+
+  html[data-player-desktop] .web-login-card .btn:hover {
+    background: linear-gradient(135deg, #a8df3f, #8dcc28);
+    transform: translateY(-1px);
+  }
+
+  html[data-player-desktop] .web-login-sep { margin-top: 20px; }
+
+  html[data-player-desktop] .web-google-preview {
+    border-color: #dce6dc;
+    border-radius: 11px;
+    color: #294b38;
+  }
+
+  html[data-player-desktop] .web-login-card__footer { margin-top: 20px; }
+
+  html[data-player-desktop] .web-login-art {
+    position: fixed;
+    inset: 0 0 0 var(--login-panel);
+    width: auto;
+    overflow: hidden;
+    background:
+      repeating-radial-gradient(circle at center,
+        rgba(255, 255, 255, .045) 0 12.5%,
+        rgba(0, 0, 0, .035) 12.7% 25%),
+      linear-gradient(135deg, #0c8b52 0%, #075e3a 48%, #143523 100%);
+  }
+
+  html[data-player-desktop] .web-login-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: .18;
+    background-image: radial-gradient(rgba(255, 255, 255, .32) .7px, transparent .7px);
+    background-size: 7px 7px;
+    mask-image: linear-gradient(to bottom, transparent, #000 25%, #000 75%, transparent);
+  }
+
+  html[data-player-desktop] .web-login-art img { display: none; }
+
+  html[data-player-desktop] .web-login-bar {
+    position: fixed;
+    z-index: 3;
+    inset: 0 0 0 var(--login-panel);
+    display: grid;
+    min-height: 0;
+    place-items: center;
+    justify-content: center;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  html[data-player-desktop] .web-login-bar .web-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    align-items: center;
+    color: #fff;
+    pointer-events: auto;
+  }
+
+  html[data-player-desktop] .web-login-bar .web-brand::after {
+    content: 'Onde o jogo acontece.';
+    color: rgba(255, 255, 255, .84);
+    font-family: Inter, sans-serif;
+    font-size: 16px;
+    font-weight: 650;
+    letter-spacing: .2px;
+  }
+
+  html[data-player-desktop] .web-login-bar .qadras-logo {
+    --logo-h: clamp(45px, 4vw, 62px);
+    filter: drop-shadow(0 8px 22px rgba(0, 0, 0, .18));
+  }
+
+
+  html[data-player-desktop] .web-login-bar .qadras-logo path:first-of-type {
+    fill: #a5df39;
+  }
+
+  html[data-player-desktop] .web-login-page::after {
+    content: '© 2026 QADRAS';
+    position: fixed;
+    z-index: 4;
+    bottom: 24px;
+    left: clamp(48px, 5vw, 76px);
+    color: #9caaa0;
+    font-size: 10px;
+    font-weight: 600;
+  }
+}

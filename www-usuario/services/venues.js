@@ -19,10 +19,84 @@ import {
 } from '../config/mock-data.js';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
+const closedWeekdaysByCourt = new Map();
+let arenaLocationsPromise = null;
+
+/* Ponte exclusivamente visual para a rua que a rota publica nao envia. Nao
+   altera coordenadas nem tenta deduzir cidade: o mapa aceita arenas de todo o
+   Brasil usando o pino devolvido pela VPS. */
+const FRONT_ARENA_ADDRESSES = Object.freeze({
+  '4fdcedbd-c22c-4b56-8144-42a6b84a380b': Object.freeze({
+    address: 'Rua Senador Campos Vergueiro, 222 - Planalto, Belo Horizonte - MG',
+    neighborhood: 'Planalto',
+    city: 'Belo Horizonte',
+    state: 'MG'
+  })
+});
+
+function apiDateValue(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 
 async function fromApiOrLocal(path, localValue) {
   if (!API_BASE_URL) return clone(localValue);
   return api.get(path);
+}
+
+async function arenaLocations() {
+  if (!API_BASE_URL) return new Map();
+  if (!arenaLocationsPromise) {
+    arenaLocationsPromise = api.get('/api/arenas?limit=100', { auth: false })
+      .then((data) => new Map((data?.arenas || []).map((arena) => [String(arena.id), arena])))
+      .catch(() => new Map());
+  }
+  return arenaLocationsPromise;
+}
+
+function withArenaLocation(venue, locations) {
+  if (!venue) return venue;
+  const arenaId = String(venue.arenaId || venue.id || '');
+  const arena = locations.get(arenaId);
+  const correction = FRONT_ARENA_ADDRESSES[arenaId];
+  if (!arena && !correction) return venue;
+
+  const address = correction?.address
+    || venue.address || venue.endereco || arena?.address || arena?.endereco || '';
+  const neighborhood = correction?.neighborhood
+    || venue.neighborhood || venue.bairro || arena?.neighborhood || arena?.bairro || '';
+  const city = correction?.city
+    || venue.city || venue.cidade || arena?.city || arena?.cidade || '';
+  const state = correction?.state
+    || venue.state || venue.estado || arena?.state || arena?.estado || '';
+  const map = venue.map || arena?.map;
+  return {
+    ...venue,
+    address,
+    endereco: address,
+    neighborhood,
+    bairro: neighborhood,
+    city,
+    cidade: city,
+    state,
+    estado: state,
+    map
+  };
+}
+
+function withDistanceFromLocation(venue, local) {
+  const lat1 = Number(local?.lat);
+  const lng1 = Number(local?.lng);
+  const lat2 = Number(venue?.map?.lat);
+  const lng2 = Number(venue?.map?.lng);
+  if (![lat1, lng1, lat2, lng2].every(Number.isFinite)) return venue;
+
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad;
+  const dLng = (lng2 - lng1) * rad;
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+  const distance = Math.round((6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))) * 10) / 10;
+  return { ...venue, distance, distancia: distance };
 }
 
 /* Destaque pago vale ate a data gravada pelo painel do gerente. */
@@ -99,7 +173,10 @@ export const venueService = {
     const busca = local?.lat != null
       ? `/api/quadras?lat=${local.lat}&lng=${local.lng}`
       : '/api/quadras';
-    const data = await fromApiOrLocal(busca, { quadras: VENUES });
+    const [data, locations] = await Promise.all([
+      fromApiOrLocal(busca, { quadras: VENUES }),
+      arenaLocations()
+    ]);
     const venues = Array.isArray(data) ? data : (data?.quadras || []);
     const sport = String(filters.sport || '').trim();
     // "outros" e um filtro por exclusao: tudo que nao esta em destaque.
@@ -110,8 +187,11 @@ export const venueService = {
       return nome === sport;
     };
     return venues
+      .map((venue) => withDistanceFromLocation(
+        applyOverrides(withArenaLocation(venue, locations)),
+        local
+      ))
       .filter(matches)
-      .map(applyOverrides)
       /* Turbinada primeiro, depois melhor avaliada, distancia so desempata.
          Antes era so distancia, entao a quadra ruim da esquina ganhava da
          otima a 400m. Como e no servico e nao na tela, mapa e favoritos
@@ -132,16 +212,28 @@ export const venueService = {
     const busca = local?.lat != null
       ? `/api/quadras/destaques?lat=${local.lat}&lng=${local.lng}`
       : '/api/quadras/destaques';
-    const data = await fromApiOrLocal(busca, {
-      destaques: clone(VENUES).sort((a, b) => b.rating - a.rating).slice(0, 4)
-    });
-    return (data?.destaques || []).map(applyOverrides);
+    const [data, locations] = await Promise.all([
+      fromApiOrLocal(busca, {
+        destaques: clone(VENUES).sort((a, b) => b.rating - a.rating).slice(0, 4)
+      }),
+      arenaLocations()
+    ]);
+    return (data?.destaques || []).map((venue) => withDistanceFromLocation(
+      applyOverrides(withArenaLocation(venue, locations)),
+      local
+    ));
   },
 
   async get(id) {
     if (API_BASE_URL) {
-      const data = await api.get(`/api/quadras/${id}`);
-      return data?.quadra || data || null;
+      const [data, locations] = await Promise.all([
+        api.get(`/api/quadras/${id}`),
+        arenaLocations()
+      ]);
+      return withDistanceFromLocation(
+        withArenaLocation(data?.quadra || data || null, locations),
+        localEscolhido()
+      );
     }
     return applyOverrides(clone(VENUES.find((venue) => String(venue.id) === String(id)) || null));
   },
@@ -161,7 +253,20 @@ export const venueService = {
     const local = localEscolhido();
     const query = local?.lat != null ? `?lat=${local.lat}&lng=${local.lng}` : '';
     const data = await api.get(`/api/arenas/${encodeURIComponent(id)}${query}`);
-    return data?.arena || null;
+    const arena = data?.arena || null;
+    if (!arena) return null;
+    const locations = new Map([[String(arena.id), arena]]);
+    const correctedArena = withDistanceFromLocation(
+      withArenaLocation({ ...arena, arenaId: arena.id }, locations),
+      local
+    );
+    return {
+      ...correctedArena,
+      quadras: (arena.quadras || []).map((venue) => withDistanceFromLocation(
+        withArenaLocation(venue, locations),
+        local
+      ))
+    };
   },
 
   /* Arenas para a faixa da home, da mais perto para a mais longe. */
@@ -175,7 +280,13 @@ export const venueService = {
     }
     try {
       const data = await api.get(`/api/arenas?${params}`);
-      return data?.arenas || [];
+      const locations = new Map((data?.arenas || []).map((arena) => [String(arena.id), arena]));
+      return (data?.arenas || [])
+        .map((arena) => withDistanceFromLocation(
+          withArenaLocation({ ...arena, arenaId: arena.id }, locations),
+          local
+        ))
+        .sort((a, b) => Number(a.distancia ?? a.distance) - Number(b.distancia ?? b.distance));
     } catch (error) {
       /* A faixa e um extra na home: se ela falhar, a lista de quadras abaixo
          continua sendo a tela. Derrubar a home inteira por causa dela seria
@@ -223,6 +334,35 @@ export const venueService = {
     const query = date ? `?data=${encodeURIComponent(date)}` : '';
     const data = await api.get(`/api/quadras/${id}/horarios${query}`);
     return Array.isArray(data?.horarios) ? data.horarios : [];
+  },
+
+  /* Dias em que a quadra NAO ABRE.
+
+     A rota publica de horarios devolve uma lista vazia somente quando a janela
+     semanal daquele dia esta fechada; bloqueios e reservas continuam vindo
+     como slots `busy`. Consultamos uma ocorrencia de cada dia da semana e
+     guardamos o resultado durante a visita, evitando uma chamada por celula do
+     calendario. Se uma consulta falhar, o dia permanece clicavel: e mais seguro
+     nao bloquear uma data valida por causa de uma falha de rede. */
+  async closedWeekdays(id, fromDate) {
+    if (!API_BASE_URL) return [];
+    const key = String(id);
+    if (!closedWeekdaysByCourt.has(key)) {
+      const base = fromDate ? new Date(`${fromDate}T12:00:00`) : new Date();
+      const request = Promise.all(Array.from({ length: 7 }, async (_, offset) => {
+        const date = new Date(base);
+        date.setDate(base.getDate() + offset);
+        try {
+          const data = await api.get(`/api/quadras/${encodeURIComponent(id)}/horarios?data=${encodeURIComponent(apiDateValue(date))}`);
+          const slots = Array.isArray(data?.horarios) ? data.horarios : null;
+          return slots && slots.length === 0 ? date.getDay() : null;
+        } catch (error) {
+          return null;
+        }
+      })).then((days) => [...new Set(days.filter((day) => day !== null))]);
+      closedWeekdaysByCourt.set(key, request);
+    }
+    return [...await closedWeekdaysByCourt.get(key)];
   },
 
   async reservations() {

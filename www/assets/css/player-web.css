@@ -721,6 +721,7 @@ html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__side {
   overflow: hidden;
   min-width: 0;
   min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
 }
 
@@ -728,6 +729,15 @@ html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__side but
   min-width: 0;
   min-height: 0;
   height: 100%;
+  border-radius: 10px;
+}
+
+html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__side button:nth-child(2) {
+  border-radius: 10px 22px 10px 10px;
+}
+
+html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__side button:nth-child(4) {
+  border-radius: 10px 10px 22px 10px;
 }
 
 html[data-player-desktop] .desktop-booking-hero .desktop-venue-gallery__side img {
@@ -772,12 +782,28 @@ html[data-player-desktop] .desktop-booking-step {
 }
 
 html[data-player-desktop] .desktop-duration .dur {
+  display: flex;
+  flex-direction: column;
   border-radius: 14px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--web-green-dark);
+}
+
+html[data-player-desktop] .desktop-duration .dur strong,
+html[data-player-desktop] .desktop-duration .dur span {
+  color: inherit;
 }
 
 html[data-player-desktop] .desktop-duration .dur.on {
-  background: var(--web-green);
-  border-color: var(--web-green);
+  background: var(--web-green-dark);
+  border-color: var(--web-green-dark);
+  color: #fff;
+}
+
+html[data-player-desktop] .desktop-duration .dur.on span {
+  color: rgba(255, 255, 255, .82);
 }
 
 html[data-player-desktop] .desktop-booking-step .avail-slots {
@@ -786,6 +812,75 @@ html[data-player-desktop] .desktop-booking-step .avail-slots {
 
 html[data-player-desktop] .desktop-booking-step .slot {
   border-radius: 12px;
+}
+
+html[data-player-desktop] .desktop-booking-step .legend em {
+  font-style: normal;
+}
+
+html[data-player-desktop] .desktop-booking-step .dot.continuation {
+  border: 1px solid #86ad48;
+  background: #eaf4d7;
+}
+
+/* `nofit` nao significa ocupado. A hora esta livre, apenas nao pode ser o
+   INICIO da duracao atual. Verde suave e a legenda evitam que 22h livre seja
+   confundido com 22h reservado. */
+html[data-player-desktop] .desktop-booking-step .slot.nofit:not(.bloco) {
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 4px;
+  border-color: #a8c774;
+  background: #f7fbea;
+  color: var(--web-green-dark);
+  text-decoration: none;
+  opacity: 1;
+}
+
+html[data-player-desktop] .desktop-booking-step .slot__hint {
+  color: #64774a;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+html[data-player-desktop] .desktop-booking-step .slot.bloco .slot__hint {
+  display: none;
+}
+
+/* A escolha representa um intervalo: o inicio fica verde cheio e as horas
+   seguintes ficam verdes claras, deixando 2h/3h visiveis como um unico bloco. */
+html[data-player-desktop] .desktop-booking-step .slot.bloco,
+html[data-player-desktop] .desktop-booking-step .avail-slots .slot.bloco {
+  border-color: var(--web-green-dark) !important;
+  background: #eaf4d7 !important;
+  color: var(--web-green-dark) !important;
+  text-decoration: none !important;
+  opacity: 1;
+}
+
+/* Livre, mas sem espaco para completar a duracao: parece bloqueado, continua
+   focavel/clicavel e o JavaScript explica o motivo no toast. */
+html[data-player-desktop] .desktop-booking-step .slot[data-player-slot-blocked] {
+  pointer-events: auto;
+  cursor: help;
+}
+
+html[data-player-desktop] .desktop-booking-step .avail-empty {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px dashed #d7dfce;
+  border-radius: 12px;
+  background: #f4f7ef;
+  color: var(--web-green-dark);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
 }
 
 html[data-player-desktop] .desktop-checkout-page,
@@ -2606,6 +2701,39 @@ html[data-player-desktop] .desktop-arena-identity {
   padding: 15px 2px;
 }
 
+/* O link ocupava sozinho a segunda linha da primeira coluna e alargava essa
+   coluna para a largura do texto. Resultado: a logo tinha 48px, mas o nome
+   comecava quase 180px depois. Cada elemento recebe agora sua celula real. */
+@media (min-width: 901px), (pointer: fine) {
+  html[data-player-desktop] .desktop-arena-identity {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    column-gap: 8px;
+    row-gap: 4px;
+  }
+
+  html[data-player-desktop] .desktop-arena-logo {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  html[data-player-desktop] .desktop-arena-identity__copy {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  html[data-player-desktop] .desktop-arena-facts {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  html[data-player-desktop] .desktop-arena-link {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    margin-top: 0;
+  }
+}
+
 html[data-player-desktop] .desktop-arena-logo {
   width: 48px;
   height: 48px;
@@ -2813,6 +2941,21 @@ html[data-player-desktop] .desktop-booking-step__head {
   margin-bottom: 20px;
 }
 
+html[data-player-desktop] [data-booking-stage-panel="time"] .desktop-booking-step__head {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+html[data-player-desktop] [data-booking-stage-panel="time"] .desktop-booking-step__head em {
+  display: inline-flex;
+  width: max-content;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  white-space: nowrap;
+}
+
 html[data-player-desktop] .desktop-booking-step__head > span {
   display: none;
 }
@@ -2839,6 +2982,43 @@ html[data-player-desktop] .booking-selector .booking-calendar {
 html[data-player-desktop] .booking-selector .calendar-day,
 html[data-player-desktop] .booking-selector .calendar-empty {
   max-width: 42px;
+}
+
+html[data-player-desktop] .booking-selector .calendar-day.is-closed:disabled {
+  border-color: #e1e5dc;
+  background: #f1f3ef;
+  color: #9ba198;
+  text-decoration: line-through;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+html[data-player-desktop] .booking-calendar__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  color: var(--web-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+html[data-player-desktop] .booking-calendar__legend[hidden] {
+  display: none;
+}
+
+html[data-player-desktop] .booking-calendar__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+html[data-player-desktop] .booking-calendar__legend i {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #e1e5dc;
+  border-radius: 50%;
+  background: #f1f3ef;
 }
 
 html[data-player-desktop] [data-booking-stage-panel="duration"] .desktop-duration {

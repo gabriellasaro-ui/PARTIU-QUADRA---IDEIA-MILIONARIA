@@ -4,7 +4,6 @@ import { ligarParEstadoCidade } from '../../services/localidades.js';
 import notificationService from '../../services/notifications.js';
 import storage from '../../storage/storage.js';
 import { calculateCheckoutAmounts, formatCurrency, mesAno } from '../../utils/formatters.js';
-import { SERVICE_FEE_RATE } from '../../config/constants.js';
 import { API_BASE_URL } from '../../config/constants.js';
 import { SPORTS, POSITIONS, LEVELS, FEET } from '../../config/mock-data.js';
 import { MODALIDADES, posicoesDe } from '../../config/esportes.js';
@@ -100,6 +99,17 @@ function displayText(value) {
     Vestiário: 'Vestiário'
   };
   return replacements[value] || value;
+}
+
+function publicAddress(item) {
+  const fullAddress = String(item?.address || item?.endereco || '').trim();
+  if (fullAddress) return fullAddress;
+
+  const neighborhood = String(item?.neighborhood || item?.bairro || '').trim();
+  const city = String(item?.city || item?.cidade || '').trim();
+  const state = String(item?.state || item?.estado || '').trim().toUpperCase();
+  const locality = [neighborhood, city].filter(Boolean).join(', ');
+  return state ? `${locality}${locality ? ' - ' : ''}${state}` : locality;
 }
 
 /* Rotulo mostrado quando ainda nao ha local escolhido. Nao e uma cidade:
@@ -436,6 +446,16 @@ function calendarMonthDate(value) {
   return new Date(year, month - 1, 1, 12, 0, 0);
 }
 
+function firstOpenBookingDate(value, closedWeekdays = []) {
+  const closed = new Set(closedWeekdays.map(Number));
+  const date = parseLocalDate(value);
+  for (let offset = 0; offset <= 60; offset += 1) {
+    if (!closed.has(date.getDay())) return localDateValue(date);
+    date.setDate(date.getDate() + 1);
+  }
+  return value;
+}
+
 function bookingDayOffset(value) {
   const today = parseLocalDate(localDateValue());
   return Math.round((parseLocalDate(value) - today) / 86400000);
@@ -455,6 +475,11 @@ function renderBookingCalendar(root) {
   if (month < minMonth) month = minMonth;
   if (month > maxMonth) month = maxMonth;
   booking.dataset.calendarMonth = calendarMonthValue(month);
+  const closedWeekdays = new Set(
+    String(booking.dataset.closedWeekdays || '').split(',').filter(Boolean).map(Number)
+  );
+  const closedLegend = calendar.querySelector('[data-calendar-closed-legend]');
+  if (closedLegend) closedLegend.hidden = closedWeekdays.size === 0;
 
   const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(month);
   calendar.querySelector('[data-calendar-label]').textContent = label.charAt(0).toUpperCase() + label.slice(1);
@@ -479,10 +504,11 @@ function renderBookingCalendar(root) {
     // que caem no dia da semana do plano ficam clicaveis.
     const foraDoPlano = booking.dataset.planKind === 'mensalista'
       && date.getDay() !== Number(booking.dataset.planWeekday || 3);
-    const disabled = date < today || date > maxDate || foraDoPlano;
+    const closed = closedWeekdays.has(date.getDay());
+    const disabled = date < today || date > maxDate || foraDoPlano || closed;
     // O inverso de foraDoPlano ja estava calculado; so faltava virar classe.
     const noPlano = booking.dataset.planKind === 'mensalista' && !foraDoPlano && !disabled;
-    const selected = value === booking.dataset.date;
+    const selected = !closed && value === booking.dataset.date;
     const isToday = value === localDateValue(today);
     const spoken = new Intl.DateTimeFormat('pt-BR', {
       weekday: 'long',
@@ -490,8 +516,9 @@ function renderBookingCalendar(root) {
       month: 'long'
     }).format(date);
     cells.push(`
-      <button type="button" class="calendar-day ${selected ? 'on' : ''} ${isToday ? 'is-today' : ''} ${noPlano ? 'is-plan' : ''}"
-              data-calendar-date="${value}" aria-label="${escapeHtml(spoken)}"
+      <button type="button" class="calendar-day ${selected ? 'on' : ''} ${isToday ? 'is-today' : ''} ${noPlano ? 'is-plan' : ''} ${closed ? 'is-closed' : ''}"
+              data-calendar-date="${value}" aria-label="${escapeHtml(spoken)}${closed ? ' — quadra fechada' : ''}"
+              ${closed ? 'title="Quadra fechada"' : ''}
               aria-pressed="${selected}" ${disabled ? 'disabled' : ''}>
         <span>${day}</span>
       </button>`);
@@ -567,7 +594,7 @@ function venueCard(venue, options = {}) {
           ${!naArena && venue.arenaCourtCount > 1 && venue.courtName
             ? `<p class="venue-card-quadra">${icon('layout-grid')}${escapeHtml(venue.courtName)}</p>`
             : ''}
-          <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${formatDistance(venue.distance)} km</p>
+          <p class="meta">${icon('map-pin')}${escapeHtml(publicAddress(venue))} - ${formatDistance(venue.distance)} km</p>
           <div class="tags">${venue.tags.slice(0, 2).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
           <div class="foot">
             <div class="price">${formatCurrency(venue.price)}<small> /hora</small></div>
@@ -727,7 +754,7 @@ async function renderHome(root) {
             : escapeHtml(venueInitials(arena.nome))}
         </span>
         <strong>${escapeHtml(arena.nome)}</strong>
-        <small>${escapeHtml(arena.bairro || arena.cidade || '')}</small>
+        <small>${escapeHtml(publicAddress(arena))}</small>
       </a>`).join('');
   }
   syncMarketplaceState(root);
@@ -774,33 +801,37 @@ async function renderExplore(root, route) {
   const sport = query.get('esporte') || '';
   const term = query.get('q') || '';
   const local = query.get('local') || currentLocation();
-  const radius = query.get('raio') || '5';
+  const radius = query.get('raio') || '25';
   const now = query.get('agora') === '1';
   const [sports, listedVenues] = await Promise.all([
     venueService.sports(),
     venueService.list({ sport })
   ]);
   const needle = normalizeSearch(term);
-  const venuesInRadius = listedVenues.filter((venue) => {
-    const insideRadius = venue.distance <= Number(radius);
+  const candidates = listedVenues.filter((venue) => {
     const availableSoon = !now || venue.id % 3 !== 0;
-    return insideRadius && availableSoon;
+    return availableSoon;
   });
-  const venues = needle
-    ? venuesInRadius.filter((venue) => normalizeSearch([
+  const matchingVenues = needle
+    ? candidates.filter((venue) => normalizeSearch([
         venue.name,
         venue.sport,
-        venue.neighborhood,
+        publicAddress(venue),
         ...venue.tags
       ].join(' ')).includes(needle))
-    : venuesInRadius;
+    : candidates;
+  const withinRadius = matchingVenues.filter((venue) => venue.distance <= Number(radius));
+  const showingNearest = withinRadius.length === 0 && matchingVenues.length > 0;
+  const venues = showingNearest ? matchingVenues.slice(0, 6) : withinRadius;
 
   root.querySelector('[data-results-title]').textContent = term
     ? `Resultados para "${term}"`
     : now
       ? 'Partiu agora'
       : 'Explore quadras';
-  root.querySelector('[data-results-sub]').textContent = now
+  root.querySelector('[data-results-sub]').textContent = showingNearest
+    ? `Nada em até ${radius} km; mostrando as opções mais próximas`
+    : now
     ? `${venues.length} quadras com horários próximos`
     : `${venues.length} opções em até ${radius} km`;
   const searchInput = root.querySelector('[data-search-form] [name="q"]');
@@ -899,7 +930,7 @@ function mapPopup(venue) {
       <img src="${escapeHtml(venue.image)}" alt="">
       <span>
         <strong>${escapeHtml(venue.name)}</strong>
-        <small>${escapeHtml(venue.sport)} - ${escapeHtml(venue.neighborhood)}</small>
+        <small>${escapeHtml(publicAddress(venue))}</small>
         <b>${formatCurrency(venue.price)} <em>/hora</em></b>
       </span>
     </a>`;
@@ -1361,10 +1392,16 @@ async function renderVenue(root, route) {
   /* localDateValue() e a mesma data que o dataset recebe logo abaixo: sem
      passar a data aqui, a primeira pintura usava a agenda de "hoje" mesmo
      quando a tela abria em outro dia. */
-  const [availability, favoriteIds] = await Promise.all([
-    venueService.availability(venue.id, localDateValue()),
-    venueService.favoriteIds()
+  const today = localDateValue();
+  const [todayAvailability, favoriteIds, closedWeekdays] = await Promise.all([
+    venueService.availability(venue.id, today),
+    venueService.favoriteIds(),
+    venueService.closedWeekdays(venue.id, today)
   ]);
+  const initialDate = firstOpenBookingDate(today, closedWeekdays);
+  const availability = initialDate === today
+    ? todayAvailability
+    : await venueService.availability(venue.id, initialDate);
 
   const gallery = Array.isArray(venue.gallery) && venue.gallery.length ? venue.gallery : [venue.image];
   const amenities = [...new Set([...venue.tags, 'Bola inclusa', 'Wi-Fi no local'])];
@@ -1445,11 +1482,12 @@ async function renderVenue(root, route) {
   booking.dataset.price = venue.price;
   booking.dataset.priceMonthly = venue.priceMonthly || venue.price * 4;
   booking.dataset.planKind = 'avulso';
-  booking.dataset.planWeekday = '3';
+  booking.dataset.planWeekday = String(parseLocalDate(initialDate).getDay());
   booking.dataset.availability = JSON.stringify(availability);
+  booking.dataset.closedWeekdays = closedWeekdays.join(',');
   booking.dataset.duration = '1';
   booking.dataset.hour = '';
-  booking.dataset.date = localDateValue();
+  booking.dataset.date = initialDate;
   booking.dataset.calendarMonth = calendarMonthValue(parseLocalDate(booking.dataset.date));
   renderBookingCalendar(root);
   renderBooking(root);
@@ -1528,17 +1566,19 @@ function renderBooking(root) {
   const start = selectedHour ? Number(selectedHour.slice(0, 2)) : -1;
 
   const groups = [
-    ['Manhã', availability.filter((slot) => Number(slot.hour.slice(0, 2)) < 12)],
-    ['Tarde', availability.filter((slot) => {
+    ['Manhã', 'pela manhã', availability.filter((slot) => Number(slot.hour.slice(0, 2)) < 12)],
+    ['Tarde', 'à tarde', availability.filter((slot) => {
       const hour = Number(slot.hour.slice(0, 2));
       return hour >= 12 && hour < 18;
     })],
-    ['Noite', availability.filter((slot) => Number(slot.hour.slice(0, 2)) >= 18)]
+    ['Noite', 'à noite', availability.filter((slot) => Number(slot.hour.slice(0, 2)) >= 18)]
   ];
-  root.querySelector('[data-slots]').innerHTML = groups.map(([label, slots]) => `
-    <div class="avail-group">
-      <div class="avail-lbl">${label}</div>
-      <div class="avail-slots">${slots.map((slot) => {
+  root.querySelector('[data-slots]').innerHTML = groups.map(([label, periodLabel, slots]) => {
+    const hasAvailableStart = slots.some((slot) => (
+      canStartAt(Number(slot.hour.slice(0, 2))) && !isPast(slot.hour)
+    ));
+    const slotContent = hasAvailableStart
+      ? slots.map((slot) => {
         const hour = Number(slot.hour.slice(0, 2));
         const ocupado = slot.status !== 'free';
         const passou = isPast(slot.hour);
@@ -1586,8 +1626,14 @@ function renderBooking(root) {
         const estado = (ocupado || passou) ? 'busy' : disponivel ? 'free' : 'nofit';
         const marca = inicio ? ' sel' : noBloco ? ' bloco' : '';
         return `<button type="button" class="slot ${estado}${marca}" data-slot-hour="${slot.hour}" aria-pressed="${inicio}" ${disponivel ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
-      }).join('')}</div>
-    </div>`).join('');
+      }).join('')
+      : `<p class="avail-empty">Sem horários disponíveis ${periodLabel}.</p>`;
+    return `
+      <div class="avail-group">
+        <div class="avail-lbl">${label}</div>
+        <div class="avail-slots">${slotContent}</div>
+      </div>`;
+  }).join('');
 
   root.querySelectorAll('[data-duration]').forEach((button) => {
     const value = Number(button.dataset.duration);
@@ -1610,8 +1656,15 @@ function renderBooking(root) {
     button.classList.toggle('on', on);
     button.setAttribute('aria-pressed', String(on));
   });
+  const closedWeekdays = new Set(
+    String(booking.dataset.closedWeekdays || '').split(',').filter(Boolean).map(Number)
+  );
   root.querySelectorAll('[data-weekday]').forEach((button) => {
-    button.classList.toggle('on', Number(button.dataset.weekday) === weekday);
+    const closed = closedWeekdays.has(Number(button.dataset.weekday));
+    button.disabled = closed;
+    button.classList.toggle('is-closed', closed);
+    button.classList.toggle('on', !closed && Number(button.dataset.weekday) === weekday);
+    button.title = closed ? 'Quadra fechada' : '';
   });
 
   // O calendario fica nos dois planos: no mensalista ele escolhe a data da
@@ -2171,7 +2224,7 @@ async function renderConfirmation(root, route) {
         <div class="ticket">
           <div class="ticket-venue">
             <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}">
-            <div><span>Partida confirmada</span><h3>${escapeHtml(venue.name)}</h3><p>${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</p></div>
+            <div><span>Partida confirmada</span><h3>${escapeHtml(venue.name)}</h3><p>${escapeHtml(publicAddress(venue))}</p></div>
           </div>
           <div class="ticket-details">
             <div class="row"><span class="k">Data</span><span class="v">${escapeHtml(dateLabel)}</span></div>
@@ -3006,12 +3059,6 @@ export async function renderMobilePage(route, root) {
     onboarding: renderOnboarding,
     clubes: renderClubSearch
   };
-  /* A porcentagem da taxa saiu das telas de reserva e pagamento: o valor em
-     reais ja esta ao lado, e e ele que a pessoa paga. O gancho continua aqui
-     para quem ainda precise exibi-la (a web tem uma tela de detalhamento). */
-  root.querySelectorAll('[data-fee-pct]').forEach((el) => {
-    el.textContent = String(Math.round(SERVICE_FEE_RATE * 100));
-  });
   await renderers[route.name]?.(root, route);
   syncMarketplaceState(document);
 }

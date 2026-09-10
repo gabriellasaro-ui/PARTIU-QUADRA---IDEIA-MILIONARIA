@@ -279,20 +279,43 @@ async function renderDesktopRoute() {
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
+/* Registrado no carregamento do modulo, antes do boot dos recursos
+   secundarios. Assim a sidebar continua navegavel mesmo se um widget isolado
+   falhar durante a inicializacao. */
+window.addEventListener('hashchange', renderDesktopRoute);
+
 function initDesktopRouter() {
   if (!document.querySelector('[data-desktop-route-view]')) return;
-  initManagerCourts();
-  initManagerReservations();
-  initManagerMembers();
-  initManagerAgenda();
-  initManagerFinance();
-  initGraficoDashboard();
-  initManagerReviews();
-  initManagerMessages();
-  initManagerBookingDetail();
-  initManagerForms();
-  initGaleriaQuadra();
-  window.addEventListener('hashchange', renderDesktopRoute);
+
+  /* A NAVEGACAO VEM PRIMEIRO.
+
+     Antes, o hashchange so era registrado depois de inicializar onze modulos
+     auxiliares. Se qualquer um deles falhasse, a URL mudava normalmente ao
+     clicar na sidebar, mas ninguem redesenhava o conteudo — exatamente o
+     sintoma de continuar na Home com `#financeiro` no endereco.
+
+     A rota e a estrutura principal do painel; um recurso isolado nao pode
+     impedir a navegacao inteira. */
+  [
+    initManagerCourts,
+    initManagerReservations,
+    initManagerMembers,
+    initManagerAgenda,
+    initManagerFinance,
+    initGraficoDashboard,
+    initManagerReviews,
+    initManagerMessages,
+    initManagerBookingDetail,
+    initManagerForms,
+    initGaleriaQuadra
+  ].forEach((inicializar) => {
+    try {
+      inicializar();
+    } catch (error) {
+      console.error(`Falha ao inicializar ${inicializar.name}`, error);
+    }
+  });
+
   return renderDesktopRoute();
 }
 

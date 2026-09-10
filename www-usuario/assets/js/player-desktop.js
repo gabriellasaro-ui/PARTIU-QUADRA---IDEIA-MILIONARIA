@@ -1,5 +1,5 @@
 import venueService, { localEscolhido, definirLocal } from '../../services/venues.js';
-import { API_BASE_URL, SERVICE_FEE_RATE } from '../../config/constants.js';
+import { API_BASE_URL } from '../../config/constants.js';
 import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
@@ -13,16 +13,49 @@ import { refreshIcons } from './component-loader.js';
 let currentRoute = null;
 let desktopMap = null;
 let activeDesktopApprovalTimer = null;
-/* Fallback, nao a verdade: e o centro de Belo Horizonte, usado so enquanto a pessoa
-   nao escolheu local nenhum. Quem manda e localEscolhido(). */
-const LOCAL_PADRAO = [-19.9300, -43.9400];
+/* Ultimo recurso para um mapa sem local e sem quadras. Nao prende a web a uma
+   cidade especifica: com resultados, a primeira quadra define o centro. */
+const LOCAL_PADRAO = [-14.2350, -51.9253];
 
 /* O mapa tem que seguir o mesmo local da lista. Antes lia a constante direto:
    trocar para "usar minha localizacao" reordenava os resultados mas o mapa
    continuava centrado em Goiania, com o "Voce esta aqui" no lugar errado. */
-function coordenadaAtual() {
+function coordenadaAtual(venues = []) {
   const local = localEscolhido();
-  return (local && local.lat != null) ? [local.lat, local.lng] : LOCAL_PADRAO;
+  if (local && local.lat != null && local.lng != null) return [local.lat, local.lng];
+  const primeira = venues.find((venue) => (
+    Number.isFinite(Number(venue?.map?.lat)) && Number.isFinite(Number(venue?.map?.lng))
+  ));
+  return primeira ? [Number(primeira.map.lat), Number(primeira.map.lng)] : LOCAL_PADRAO;
+}
+
+/* Fonte unica de localizacao na versao web. A mesma leitura alimenta o
+   seletor, as distancias e o ponto "Voce esta aqui" do mapa. */
+function pegarLocalizacao() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocalização não suportada pelo navegador.'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
+      },
+      (error) => {
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
 }
 
 /* Raio de busca escolhido em Ajustes. O mapa enquadra por ele: antes o zoom
@@ -110,6 +143,17 @@ function displayText(value) {
   return replacements[value] || value;
 }
 
+function publicAddress(item) {
+  const fullAddress = String(item?.address || item?.endereco || '').trim();
+  if (fullAddress) return fullAddress;
+
+  const neighborhood = String(item?.neighborhood || item?.bairro || '').trim();
+  const city = String(item?.city || item?.cidade || '').trim();
+  const state = String(item?.state || item?.estado || '').trim().toUpperCase();
+  const locality = [neighborhood, city].filter(Boolean).join(', ');
+  return state ? `${locality}${locality ? ' - ' : ''}${state}` : locality;
+}
+
 function ratingStars(rating, className = 'ic sm') {
   return Array.from({ length: 5 }, (_, index) => (
     icon('star', `${className} ${index >= Math.round(Number(rating)) ? 'is-empty' : ''}`)
@@ -141,6 +185,35 @@ function approvalWaitingVisual() {
 function addHours(hour, duration) {
   const start = Number(String(hour).slice(0, 2));
   return `${String(start + Number(duration)).padStart(2, '0')}:00`;
+}
+
+/* Cada item da API representa UMA hora de quadra. Isso e diferente de poder
+   INICIAR uma reserva de 2h/3h naquele item: 22h pode estar livre (22h-23h)
+   e ainda assim nao iniciar 2h por nao existir 23h. Manter essa diferenca em
+   um helper evita tratar "nao inicia" como se fosse "ocupado". */
+function bookingBlockIssue(availability, startHour, duration) {
+  const start = Number(String(startHour).slice(0, 2));
+  const slotsByHour = new Map(availability.map((slot) => [
+    Number(String(slot.hour).slice(0, 2)),
+    slot
+  ]));
+  for (let index = 0; index < duration; index += 1) {
+    const slot = slotsByHour.get(start + index);
+    if (!slot) return { type: 'missing', hour: addHours(startHour, index) };
+    if (slot.status !== 'free') return { type: 'busy', hour: slot.hour };
+  }
+  return null;
+}
+
+function bookingBlockMessage(startHour, duration, issue) {
+  if (issue?.type === 'busy') {
+    return `Não é possível começar às ${startHour}: o horário das ${issue.hour} está indisponível.`;
+  }
+  if (issue?.type === 'missing' && issue.hour === startHour) {
+    return `O horário das ${startHour} não está mais disponível. Escolha outro início.`;
+  }
+  const durationCopy = duration === 1 ? '1 hora' : `${duration} horas`;
+  return `${startHour} está livre, mas não há horários suficientes depois dele para completar ${durationCopy}. Escolha outro início.`;
 }
 
 function localDateValue(date = new Date()) {
@@ -195,6 +268,16 @@ function calendarMonthDate(value) {
   return new Date(year, month - 1, 1, 12, 0, 0);
 }
 
+function firstOpenBookingDate(value, closedWeekdays = []) {
+  const closed = new Set(closedWeekdays.map(Number));
+  const date = parseLocalDate(value);
+  for (let offset = 0; offset <= 60; offset += 1) {
+    if (!closed.has(date.getDay())) return localDateValue(date);
+    date.setDate(date.getDate() + 1);
+  }
+  return value;
+}
+
 function renderDesktopBookingCalendar(root) {
   const booking = root.querySelector('[data-player-booking]');
   const calendar = root.querySelector('[data-player-booking-calendar]');
@@ -209,6 +292,11 @@ function renderDesktopBookingCalendar(root) {
   if (month < minMonth) month = minMonth;
   if (month > maxMonth) month = maxMonth;
   booking.dataset.calendarMonth = calendarMonthValue(month);
+  const closedWeekdays = new Set(
+    String(booking.dataset.closedWeekdays || '').split(',').filter(Boolean).map(Number)
+  );
+  const closedLegend = calendar.querySelector('[data-player-calendar-closed-legend]');
+  if (closedLegend) closedLegend.hidden = closedWeekdays.size === 0;
 
   const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(month);
   calendar.querySelector('[data-player-calendar-label]').textContent = label.charAt(0).toUpperCase() + label.slice(1);
@@ -226,8 +314,9 @@ function renderDesktopBookingCalendar(root) {
     }
     const date = new Date(month.getFullYear(), month.getMonth(), day, 12, 0, 0);
     const value = localDateValue(date);
-    const disabled = date < today || date > maxDate;
-    const selected = value === booking.dataset.date;
+    const closed = closedWeekdays.has(date.getDay());
+    const disabled = date < today || date > maxDate || closed;
+    const selected = !closed && value === booking.dataset.date;
     const isToday = value === localDateValue(today);
     const spoken = new Intl.DateTimeFormat('pt-BR', {
       weekday: 'long',
@@ -235,8 +324,9 @@ function renderDesktopBookingCalendar(root) {
       month: 'long'
     }).format(date);
     cells.push(`
-      <button type="button" class="calendar-day ${selected ? 'on' : ''} ${isToday ? 'is-today' : ''}"
-              data-player-calendar-date="${value}" aria-label="${escapeHtml(spoken)}"
+      <button type="button" class="calendar-day ${selected ? 'on' : ''} ${isToday ? 'is-today' : ''} ${closed ? 'is-closed' : ''}"
+              data-player-calendar-date="${value}" aria-label="${escapeHtml(spoken)}${closed ? ' — quadra fechada' : ''}"
+              ${closed ? 'title="Quadra fechada"' : ''}
               aria-pressed="${selected}" ${disabled ? 'disabled' : ''}>
         <span>${day}</span>
       </button>`);
@@ -332,7 +422,7 @@ function venueCard(venue, favorite = false, options = {}) {
         ${!naArena && venue.arenaCourtCount > 1 && venue.courtName
           ? `<p class="qcard-quadra">${icon('layout-grid')}${escapeHtml(venue.courtName)}</p>`
           : ''}
-        <p class="meta">${icon('map-pin')}${escapeHtml(venue.neighborhood)} - ${venue.distance.toLocaleString('pt-BR')} km</p>
+        <p class="meta">${icon('map-pin')}${escapeHtml(publicAddress(venue))} - ${venue.distance.toLocaleString('pt-BR')} km</p>
         <div class="tags">${venue.tags.slice(0, 3).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
         <div class="foot">
           <div class="price">${money(venue.price)}<small> /hora</small></div>
@@ -348,7 +438,7 @@ function mapPopup(venue) {
       <img src="${escapeHtml(venue.image)}" alt="" style="width:64px;height:58px;object-fit:cover;border-radius:7px" decoding="async" loading="lazy">
       <span>
         <strong style="display:block">${escapeHtml(venue.name)}</strong>
-        <small style="display:block;margin:3px 0">${escapeHtml(venue.neighborhood)}</small>
+        <small style="display:block;margin:3px 0">${escapeHtml(publicAddress(venue))}</small>
         <b>${money(venue.price)} /hora</b>
       </span>
     </a>`;
@@ -360,12 +450,9 @@ async function renderExplore(root, route) {
   const term = query.get('q') || '';
   const escolhido = localEscolhido();
   const cidades = await venueService.cidadesComQuadra();
-  /* Padrao vem da propria lista, e nao de uma string escrita aqui: o banco
-     grava "Goiania" sem acento e o rotulo fixo era "Goiânia, GO" — nenhuma
-     opcao casava, o <select> caia na primeira (que e "Usar minha
-     localizacao") e parecia ativo sem nunca ter obtido posicao alguma. */
-  const local = escolhido?.label || query.get('local') || cidades[0]?.label || 'Belo Horizonte, MG';
-  const radius = query.get('raio') || '5';
+  /* Sem escolha, nao inventa uma cidade a partir da primeira arena da lista. */
+  const local = escolhido?.label || query.get('local') || 'Escolha sua localização';
+  const radius = query.get('raio') || '25';
   const now = query.get('agora') === '1';
   const [sports, listedVenues, arenas] = await Promise.all([
     venueService.sports(),
@@ -373,21 +460,28 @@ async function renderExplore(root, route) {
     venueService.arenasProximas()
   ]);
   const needle = normalizeSearch(term);
-  const venues = listedVenues.filter((venue) => {
+  const candidates = listedVenues.filter((venue) => {
     const searchable = normalizeSearch([
       venue.name,
       venue.sport,
-      venue.neighborhood,
+      publicAddress(venue),
       ...venue.tags
     ].join(' '));
     const matchesTerm = !needle || searchable.includes(needle);
-    const insideRadius = venue.distance <= Number(radius);
     const availableSoon = !now || venue.id % 3 !== 0;
-    return matchesTerm && insideRadius && availableSoon;
+    return matchesTerm && availableSoon;
   });
+  const withinRadius = candidates.filter((venue) => venue.distance <= Number(radius));
+  /* Localizacao nunca pode transformar uma lista valida numa tela vazia. Se
+     nao houver nada dentro do raio, mantemos as mais proximas visiveis e
+     explicamos o motivo no cabecalho. */
+  const showingNearest = withinRadius.length === 0 && candidates.length > 0;
+  const venues = showingNearest ? candidates.slice(0, 6) : withinRadius;
   const pageSub = document.querySelector('[data-page-sub]');
   if (pageSub) {
-    pageSub.textContent = now
+    pageSub.textContent = showingNearest
+      ? `Nenhuma quadra em até ${radius} km; exibindo as mais próximas de ${local}`
+      : now
       ? `${venues.length} quadras com horários próximos`
       : `${venues.length} quadras disponíveis perto de ${local}`;
   }
@@ -403,7 +497,7 @@ async function renderExplore(root, route) {
           <details class="desktop-local" data-player-local>
             <summary aria-label="Trocar o local da busca">
               ${icon(escolhido?.auto ? 'locate-fixed' : 'map-pin', 'ic sm')}
-              <span data-local-rotulo>${escapeHtml(escolhido?.auto ? 'Perto de você' : local)}</span>
+              <span data-local-rotulo>${escapeHtml(local)}</span>
               ${icon('chevron-down', 'ic sm')}
             </summary>
             <div class="desktop-local__menu" role="listbox">
@@ -414,7 +508,7 @@ async function renderExplore(root, route) {
                 ${icon('locate-fixed', 'ic sm')}
                 <span><strong>Usar minha localização</strong><small>Ordena pelas quadras mais perto de onde você está</small></span>
               </button>
-              ${(cidades.length ? cidades : [{ label: local }]).map((c) => `
+              ${cidades.map((c) => `
               <button type="button" role="option" aria-selected="${!escolhido?.auto && c.label === local ? 'true' : 'false'}"
                       class="desktop-local__op ${!escolhido?.auto && c.label === local ? 'on' : ''}" data-local-op="${escapeHtml(c.label)}">
                 ${icon('map-pin', 'ic sm')}
@@ -475,7 +569,6 @@ async function renderExplore(root, route) {
                 : escapeHtml(venueInitials(arena.nome))}
             </span>
             <strong>${escapeHtml(arena.nome)}</strong>
-            <small>${escapeHtml(arena.bairro || arena.cidade || '')}</small>
           </a>`).join('')}
       </div>
     </section>` : ''}
@@ -533,7 +626,9 @@ function initExploreMap(root) {
   if (!mapElement || !window.L) return;
   desktopMap?.remove();
   const venues = JSON.parse(root.dataset.mapVenues || '[]');
-  desktopMap = window.L.map(mapElement).setView(coordenadaAtual(), zoomParaRaio(raioKm()));
+  const centro = coordenadaAtual(venues);
+  const local = localEscolhido();
+  desktopMap = window.L.map(mapElement).setView(centro, zoomParaRaio(raioKm()));
   /* Tiles do OpenStreetMap: a CARTO passou a pedir chave de API, e mapa preso
      a conta de terceiro apaga sozinho no dia em que a cota virar. Sem `{s}`
      (subdominios aposentados) e sem `{r}` (nao ha tile @2x). */
@@ -541,61 +636,39 @@ function initExploreMap(root) {
     attribution: '&copy; OpenStreetMap',
     maxZoom: 19
   }).addTo(desktopMap);
-  const bounds = [coordenadaAtual()];
+  const bounds = local?.lat != null ? [centro] : [];
   venues.forEach((venue) => {
     const position = [venue.map.lat, venue.map.lng];
     window.L.marker(position, { icon: iconeQuadra() }).addTo(desktopMap).bindPopup(mapPopup(venue));
     bounds.push(position);
   });
-  /* "Voce esta aqui". Antes o mapa CENTRAVA na posicao do usuario e a usava
-     para enquadrar, mas nunca a desenhava — dava para ver as quadras e nao
-     dava para saber de onde elas estavam perto. Circulo em vez de alfinete,
-     para nao competir com os marcadores das quadras. */
-  /* Um circulo de 7px verde some no meio de alfinetes azuis grandes: nao
-     dava para saber que aquilo era voce. Agora sao tres camadas — halo,
-     anel branco e nucleo — mais um rotulo fixo, para o ponto se declarar
-     sem depender de clique. */
-  const haloUsuario = window.L.circleMarker(coordenadaAtual(), {
-    radius: 20,
-    stroke: false,
-    fillColor: '#9bcf33',
-    fillOpacity: 0.18,
-    interactive: false
-  }).addTo(desktopMap);
-  const marcadorUsuario = window.L.circleMarker(coordenadaAtual(), {
-    radius: 10,
-    color: '#ffffff',
-    weight: 4,
-    fillColor: '#86bd23',
-    fillOpacity: 1
-  }).addTo(desktopMap);
-  marcadorUsuario.bindTooltip('Você está aqui', {
-    permanent: true,
-    direction: 'top',
-    offset: [0, -12],
-    className: 'mapa-voce'
-  });
+  /* So chama uma coordenada de "Voce esta aqui" quando ela veio do GPS. Uma
+     cidade escolhida ou o centro do mapa nao sao a posicao da pessoa. */
+  if (local?.auto === true) {
+    window.L.circleMarker(centro, {
+      radius: 20,
+      stroke: false,
+      fillColor: '#9bcf33',
+      fillOpacity: 0.18,
+      interactive: false
+    }).addTo(desktopMap);
+    const marcadorUsuario = window.L.circleMarker(centro, {
+      radius: 10,
+      color: '#ffffff',
+      weight: 4,
+      fillColor: '#86bd23',
+      fillOpacity: 1
+    }).addTo(desktopMap);
+    marcadorUsuario.bindTooltip('Você está aqui', {
+      permanent: true,
+      direction: 'top',
+      offset: [0, -12],
+      className: 'mapa-voce'
+    });
+  }
 
   if (bounds.length > 1) desktopMap.fitBounds(bounds, { padding: [34, 34], maxZoom: 14 });
   setTimeout(() => desktopMap?.invalidateSize(), 50);
-
-  /* Posicao real quando o usuario permitir. Recusa, falta de sinal ou http
-     sem TLS nao podem quebrar o mapa: fica no ponto padrao de Goiania.
-     Quando GEOLOCATION_READY (services/geo.js) for ligado para o app nativo,
-     esta chamada deve passar a ir por la, que tem o plugin do Capacitor. */
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (!desktopMap) return;
-        const aqui = [pos.coords.latitude, pos.coords.longitude];
-        marcadorUsuario.setLatLng(aqui);
-        haloUsuario.setLatLng(aqui);
-        desktopMap.panTo(aqui);
-      },
-      () => {},
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-    );
-  }
 }
 
 async function renderVenue(root, route) {
@@ -606,13 +679,18 @@ async function renderVenue(root, route) {
   }
   /* Com a data: sem ela, a primeira pintura usava a agenda de "hoje" mesmo
      quando a tela abria em outro dia. */
-  const [availability, favoriteIds] = await Promise.all([
-    venueService.availability(venue.id, localDateValue()),
-    venueService.favoriteIds()
+  const today = localDateValue();
+  const [todayAvailability, favoriteIds, closedWeekdays] = await Promise.all([
+    venueService.availability(venue.id, today),
+    venueService.favoriteIds(),
+    venueService.closedWeekdays(venue.id, today)
   ]);
+  const initialDate = firstOpenBookingDate(today, closedWeekdays);
+  const availability = initialDate === today
+    ? todayAvailability
+    : await venueService.availability(venue.id, initialDate);
   const gallery = Array.isArray(venue.gallery) && venue.gallery.length ? venue.gallery : [venue.image];
   const amenities = [...new Set([...venue.tags, 'Bola inclusa', 'Wi-Fi no local'])];
-  const today = localDateValue();
   const pageTitle = document.querySelector('[data-page-title]');
   const pageSub = document.querySelector('[data-page-sub]');
   if (pageTitle) pageTitle.textContent = venue.name;
@@ -626,7 +704,7 @@ async function renderVenue(root, route) {
       <div class="desktop-venue-gallery__grid">
         <img class="desktop-venue-gallery__main" data-player-gallery-hero src="${escapeHtml(gallery[0])}" alt="${escapeHtml(venue.name)}" decoding="async" fetchpriority="high">
         <div class="desktop-venue-gallery__side">
-          ${gallery.slice(1, 3).map((photo, index) => `
+          ${gallery.slice(1, 5).map((photo, index) => `
             <button type="button" data-player-gallery-image="${escapeHtml(photo)}" aria-label="Abrir foto ${index + 2}">
               <img src="${escapeHtml(photo)}" alt="" loading="lazy" decoding="async">
             </button>`).join('')}
@@ -651,7 +729,7 @@ async function renderVenue(root, route) {
         <!-- Selo "Arena verificada" removido: nao ha verificacao nenhuma
              por tras dele. -->
         <h1>${escapeHtml(venue.arenaName || venue.name)}</h1>
-        <p>${icon('map-pin', 'ic sm')}${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</p>
+        <p>${icon('map-pin', 'ic sm')}${escapeHtml(publicAddress(venue))}</p>
       </div>
       <div class="desktop-arena-facts">
         <span>${icon('star', 'ic sm')}<b>${venue.rating}</b><small>${venue.reviews} avaliações</small></span>
@@ -683,7 +761,8 @@ async function renderVenue(root, route) {
 
     <div class="desktop-booking-layout" data-player-booking
          data-venue-id="${venue.id}" data-price="${venue.price}"
-         data-date="${today}" data-calendar-month="${calendarMonthValue(parseLocalDate(today))}" data-duration="1"
+         data-date="${initialDate}" data-calendar-month="${calendarMonthValue(parseLocalDate(initialDate))}"
+         data-closed-weekdays="${closedWeekdays.join(',')}" data-duration="1"
          data-hour="" data-booking-stage="date">
       <main class="desktop-booking-main">
         <section class="booking-selector">
@@ -716,6 +795,9 @@ async function renderVenue(root, route) {
                 <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
               </div>
               <div class="booking-calendar__grid" data-player-calendar-grid></div>
+              <div class="booking-calendar__legend" data-player-calendar-closed-legend hidden>
+                <span><i aria-hidden="true"></i>Quadra fechada</span>
+              </div>
             </div>
             <footer class="booking-wizard-actions">
               <p>Você pode reservar com até 60 dias de antecedência.</p>
@@ -747,8 +829,9 @@ async function renderVenue(root, route) {
               <em data-player-availability-copy></em>
             </div>
             <div class="legend">
-              <span><i class="dot free"></i> Disponível</span>
-              <span><i class="dot busy"></i> Não comporta a duração</span>
+              <span><i class="dot free"></i> Disponível para iniciar</span>
+              <span data-player-continuation-legend hidden><i class="dot continuation"></i><em data-player-continuation-copy>Livre, mas não inicia esta duração</em></span>
+              <span><i class="dot busy"></i> Ocupado</span>
             </div>
             <div class="avail" data-player-slots></div>
             <footer class="booking-wizard-actions booking-wizard-actions--time">
@@ -794,7 +877,7 @@ async function renderVenue(root, route) {
           </div>
           <div class="bc-summary">
             <div class="line"><span class="muted">Aluguel da quadra <span data-player-booking-hours></span></span><span data-player-booking-sub>-</span></div>
-            <div class="line"><span class="muted">Taxa de serviço (${Math.round(SERVICE_FEE_RATE * 100)}%)</span><span data-player-booking-fee>-</span></div>
+            <div class="line"><span class="muted">Taxa de serviço</span><span data-player-booking-fee>-</span></div>
             <div class="line total"><span>Total</span><span data-player-booking-total>-</span></div>
             <small>Pagamento, suporte e proteção da reserva.</small>
           </div>
@@ -832,15 +915,11 @@ function renderBooking(root) {
   const duration = Math.max(1, Math.min(3, Number(booking.dataset.duration || 1)));
   booking.dataset.duration = String(duration);
 
-  const isFreeAt = (hour) => availability.some((slot) => (
-    Number(slot.hour.slice(0, 2)) === hour && slot.status === 'free'
-  ));
-  const canStartAt = (hour) => {
-    for (let index = 0; index < duration; index += 1) {
-      if (!isFreeAt(hour + index)) return false;
-    }
-    return true;
-  };
+  const canStartAt = (hour) => !bookingBlockIssue(
+    availability,
+    `${String(hour).padStart(2, '0')}:00`,
+    duration
+  );
   const isPast = (hour) => isPastSlot(hour, booking.dataset.date);
 
   if (selectedHour && (!canStartAt(Number(selectedHour.slice(0, 2))) || isPast(selectedHour))) {
@@ -849,31 +928,63 @@ function renderBooking(root) {
   }
 
   const start = selectedHour ? Number(selectedHour.slice(0, 2)) : -1;
+  const isInSelectedBlock = (hour) => (
+    Boolean(selectedHour) && hour >= start && hour < start + duration
+  );
 
   const groups = [
-    ['Manhã', availability.filter((slot) => Number(slot.hour.slice(0, 2)) < 12)],
-    ['Tarde', availability.filter((slot) => Number(slot.hour.slice(0, 2)) >= 12 && Number(slot.hour.slice(0, 2)) < 18)],
-    ['Noite', availability.filter((slot) => Number(slot.hour.slice(0, 2)) >= 18)]
+    ['Manhã', 'pela manhã', availability.filter((slot) => Number(slot.hour.slice(0, 2)) < 12)],
+    ['Tarde', 'à tarde', availability.filter((slot) => Number(slot.hour.slice(0, 2)) >= 12 && Number(slot.hour.slice(0, 2)) < 18)],
+    ['Noite', 'à noite', availability.filter((slot) => Number(slot.hour.slice(0, 2)) >= 18)]
   ];
-  root.querySelector('[data-player-slots]').innerHTML = groups.map(([label, slots]) => `
-    <div class="avail-group">
-      <div class="avail-lbl">${label}</div>
-      <div class="avail-slots">${slots.map((slot) => {
+  root.querySelector('[data-player-slots]').innerHTML = groups.map(([label, periodLabel, slots]) => {
+    const hasAvailableStart = slots.some((slot) => (
+      canStartAt(Number(slot.hour.slice(0, 2))) && !isPast(slot.hour)
+    ));
+    /* Um bloco pode atravessar os grupos (11h -> 12h ou 17h -> 18h).
+       Mesmo que o grupo seguinte nao tenha outro INICIO valido, ele precisa
+       continuar visivel para mostrar todas as horas da reserva. */
+    const hasSelectedBlockSlot = slots.some((slot) => (
+      isInSelectedBlock(Number(slot.hour.slice(0, 2)))
+    ));
+    const slotContent = hasAvailableStart || hasSelectedBlockSlot
+      ? slots.map((slot) => {
         const hour = Number(slot.hour.slice(0, 2));
-        const selected = Boolean(selectedHour) && hour === start;
         const ocupado = slot.status !== 'free';
         const passou = isPast(slot.hour);
         const cabe = canStartAt(hour);
         const availableStart = cabe && !passou;
-        /* Dois estados, como no mobile: ou o horario serve de INICIO, ou nao
-           serve. O motivo vai no title. Ver o comentario longo em mobile.js. */
+        const issue = !ocupado && !passou && !availableStart
+          ? bookingBlockIssue(availability, slot.hour, duration)
+          : null;
+        const inSelectedBlock = isInSelectedBlock(hour) && !ocupado && !passou;
+        const selectedStart = inSelectedBlock && hour === start;
+        const state = passou ? 'past' : ocupado ? 'busy' : availableStart ? 'free' : 'nofit';
+        const selectionState = selectedStart ? ' sel' : inSelectedBlock ? ' bloco' : '';
         const reason = passou
           ? 'Horário já passou'
           : ocupado ? 'Reservado'
           : `Não cabem ${duration}h seguidas a partir daqui`;
-        return `<button type="button" class="slot ${availableStart ? 'free' : 'busy'} ${selected ? 'sel' : ''}" data-player-slot="${slot.hour}" aria-pressed="${Boolean(selectedHour && hour === start)}" ${availableStart ? '' : `disabled title="${reason}"`}>${slot.hour}</button>`;
-      }).join('')}</div>
-    </div>`).join('');
+        /* Horario realmente ocupado/passado continua desabilitado. Um horario
+           livre que so nao comporta a duracao fica bloqueado por ARIA, mas
+           recebe o clique para explicar o motivo em um toast. */
+        const availabilityState = availableStart
+          ? ''
+          : (ocupado || passou)
+            ? `disabled title="${reason}"`
+            : `aria-disabled="true" data-player-slot-blocked="${issue?.type || 'missing'}" data-player-slot-blocked-hour="${issue?.hour || ''}" title="${reason}"`;
+        const content = state === 'nofit'
+          ? `<span>${slot.hour}</span><small class="slot__hint">não inicia ${duration}h</small>`
+          : slot.hour;
+        return `<button type="button" class="slot ${state}${selectionState}" data-player-slot="${slot.hour}" aria-pressed="${inSelectedBlock}" ${availabilityState}>${content}</button>`;
+      }).join('')
+      : `<p class="avail-empty">Sem horários disponíveis ${periodLabel}.</p>`;
+    return `
+      <div class="avail-group">
+        <div class="avail-lbl">${label}</div>
+        <div class="avail-slots">${slotContent}</div>
+      </div>`;
+  }).join('');
 
   root.querySelectorAll('[data-player-duration]').forEach((button) => {
     const value = Number(button.dataset.playerDuration);
@@ -882,6 +993,13 @@ function renderBooking(root) {
     button.classList.toggle('on', value === duration);
     button.setAttribute('aria-pressed', String(value === duration));
   });
+
+  const continuationLegend = root.querySelector('[data-player-continuation-legend]');
+  if (continuationLegend) {
+    continuationLegend.hidden = duration === 1;
+    const copy = continuationLegend.querySelector('[data-player-continuation-copy]');
+    if (copy) copy.textContent = `Livre, mas não inicia ${duration}h`;
+  }
 
   const { subtotal, serviceFee, total } = calculateCheckoutAmounts(booking.dataset.price, duration);
   const freeCount = availability.filter((slot) => canStartAt(Number(slot.hour.slice(0, 2))) && !isPast(slot.hour)).length;
@@ -1207,7 +1325,7 @@ async function renderPayment(root, route) {
             </div>
             <div class="desktop-checkout-venue">
               <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" decoding="async" loading="lazy">
-              <div><h3>${escapeHtml(venue.name)}</h3><p>${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</p></div>
+              <div><h3>${escapeHtml(venue.name)}</h3><p>${escapeHtml(publicAddress(venue))}</p></div>
               <div class="desktop-checkout-facts">
                 <span>${icon('calendar-days', 'ic sm')}<b>${escapeHtml(dateText)}</b></span>
                 <span>${icon('clock-3', 'ic sm')}<b>${hour} - ${endHour}</b></span>
@@ -1255,7 +1373,7 @@ async function renderPayment(root, route) {
             <h2>Total da reserva</h2>
           </div>
           <div class="line"><span class="muted">Aluguel (${duration}h)</span><span>${money(subtotal)}</span></div>
-          <div class="line"><span class="muted">Taxa de serviço (${Math.round(SERVICE_FEE_RATE * 100)}%)</span><span>${money(serviceFee)}</span></div>
+          <div class="line"><span class="muted">Taxa de serviço</span><span>${money(serviceFee)}</span></div>
           <div class="line total"><span>Total</span><span>${money(total)}</span></div>
           <div class="order-card__fee-note">${icon('info', 'ic sm')}A taxa mantém o pagamento, o suporte e a proteção da reserva.</div>
           <a class="btn btn-primary btn-lg btn-block" data-player-payment-cta>
@@ -1416,12 +1534,12 @@ async function renderConfirmation(root, route) {
           <div class="ticket">
             <div class="tk-top">
               <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" decoding="async" loading="lazy">
-              <div><span>Partida confirmada</span><h3>${escapeHtml(venue.name)}</h3><div class="m">${escapeHtml(displayText(venue.sport))} - ${escapeHtml(displayText(venue.neighborhood))}</div></div>
+              <div><span>Partida confirmada</span><h3>${escapeHtml(venue.name)}</h3><div class="m">${escapeHtml(publicAddress(venue))}</div></div>
             </div>
             <div class="tk-body">
               <div class="row"><span class="k">Data</span><span class="v">${escapeHtml(dateText)}</span></div>
               <div class="row"><span class="k">Horário</span><span class="v">${hour} - ${endHour} (${duration}h)</span></div>
-              <div class="row"><span class="k">Endereço</span><span class="v">${escapeHtml(displayText(venue.neighborhood))}, Goiânia</span></div>
+              <div class="row"><span class="k">Endereço</span><span class="v">${escapeHtml(publicAddress(venue))}</span></div>
               <div class="row"><span class="k">Pagamento</span><span class="v">${PAYMENT_METHOD_LABELS[method]} - aprovado</span></div>
               <div class="row"><span class="k">Aluguel</span><span class="v">${money(subtotal)}</span></div>
               <div class="row"><span class="k">Taxa de serviço</span><span class="v">${money(serviceFee)}</span></div>
@@ -1572,7 +1690,7 @@ async function renderReservations(root) {
           <h3>${escapeHtml(venue.name)}</h3>
           <div class="meta">
             <span>${sportIcon(venue.sport)}${escapeHtml(venue.sport)}</span>
-            <span>${icon('map-pin')}${escapeHtml(venue.neighborhood)}</span>
+            <span>${icon('map-pin')}${escapeHtml(publicAddress(venue))}</span>
             <span>${icon('calendar-days')}${escapeHtml(reservation.date)}</span>
             <span>${icon('clock-3')}${reservation.hour}</span>
           </div>
@@ -2000,36 +2118,6 @@ function avisoLocal(selectLocal, texto) {
   aviso.textContent = texto;
 }
 
-function posicaoAtual() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Seu navegador não oferece localização'));
-      return;
-    }
-    /* Origem insegura nao pede permissao nenhuma: o navegador recusa antes.
-       Acontece ao abrir pelo IP da rede local (http://192.168.x.x) em vez de
-       localhost — e a falha e silenciosa se ninguem avisar. */
-    if (!window.isSecureContext) {
-      reject(new Error('A localização exige HTTPS. Abra por localhost ou por um endereço https.'));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (erro) => {
-        const frases = {
-          1: 'Permissão negada. Libere a localização nas configurações do site.',
-          2: 'Não foi possível obter sua localização agora.',
-          3: 'A localização demorou demais para responder.'
-        };
-        reject(new Error(frases[erro.code] || 'Não foi possível obter sua localização'));
-      },
-      /* 10s e cache de 5min: pedir precisao alta aqui gastaria bateria para
-         ordenar uma lista por quilometro. */
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-    );
-  });
-}
-
 async function renderOnboarding(root, route) {
   const sports = MODALIDADES;
   const user = authService.currentUser() || {};
@@ -2343,17 +2431,15 @@ export function initPlayerDesktopActions() {
           if (estado === 'denied') {
             throw new Error('Você bloqueou a localização para este site. Clique no cadeado da barra de endereço, permita a localização e tente de novo.');
           }
-          const pos = await posicaoAtual();
-          /* Nomeia o lugar em vez de exibir "Perto de você": saber o bairro
-             confirma para a pessoa que o app achou onde ela esta. Se o lugar
-             conhecido mais proximo estiver a mais de 60 km, o nome so
-             confundiria — ai fica o rotulo generico. */
-          let rotulo = 'Perto de você';
-          try {
-            const lugar = await venueService.localDeCoordenada(pos.lat, pos.lng);
-            if (lugar && lugar.distanceKm <= 60 && lugar.label) rotulo = lugar.label;
-          } catch (erro) { /* nome e enfeite: a busca funciona sem ele */ }
-          definirLocal({ label: rotulo, lat: pos.lat, lng: pos.lng, auto: true });
+          const position = await pegarLocalizacao();
+          const pos = { lat: position.latitude, lng: position.longitude };
+          definirLocal({
+            label: 'Minha localização',
+            lat: pos.lat,
+            lng: pos.lng,
+            accuracy: position.accuracy,
+            auto: true
+          });
           avisoLocal(selectLocal, '');
           window.pqToast?.('Usando sua localização');
         } catch (erro) {
@@ -2502,6 +2588,42 @@ export function initPlayerDesktopActions() {
       return;
     }
 
+    /* Outra pessoa pode reservar uma das horas enquanto esta tela esta
+       aberta. Antes de sair para o pagamento, consulta novamente a agenda da
+       VPS e impede que um bloco agora incompleto continue parecendo valido. */
+    const bookingCta = event.target.closest('[data-player-booking-cta]');
+    if (bookingCta) {
+      event.preventDefault();
+      const root = bookingCta.closest('[data-player-desktop-page]');
+      const booking = root?.querySelector('[data-player-booking]');
+      const startHour = booking?.dataset.hour;
+      const destination = bookingCta.getAttribute('href');
+      if (!booking || !startHour || !destination) return;
+
+      const duration = Math.max(1, Math.min(3, Number(booking.dataset.duration || 1)));
+      bookingCta.setAttribute('aria-busy', 'true');
+      try {
+        const latestAvailability = await venueService.availability(
+          booking.dataset.venueId,
+          booking.dataset.date
+        );
+        booking.dataset.availability = JSON.stringify(latestAvailability);
+        const issue = bookingBlockIssue(latestAvailability, startHour, duration);
+        if (issue) {
+          booking.dataset.hour = '';
+          renderBooking(root);
+          window.pqToast?.(bookingBlockMessage(startHour, duration, issue));
+          return;
+        }
+        location.hash = destination.replace(/^#/, '');
+      } catch (error) {
+        window.pqToast?.('Não foi possível confirmar os horários agora. Tente novamente.');
+      } finally {
+        bookingCta.removeAttribute('aria-busy');
+      }
+      return;
+    }
+
     const bookingStage = event.target.closest('[data-booking-stage-go]');
     if (bookingStage) {
       const root = bookingStage.closest('[data-player-desktop-page]');
@@ -2535,9 +2657,20 @@ export function initPlayerDesktopActions() {
     }
 
     const slot = event.target.closest('[data-player-slot]');
-    if (slot && !slot.disabled) {
+    if (slot) {
       const root = slot.closest('[data-player-desktop-page]');
-      root.querySelector('[data-player-booking]').dataset.hour = slot.dataset.playerSlot;
+      const booking = root.querySelector('[data-player-booking]');
+      if (slot.dataset.playerSlotBlocked) {
+        const duration = Math.max(1, Math.min(3, Number(booking.dataset.duration || 1)));
+        const issue = {
+          type: slot.dataset.playerSlotBlocked,
+          hour: slot.dataset.playerSlotBlockedHour
+        };
+        window.pqToast?.(bookingBlockMessage(slot.dataset.playerSlot, duration, issue));
+        return;
+      }
+      if (slot.disabled) return;
+      booking.dataset.hour = slot.dataset.playerSlot;
       renderBooking(root);
       return;
     }
@@ -2545,8 +2678,17 @@ export function initPlayerDesktopActions() {
     const duration = event.target.closest('[data-player-duration]');
     if (duration && !duration.disabled) {
       const root = duration.closest('[data-player-desktop-page]');
-      root.querySelector('[data-player-booking]').dataset.duration = duration.dataset.playerDuration;
+      const booking = root.querySelector('[data-player-booking]');
+      const previousHour = booking.dataset.hour;
+      booking.dataset.duration = duration.dataset.playerDuration;
+      const newDuration = Math.max(1, Math.min(3, Number(duration.dataset.playerDuration || 1)));
+      const issue = previousHour
+        ? bookingBlockIssue(JSON.parse(booking.dataset.availability || '[]'), previousHour, newDuration)
+        : null;
       renderBooking(root);
+      if (previousHour && !booking.dataset.hour) {
+        window.pqToast?.(bookingBlockMessage(previousHour, newDuration, issue));
+      }
       return;
     }
 
