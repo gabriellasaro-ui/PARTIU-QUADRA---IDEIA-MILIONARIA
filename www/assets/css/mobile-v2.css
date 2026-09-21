@@ -14301,3 +14301,71 @@ html[data-theme="dark"] .leaflet-tile-pane {
   font-size: 13px;
   line-height: 1.5;
 }
+
+.booking-step .avail-empty {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  margin: 0;
+  padding: 9px 12px;
+  border: 1px dashed #d7dfce;
+  border-radius: 16px;
+  background: #f4f7ef;
+  color: var(--pq-brand-deep, #294515);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.arena-identity {
+  gap: 8px;
+}
+
+.calendar-day.is-closed:disabled {
+  border-color: var(--pq-line);
+  background: var(--pq-app-bg);
+  color: var(--pq-muted);
+  text-decoration: line-through;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.booking-calendar__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  color: var(--pq-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.booking-calendar__legend[hidden] {
+  display: none;
+}
+
+.booking-calendar__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.booking-calendar__legend i {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--pq-line);
+  border-radius: 50%;
+  background: var(--pq-app-bg);
+}
+
+.weekday.is-closed:disabled {
+  border-color: var(--pq-line);
+  background: var(--pq-app-bg);
+  color: var(--pq-muted);
+  text-decoration: line-through;
+  opacity: .7;
+  cursor: not-allowed;
+}

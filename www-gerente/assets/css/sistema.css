@@ -3862,6 +3862,22 @@ html[data-manager-app] .manager-booking-plano.is-avulso {
   padding-left: 0;
 }
 
+/* Os indicadores de Reservas deixaram de ser uma caixa segmentada e viraram
+   cartoes independentes. O contenedor antigo ainda recortava os cantos dos
+   filhos com overflow:hidden; no desktop isso apagava visualmente parte da
+   borda externa. Mantemos o ajuste restrito ao painel web. */
+@media (min-width: 821px) and (pointer: fine) {
+  html[data-manager-app][data-manager-view="reservas"] .manager-reservation-overview {
+    overflow: visible;
+    border-radius: 0;
+  }
+
+  html[data-manager-app][data-manager-view="reservas"] .manager-reservation-overview article {
+    border-color: var(--manager-line-strong);
+    box-shadow: var(--pq-shadow-1);
+  }
+}
+
 /* O quadradinho verde atras do icone sai de TODOS os KPIs, e nao so os do
    inicio: na tela de Reservas eram outros tres blocos competindo com o numero.
    O seletor cobre as variantes que cada tela usa. */
