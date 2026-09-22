@@ -149,6 +149,14 @@ class Settings(BaseSettings):
     #: MP da 180 dias; renovar cedo cobre worker parado por alguns dias sem
     #: que ninguem precise reconectar a mao.
     mercadopago_refresh_days_before: int = 15
+    #: Manda `test_token=true` na troca do code, o que faz o MP devolver
+    #: credenciais de SANDBOX do vendedor. Existe porque nao ha Client Secret
+    #: de teste: o par client_id/client_secret e sempre o de producao, e o que
+    #: separa teste de producao e a conta que autoriza mais este parametro.
+    #: [VERIFICAR NO SANDBOX] — a doc cita o parametro mas nao detalha o
+    #: comportamento; se a conexao com conta de teste funcionar sem ele,
+    #: deixe em false.
+    mercadopago_oauth_test_token: bool = False
     #: Para onde devolver o dono da arena depois da autorizacao (a tela de
     #: pagamentos do painel do gerente). Vazia => o callback responde JSON,
     #: o que mantem a rota testavel sem inventar um redirect para lugar nenhum.

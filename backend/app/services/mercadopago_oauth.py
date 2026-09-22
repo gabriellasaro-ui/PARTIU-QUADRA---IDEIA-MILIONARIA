@@ -142,6 +142,12 @@ def _postar_token(dados: dict) -> dict:
         "client_secret": settings.mercadopago_client_secret.strip(),
         **dados,
     }
+    # So na troca do code: o refresh herda o ambiente do token que renova.
+    if (
+        settings.mercadopago_oauth_test_token
+        and dados.get("grant_type") == "authorization_code"
+    ):
+        corpo["test_token"] = True
     try:
         resposta = requests.post(
             TOKEN_URL,
