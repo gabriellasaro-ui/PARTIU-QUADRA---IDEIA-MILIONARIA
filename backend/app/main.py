@@ -34,6 +34,7 @@ from .api import (
     partidas,
     admin,
     onboarding,
+    mercadopago,
 )
 from .core.config import settings
 from .core.database import check_database
@@ -254,6 +255,7 @@ app.include_router(perfil.router)
 app.include_router(favoritos.router)
 app.include_router(auth.router)
 app.include_router(payments.router)
+app.include_router(mercadopago.router)
 app.include_router(notifications.router)
 app.include_router(devices.router)
 app.include_router(ws.router)

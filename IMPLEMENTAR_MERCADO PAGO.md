@@ -6,8 +6,16 @@ Integrar o **Split de Pagamentos 1:1** do Mercado Pago (modelo *marketplace*) pa
 
 **Regras de negócio atuais (confirmadas):**
 - Jogador paga `subtotal + 9% do total` → `player_fee_rate = 0.0989011` (taxa = 9% do total pago).
-- Arena recebe o subtotal (menos comissão MP) ; Qadras retém a comissão.
-- Desconto do MP acontece **primeiro**; a comissão do marketplace incide **sobre o restante** (`application_fee`), conforme doc oficial.
+- Arena cede 3% do subtotal → `arena_fee_rate = 0.03`; repasse bruto da arena = `subtotal * 0.97`.
+- **Qadras retém as duas pontas:** comissão bruta = `round(subtotal * (player_fee_rate + arena_fee_rate))` = **12,89% do subtotal** — a mesma expressão de `admin.overview` (`admin.py:107`) e do seed (`seed.py:714`).
+- **A taxa do MP sai da parte da Qadras** (decisão de 2026-09-21). O `application_fee` enviado ao MP é a comissão bruta **menos** a taxa estimada do MP, para que o repasse da arena feche em `subtotal * 0.97` exato:
+  ```
+  application_fee = comissao_bruta − ceil(total_pago * taxa_mp_da_arena)
+  ```
+  Arredondar a taxa **para cima** (`ceil`): subestimar faz a arena receber menos que os 97% prometidos, que é justamente o que esta decisão evita.
+- Consequência: o repasse da arena passa a ser exatamente `subtotal * 0.97`, validando a fórmula que `gerente.py:157` já exibe. A margem líquida da Qadras cai de 12,89% para ~11,80% do subtotal (supondo taxa MP de 0,99%, valor NAO confirmado).
+- A taxa aplicada em split 1:1 é a da **conta do vendedor**, não a da Qadras → `taxa_mp` é por arena, nunca constante global. Guardar em `mercadopago_connections.fee_rate` (default em config) e conciliar com `fee_details` da resposta do `/v1/payments`.
+- **As taxas do MP nao estao confirmadas neste plano.** O site de tarifas bloqueia leitura automatizada. Fonte de verdade, nesta ordem: (1) campo `fee_details` da resposta do `POST /v1/payments` no sandbox — da o valor real por conta e por meio de pagamento; (2) painel Custos da conta de cada arena. Nao chumbar percentual no codigo antes de medir.
 
 ## 2. Mapa completo dos componentes atuais
 
@@ -35,14 +43,29 @@ Integrar o **Split de Pagamentos 1:1** do Mercado Pago (modelo *marketplace*) pa
 - **Cobrança Transparente:** `POST /v1/payments` com `Authorization: Bearer <access_token DO VENDEDOR>` + campo **`application_fee`** (comissão do marketplace em R$, **não %**).
   - Ordem de dedução: comissão MP → comissão marketplace sobre o restante.
 - **Reembolso:** dividido **proporcionalmente** entre vendedor e marketplace; se vendedor não tiver saldo, marketplace reembolsa a própria parte.
+- **Cartão (tokenização):** front usa a `public_key` da **Qadras**; backend usa o `access_token` da **arena**. Ver seção 8.
 - **Setup no painel:** aplicação `Pagamentos online → Checkout Transparente (API) → modelo Marketplace` + **Redirect URL** configurada.
 
 ## 4. Decisões pendentes (marcadas como `[DECIDIR]` no código)
 
-1. **`application_fee`** = valor da comissão da Qadras por cobrança. Sugestão: `application_fee = tax = arredondar(subtotal * player_fee_rate)` → Qadras retém a fee; arena recebe o subtotal. **`[DECIDIR]` se retém os 3% da arena também.**
-2. **Persistência dos tokens do vendedor:** **tabela própria `mercadopago_connections`** (recomendado) vs. JSON em `arenas.settings`.
-3. **Ambiente inicial:** TEST- (contas de teste) → `ENVIRONMENT=development`/`staging`; ou produção `APP_USR-`.
-4. **Redirect URL** exata do callback (ex.: `https://api.qadras.com.br/api/mercadopago/oauth/callback`) — definir o path antes de implementar as rotas.
+1. ~~**`application_fee`**~~ **DECIDIDO (2026-09-21):** a Qadras retém **as duas pontas** (9% do jogador + 3% da arena) **e absorve a taxa do MP**.
+   ```python
+   comissao_bruta = round(subtotal_cents * (settings.player_fee_rate + settings.arena_fee_rate))
+   taxa_mp_real    = math.ceil(total_cents * conexao.fee_rate)   # ceil: nunca subestimar
+   teto            = math.ceil(total_cents * settings.mercadopago_fee_absorbed_cap)
+   absorvido       = min(taxa_mp_real, teto)                     # Qadras banca ate o teto
+   application_fee = max(0, comissao_bruta - absorvido) / 100    # MP espera R$, nao centavos
+   ```
+   **Teto de absorção (2026-09-22):** a Qadras banca a taxa do MP até **0,99% do valor pago**; o que exceder é da arena. No Pix a taxa fica abaixo do teto e a Qadras banca tudo (arena recebe os 97% cheios); no cartão o excedente sobra para a arena, e a margem da Qadras trava em ~R$ 11,80 por R$ 100 de subtotal. O teto vive em `settings.mercadopago_fee_absorbed_cap` — é parâmetro comercial, não constante de código.
+
+   Reutilizar `comissao_bruta` da mesma expressão de `admin.py:107` (não reescrever), para que os relatórios fechem com o extrato do MP.
+
+   Exemplo com subtotal R$ 100,00 e taxa MP de 0,99% (valor ilustrativo, a confirmar): jogador paga R$ 109,89 · MP retém R$ 1,09 · `application_fee` = R$ 11,80 · **arena recebe R$ 97,00** · Qadras líquido R$ 11,80.
+
+   Gravar no `Payment` os três valores (`commission_gross`, `mp_fee`, `commission_net`) na confirmação do webhook, lendo `fee_details` da resposta do MP — sem isso não há como conciliar a margem real.
+2. ~~**Persistência dos tokens do vendedor**~~ **DECIDIDO (2026-09-22): tabela própria `mercadopago_connections`.** Motivos: `expires_at` indexável para a task de renovação varrer só o que expira (em JSON seria varredura completa + parse), e os tokens ficam **fora** de `arenas.settings`, que já é serializado para o painel do gerente. A tabela também acomoda `fee_rate` (taxa MP daquela arena) e os meios de pagamento habilitados.
+3. ~~**Ambiente inicial**~~ **DECIDIDO (2026-09-22): sandbox com contas `TEST-`.** A guarda de `config.py` já recusa `TEST-` quando `ENVIRONMENT=production`, então os dois convivem. O sandbox é o que responde as três perguntas abertas: taxa real do Pix (via `fee_details`), se `application_fee` funciona em Pix, e se cartão salvo atravessa arenas (ver 8.5).
+4. ~~**Redirect URL**~~ **DECIDIDO (2026-09-21):** `https://api.qadras.com.br/api/mercadopago/oauth/callback`, sem barra final, já cadastrada no painel MP. O `redirect_uri` enviado na autorização **e** na troca do code tem de ser essa string idêntica, senão o MP responde `invalid_grant`. Colocar em `MERCADOPAGO_REDIRECT_URI` e nunca montar a URL a partir do `Host` da request.
 
 ## 5. Plano de implementação por etapa
 
@@ -125,3 +148,50 @@ Integrar o **Split de Pagamentos 1:1** do Mercado Pago (modelo *marketplace*) pa
 - `backend/.env.example` *(alterar)*
 - `www-gerente/*` *(conexão OAuth)*
 - `backend/tests/test_mercadopago_oauth.py` *(criar)* + `backend/tests/test_payments.py` *(estender)*
+## 8. Cartão com tokenização + LGPD (escopo adicionado em 2026-09-22)
+
+### 8.1 Regra de ouro — VERIFICADA na doc oficial
+- O frontend tokeniza com a **`public_key` da Qadras (conta integradora)** — **não** a do vendedor. Uma única chave no app do jogador, sem configuração por arena.
+- O backend cobra com o **`access_token` da arena** (obtido no OAuth) + `application_fee`.
+- Fonte: `developers/pt/docs/split-payments/split-1-1/integration-configuration/integrate-marketplace`.
+- Consequência: `mercadopago_connections.public_key` **não** é usada na tokenização. Guardar mesmo assim (o OAuth devolve), mas não construir lógica de front em cima dela.
+
+### 8.2 Por que o número do cartão nunca toca o backend (PCI-DSS)
+1. `MercadoPago.js v2` no navegador (`www-usuario`) captura número/CVV/validade.
+2. O SDK envia direto ao MP e devolve um **`card_token` de uso único**.
+3. O front manda ao nosso backend **apenas**: `token`, `payment_method_id`, `issuer_id`, `installments`, `last4`, `brand`.
+4. O backend faz `POST /v1/payments` com esse token + `access_token` da arena + `application_fee`.
+
+O comentário já existente em `mercadopago.py:120-127` descreve exatamente esse desenho — a recusa atual de cartão é proposital, não uma lacuna.
+
+### 8.3 O que pode e o que não pode ser persistido
+- **PODE:** últimos 4 dígitos, bandeira, `payment_method_id`, id do pagamento no MP, valor, status, parcelas.
+- **NUNCA:** PAN completo, CVV/`security_code`, validade, trilha. Nem em banco, nem em log, nem em APM, nem em campo de texto livre.
+- **Guard obrigatório:** filtro de log que descarta chaves sensíveis + teste que falha se `card_number|security_code|cvv` aparecer em qualquer log da suíte.
+
+### 8.4 LGPD — obrigações concretas
+- **Base legal:** execução de contrato (art. 7º, V). Processar o pagamento da reserva **não** exige consentimento separado.
+- **Minimização:** somente os campos de 8.3.
+- **Transparência:** política de privacidade nomeando o Mercado Pago como **operador** e o que é compartilhado com ele.
+- **Retenção:** dado de pagamento segue prazo fiscal/contábil — ao excluir a conta do jogador, **anonimizar o vínculo** em vez de apagar o `Payment`.
+- **Direito de eliminação:** rota de exclusão de cartão salvo (se houver) e fluxo de exclusão de conta.
+- **Encarregado (DPO):** contato publicado. **Incidentes:** procedimento de comunicação à ANPD.
+
+### 8.5 Cartão salvo — RECOMENDAÇÃO: não fazer na v1
+Em split 1:1 o `customer`/`card_id` pertence **à conta que o criou**. Como cada cobrança roda na conta da **arena**, um cartão salvo na arena A tende a **não ser cobrável** na arena B — e o jogador da Qadras reserva em várias arenas. As saídas seriam cartão salvo *por arena* (confuso e multiplica dado pessoal) ou nada.
+
+**`[VERIFICAR NO SANDBOX]`** antes de descartar em definitivo.
+
+Sem cartão salvo: token de uso único a cada reserva, nada além de 8.3 no banco → **escopo LGPD mínimo**, que é o objetivo declarado.
+
+### 8.6 Pré-requisito do lado da arena
+A conta MP da arena precisa estar **habilitada a receber cartão**. Se não estiver, a cobrança falha mesmo com token válido. Logo: `GET /api/mercadopago/status` deve expor os meios aceitos pela arena, e o app do jogador **esconde cartão** para arenas sem cartão habilitado.
+
+### 8.7 Etapas adicionais (somam-se às A–J)
+- **K.** `www-usuario`: SDK MP.js v2 em `pages/pagamento.html`, formulário de cartão, geração do token, envio ao backend.
+- **L.** `mercadopago.py`: `create_payment` aceita `metodo == "card"` (token, `installments`, `issuer_id`, `payment_method_id`) + `application_fee`.
+- **M.** Status de cartão difere do Pix: pode vir `in_process` (antifraude) e `rejected` com `status_detail`. Traduzir para mensagem útil ao jogador.
+- **N.** `[DECIDIR]` Parcelamento: aceita? Quem paga os juros?
+- **O.** `[DECIDIR]` 3-D Secure: reduz fraude e chargeback, adiciona um passo no fluxo.
+- **P.** `[DECIDIR]` Chargeback: webhook de `chargebacks`; em split o valor volta proporcional — definir a política com a arena.
+- **Q.** Testes: cartões de teste do MP (aprovado/recusado/pendente), token inválido, arena sem cartão habilitado, e o teste de log sem PAN.

@@ -118,6 +118,42 @@ class Settings(BaseSettings):
     #: Vazia => vale so a URL cadastrada no painel.
     mercadopago_notification_url: str = ""
 
+    # --- Split de pagamentos 1:1 (marketplace) -----------------------------
+    #
+    # Cada arena conecta a PROPRIA conta MP via OAuth e a cobranca sai com o
+    # token dela; a Qadras retem `application_fee`. O token global acima
+    # deixa de ser o caminho de cobranca quando o split esta ligado.
+    #
+    # LIGADO POR FLAG, e nao pela simples presenca das credenciais, porque a
+    # producao de hoje cobra com o token global: exigir OAuth de cara faria o
+    # proximo deploy nao subir. Vira true quando as arenas ja conectaram.
+    mercadopago_split_enabled: bool = False
+    #: Da APLICACAO no painel MP (Suas integracoes > aplicacao > Credenciais).
+    #: O secret troca code por token de QUALQUER vendedor: vive so no .env.
+    mercadopago_client_id: str = ""
+    mercadopago_client_secret: str = ""
+    #: Identica, caractere por caractere, a Redirect URL cadastrada no painel
+    #: (sem barra final) — divergencia vira invalid_grant. NUNCA montar a
+    #: partir do Host da request: um Host forjado viraria open redirect
+    #: levando junto o code de autorizacao do vendedor.
+    mercadopago_redirect_uri: str = ""
+    #: A Qadras banca a taxa do MP ATE este teto (fracao do valor pago); o que
+    #: exceder sobra para a arena. No Pix a taxa fica abaixo e a arena recebe
+    #: os 97% cheios; no cartao o excedente e dela. Parametro COMERCIAL — por
+    #: isso env var, e nao constante no meio do calculo.
+    mercadopago_fee_absorbed_cap: float = 0.0099
+    #: Taxa presumida de uma arena enquanto a real nao foi medida pelo
+    #: `fee_details` da resposta do MP. O valor real fica por conexao.
+    mercadopago_default_fee_rate: float = 0.0099
+    #: Quantos dias antes do vencimento a task renova o token do vendedor. O
+    #: MP da 180 dias; renovar cedo cobre worker parado por alguns dias sem
+    #: que ninguem precise reconectar a mao.
+    mercadopago_refresh_days_before: int = 15
+    #: Para onde devolver o dono da arena depois da autorizacao (a tela de
+    #: pagamentos do painel do gerente). Vazia => o callback responde JSON,
+    #: o que mantem a rota testavel sem inventar um redirect para lugar nenhum.
+    mercadopago_panel_return_url: str = ""
+
     # Segredo compartilhado do webhook de pagamento. O callback do provedor e
     # publico (quem chama e o provedor, nao o app), entao ele precisa provar
     # quem e: sem isso, qualquer um que conheca o providerRef — e o proprio
@@ -174,6 +210,35 @@ class Settings(BaseSettings):
                         "MERCADOPAGO_ACCESS_TOKEN de TESTE em producao: as "
                         "cobrancas seriam simuladas e o dinheiro nunca "
                         "entraria. Use o token de producao (APP_USR-...)."
+                    )
+            if self.mercadopago_split_enabled:
+                faltando = [
+                    nome
+                    for nome, valor in (
+                        ("MERCADOPAGO_CLIENT_ID", self.mercadopago_client_id),
+                        ("MERCADOPAGO_CLIENT_SECRET", self.mercadopago_client_secret),
+                        ("MERCADOPAGO_REDIRECT_URI", self.mercadopago_redirect_uri),
+                    )
+                    if not valor.strip()
+                ]
+                if faltando:
+                    raise ValueError(
+                        "MERCADOPAGO_SPLIT_ENABLED=true sem " + ", ".join(faltando)
+                        + ". Sem essas credenciais nenhuma arena consegue "
+                        "conectar a conta, e toda cobranca morre no OAuth."
+                    )
+                destino = self.mercadopago_redirect_uri.strip()
+                if not destino.startswith("https://"):
+                    raise ValueError(
+                        "MERCADOPAGO_REDIRECT_URI precisa ser https em "
+                        "producao: o code de autorizacao do vendedor viaja "
+                        "nessa URL."
+                    )
+                if destino.endswith("/"):
+                    raise ValueError(
+                        "MERCADOPAGO_REDIRECT_URI com barra final nao bate "
+                        "com a URL cadastrada no painel do MP: a troca do "
+                        "code falha com invalid_grant."
                     )
             verif = self.verification_provider.strip().lower()
             if verif == "log":

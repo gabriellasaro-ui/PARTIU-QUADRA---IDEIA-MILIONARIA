@@ -4,14 +4,21 @@ A Fase 1 registra apenas uma tarefa de saude para provar o wiring. A Fase 4
 adiciona as tarefas de expiracao e conclusao de reservas; push FCM, repasses
 e webhooks entram nas fases seguintes.
 """
+import logging
+
+from sqlalchemy import select
+
 from ..core.celery_app import celery_app
 from ..core.config import settings
 from ..core.database import SessionLocal
-from ..models import PUSH_STATUS_ERRORED, PUSH_STATUS_OK
+from ..models import PUSH_STATUS_ERRORED, PUSH_STATUS_OK, MercadoPagoConnection
 from ..repositories import notifications as notif_repo
 from ..services import bookings as bookings_svc
+from ..services import mercadopago_oauth as mp_oauth
 from ..services import mock_autoconfirm
 from ..services.push import get_push_provider
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name="app.workers.tasks.ping")
@@ -126,3 +133,45 @@ def gerar_settlements_semanais() -> dict:
     with SessionLocal() as db:
         created = gerente_svc.generate_settlements(db)
     return {"criados": created}
+
+
+@celery_app.task(name="app.workers.tasks.renovar_tokens_mercadopago")
+def renovar_tokens_mercadopago() -> dict:
+    """Renova os tokens das arenas antes dos 180 dias do Mercado Pago.
+
+    POR QUE ISTO E CRITICO: o token do vendedor expira em 180 dias e o MP nao
+    avisa. Sem esta tarefa, seis meses depois de conectar, TODA cobranca da
+    arena passa a falhar de uma vez — e a unica saida seria pedir a cada dono
+    que refizesse o OAuth a mao.
+
+    Uma arena que falha nao pode derrubar as outras: cada renovacao commita
+    sozinha. O caso mais comum de falha e conexao sem refresh_token (arena
+    que revogou o acesso pelo painel do MP), e para essa nao ha automacao
+    possivel — ela precisa reconectar, e o painel ja mostra isso via
+    `precisaRenovar`.
+    """
+    renovadas, falhas = 0, 0
+    with SessionLocal() as db:
+        pendentes = [
+            c
+            for c in db.execute(select(MercadoPagoConnection).where(
+                MercadoPagoConnection.revoked_at.is_(None)
+            )).scalars()
+            if mp_oauth.precisa_renovar(c)
+        ]
+        for conexao in pendentes:
+            try:
+                mp_oauth.refresh_connection(db, conexao)
+                db.commit()
+                renovadas += 1
+            except mp_oauth.MercadoPagoOAuthError as exc:
+                db.rollback()
+                falhas += 1
+                # Sem token na mensagem: MercadoPagoOAuthError nunca carrega
+                # corpo de resposta do MP.
+                logger.warning(
+                    "renovacao mercadopago falhou arena=%s: %s",
+                    conexao.arena_id,
+                    exc,
+                )
+    return {"renovadas": renovadas, "falhas": falhas}

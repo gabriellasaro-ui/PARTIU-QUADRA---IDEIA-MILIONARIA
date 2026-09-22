@@ -160,8 +160,10 @@ from .verification import (
 from .user_session import UserSession
 from .demand import SlotDemand
 from .block import ArenaBlock
+from .mercadopago_connection import MercadoPagoConnection
 
 __all__ = [
+    "MercadoPagoConnection",
     "ArenaBlock",
     "SlotDemand",
     "User",

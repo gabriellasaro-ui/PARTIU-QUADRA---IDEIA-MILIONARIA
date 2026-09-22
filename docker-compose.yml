@@ -16,6 +16,20 @@ x-api-env: &api-env
   PAYMENT_WEBHOOK_SECRET: "dev-local-webhook-secret"
   PUSH_PROVIDER: mock
 
+  # --- Split Mercado Pago (dev) ---------------------------------------------
+  # Desligado por padrao: sem isto o dev local segue no provider mock, que nao
+  # fala com o MP. Para testar a conexao OAuth de verdade, preencha as tres
+  # variaveis abaixo com as credenciais de TESTE da aplicacao e ligue o flag.
+  #
+  # O REDIRECT_URI precisa ser uma URL https PUBLICA que chegue nesta API — o
+  # navegador do vendedor volta por ela. Em dev isso quer dizer um tunel
+  # (ngrok/cloudflared) cadastrado como Redirect URL no painel do MP.
+  MERCADOPAGO_SPLIT_ENABLED: "${MERCADOPAGO_SPLIT_ENABLED:-false}"
+  MERCADOPAGO_CLIENT_ID: "${MERCADOPAGO_CLIENT_ID:-}"
+  MERCADOPAGO_CLIENT_SECRET: "${MERCADOPAGO_CLIENT_SECRET:-}"
+  MERCADOPAGO_REDIRECT_URI: "${MERCADOPAGO_REDIRECT_URI:-}"
+  MERCADOPAGO_PANEL_RETURN_URL: "${MERCADOPAGO_PANEL_RETURN_URL:-}"
+
 services:
   postgres:
     image: postgres:16-alpine

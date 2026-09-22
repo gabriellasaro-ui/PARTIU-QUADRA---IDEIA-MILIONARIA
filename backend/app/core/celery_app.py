@@ -67,6 +67,12 @@ celery_app.conf.update(
         },
         # Fase 8 (gerente): segunda-feira 03:00 grava os repasses da semana
         # anterior por arena (settlements pending).
+        # Split MP: o token do vendedor vale 180 dias. Diario e de sobra, e
+        # cobre worker parado por alguns dias sem ninguem reconectar a mao.
+        "renovar-tokens-mercadopago": {
+            "task": "app.workers.tasks.renovar_tokens_mercadopago",
+            "schedule": 86400.0,
+        },
         "gerar-settlements-semanais": {
             "task": "app.workers.tasks.gerar_settlements_semanais",
             "schedule": crontab(day_of_week=0, hour=3, minute=0),
