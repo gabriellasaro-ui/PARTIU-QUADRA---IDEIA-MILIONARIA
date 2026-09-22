@@ -47,6 +47,7 @@ import requests
 
 from ...core.config import settings
 from ...core.timezone import now_local
+from . import split
 from .base import PaymentIntent, PaymentProvider, WebhookResult
 
 logger = logging.getLogger(__name__)
@@ -72,8 +73,14 @@ class MercadoPagoError(RuntimeError):
 class MercadoPagoProvider(PaymentProvider):
     name = "mercadopago"
 
-    def __init__(self) -> None:
-        token = (settings.mercadopago_access_token or "").strip()
+    def __init__(self, access_token: str | None = None) -> None:
+        """`access_token` da arena (split) ou None para o token global.
+
+        No split 1:1 a cobranca sai na conta do VENDEDOR: o header Bearer
+        carrega o token dele, nao o da Qadras. O token global continua valendo
+        para o caminho antigo, de conta unica.
+        """
+        token = (access_token or settings.mercadopago_access_token or "").strip()
         if not token:
             # Falhar na criacao do provider e melhor do que descobrir no meio
             # de uma reserva, com o jogador olhando para a tela.
@@ -82,6 +89,8 @@ class MercadoPagoProvider(PaymentProvider):
                 "PAYMENT_PROVIDER=mercadopago."
             )
         self._token = token
+        #: True quando cobra na conta de uma arena.
+        self.por_vendedor = bool(access_token)
 
     # ------------------------------------------------------------------ HTTP
 
@@ -148,6 +157,15 @@ class MercadoPagoProvider(PaymentProvider):
             # reconhecemos, ainda da para rastrear pelo codigo.
             "external_reference": booking.code,
         }
+        # A COMISSAO DA QADRAS, quando a cobranca e na conta da arena.
+        #
+        # Valor absoluto em REAIS, nao percentual. O MP desconta a taxa DELE
+        # primeiro e aplica o application_fee sobre o restante; por isso
+        # `split.calcular` ja desconta daqui o que a Qadras decidiu bancar.
+        fee_cents = amounts.get("application_fee_cents")
+        if fee_cents is not None:
+            corpo["application_fee"] = split.em_reais(fee_cents)
+
         if settings.mercadopago_notification_url.strip():
             corpo["notification_url"] = settings.mercadopago_notification_url.strip()
 
@@ -184,6 +202,21 @@ class MercadoPagoProvider(PaymentProvider):
     # -------------------------------------------------------------- webhook
 
     def parse_webhook(self, headers, body: bytes, query=None) -> WebhookResult | None:
+        """Valida a assinatura e consulta o status usando ESTE token.
+
+        No split, quem consulta precisa ser o token da ARENA dona do pagamento
+        — o token global nao enxerga a cobranca dela. Por isso a rota do
+        webhook usa `extrair_id_verificado` + `consultar_status` separados:
+        entre os dois ela descobre de quem e o pagamento. Este metodo segue
+        existindo para o caminho de conta unica.
+        """
+        ident = self.extrair_id_verificado(headers, body, query)
+        if ident is None:
+            return None
+        return self.consultar_status(ident)
+
+    def extrair_id_verificado(self, headers, body: bytes, query=None) -> str | None:
+        """Id do pagamento, SE a assinatura conferir. Nao chama a API."""
         if not body:
             return None
         try:
@@ -209,9 +242,14 @@ class MercadoPagoProvider(PaymentProvider):
             # 200/ignored, sem mover dinheiro nenhum.
             logger.warning("Webhook Mercado Pago com assinatura invalida")
             return None
+        return id_pagamento
 
-        # A notificacao NAO diz o que aconteceu — so que algo mudou. O status
-        # vem da API, que e a unica fonte que o remetente do POST nao controla.
+    def consultar_status(self, id_pagamento: str) -> WebhookResult | None:
+        """Pergunta a API o que de fato aconteceu com aquele pagamento.
+
+        A notificacao NAO diz o que mudou — so que algo mudou. O status vem da
+        API, a unica fonte que o remetente do POST nao controla.
+        """
         try:
             pagamento = self._chamar("GET", f"/v1/payments/{id_pagamento}")
         except MercadoPagoError:

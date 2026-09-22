@@ -195,3 +195,37 @@ A conta MP da arena precisa estar **habilitada a receber cartão**. Se não esti
 - **O.** `[DECIDIR]` 3-D Secure: reduz fraude e chargeback, adiciona um passo no fluxo.
 - **P.** `[DECIDIR]` Chargeback: webhook de `chargebacks`; em split o valor volta proporcional — definir a política com a arena.
 - **Q.** Testes: cartões de teste do MP (aprovado/recusado/pendente), token inválido, arena sem cartão habilitado, e o teste de log sem PAN.
+
+
+## 9. Estado da implementacao (22/09/2026)
+
+| Etapa | Estado | Onde |
+|---|---|---|
+| A. Configuracao | ✅ | `core/config.py` — split_enabled, client_id/secret, redirect_uri, teto, taxa presumida |
+| B. Modelo + migracao | ✅ | `models/mercadopago_connection.py`, `x9f1a2b3c4d5_marketplace_split.py` |
+| C. Servico OAuth | ✅ | `services/mercadopago_oauth.py` |
+| D. Provider por vendedor | ✅ | `payments/mercadopago.py` — `MercadoPagoProvider(access_token=...)` + `application_fee` |
+| E. Cobranca resolve a arena | ✅ | `services/bookings.py` — `_provider_para_cobranca`, 409 sem conexao |
+| F. Webhook com token da arena | ✅ | `api/payments.py` + `extrair_id_verificado`/`consultar_status` |
+| G. Renovacao (Celery) | ✅ | `workers/tasks.py` + beat diario |
+| H. Rotas OAuth | ✅ | `api/mercadopago.py` |
+| I. Frontend (gerente conecta) | ⬜ | `www-gerente` |
+| K–M. Cartao com tokenizacao | ⬜ | `www-usuario` + provider |
+| N–P. Parcelamento / 3DS / chargeback | ⬜ `[DECIDIR]` | — |
+
+### Como o split e ligado
+
+`MERCADOPAGO_SPLIT_ENABLED` governa **a cobranca**, nao o OAuth. As rotas de
+conexao funcionam com o flag desligado — de proposito: as arenas conectam
+primeiro, e so quando todas estiverem conectadas o flag vira `true` e a
+cobranca passa a sair na conta delas. Ligar antes faria toda reserva de arena
+nao conectada responder 409.
+
+### O que ainda nao foi verificado no sandbox
+
+1. Se `application_fee` funciona em **Pix** (a doc e ambigua; em cartao e certo).
+2. A taxa real do Pix por conta — hoje presumida em `MERCADOPAGO_DEFAULT_FEE_RATE`.
+   O valor verdadeiro vem em `fee_details` na resposta do `/v1/payments`.
+3. Se `test_token=true` e necessario na troca do code (flag
+   `MERCADOPAGO_OAUTH_TEST_TOKEN`, default false).
+4. Se cartao salvo atravessa arenas (secao 8.5) — so importa quando K–M entrarem.

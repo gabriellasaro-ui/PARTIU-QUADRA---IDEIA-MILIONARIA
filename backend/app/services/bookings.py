@@ -9,6 +9,7 @@ Mensalista: um comando cria 4 bookings semanais (grupo por group_id); a
 primeira carrega a mensalidade (total do mes) e as outras 3 sao sessoes
 (is_session=True, total 0) que seguram o slot das semanas seguintes.
 """
+import logging
 import uuid
 from datetime import datetime, time, timedelta, timezone
 
@@ -61,7 +62,11 @@ from sqlalchemy import select
 from .catalog import _as_local, _day_window, bairro_da_arena
 from .messages import ensure_conversation_for_booking
 from .notifications import emit_notification, notify_booking_event
-from .payments import get_provider
+from .payments import get_provider, provider_para_conexao
+from .payments import split as split_calc
+from . import mercadopago_oauth as mp_oauth
+
+logger = logging.getLogger(__name__)
 
 ROLE_SISTEMA = "sistema"
 
@@ -686,6 +691,52 @@ def get_events(db: Session, user, booking_id) -> list[dict]:
 
 # --- Transicoes de dominio -------------------------------------------------
 
+def _provider_para_cobranca(db: Session, booking):
+    """Quem cobra esta reserva, e com que valores.
+
+    Com o split ligado, quem cobra e a ARENA: o Bearer leva o token dela e a
+    Qadras retem `application_fee` na mesma transacao. Sem split, segue o
+    caminho antigo de conta unica (o mock de dev cai aqui tambem).
+    """
+    amounts = {"total_cents": booking.total_cents}
+    usa_split = (
+        settings.mercadopago_split_enabled
+        and settings.payment_provider.strip().lower() == "mercadopago"
+    )
+    if not usa_split:
+        return get_provider(), amounts
+
+    conexao = mp_oauth.connection_for_arena(db, booking.arena_id)
+    if conexao is None:
+        # 409 e nao 500: nao e defeito, e cadastro incompleto. A mensagem
+        # precisa dizer de quem e a pendencia, senao o jogador leva a culpa
+        # por algo que so o dono da arena resolve.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Esta arena ainda nao conectou a conta de recebimento e nao "
+                "pode receber pagamentos. Avise o responsavel pela quadra."
+            ),
+        )
+
+    # Rede de seguranca da task diaria: se o beat estiver parado ha dias, o
+    # token pode estar perto de vencer. Falhar aqui NAO derruba a cobranca —
+    # o token so vence de fato em `expires_at`, e ate la ele cobra.
+    try:
+        conexao = mp_oauth.refresh_if_needed(db, conexao)
+    except mp_oauth.MercadoPagoOAuthError as erro:
+        logger.warning(
+            "renovacao preventiva falhou arena=%s: %s", booking.arena_id, erro
+        )
+
+    amounts.update(
+        split_calc.calcular(
+            booking.subtotal_cents, booking.total_cents, conexao.fee_rate
+        )
+    )
+    return provider_para_conexao(conexao), amounts
+
+
 def pay_booking(db: Session, user, booking_id) -> tuple[Booking, Payment, bool]:
     """Fase 5: cria o intent Pix no provider — nao transiciona na hora.
 
@@ -729,10 +780,8 @@ def pay_booking(db: Session, user, booking_id) -> tuple[Booking, Payment, bool]:
             )
         return booking, existing, True  # mesmo intent (replay)
 
-    provider = get_provider()
-    intent = provider.create_payment(
-        booking=booking, amounts={"total_cents": booking.total_cents}
-    )
+    provider, amounts = _provider_para_cobranca(db, booking)
+    intent = provider.create_payment(booking=booking, amounts=amounts)
     payment = Payment(
         id=uuid.uuid4(),
         booking_id=booking.id,
@@ -1110,3 +1159,24 @@ def create_review(db: Session, user, booking_id, rating: int, comment: str | Non
     db.add(review)
     db.commit()
     return review
+
+
+def provider_do_pagamento(db: Session, provider_ref: str):
+    """Provider com o token da ARENA dona daquele pagamento, ou None.
+
+    O webhook do Mercado Pago so traz o id do pagamento — nem o status, nem de
+    quem ele e. Para perguntar o status e preciso o token de QUEM COBROU, e no
+    split quem cobrou foi a arena. Consultar com o token global devolve 404, a
+    rota trataria como evento desconhecido, e a reserva ficaria pendente para
+    sempre com o dinheiro ja pago.
+    """
+    payment = pay_repo.get_by_provider_ref(db, provider_ref)
+    if payment is None:
+        return None
+    booking = db.get(Booking, payment.booking_id)
+    if booking is None:
+        return None
+    conexao = mp_oauth.connection_for_arena(db, booking.arena_id)
+    if conexao is None or not conexao.access_token:
+        return None
+    return provider_para_conexao(conexao)

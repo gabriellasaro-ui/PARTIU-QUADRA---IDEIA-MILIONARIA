@@ -15,7 +15,9 @@ from ..auth.deps import get_current_user
 from ..core.database import get_db
 from ..models import User
 from ..services import bookings as svc
+from ..core.config import settings
 from ..services.payments import get_provider
+from ..services.payments.mercadopago import MercadoPagoProvider
 
 router = APIRouter(prefix="/api/payments", tags=["payments"])
 
@@ -30,9 +32,24 @@ async def webhook_pagamento(
     prov = get_provider(provider)
     # A query vai junto: o Mercado Pago assina um manifesto montado com o
     # data.id que chega NA URL, e sem ele nao da para conferir a assinatura.
-    result = prov.parse_webhook(
-        dict(request.headers), body, dict(request.query_params)
-    )
+    cabecalhos = dict(request.headers)
+    query = dict(request.query_params)
+
+    if settings.mercadopago_split_enabled and isinstance(prov, MercadoPagoProvider):
+        # NO SPLIT A CONSULTA PRECISA DO TOKEN DA ARENA.
+        #
+        # Por isso o webhook vira duas etapas: primeiro confere a assinatura e
+        # extrai o id (sem chamar a API), depois descobre de quem e o pagamento
+        # e so entao pergunta o status com o token de quem cobrou.
+        ident = prov.extrair_id_verificado(cabecalhos, body, query)
+        if ident is None:
+            return {"ok": False, "ignored": True}
+        # Sem conexao encontrada, cai no token global: e o caso de pagamento
+        # antigo, criado antes de a arena conectar.
+        prov = svc.provider_do_pagamento(db, ident) or prov
+        result = prov.consultar_status(ident)
+    else:
+        result = prov.parse_webhook(cabecalhos, body, query)
     if result is None:
         return {"ok": False, "ignored": True}
     payment, replay = svc.confirm_payment(

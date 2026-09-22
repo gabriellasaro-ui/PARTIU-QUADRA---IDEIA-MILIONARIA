@@ -33,4 +33,20 @@ def get_provider(name: str | None = None) -> PaymentProvider:
     return cls()
 
 
-__all__ = ["get_provider", "PaymentIntent", "PaymentProvider", "WebhookResult"]
+def provider_para_conexao(conexao) -> PaymentProvider:
+    """Provider que cobra na conta DAQUELA arena (split 1:1).
+
+    SEM cache, ao contrario de `get_provider`: o token e por vendedor e muda a
+    cada renovacao. Um `lru_cache` aqui continuaria servindo o token velho
+    depois do refresh, e o sintoma seria 401 intermitente numa arena so.
+    """
+    return MercadoPagoProvider(access_token=conexao.access_token)
+
+
+__all__ = [
+    "get_provider",
+    "provider_para_conexao",
+    "PaymentIntent",
+    "PaymentProvider",
+    "WebhookResult",
+]
