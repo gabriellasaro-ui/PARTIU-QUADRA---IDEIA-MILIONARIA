@@ -8,7 +8,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -36,6 +36,8 @@ from .api import (
     onboarding,
     mercadopago,
 )
+from .auth.deps import get_current_admin
+from .core.celery_app import celery_app
 from .core.config import settings
 from .core.database import check_database
 from .core.logging import setup_logging
@@ -306,6 +308,44 @@ def ready():
         "db": "ok",
         "app": settings.app_name,
         "version": settings.app_version,
+    }
+
+
+@app.get("/api/health/workers")
+def health_workers(_admin=Depends(get_current_admin)):
+    """Os workers do Celery estao vivos e ja conhecem as tarefas novas?
+
+    /api/health prova que a API ALCANCA o Redis — nao que alguem esteja
+    consumindo a fila. Sao coisas diferentes: com o worker parado, a tarefa
+    enfileirada fica la para sempre e nenhum health check reclama. Esta rota
+    pergunta aos proprios workers, via broadcast de control.
+
+    LIMITE CONHECIDO: o beat nao responde a ping — ele so PRODUZ tarefas, nao
+    as consome. `beat_schedule` aqui e o que ESTE build agenda; como os tres
+    apps usam a mesma imagem, serve de indicio, mas nao prova que o container
+    do beat foi redeployado. Isso so o log do beat (ou a tarefa de fato
+    disparando) confirma.
+
+    Restrito a admin: a lista de tarefas registradas e mapa da casa.
+    """
+    try:
+        controle = celery_app.control
+        pong = controle.ping(timeout=2.0) or []
+        inspecao = controle.inspect(timeout=2.0)
+        registradas = inspecao.registered() or {}
+    except Exception as exc:  # broker fora do ar, timeout, etc.
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unreachable", "erro": str(exc)[:200]},
+        )
+
+    nomes = sorted({t for tarefas in registradas.values() for t in tarefas})
+    return {
+        "status": "ok" if pong else "sem_worker",
+        "workers": [list(r)[0] for r in pong if r],
+        "tarefas_registradas": nomes,
+        # O que este build MANDA agendar (ver o limite no docstring).
+        "beat_schedule": sorted(celery_app.conf.beat_schedule or {}),
     }
 
 
