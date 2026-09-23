@@ -608,6 +608,12 @@ def _to_reservation(booking: Booking, court: Court, arena: Arena) -> dict:
         "serviceFee": booking.service_fee_cents / 100,
         "price": booking.total_cents / 100,
         "status": _STATUS_LABEL.get(booking.status, booking.status),
+        # O CODIGO CRU, alem do rotulo. `status` e texto para humano e
+        # `statusClass` agrupa tres estados diferentes em "pendente" — nenhum
+        # dos dois serve para o cliente decidir comportamento. Sem isto o
+        # front tinha de comparar com a string em portugues, que quebra no dia
+        # em que alguem melhorar a redacao.
+        "statusCode": booking.status,
         "statusClass": _STATUS_CLASS.get(booking.status, "pendente"),
         "group": "proxima" if in_future else "historico",
         "statusAt": _as_local(booking.updated_at).isoformat() if booking.updated_at else None,

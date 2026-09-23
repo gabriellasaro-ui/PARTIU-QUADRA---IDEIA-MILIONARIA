@@ -1731,6 +1731,11 @@ async function renderReservations(root) {
        esporte, bairro, data, hora e valor. */
     const venue = venues.find((item) => item.id === reservation.venueId) || {};
     const conversation = conversations.find((item) => String(item.venueId) === String(reservation.venueId));
+    /* `statusCode` e o codigo cru; o rotulo em portugues fica de reserva para
+       servidor que ainda nao subiu o campo. `statusClass` NAO serve: ele junta
+       pending_payment, payment_confirmed e requested todos como "pendente". */
+    const aguardandoPagamento = (reservation.statusCode || '') === 'pending_payment'
+      || reservation.status === 'Aguardando pagamento';
     return `
       <article class="ritem" data-status="${escapeHtml(reservation.group)}" ${reservation.group === 'proxima' ? '' : 'style="display:none"'}>
         <img src="${escapeHtml(reservation.image || venue.image || '')}" alt="${escapeHtml(reservation.venueName || venue.name || 'Quadra')}" decoding="async" loading="lazy">
@@ -1747,7 +1752,9 @@ async function renderReservations(root) {
         <div class="col-r">
           <div class="amt">${money(reservation.price)}</div>
           <div class="acts">
-            ${reservation.venueId ? `<a href="#quadra/${reservation.venueId}" class="btn btn-soft">Detalhes</a>` : ''}
+            ${aguardandoPagamento
+              ? `<button type="button" class="btn btn-primary" data-pagar-reserva="${escapeHtml(reservation.id)}">Pagar com Pix</button>`
+              : (reservation.venueId ? `<a href="#quadra/${reservation.venueId}" class="btn btn-soft">Detalhes</a>` : '')}
             ${conversation && rotaLiberada('mensagens') ? `<a href="#mensagens/${conversation.id}" class="btn btn-outline">${icon('message-circle', 'ic sm')}Chat</a>` : ''}
           </div>
         </div>
@@ -1769,6 +1776,35 @@ async function renderReservations(root) {
       </div>
     </div>
     </section>`;
+
+  /* PAGAR DIRETO DA LISTA.
+
+     Antes o unico botao levava para a pagina da quadra — ou seja, quem tinha
+     uma reserva esperando pagamento era mandado de volta para escolher data e
+     horario, como se fosse comecar tudo de novo. O Pix daquela reserva ja
+     existe; `/pagar` devolve a MESMA cobranca (replay), entao nao ha risco de
+     criar uma segunda. */
+  root.querySelectorAll('[data-pagar-reserva]').forEach((botao) => {
+    botao.addEventListener('click', async () => {
+      const id = botao.dataset.pagarReserva;
+      const rotulo = botao.textContent;
+      botao.disabled = true;
+      botao.textContent = 'Gerando Pix...';
+      try {
+        const cobranca = await payPlayerReservation(id);
+        const resultado = await cobrarPix(cobranca?.payment);
+        if (resultado === 'pago') {
+          // Recarrega para o cartao refletir o novo estado.
+          await renderReservations(root);
+          return;
+        }
+      } catch (error) {
+        window.pqToast?.(error?.message || 'Não foi possível gerar o Pix');
+      }
+      botao.disabled = false;
+      botao.textContent = rotulo;
+    });
+  });
 }
 
 async function renderFavorites(root) {
