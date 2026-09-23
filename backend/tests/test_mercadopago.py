@@ -195,3 +195,71 @@ def test_idempotencia_distingue_mudanca_de_status(provider, monkeypatch):
     _responde_status(provider, monkeypatch, "approved")
     a2 = provider.parse_webhook(_assina("77"), _notificacao("77"), {"data.id": "77"})
     assert a2.webhook_id == a.webhook_id
+
+
+def test_date_of_expiration_vai_em_milissegundos(provider, monkeypatch):
+    """O Mercado Pago recusa microssegundos — e o erro dele nao diz o campo.
+
+    `isoformat()` cru gera 6 casas decimais. O MP responde 500 (nao 400), sem
+    apontar `date_of_expiration`, entao o sintoma em producao era "nao foi
+    possivel carregar" na tela de pagamento e nada mais. Este teste trava o
+    formato para que a regressao nao volte silenciosa.
+    """
+    import re
+    from types import SimpleNamespace
+
+    capturado = {}
+
+    def _falso_chamar(metodo, caminho, corpo=None, *, idempotencia=None):
+        capturado.update(corpo or {})
+        return {"id": "123", "status": "pending", "point_of_interaction": {}}
+
+    monkeypatch.setattr(provider, "_chamar", _falso_chamar)
+    booking = SimpleNamespace(
+        payment_method="pix", code="PQ-1", client_email=None, client_name=None
+    )
+    provider.create_payment(booking=booking, amounts={"total_cents": 10_989})
+
+    data = capturado["date_of_expiration"]
+    # Exatamente 3 casas decimais, e offset de fuso presente.
+    assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$", data), data
+
+
+def test_application_fee_entra_no_corpo_quando_informado(provider, monkeypatch):
+    """Sem isto a Qadras nao retem nada: o MP so divide se o campo for."""
+    from types import SimpleNamespace
+
+    capturado = {}
+
+    def _falso_chamar(metodo, caminho, corpo=None, *, idempotencia=None):
+        capturado.update(corpo or {})
+        return {"id": "123", "status": "pending", "point_of_interaction": {}}
+
+    monkeypatch.setattr(provider, "_chamar", _falso_chamar)
+    booking = SimpleNamespace(
+        payment_method="pix", code="PQ-2", client_email=None, client_name=None
+    )
+    provider.create_payment(
+        booking=booking,
+        amounts={"total_cents": 10_989, "application_fee_cents": 1_180},
+    )
+    # Em REAIS decimais, como o MP espera — nao em centavos.
+    assert capturado["application_fee"] == 11.80
+
+
+def test_sem_application_fee_o_campo_nao_vai(provider, monkeypatch):
+    """Conta unica (sem split) nao pode mandar o campo — o MP recusaria."""
+    from types import SimpleNamespace
+
+    capturado = {}
+
+    def _falso_chamar(metodo, caminho, corpo=None, *, idempotencia=None):
+        capturado.update(corpo or {})
+        return {"id": "123", "status": "pending", "point_of_interaction": {}}
+
+    monkeypatch.setattr(provider, "_chamar", _falso_chamar)
+    booking = SimpleNamespace(
+        payment_method="pix", code="PQ-3", client_email=None, client_name=None
+    )
+    provider.create_payment(booking=booking, amounts={"total_cents": 10_989})
+    assert "application_fee" not in capturado

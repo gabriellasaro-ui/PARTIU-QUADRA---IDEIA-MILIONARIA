@@ -176,8 +176,17 @@ class MercadoPagoProvider(PaymentProvider):
                 "email": booking.client_email or "jogador@qadras.com.br",
                 "first_name": (booking.client_name or "Jogador").split(" ")[0],
             },
-            # Precisa de offset de fuso; now_local() ja e consciente.
-            "date_of_expiration": expira_em.isoformat(),
+            # MILISSEGUNDOS, e nao microssegundos.
+            #
+            # `isoformat()` cru gera 6 casas decimais (...349512-03:00) e o
+            # Mercado Pago recusa com "must be valid date and format
+            # (yyyy-MM-dd'T'HH:mm:ssz)". Em producao isso chegava como HTTP
+            # 500 do lado deles — erro opaco, sem dizer qual campo — e toda
+            # tentativa de pagar morria na tela do jogador.
+            #
+            # `timespec="milliseconds"` corta para 3 casas e mantem o offset
+            # de fuso, que continua obrigatorio (now_local() ja e consciente).
+            "date_of_expiration": expira_em.isoformat(timespec="milliseconds"),
             # Amarra a cobranca a reserva: se um webhook chegar com id que nao
             # reconhecemos, ainda da para rastrear pelo codigo.
             "external_reference": booking.code,
