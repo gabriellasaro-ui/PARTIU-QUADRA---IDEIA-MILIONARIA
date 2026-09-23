@@ -428,7 +428,7 @@ async function renderMobileRoute() {
     // Registrar SEMPRE: sem isto o erro fica invisivel e so sobra a tela de
     // aviso, que nao diz nada a quem precisa consertar. (A arvore www ja
     // fazia isto; esta ficou para tras.)
-    console.error('[rota]', routeName, descreveErro(error));
+    console.error('[rota/v2]', routeName, descreveErro(error));
     view.setAttribute('data-route-error', routeName);
     view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p></div></div>';
   } finally {
@@ -531,7 +531,7 @@ async function renderPlayerDesktopRoute() {
     await renderPlayerDesktopPage(routeState, view);
   } catch (error) {
     // Mesmo motivo do roteador mobile: sem log, so sobra a tela de aviso.
-    console.error('[rota]', routeName, descreveErro(error));
+    console.error('[rota/v2]', routeName, descreveErro(error));
     view.setAttribute('data-route-error', routeName);
     view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p><a class="btn block" href="#quadras">Voltar para explorar</a></div></div>';
   } finally {

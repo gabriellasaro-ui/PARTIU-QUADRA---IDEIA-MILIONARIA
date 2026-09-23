@@ -374,7 +374,18 @@ export const venueService = {
   },
 
   async saveReservation(reservation) {
-    if (API_BASE_URL) return api.post('/api/reservas', reservation);
+    /* COM API, A RESERVA JA EXISTE NO SERVIDOR — aqui nao se cria nada.
+       Esta funcao nasceu na epoca do localStorage, quando salvar era a unica
+       forma de a reserva existir. Ao ligar a API alguem apontou o mesmo
+       objeto LOCAL para POST /api/reservas — so que o formato e outro: o
+       objeto local tem {id, code, venueId, date, hour, status...} e a API
+       exige `quadraId`. Resultado: 422 "Field required" em toda reserva.
+       Quem cria de verdade e `submitPlayerReservation`, no comeco do
+       checkout. Este ponto e chamado DEPOIS, so para refletir o estado na
+       tela — e o servidor ja e a fonte da verdade.
+       O 422 subia no meio do render da rota, matava o `renderPending` e a
+       pessoa via "Nao foi possivel carregar" logo apos pagar. */
+    if (API_BASE_URL) return clone(reservation);
     const reservations = await this.reservations();
     const next = [reservation, ...reservations.filter((item) => item.code !== reservation.code)];
     storage.set('reservations', next);

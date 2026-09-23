@@ -163,6 +163,14 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok) {
+    /* O ENDERECO que falhou, no ponto em que a falha nasce.
+       Quem captura la em cima so ve a mensagem — e "Field required" sem
+       dizer de qual chamada, nem de qual campo, nao permite consertar nada.
+       Aqui ainda temos path, status e corpo. */
+    try {
+      console.error('[api]', method, path, '->', response.status,
+        (() => { try { return JSON.stringify(payload); } catch { return '<corpo nao serializavel>'; } })());
+    } catch { /* log nunca pode derrubar a chamada */ }
     throw new ApiError(mensagemDoErro(payload), response, payload);
   }
 
