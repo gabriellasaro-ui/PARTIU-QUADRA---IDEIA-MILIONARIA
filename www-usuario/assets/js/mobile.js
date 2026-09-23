@@ -11,6 +11,7 @@ import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
 import { submitPlayerReservation, payPlayerReservation, watchReservation, getPayment, getReservation } from '../../services/reservation-live.js';
 import { cobrarPix } from '../../services/pix-checkout.js';
+import { abrirDetalhesDaReserva } from '../../services/reserva-detalhes.js';
 import { authHashFor, safeNext, requiresLogin } from '../../middleware/auth.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
@@ -626,8 +627,16 @@ function reservationCard(reservation, venue) {
   const bairro = venue?.neighborhood || reservation.neighborhood || '';
   const alvo = venue?.id || reservation.venueId || '';
   const local = [esporte, bairro].filter(Boolean).join(' - ');
+  /* AGUARDANDO PAGAMENTO E OUTRA ACAO.
+
+     O card inteiro era um link para a pagina da quadra — a vitrine de venda.
+     Quem ja reservou nao quer comprar de novo: ou precisa PAGAR o Pix que
+     ficou pendente, ou quer conferir local, data e codigo. Duas intencoes, e
+     nenhuma delas e "escolher outro horario". */
+  const aguardandoPagamento = (reservation.statusCode || '') === 'pending_payment'
+    || reservation.status === 'Aguardando pagamento';
   return `
-    <a href="${alvo ? `#quadra/${alvo}` : '#reservas'}" data-status="${escapeHtml(reservation.group || 'proxima')}">
+    <a href="#reservas" data-reserva-acao="${aguardandoPagamento ? 'pagar' : 'detalhes'}" data-status="${escapeHtml(reservation.group || 'proxima')}">
       <article class="res-card" data-reserva-id="${escapeHtml(String(reservation.id || reservation.code || ''))}">
         <img src="${escapeHtml(foto)}" alt="${escapeHtml(nome)}" loading="lazy">
         <div class="res-info">
@@ -635,7 +644,7 @@ function reservationCard(reservation, venue) {
           <span class="res-meta">${icon('map-pin')}${escapeHtml(local)}</span>
           <span class="res-meta">${icon('calendar-days')}${escapeHtml(reservation.date)} - ${escapeHtml(reservation.hour)} a ${escapeHtml(reservation.endHour)}</span>
           <div class="res-foot">
-            <span class="status ${escapeHtml(reservation.statusClass)}">${escapeHtml(reservation.status)}</span>
+            <span class="status ${escapeHtml(reservation.statusClass)}">${escapeHtml(aguardandoPagamento ? 'Toque para pagar' : reservation.status)}</span>
             <span class="res-val">${formatCurrency(reservation.price)}</span>
           </div>
         </div>
@@ -2658,6 +2667,39 @@ async function renderReservations(root) {
      clicou, entao "Proximas" vinha marcada mas a lista mostrava tudo — e o
      [data-empty] ("Nada por aqui") continuava escondido mesmo sem card nenhum,
      deixando um retangulo em branco no lugar da explicacao. */
+  /* Um listener na lista, e nao um por card: a lista e repintada a cada
+     filtro de aba, e prender no card criaria listeners orfaos a cada troca. */
+  if (list && !list.dataset.acoesLigadas) {
+    list.dataset.acoesLigadas = '1';
+    list.addEventListener('click', async (ev) => {
+      const gatilho = ev.target.closest('[data-reserva-acao]');
+      if (!gatilho) return;
+      ev.preventDefault();
+
+      const cartao = gatilho.querySelector('[data-reserva-id]');
+      const id = cartao?.dataset.reservaId;
+      const reserva = reservations.find((r) => String(r.id) === String(id));
+      if (!reserva) return;
+
+      if (gatilho.dataset.reservaAcao === 'pagar') {
+        try {
+          const cobranca = await payPlayerReservation(reserva.id);
+          const resultado = await cobrarPix(cobranca?.payment);
+          if (resultado === 'pago') await renderReservations(root);
+        } catch (error) {
+          window.pqToast?.(error?.message || 'Não foi possível gerar o Pix');
+        }
+        return;
+      }
+
+      const quadra = venues.find((v) => v.id === reserva.venueId) || {};
+      abrirDetalhesDaReserva(reserva, {
+        endereco: quadra.address || quadra.neighborhood || '',
+        foto: quadra.image || ''
+      });
+    });
+  }
+
   aplicarAbaDeReservas(root);
 
   /* VINDO DE UMA NOTIFICACAO: leva ate a reserva, e nao so ate a lista.
