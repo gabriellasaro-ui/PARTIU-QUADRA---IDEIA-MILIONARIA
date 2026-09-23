@@ -785,11 +785,17 @@ def pay_booking(db: Session, user, booking_id) -> tuple[Booking, Payment, bool]:
     try:
         intent = provider.create_payment(booking=booking, amounts=amounts)
     except MercadoPagoError as erro:
-        # 502 e nao 500: quem recusou foi o adquirente, e a distincao importa
-        # para quem esta olhando o monitoramento. A mensagem carrega o motivo
-        # do MP (nunca o corpo cru, que ecoa o que foi enviado).
+        # 409, E NAO 502, por um motivo pratico: o proxy do EasyPanel
+        # substitui o corpo de respostas 5xx pela pagina de erro dele. O
+        # motivo da recusa — a unica coisa util aqui — nunca chegava ao
+        # cliente, e a correcao que tornou o erro visivel virava inutil em
+        # producao. 4xx passa intacto.
+        #
+        # Semanticamente tambem se defende: a cobranca nao pode ser criada no
+        # estado atual (conta do vendedor mal configurada, credencial de
+        # ambiente trocado), e nao "a Qadras esta fora do ar".
         logger.warning("cobranca recusada reserva=%s: %s", booking.code, erro)
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(erro))
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro))
     payment = Payment(
         id=uuid.uuid4(),
         booking_id=booking.id,
