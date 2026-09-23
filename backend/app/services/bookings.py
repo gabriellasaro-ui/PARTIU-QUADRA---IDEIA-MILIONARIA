@@ -63,6 +63,7 @@ from .catalog import _as_local, _day_window, bairro_da_arena
 from .messages import ensure_conversation_for_booking
 from .notifications import emit_notification, notify_booking_event
 from .payments import get_provider, provider_para_conexao
+from .payments.mercadopago import MercadoPagoError
 from .payments import split as split_calc
 from . import mercadopago_oauth as mp_oauth
 
@@ -781,7 +782,14 @@ def pay_booking(db: Session, user, booking_id) -> tuple[Booking, Payment, bool]:
         return booking, existing, True  # mesmo intent (replay)
 
     provider, amounts = _provider_para_cobranca(db, booking)
-    intent = provider.create_payment(booking=booking, amounts=amounts)
+    try:
+        intent = provider.create_payment(booking=booking, amounts=amounts)
+    except MercadoPagoError as erro:
+        # 502 e nao 500: quem recusou foi o adquirente, e a distincao importa
+        # para quem esta olhando o monitoramento. A mensagem carrega o motivo
+        # do MP (nunca o corpo cru, que ecoa o que foi enviado).
+        logger.warning("cobranca recusada reserva=%s: %s", booking.code, erro)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(erro))
     payment = Payment(
         id=uuid.uuid4(),
         booking_id=booking.id,

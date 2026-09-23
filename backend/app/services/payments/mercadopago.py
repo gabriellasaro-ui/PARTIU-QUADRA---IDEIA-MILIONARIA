@@ -66,6 +66,27 @@ _ESTORNOS = {"refunded", "charged_back"}
 #: aguardando pagamento. Notificar isso de novo nao acrescenta nada.
 
 
+def _motivo(resposta) -> str:
+    """Resumo legivel do erro do MP: `message` e a primeira `cause`.
+
+    So esses campos — o corpo inteiro pode trazer de volta o que foi enviado.
+    """
+    try:
+        corpo = resposta.json() or {}
+    except ValueError:
+        return ""
+    partes = [str(corpo.get("message") or corpo.get("error") or "").strip()]
+    causas = corpo.get("cause") or []
+    if isinstance(causas, list) and causas:
+        primeira = causas[0]
+        if isinstance(primeira, dict):
+            partes.append(
+                str(primeira.get("description") or primeira.get("code") or "").strip()
+            )
+    texto = " / ".join(p for p in partes if p)
+    return f": {texto[:160]}" if texto else ""
+
+
 class MercadoPagoError(RuntimeError):
     """Falha de comunicacao ou recusa da API do Mercado Pago."""
 
@@ -118,8 +139,12 @@ class MercadoPagoProvider(PaymentProvider):
                 "MercadoPago %s %s -> %s: %s",
                 metodo, caminho, resposta.status_code, resposta.text[:300],
             )
+            # O MOTIVO, e nao so o status. Sem isto toda recusa do MP vira o
+            # mesmo erro opaco e a unica saida e ler o log do container — que
+            # nem sempre esta a mao de quem esta testando.
             raise MercadoPagoError(
-                f"Mercado Pago recusou {metodo} {caminho} ({resposta.status_code})"
+                f"Mercado Pago recusou {metodo} {caminho} "
+                f"({resposta.status_code}){_motivo(resposta)}"
             )
         return resposta.json() if resposta.content else {}
 
