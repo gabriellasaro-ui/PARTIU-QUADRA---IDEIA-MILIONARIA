@@ -1915,6 +1915,82 @@ async function renderConfirmation(root, route) {
   }
 }
 
+
+/* Detalhes da reserva num modal, e nao numa navegacao.
+
+   O botao "Detalhes" levava para a PAGINA DA QUADRA — que e a vitrine de
+   venda, com seletor de data e horario. Quem ja tem a reserva confirmada nao
+   quer comprar de novo: quer conferir onde e, quando e, e o codigo para
+   mostrar na portaria. Sao perguntas diferentes.
+
+   Estilo inline pelo mesmo motivo do overlay do Pix: nao depender de classe
+   de CSS que pode nao existir, e nao poder quebrar layout nenhum. */
+function abrirDetalhesDaReserva(reserva, quadra) {
+  const foto = reserva.image || quadra.image || '';
+  const endereco = quadra.id ? publicAddress(quadra) : (reserva.neighborhood || '');
+  const linhas = [
+    ['Local', reserva.venueName || quadra.name || 'Quadra'],
+    ['Endereço', endereco],
+    ['Esporte', reserva.sport || quadra.sport || ''],
+    ['Data', reserva.date || ''],
+    ['Horário', (reserva.hour || '') + (reserva.endHour ? ' às ' + reserva.endHour : '')],
+    ['Duração', (reserva.duration || 1) + 'h'],
+    ['Código', reserva.code || '—'],
+    ['Status', reserva.status || ''],
+    ['Valor pago', money(reserva.price)]
+  ];
+
+  const fundo = document.createElement('div');
+  fundo.setAttribute('role', 'dialog');
+  fundo.setAttribute('aria-modal', 'true');
+  fundo.setAttribute('aria-label', 'Detalhes da reserva');
+  fundo.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:9998',
+    'background:rgba(12,16,12,.72)',
+    'display:flex', 'align-items:center', 'justify-content:center',
+    'padding:16px', 'overflow:auto'
+  ].join(';');
+
+  fundo.innerHTML = [
+    '<div style="background:#fff;color:#12200f;border-radius:20px;max-width:460px;width:100%;',
+    'overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35)">',
+    foto
+      ? '<img src="' + escapeHtml(foto) + '" alt="' + escapeHtml(reserva.venueName || '')
+        + '" style="width:100%;height:180px;object-fit:cover;display:block">'
+      : '',
+    '<div style="padding:20px 22px 22px">',
+    '<h2 style="margin:0 0 14px;font-size:20px;line-height:1.25">Sua reserva</h2>',
+    '<dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px">',
+    linhas.filter(function (l) { return l[1]; }).map(function (l) {
+      return '<dt style="opacity:.6;white-space:nowrap">' + escapeHtml(l[0]) + '</dt>'
+        + '<dd style="margin:0;text-align:right;font-weight:600">' + escapeHtml(String(l[1])) + '</dd>';
+    }).join(''),
+    '</dl>',
+    '<button type="button" data-fechar-detalhes',
+    ' style="width:100%;margin-top:18px;padding:13px;border:0;border-radius:12px;cursor:pointer;',
+    'background:#7ed321;color:#12200f;font-weight:700;font-size:15px">Fechar</button>',
+    '</div></div>'
+  ].join('');
+
+  const travaScroll = document.body.style.overflow;
+
+  function fechar() {
+    document.body.style.overflow = travaScroll;
+    document.removeEventListener('keydown', aoTeclar);
+    fundo.remove();
+  }
+  function aoTeclar(ev) {
+    if (ev.key === 'Escape') fechar();
+  }
+
+  document.body.style.overflow = 'hidden';
+  document.body.appendChild(fundo);
+  document.addEventListener('keydown', aoTeclar);
+  fundo.querySelector('[data-fechar-detalhes]').addEventListener('click', fechar);
+  /* Clicar fora fecha, mas so no fundo: clique dentro do cartao nao conta. */
+  fundo.addEventListener('click', function (ev) { if (ev.target === fundo) fechar(); });
+}
+
 async function renderReservations(root) {
   /* NADA AQUI PODE DERRUBAR A LISTA.
 
@@ -1960,7 +2036,7 @@ async function renderReservations(root) {
           <div class="acts">
             ${aguardandoPagamento
               ? `<button type="button" class="btn btn-primary" data-pagar-reserva="${escapeHtml(reservation.id)}">Pagar com Pix</button>`
-              : (reservation.venueId ? `<a href="#quadra/${reservation.venueId}" class="btn btn-soft">Detalhes</a>` : '')}
+              : `<button type="button" class="btn btn-soft" data-detalhes-reserva="${escapeHtml(reservation.id)}">Detalhes</button>`}
             ${conversation && rotaLiberada('mensagens') ? `<a href="#mensagens/${conversation.id}" class="btn btn-outline">${icon('message-circle', 'ic sm')}Chat</a>` : ''}
           </div>
         </div>
@@ -1990,6 +2066,15 @@ async function renderReservations(root) {
      horario, como se fosse comecar tudo de novo. O Pix daquela reserva ja
      existe; `/pagar` devolve a MESMA cobranca (replay), entao nao ha risco de
      criar uma segunda. */
+  root.querySelectorAll('[data-detalhes-reserva]').forEach((botao) => {
+    botao.addEventListener('click', () => {
+      const reserva = reservations.find((r) => String(r.id) === botao.dataset.detalhesReserva);
+      if (!reserva) return;
+      const quadra = venues.find((v) => v.id === reserva.venueId) || {};
+      abrirDetalhesDaReserva(reserva, quadra);
+    });
+  });
+
   root.querySelectorAll('[data-pagar-reserva]').forEach((botao) => {
     botao.addEventListener('click', async () => {
       const id = botao.dataset.pagarReserva;
