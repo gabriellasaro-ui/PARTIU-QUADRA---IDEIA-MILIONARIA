@@ -9,7 +9,7 @@
 /* Subir esta versao descarta os caches antigos no `activate`. Necessario
    sempre que um asset do SHELL mudar: sem isso, cliente que ja instalou o
    service worker pode seguir com o arquivo velho. */
-const CACHE = 'pq-v14';
+const CACHE = 'pq-v15';
 const SHELL = [
   '/',
   '/index.html',

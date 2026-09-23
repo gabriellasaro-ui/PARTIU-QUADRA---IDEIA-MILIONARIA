@@ -1428,8 +1428,14 @@ html[data-player-desktop] .desktop-booking-hero > .fav-heart {
 html[data-player-desktop] .desktop-reservation-flow {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  width: min(100%, 820px);
+  /* COLUNAS AUTOMATICAS, e nao um numero cravado.
+     Com `repeat(4, ...)` a quinta etapa (Pix) caia para uma segunda
+     linha e o roadmap aparecia empilhado. `grid-auto-flow: column`
+     acomoda quantas etapas existirem, sem quebrar de novo se o fluxo
+     crescer. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: min(100%, 940px);
   margin: 28px auto;
   padding: 0;
   list-style: none;
@@ -1439,8 +1445,10 @@ html[data-player-desktop] .desktop-reservation-flow::before {
   position: absolute;
   z-index: 0;
   top: 19px;
-  right: 12.5%;
-  left: 12.5%;
+  /* A linha vai do centro da primeira etapa ao centro da ultima. Com 5
+     colunas, meia coluna e 10% — era 12,5% quando havia 4. */
+  right: 10%;
+  left: 10%;
   height: 2px;
   background: #e2e7d9;
   content: "";
@@ -1454,7 +1462,9 @@ html[data-player-desktop] .desktop-reservation-flow li {
   align-items: center;
   justify-self: center;
   gap: 9px;
-  min-width: 150px;
+  /* 120px x 5 etapas cabe nos 940px do trilho; 150px nao cabia e forcava a
+     quebra mesmo com as colunas automaticas. */
+  min-width: 120px;
   color: #8b9083;
 }
 

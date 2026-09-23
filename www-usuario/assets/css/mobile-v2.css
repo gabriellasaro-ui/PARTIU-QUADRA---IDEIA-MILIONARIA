@@ -4775,7 +4775,13 @@ html[data-route="mapa"] .phone {
 .booking-flow {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* COLUNAS AUTOMATICAS, e nao um numero cravado.
+     Com `repeat(4, ...)` a quinta etapa (Pix) caia para uma segunda
+     linha e o roadmap aparecia empilhado. `grid-auto-flow: column`
+     acomoda quantas etapas existirem, sem quebrar de novo se o fluxo
+     crescer. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   margin: 2px 0 25px;
   padding: 0;
   list-style: none;
@@ -4785,8 +4791,9 @@ html[data-route="mapa"] .phone {
   position: absolute;
   z-index: 0;
   top: 17px;
-  right: 12.5%;
-  left: 12.5%;
+  /* Meia coluna de 5 etapas = 10%; era 12,5% quando havia 4. */
+  right: 10%;
+  left: 10%;
   height: 2px;
   background: var(--pq-tint-strong);
   content: "";
@@ -10125,7 +10132,13 @@ html[data-route="mapa"] .phone {
 .booking-flow {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* COLUNAS AUTOMATICAS, e nao um numero cravado.
+     Com `repeat(4, ...)` a quinta etapa (Pix) caia para uma segunda
+     linha e o roadmap aparecia empilhado. `grid-auto-flow: column`
+     acomoda quantas etapas existirem, sem quebrar de novo se o fluxo
+     crescer. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   margin: 2px 0 25px;
   padding: 0;
   list-style: none;
@@ -10135,8 +10148,9 @@ html[data-route="mapa"] .phone {
   position: absolute;
   z-index: 0;
   top: 17px;
-  right: 12.5%;
-  left: 12.5%;
+  /* Meia coluna de 5 etapas = 10%; era 12,5% quando havia 4. */
+  right: 10%;
+  left: 10%;
   height: 2px;
   background: var(--pq-tint-strong);
   content: "";
