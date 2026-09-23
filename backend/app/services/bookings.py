@@ -1041,8 +1041,20 @@ def _estornar_se_pago(db: Session, booking, motivo: str) -> bool:
     # pior possivel: a reserva recusada e o dinheiro ficando na arena, em
     # silencio.
     provedor = get_provider(pay.provider)
+    origem = "global"
     if settings.mercadopago_split_enabled and pay.provider_ref:
-        provedor = provider_do_pagamento(db, pay.provider_ref) or provedor
+        do_vendedor = provider_do_pagamento(db, pay.provider_ref)
+        if do_vendedor is not None:
+            provedor, origem = do_vendedor, "arena"
+
+    # DIZ QUAL TOKEN FOI USADO. Sem isto, "Caller ID is not allowed" nao
+    # distingue "o fix nao subiu" de "a conexao da arena nao foi encontrada"
+    # de "o MP recusa o token do vendedor mesmo" — tres causas com consertos
+    # diferentes, e cada tentativa custa um deploy.
+    logger.info(
+        "estorno reserva=%s pagamento=%s token=%s split=%s",
+        booking.code, pay.id, origem, settings.mercadopago_split_enabled,
+    )
 
     try:
         ok = bool(provedor.refund(pay))
