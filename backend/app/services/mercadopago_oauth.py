@@ -159,15 +159,28 @@ def _postar_token(dados: dict) -> dict:
         raise MercadoPagoOAuthError(f"Mercado Pago inacessivel: {exc}") from exc
 
     if resposta.status_code >= 400:
-        # So o status e o grant vao para o log. O corpo de erro do MP ecoa o
-        # que foi enviado, inclusive o code.
+        # O CODIGO DE ERRO DO MP, e nada alem dele.
+        #
+        # O corpo de erro ecoa o que foi enviado, inclusive o `code` — por
+        # isso nunca vai inteiro para log nem para a resposta. Mas o campo
+        # `error` (invalid_grant, invalid_client...) e o que diz QUAL e o
+        # problema, e sem ele todo defeito de configuracao vira o mesmo
+        # "recusado" opaco. Vale extrair so ele.
+        motivo = ""
+        try:
+            corpo_erro = resposta.json() or {}
+            motivo = str(corpo_erro.get("error") or corpo_erro.get("message") or "")[:60]
+        except ValueError:
+            pass
         logger.warning(
-            "oauth mercadopago recusou grant=%s status=%s",
+            "oauth mercadopago recusou grant=%s status=%s erro=%s",
             dados.get("grant_type"),
             resposta.status_code,
+            motivo or "?",
         )
+        sufixo = f": {motivo}" if motivo else ""
         raise MercadoPagoOAuthError(
-            f"Mercado Pago recusou a autorizacao ({resposta.status_code})"
+            f"Mercado Pago recusou a autorizacao ({resposta.status_code}){sufixo}"
         )
     return resposta.json() if resposta.content else {}
 

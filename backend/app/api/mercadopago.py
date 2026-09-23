@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/mercadopago", tags=["mercadopago"])
 
 
-def _retorno(sucesso: bool, motivo: str = ""):
+def _retorno(sucesso: bool, motivo: str = "", detalhe: str = ""):
     """Devolve o dono ao painel, ou responde JSON se nao houver painel.
 
     `mercadopago_panel_return_url` vazia mantem a rota utilizavel em teste e
@@ -39,7 +39,9 @@ def _retorno(sucesso: bool, motivo: str = ""):
     """
     destino = settings.mercadopago_panel_return_url.strip()
     if not destino:
-        return {"ok": sucesso, "erro": motivo or None}
+        # Sem painel configurado a resposta e lida por gente depurando: o
+        # detalhe vale mais que a estetica.
+        return {"ok": sucesso, "erro": motivo or None, "detalhe": detalhe or None}
     sep = "&" if "?" in destino else "?"
     query = "mp=ok" if sucesso else f"mp=erro&motivo={motivo or 'falha'}"
     return RedirectResponse(f"{destino}{sep}{query}", status_code=302)
@@ -74,10 +76,12 @@ def callback_oauth(
     try:
         arena_id, _conexao = oauth.exchange_code(db, code=code, state=state)
     except oauth.MercadoPagoOAuthError as exc:
-        # `str(exc)` aqui e seguro: _postar_token nunca poe corpo do MP na
-        # mensagem, so o status.
+        # `str(exc)` e seguro por construcao: MercadoPagoOAuthError so carrega
+        # status e codigo de erro do MP, nunca o corpo (que ecoa o `code`).
+        # Devolver o motivo evita que todo defeito de configuracao apareca
+        # como o mesmo "recusado" — que nao da para depurar.
         logger.warning("callback mercadopago falhou: %s", exc)
-        return _retorno(False, "recusado")
+        return _retorno(False, "recusado", detalhe=str(exc))
     db.commit()
     logger.info("mercadopago: arena %s conectada", arena_id)
     return _retorno(True)
