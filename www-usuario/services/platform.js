@@ -50,6 +50,10 @@ export const ROTAS_WEB = new Set([
   // deixar de fora faria a web mostrar o link e a rota cair na home.
   'quadras', 'quadra', 'arena', 'mapa', 'home', 'buscar',
   'pagamento', 'confirmado',
+  // reservas liberado a pedido do dono: quem reserva pela web precisa ver o
+  // que reservou — data, horario, endereco e o estado do pagamento. Sem isto
+  // a pessoa pagava e nao tinha onde conferir sem instalar o app.
+  'reservas',
   // favoritos liberado a pedido do dono: salvar quadra e um gancho barato
   // para o sujeito voltar, e nao depende de mais nada do app
   'favoritos',

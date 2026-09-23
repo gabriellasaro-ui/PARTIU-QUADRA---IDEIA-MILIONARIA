@@ -1710,34 +1710,45 @@ async function renderConfirmation(root, route) {
 }
 
 async function renderReservations(root) {
+  /* NADA AQUI PODE DERRUBAR A LISTA.
+
+     `conversations` e chat, que e exclusivo do app: na web a chamada falha e
+     antes levava o Promise.all junto, deixando a pessoa sem ver as proprias
+     reservas. `list` e so para enriquecer o cartao com a foto e o endereco da
+     quadra — a reserva ja traz o essencial. */
   const [reservations, venues, conversations] = await Promise.all([
-    venueService.reservations(),
-    venueService.list(),
-    venueService.conversations()
+    venueService.reservations().catch(() => []),
+    venueService.list().catch(() => []),
+    venueService.conversations().catch(() => [])
   ]);
   const cards = reservations.map((reservation) => {
-    const venue = venues.find((item) => item.id === reservation.venueId);
-    if (!venue) return '';
-    const conversation = conversations.find((item) => String(item.venueId) === String(venue.id));
+    /* A RESERVA E A FONTE, a quadra e o complemento.
+
+       Antes, reserva cujo `venueId` nao estivesse na lista carregada era
+       DESCARTADA em silencio (`if (!venue) return ''`) — e `list()` e
+       paginada. Quem reservasse numa quadra fora da primeira pagina pagava e
+       nao via a reserva em lugar nenhum. O payload da reserva ja traz nome,
+       esporte, bairro, data, hora e valor. */
+    const venue = venues.find((item) => item.id === reservation.venueId) || {};
+    const conversation = conversations.find((item) => String(item.venueId) === String(reservation.venueId));
     return `
       <article class="ritem" data-status="${escapeHtml(reservation.group)}" ${reservation.group === 'proxima' ? '' : 'style="display:none"'}>
-        <img src="${escapeHtml(venue.image)}" alt="${escapeHtml(venue.name)}" decoding="async" loading="lazy">
+        <img src="${escapeHtml(reservation.image || venue.image || '')}" alt="${escapeHtml(reservation.venueName || venue.name || 'Quadra')}" decoding="async" loading="lazy">
         <div class="info">
-          <h3>${escapeHtml(venue.name)}</h3>
+          <h3>${escapeHtml(reservation.venueName || venue.name || 'Quadra')}</h3>
           <div class="meta">
-            <span>${sportIcon(venue.sport)}${escapeHtml(venue.sport)}</span>
-            <span>${icon('map-pin')}${escapeHtml(publicAddress(venue))}</span>
+            <span>${sportIcon(reservation.sport || venue.sport)}${escapeHtml(reservation.sport || venue.sport || '')}</span>
+            <span>${icon('map-pin')}${escapeHtml(venue.id ? publicAddress(venue) : (reservation.neighborhood || 'Endereço na confirmação'))}</span>
             <span>${icon('calendar-days')}${escapeHtml(reservation.date)}</span>
-            <span>${icon('clock-3')}${reservation.hour}</span>
+            <span>${icon('clock-3')}${escapeHtml(reservation.hour)}${reservation.endHour ? ` - ${escapeHtml(reservation.endHour)}` : ''}</span>
           </div>
           <span class="status ${escapeHtml(reservation.statusClass)}" style="margin-top:10px;">${escapeHtml(reservation.status)}</span>
         </div>
         <div class="col-r">
           <div class="amt">${money(reservation.price)}</div>
           <div class="acts">
-            <a href="#quadra/${venue.id}" class="btn btn-soft">Detalhes</a>
-            ${conversation ? `<a href="#mensagens/${conversation.id}" class="btn btn-outline">${icon('message-circle', 'ic sm')}Chat</a>` : ''}
-            <a href="#quadra/${venue.id}" class="btn btn-outline">Reagendar</a>
+            ${reservation.venueId ? `<a href="#quadra/${reservation.venueId}" class="btn btn-soft">Detalhes</a>` : ''}
+            ${conversation && rotaLiberada('mensagens') ? `<a href="#mensagens/${conversation.id}" class="btn btn-outline">${icon('message-circle', 'ic sm')}Chat</a>` : ''}
           </div>
         </div>
       </article>`;
