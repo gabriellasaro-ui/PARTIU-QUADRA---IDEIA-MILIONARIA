@@ -146,3 +146,42 @@ def test_webhook_idempotent(client, login):
     })
     assert r3.status_code == 200
     assert r3.json()["replay"] is True
+
+
+def _uma_quadra():
+    from app.core.database import SessionLocal
+    from app.models import Court
+    from sqlalchemy import select
+
+    with SessionLocal() as db:
+        return str(db.execute(select(Court).where(Court.is_active == True)).scalars().first().id)
+
+
+def test_sincronizar_e_a_rede_de_seguranca_do_webhook(client, login):
+    """Webhook falha; o dinheiro nao. Esta rota existe para isso.
+
+    Sem ela, uma notificacao perdida — `notification_url` esquecida no
+    ambiente, deploy no instante errado, rede — deixa a reserva morrendo em
+    `pending_payment` com o Pix ja pago, e a unica saida e mexer no banco.
+    """
+    hdrs = login("gabriel@email.com")
+    date_, hora = _next_slot()
+    booking = _create_booking(client, hdrs, _uma_quadra(), date_=date_, hora=hora)
+    pid = client.post(f"/api/reservas/{booking['id']}/pagar", headers=hdrs).json()["payment"]["id"]
+
+    # Com o mock nao ha o que conciliar, mas a rota tem de responder sem
+    # explodir — e e esse contrato que o provider real vai herdar.
+    r = client.post(f"/api/payments/{pid}/sincronizar", headers=hdrs)
+    assert r.status_code == 200, r.text
+    assert r.json()["ok"] is True
+
+
+def test_sincronizar_nao_vaza_pagamento_de_outro(client, login):
+    """Mesma autorizacao da consulta: dono ou admin, e mais ninguem."""
+    hdrs = login("gabriel@email.com")
+    date_, hora = _next_slot()
+    booking = _create_booking(client, hdrs, _uma_quadra(), date_=date_, hora=hora)
+    pid = client.post(f"/api/reservas/{booking['id']}/pagar", headers=hdrs).json()["payment"]["id"]
+
+    outro = login("dono@arenabolanarede.com.br")
+    assert client.post(f"/api/payments/{pid}/sincronizar", headers=outro).status_code == 403
