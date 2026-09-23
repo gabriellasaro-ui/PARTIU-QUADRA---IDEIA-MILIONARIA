@@ -1,6 +1,6 @@
 import venueService, { localEscolhido, definirLocal } from '../../services/venues.js';
 import { API_BASE_URL } from '../../config/constants.js';
-import { submitPlayerReservation, payPlayerReservation, watchReservation, getPayment } from '../../services/reservation-live.js';
+import { submitPlayerReservation, payPlayerReservation, watchReservation, getPayment, getReservation } from '../../services/reservation-live.js';
 import { cobrarPix } from '../../services/pix-checkout.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
@@ -1481,7 +1481,20 @@ async function renderConfirmation(root, route) {
 
   function approvalFlow(state) {
     const rejected = state === 'declined' || state === 'expired';
-    const approvalClass = state === 'accepted' ? 'is-done' : rejected ? 'is-error' : 'is-current';
+    /* O PAGAMENTO SO E ETAPA CUMPRIDA QUANDO O DINHEIRO ENTRA.
+
+       Antes o passo "Pagamento" vinha cravado como concluido — inclusive na
+       tela que existe justamente porque o Pix NAO foi pago. O roadmap dizia
+       que estava tudo certo enquanto pedia o pagamento logo abaixo. */
+    const esperandoPix = state === 'pix';
+    const pagamentoClass = esperandoPix ? 'is-current' : 'is-done';
+    const pagamentoMarker = esperandoPix ? '2' : icon('check', 'ic sm');
+    const pagamentoNota = esperandoPix
+      ? 'Aguardando o Pix'
+      : PAYMENT_METHOD_LABELS[method];
+    const approvalClass = state === 'accepted'
+      ? 'is-done'
+      : rejected ? 'is-error' : esperandoPix ? '' : 'is-current';
     const approvalMarker = state === 'accepted'
       ? icon('check', 'ic sm')
       : rejected
@@ -1490,8 +1503,8 @@ async function renderConfirmation(root, route) {
     return `
       <ol class="desktop-reservation-flow desktop-reservation-flow--confirmation" aria-label="Etapas da reserva">
         <li class="is-done"><span>${icon('check', 'ic sm')}</span><div><strong>Horário</strong><small>${escapeHtml(dateText)} - ${hour}</small></div></li>
-        <li class="is-done"><span>${icon('check', 'ic sm')}</span><div><strong>Pagamento</strong><small>${PAYMENT_METHOD_LABELS[method]}</small></div></li>
-        <li class="${approvalClass}"><span>${approvalMarker}</span><div><strong>Aprovação</strong><small>${state === 'accepted' ? 'Arena aceitou' : rejected ? 'Não aprovada' : 'Aguardando arena'}</small></div></li>
+        <li class="${pagamentoClass}"><span>${pagamentoMarker}</span><div><strong>Pagamento</strong><small>${escapeHtml(pagamentoNota)}</small></div></li>
+        <li class="${approvalClass}"><span>${approvalMarker}</span><div><strong>Aprovação</strong><small>${state === 'accepted' ? 'Arena aceitou' : rejected ? 'Não aprovada' : esperandoPix ? 'Depois do pagamento' : 'Aguardando arena'}</small></div></li>
         <li class="${state === 'accepted' ? 'is-current' : ''}"><span>4</span><div><strong>Confirmação</strong><small>Horário garantido</small></div></li>
       </ol>`;
   }
@@ -1617,7 +1630,25 @@ async function renderConfirmation(root, route) {
   }
 
   let cobrancaPix = null;
-  if (API_BASE_URL) {
+  /* F5 NAO PODE CRIAR OUTRA RESERVA.
+
+     Esta tela roda o checkout inteiro ao ser montada. Recarregar fazia ela
+     POSTar a mesma reserva de novo; o horario ja estava ocupado pela
+     primeira, a API recusava, e o `catch` abaixo zerava `apiReserva` — o que
+     a tela lia como "a arena nao aceitou". Quem tinha acabado de pagar via
+     "Nao aprovada" na cara.
+
+     Com o id na URL, o reload RECUPERA a reserva em vez de recriar. */
+  const idNaUrl = routeQuery(route).get('reserva');
+  if (API_BASE_URL && idNaUrl) {
+    try {
+      apiReserva = await getReservation(idNaUrl);
+    } catch (error) {
+      apiReserva = null;
+    }
+  }
+
+  if (API_BASE_URL && !apiReserva) {
     try {
       const submit = await submitPlayerReservation(context);
       apiReserva = submit.reserva;
@@ -1639,11 +1670,31 @@ async function renderConfirmation(root, route) {
            desligada), entao o comportamento antigo segue identico nesses
            casos. Ela nunca rejeita: expirar ou "pagar depois" caem no mesmo
            caminho de sempre, a tela de espera. */
-        const cobranca = await payPlayerReservation(apiReserva.id);
-        cobrancaPix = cobranca?.payment || null;
+        /* O id na URL e o que torna o reload seguro. `replaceState` para nao
+           criar entrada no historico: o Voltar deve sair do checkout, nao
+           repetir o mesmo passo. */
+        try {
+          if (!location.hash.includes('reserva=')) {
+            const juncao = location.hash.includes('?') ? '&' : '?';
+            const novoHash = location.hash + juncao + 'reserva=' + encodeURIComponent(apiReserva.id);
+            history.replaceState({}, '', location.pathname + location.search + novoHash);
+          }
+        } catch (error) { /* historico bloqueado: o fluxo segue sem o atalho */ }
       }
     } catch (error) {
       apiReserva = null;
+    }
+  }
+
+  /* A COBRANCA, tanto no caminho novo quanto no reload. `/pagar` devolve a
+     MESMA cobranca quando ja existe uma pendente, entao chamar de novo nao
+     cria uma segunda. */
+  if (API_BASE_URL && apiReserva && !cobrancaPix) {
+    try {
+      const cobranca = await payPlayerReservation(apiReserva.id);
+      cobrancaPix = cobranca?.payment || null;
+    } catch (error) {
+      cobrancaPix = null;
     }
   }
 
@@ -1666,7 +1717,7 @@ async function renderConfirmation(root, route) {
     setApprovalMeta('Aguardando pagamento', 'Pague o Pix para a arena receber sua solicitacao');
     root.innerHTML = [
       '<div class="desktop-confirmation-page">',
-      approvalFlow('pending'),
+      approvalFlow('pix'),
       '<section class="desktop-approval-view desktop-approval-view--pending">',
       '<div class="desktop-approval-symbol">' + icon('qr-code') + '</div>',
       '<span class="confirm__eyebrow">Falta o pagamento</span>',
@@ -1815,7 +1866,18 @@ async function renderConfirmation(root, route) {
     // cronometro so cuida do limite de 15 minutos.
     if (API_BASE_URL) {
       if (!apiReserva) {
-        await renderRejected('declined');
+        /* Sem reserva no servidor NAO e recusa da arena — e falha nossa ao
+           criar. Dizer "nao aprovada" aqui culpava o dono da quadra por um
+           erro de rede. */
+        clearInterval(activeDesktopApprovalTimer);
+        setApprovalMeta('Não foi possível concluir', 'Tente enviar a solicitação de novo');
+        root.innerHTML = '<div class="desktop-confirmation-page"><section class="desktop-approval-view">'
+          + '<h1>Não conseguimos registrar sua solicitação</h1>'
+          + '<p>Nada foi cobrado. Tente escolher o horário de novo.</p>'
+          + '<div class="desktop-approval-actions">'
+          + '<a href="#quadra/' + venue.id + '" class="btn btn-primary btn-lg">Escolher horário</a>'
+          + '</div></section></div>';
+        return;
       } else if (remaining <= 0 || forcedResult === 'expirado') {
         await renderRejected('expired');
       }
@@ -1831,10 +1893,16 @@ async function renderConfirmation(root, route) {
     }
   }
 
-  /* Pix pendente -> tela de pagamento. Qualquer outro caso (mock, cobranca ja
-     paga, API desligada) segue direto para a espera da arena, que e o
-     comportamento de sempre. */
-  if (cobrancaPix && cobrancaPix.qrCode && cobrancaPix.status === 'pending') {
+  /* O ESTADO REAL MANDA, e nao o fato de termos acabado de criar a reserva.
+     Num reload a reserva pode estar em qualquer ponto do fluxo. */
+  const estado = apiReserva?.statusCode || '';
+  if (estado === 'confirmed' || estado === 'completed') {
+    await renderAccepted();
+  } else if (estado === 'rejected') {
+    await renderRejected('declined');
+  } else if (estado === 'expired' || estado === 'cancelled' || estado === 'payment_failed') {
+    await renderRejected('expired');
+  } else if (cobrancaPix && cobrancaPix.qrCode && cobrancaPix.status === 'pending') {
     await renderAguardandoPix(cobrancaPix);
   } else {
     await esperarPelaArena();

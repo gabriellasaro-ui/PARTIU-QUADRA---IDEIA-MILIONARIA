@@ -73,6 +73,17 @@ export async function payPlayerReservation(reservaId) {
    disto: a pessoa pode fechar o QR, pagar pelo app do banco e voltar —
    sem uma sonda, a tela esperaria para sempre por um evento que ja
    aconteceu. */
+/* Recupera uma reserva JA CRIADA. Existe por causa do F5: a tela de
+   confirmacao roda o checkout inteiro ao ser montada, e recarregar
+   fazia ela tentar criar a MESMA reserva de novo. O horario ja estava
+   ocupado pela primeira, a API recusava, e o front lia a recusa como
+   "a arena nao aceitou" — mentindo para quem tinha acabado de pagar. */
+export async function getReservation(reservaId) {
+  if (!API_BASE_URL || !reservaId) return null;
+  const data = await api.get(`/api/reservas/${reservaId}`);
+  return data?.reserva || null;
+}
+
 export async function getPayment(paymentId) {
   if (!API_BASE_URL || !paymentId) return null;
   const data = await api.get(`/api/payments/${paymentId}`);

@@ -9,7 +9,7 @@ import { SPORTS, POSITIONS, LEVELS, FEET } from '../../config/mock-data.js';
 import { MODALIDADES, posicoesDe } from '../../config/esportes.js';
 import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
-import { submitPlayerReservation, payPlayerReservation, watchReservation, getPayment } from '../../services/reservation-live.js';
+import { submitPlayerReservation, payPlayerReservation, watchReservation, getPayment, getReservation } from '../../services/reservation-live.js';
 import { cobrarPix } from '../../services/pix-checkout.js';
 import { authHashFor, safeNext, requiresLogin } from '../../middleware/auth.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
@@ -2148,7 +2148,16 @@ async function renderConfirmation(root, route) {
 
   function approvalFlow(state) {
     const rejected = state === 'declined' || state === 'expired';
-    const approvalClass = state === 'accepted' ? 'is-done' : rejected ? 'is-error' : 'is-current';
+    /* O PAGAMENTO SO E ETAPA CUMPRIDA QUANDO O DINHEIRO ENTRA.
+
+       Antes o passo "Pagamento" vinha cravado como concluido — inclusive na
+       tela que existe justamente porque o Pix NAO foi pago. */
+    const esperandoPix = state === 'pix';
+    const pagamentoClass = esperandoPix ? 'is-current' : 'is-done';
+    const pagamentoMarker = esperandoPix ? '2' : icon('check');
+    const approvalClass = state === 'accepted'
+      ? 'is-done'
+      : rejected ? 'is-error' : esperandoPix ? '' : 'is-current';
     const confirmationClass = state === 'accepted' ? 'is-current' : '';
     const approvalMarker = state === 'accepted'
       ? icon('check')
@@ -2158,7 +2167,7 @@ async function renderConfirmation(root, route) {
     return `
       <ol class="booking-flow booking-flow--confirmation" aria-label="Etapas da reserva">
         <li class="is-done"><span>${icon('check')}</span><small>Horário</small></li>
-        <li class="is-done"><span>${icon('check')}</span><small>Pagamento</small></li>
+        <li class="${pagamentoClass}"><span>${pagamentoMarker}</span><small>Pagamento</small></li>
         <li class="${approvalClass}"><span>${approvalMarker}</span><small>Aprovação</small></li>
         <li class="${confirmationClass}"><span>${state === 'accepted' ? '4' : '4'}</span><small>Confirmação</small></li>
       </ol>`;
@@ -2300,7 +2309,26 @@ async function renderConfirmation(root, route) {
     refreshApprovalIcons();
   }
 
-  if (API_BASE_URL) {
+  let cobrancaPix = null;
+  /* F5 NAO PODE CRIAR OUTRA RESERVA.
+
+     Esta tela roda o checkout inteiro ao ser montada. Recarregar fazia ela
+     POSTar a mesma reserva de novo; o horario ja estava ocupado pela
+     primeira, a API recusava, e o `catch` zerava `apiReserva` — o que a tela
+     lia como "a arena nao aceitou". Quem tinha acabado de pagar via "Nao
+     aprovada" na cara.
+
+     Com o id na URL, o reload RECUPERA a reserva em vez de recriar. */
+  const idNaUrl = routeQuery(route).get('reserva');
+  if (API_BASE_URL && idNaUrl) {
+    try {
+      apiReserva = await getReservation(idNaUrl);
+    } catch (error) {
+      apiReserva = null;
+    }
+  }
+
+  if (API_BASE_URL && !apiReserva) {
     try {
       /* A escolha do checkout entra no pedido. `context` e montado antes da
          pessoa escolher o clube, entao o valor e anexado aqui, no momento do
@@ -2325,11 +2353,30 @@ async function renderConfirmation(root, route) {
            desligada), entao o comportamento antigo segue identico nesses
            casos. Ela nunca rejeita: expirar ou "pagar depois" caem no mesmo
            caminho de sempre, a tela de espera. */
-        const cobranca = await payPlayerReservation(apiReserva.id);
-        cobrancaPix = cobranca?.payment || null;
+        /* O id na URL e o que torna o reload seguro. `replaceState` para nao
+           criar entrada no historico: o Voltar deve sair do checkout. */
+        try {
+          if (!location.hash.includes('reserva=')) {
+            const juncao = location.hash.includes('?') ? '&' : '?';
+            const novoHash = location.hash + juncao + 'reserva=' + encodeURIComponent(apiReserva.id);
+            history.replaceState({}, '', location.pathname + location.search + novoHash);
+          }
+        } catch (error) { /* historico bloqueado: o fluxo segue sem o atalho */ }
       }
     } catch (error) {
       apiReserva = null;
+    }
+  }
+
+  /* A COBRANCA, tanto no caminho novo quanto no reload. `/pagar` devolve a
+     MESMA cobranca quando ja existe uma pendente, entao chamar de novo nao
+     cria uma segunda. */
+  if (API_BASE_URL && apiReserva && !cobrancaPix) {
+    try {
+      const cobranca = await payPlayerReservation(apiReserva.id);
+      cobrancaPix = cobranca?.payment || null;
+    } catch (error) {
+      cobrancaPix = null;
     }
   }
 
@@ -2347,7 +2394,7 @@ async function renderConfirmation(root, route) {
   async function renderAguardandoPix(pagamento) {
     document.title = 'Aguardando pagamento - Qadras';
     content.innerHTML = [
-      approvalFlow('pending'),
+      approvalFlow('pix'),
       '<section class="approval-view approval-view--pending">',
       '<span class="approval-eyebrow">Falta o pagamento</span>',
       '<h1>Pague o Pix para confirmar</h1>',
@@ -2484,7 +2531,17 @@ async function renderConfirmation(root, route) {
     // cronometro so cuida do limite de 15 minutos.
     if (API_BASE_URL) {
       if (!apiReserva) {
-        await renderRejected('declined');
+        /* Sem reserva no servidor NAO e recusa da arena — e falha nossa ao
+           criar. Dizer "nao aprovada" culpava o dono da quadra por um erro
+           que nao foi dele. */
+        clearInterval(activeMobileApprovalTimer);
+        document.title = 'Não foi possível concluir - Qadras';
+        content.innerHTML = '<section class="approval-view">'
+          + '<h1>Não conseguimos registrar sua solicitação</h1>'
+          + '<p>Nada foi cobrado. Tente escolher o horário de novo.</p>'
+          + '<a href="#quadra/' + venue.id + '" class="btn block">Escolher horário</a>'
+          + '</section>';
+        return;
       } else if (remaining <= 0 || forcedResult === 'expirado') {
         await renderRejected('expired');
       }
@@ -2500,9 +2557,16 @@ async function renderConfirmation(root, route) {
     }
   }
 
-  /* Pix pendente -> tela de pagamento. Qualquer outro caso (mock, cobranca ja
-     paga, API desligada) segue direto para a espera da arena. */
-  if (cobrancaPix && cobrancaPix.qrCode && cobrancaPix.status === 'pending') {
+  /* O ESTADO REAL MANDA, e nao o fato de termos acabado de criar a reserva.
+     Num reload a reserva pode estar em qualquer ponto do fluxo. */
+  const estado = apiReserva?.statusCode || '';
+  if (estado === 'confirmed' || estado === 'completed') {
+    await renderAccepted();
+  } else if (estado === 'rejected') {
+    await renderRejected('declined');
+  } else if (estado === 'expired' || estado === 'cancelled' || estado === 'payment_failed') {
+    await renderRejected('expired');
+  } else if (cobrancaPix && cobrancaPix.qrCode && cobrancaPix.status === 'pending') {
     await renderAguardandoPix(cobrancaPix);
   } else {
     await esperarPelaArena();
