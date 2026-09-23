@@ -428,7 +428,7 @@ async function renderMobileRoute() {
     // Registrar SEMPRE: sem isto o erro fica invisivel e so sobra a tela de
     // aviso, que nao diz nada a quem precisa consertar. (A arvore www ja
     // fazia isto; esta ficou para tras.)
-    console.error('[rota]', routeName, error);
+    console.error('[rota]', routeName, descreveErro(error));
     view.setAttribute('data-route-error', routeName);
     view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p></div></div>';
   } finally {
@@ -490,6 +490,26 @@ function updatePlayerDesktopMeta(routeName, route) {
   if (sub) sub.textContent = route.sub;
 }
 
+/* O QUE DE FATO DEU ERRADO, e nao so "ApiError".
+
+   O bridge de console do Capacitor achata um Error na mensagem: no APK, um
+   422 aparecia como "ApiError: Field required" sem dizer QUAL campo — o que
+   e quase nada para depurar, e custou um ciclo inteiro de rebuild. `payload`
+   traz o corpo da resposta, que nomeia o campo. */
+function descreveErro(error) {
+  if (!error) return 'erro desconhecido';
+  const partes = [`${error.name || 'Erro'}: ${error.message || ''}`];
+  if (error.status) partes.push(`status=${error.status}`);
+  if (error.payload !== undefined) {
+    try {
+      partes.push(`detalhe=${JSON.stringify(error.payload)}`);
+    } catch {
+      partes.push('detalhe=<nao serializavel>');
+    }
+  }
+  return partes.join(' | ');
+}
+
 async function renderPlayerDesktopRoute() {
   const view = document.querySelector('[data-player-desktop-route-view]');
   if (!view) return;
@@ -510,6 +530,8 @@ async function renderPlayerDesktopRoute() {
     await setFragment(view, route.page);
     await renderPlayerDesktopPage(routeState, view);
   } catch (error) {
+    // Mesmo motivo do roteador mobile: sem log, so sobra a tela de aviso.
+    console.error('[rota]', routeName, descreveErro(error));
     view.setAttribute('data-route-error', routeName);
     view.innerHTML = '<div class="container route-page"><div class="empty"><h3>Não foi possível carregar</h3><p>Verifique sua conexão e tente de novo.</p><a class="btn block" href="#quadras">Voltar para explorar</a></div></div>';
   } finally {

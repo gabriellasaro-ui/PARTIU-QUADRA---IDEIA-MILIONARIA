@@ -46,3 +46,7 @@ backend/qadras-dev.db
 TESTE_APAGAR.py
 *_APAGAR.py
 senha*.txt
+
+# Dump de log do servidor — costuma trazer JWT dentro
+log
+*.log
