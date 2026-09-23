@@ -9,7 +9,7 @@ import { SPORTS, POSITIONS, LEVELS, FEET } from '../../config/mock-data.js';
 import { MODALIDADES, posicoesDe } from '../../config/esportes.js';
 import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
-import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
+import { submitPlayerReservation, payPlayerReservation, watchReservation, getPayment } from '../../services/reservation-live.js';
 import { cobrarPix } from '../../services/pix-checkout.js';
 import { authHashFor, safeNext, requiresLogin } from '../../middleware/auth.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
@@ -22,6 +22,9 @@ let currentRoute = null;
 let activeMobileMap = null;
 let activeUserMarker = null;
 let activeMobileApprovalTimer = null;
+/* Prazo da cobranca Pix; o servidor manda `expiresAt` em cada
+   pagamento e isto e so o fallback da barra. */
+const PIX_WINDOW_MS = 15 * 60 * 1000;
 let gameCardTicker = null;
 let clubSection = 'peladas';
 const DEFAULT_LOCATION = [-19.9300, -43.9400];
@@ -2119,7 +2122,7 @@ async function renderConfirmation(root, route) {
   let code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
   const query = routeQuery(route);
   const requestedDeadline = Number(query.get('deadline'));
-  const deadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
+  let deadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
     ? requestedDeadline
     : Date.now() + APPROVAL_WINDOW_MS;
   const forcedResult = query.get('resultado') || 'aceito';
@@ -2323,16 +2326,7 @@ async function renderConfirmation(root, route) {
            casos. Ela nunca rejeita: expirar ou "pagar depois" caem no mesmo
            caminho de sempre, a tela de espera. */
         const cobranca = await payPlayerReservation(apiReserva.id);
-        /* SEM `await` DE PROPOSITO.
-           A primeira versao esperava o pagamento aqui dentro. So que isto roda
-           DENTRO do render da rota, que o roteador envolve num try/catch: bloquear
-           por minutos enquanto a pessoa paga fazia o render nunca terminar, e a
-           tela caia no "Nao foi possivel carregar".
-           O overlay nao precisa bloquear. Ele fica POR CIMA da tela de espera,
-           que renderiza normalmente logo abaixo; quando o Pix cai, o overlay se
-           fecha sozinho e a espera ja esta ali atras. O `catch` existe para uma
-           falha no overlay nunca derrubar o fluxo da reserva. */
-        cobrarPix(cobranca?.payment).catch(() => {});
+        cobrancaPix = cobranca?.payment || null;
       }
     } catch (error) {
       apiReserva = null;
@@ -2345,21 +2339,133 @@ async function renderConfirmation(root, route) {
     statusClass: 'pendente',
     group: 'proxima'
   });
-  document.title = 'Aguardando aprovação - Qadras';
-  renderPending(Math.max(0, deadline - Date.now()));
+  /* A ESPERA DO PIX NAO E A ESPERA DA ARENA.
 
-  if (API_BASE_URL && apiReserva) {
-    watchReservation(apiReserva.id, {
-      onDone: async (status) => {
-        if (status === 'confirmed' || status === 'completed') {
-          await renderAccepted();
-        } else if (status === 'expired') {
-          await renderRejected('expired');
-        } else {
-          await renderRejected('declined');
+     Antes havia uma tela so: pagando ou nao, a pessoa caia em "aguardando a
+     arena" — olhando o cronometro de aprovacao de um pedido que a arena nem
+     tinha recebido, porque ela so ve a solicitacao depois do pagamento. */
+  async function renderAguardandoPix(pagamento) {
+    document.title = 'Aguardando pagamento - Qadras';
+    content.innerHTML = [
+      approvalFlow('pending'),
+      '<section class="approval-view approval-view--pending">',
+      '<span class="approval-eyebrow">Falta o pagamento</span>',
+      '<h1>Pague o Pix para confirmar</h1>',
+      '<p>Sua reserva fica guardada ate o pagamento. <strong>'
+        + escapeHtml(venue.name)
+        + '</strong> so recebe a solicitacao depois que o Pix cair.</p>',
+      '<div class="approval-timer">',
+      '<div><span>Tempo para pagar</span><strong data-pix-countdown>--:--</strong></div>',
+      '<div class="approval-progress" aria-hidden="true">'
+        + '<span data-pix-progress style="width:100%"></span></div>',
+      '</div>',
+      '<div class="approval-reservation">',
+      '<img src="' + escapeHtml(venue.image) + '" alt="' + escapeHtml(venue.name) + '">',
+      '<div><strong>' + escapeHtml(dateLabel) + '</strong><span>' + hour + ' a ' + endHour
+        + ' - ' + duration + 'h</span></div>',
+      '<b>' + formatCurrency(total) + '</b>',
+      '</div>',
+      '<div class="approval-payment-note">',
+      icon('shield-check'),
+      '<span><strong>Nada foi cobrado ainda</strong><small>Se voce nao pagar, a reserva '
+        + 'simplesmente expira.</small></span>',
+      '</div>',
+      '<button type="button" class="btn block" data-mostrar-pix>Mostrar o Pix</button>',
+      '</section>'
+    ].join('');
+    refreshApprovalIcons();
+
+    const expiraEm = pagamento.expiresAt
+      ? new Date(pagamento.expiresAt).getTime()
+      : (Date.now() + PIX_WINDOW_MS);
+
+    let sonda = null;
+    let relogio = null;
+    function pararSonda() {
+      if (sonda) window.clearInterval(sonda);
+      if (relogio) window.clearInterval(relogio);
+      sonda = null;
+      relogio = null;
+    }
+
+    function tickPix() {
+      if (!document.contains(root)) return pararSonda();
+      const restante = expiraEm - Date.now();
+      const alvo = content.querySelector('[data-pix-countdown]');
+      const barra = content.querySelector('[data-pix-progress]');
+      if (alvo) alvo.textContent = formatApprovalCountdown(Math.max(0, restante));
+      if (barra) {
+        const pct = Math.max(0, Math.min(100, (restante / PIX_WINDOW_MS) * 100));
+        barra.style.width = pct + '%';
+      }
+      if (restante <= 0) {
+        pararSonda();
+        const titulo = content.querySelector('h1');
+        const botao = content.querySelector('[data-mostrar-pix]');
+        if (titulo) titulo.textContent = 'O tempo para pagar terminou';
+        if (botao) {
+          botao.textContent = 'Escolher outro horario';
+          botao.onclick = () => { location.hash = 'quadra/' + venue.id; };
         }
       }
-    });
+    }
+
+    async function seguirSePago(estado) {
+      if (estado !== 'confirmed' && estado !== 'pago') return false;
+      pararSonda();
+      await esperarPelaArena();
+      return true;
+    }
+
+    async function abrirPix() {
+      const resultado = await cobrarPix(pagamento).catch(() => null);
+      await seguirSePago(resultado);
+    }
+
+    const botaoPix = content.querySelector('[data-mostrar-pix]');
+    if (botaoPix) botaoPix.addEventListener('click', abrirPix);
+
+    /* A pessoa pode fechar o QR, pagar pelo app do banco e voltar. */
+    sonda = window.setInterval(async () => {
+      if (!document.contains(root)) return pararSonda();
+      try {
+        const atual = await getPayment(pagamento.id);
+        if (atual && atual.status !== 'pending') await seguirSePago(atual.status);
+      } catch (error) {
+        // Falha de rede: tenta de novo no proximo ciclo.
+      }
+    }, 5000);
+
+    relogio = window.setInterval(tickPix, 1000);
+    tickPix();
+    abrirPix();
+  }
+
+  async function esperarPelaArena() {
+    /* O relogio da arena comeca no PAGAMENTO, nao no checkout — e o backend
+       conta assim tambem, de `paid_at`. Comecar antes descontaria do dono o
+       tempo que o jogador levou para pagar. */
+    deadline = Date.now() + APPROVAL_WINDOW_MS;
+    document.title = 'Aguardando aprovação - Qadras';
+    renderPending(APPROVAL_WINDOW_MS);
+
+    if (API_BASE_URL && apiReserva) {
+      watchReservation(apiReserva.id, {
+        onDone: async (status) => {
+          if (status === 'confirmed' || status === 'completed') {
+            await renderAccepted();
+          } else if (status === 'expired') {
+            await renderRejected('expired');
+          } else {
+            await renderRejected('declined');
+          }
+        }
+      });
+    }
+
+    if (activeMobileApprovalTimer) window.clearInterval(activeMobileApprovalTimer);
+    activeMobileApprovalTimer = window.setInterval(tickApproval, 1000);
+    await tickApproval();
   }
 
   async function tickApproval() {
@@ -2394,8 +2500,13 @@ async function renderConfirmation(root, route) {
     }
   }
 
-  activeMobileApprovalTimer = window.setInterval(tickApproval, 1000);
-  await tickApproval();
+  /* Pix pendente -> tela de pagamento. Qualquer outro caso (mock, cobranca ja
+     paga, API desligada) segue direto para a espera da arena. */
+  if (cobrancaPix && cobrancaPix.qrCode && cobrancaPix.status === 'pending') {
+    await renderAguardandoPix(cobrancaPix);
+  } else {
+    await esperarPelaArena();
+  }
 }
 
 /* Um plano mensalista sao 4 sessoes, mas UMA assinatura. Listar as quatro

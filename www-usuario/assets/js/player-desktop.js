@@ -15,6 +15,10 @@ import { refreshIcons } from './component-loader.js';
 let currentRoute = null;
 let desktopMap = null;
 let activeDesktopApprovalTimer = null;
+/* Prazo da cobranca Pix. O servidor manda `expiresAt` em cada
+   pagamento; isto e so o fallback para desenhar a barra quando o
+   campo nao vier. */
+const PIX_WINDOW_MS = 15 * 60 * 1000;
 /* Ultimo recurso para um mapa sem local e sem quadras. Nao prende a web a uma
    cidade especifica: com resultados, a primeira quadra define o centro. */
 const LOCAL_PADRAO = [-14.2350, -51.9253];
@@ -1678,9 +1682,12 @@ async function renderConfirmation(root, route) {
         + escapeHtml(displayText(venue.sport)) + '</small></div>',
       '<b>' + money(total) + '</b>',
       '</div>',
+      '<div class="desktop-approval-timer">',
+      '<div><span>Tempo para pagar</span><strong data-pix-countdown>--:--</strong></div>',
+      '<div class="desktop-approval-progress"><span data-pix-progress style="width:100%"></span></div>',
+      '</div>',
       '<div class="desktop-approval-actions">',
       '<button type="button" class="btn btn-primary btn-lg" data-mostrar-pix>Mostrar o Pix</button>',
-      '<a href="#reservas" class="btn btn-outline btn-lg">Pagar depois</a>',
       '</div>',
       '<div class="desktop-approval-note">',
       icon('shield-check'),
@@ -1692,11 +1699,48 @@ async function renderConfirmation(root, route) {
     ].join('');
     refreshApprovalIcons();
 
+    /* QUANTO TEMPO AINDA DA PARA PAGAR.
+
+       A cobranca do Mercado Pago expira (hoje em 15 minutos) e depois o
+       codigo simplesmente nao e mais pagavel. Sem o relogio na tela, a pessoa
+       descobria isso no aplicativo do banco, com o Pix ja recusado. */
+    const expiraEm = pagamento.expiresAt
+      ? new Date(pagamento.expiresAt).getTime()
+      : (Date.now() + PIX_WINDOW_MS);
+
     let sonda = null;
+    let relogio = null;
     function pararSonda() {
       if (sonda) window.clearInterval(sonda);
+      if (relogio) window.clearInterval(relogio);
       sonda = null;
+      relogio = null;
     }
+
+    function tickPix() {
+      if (!document.contains(root)) return pararSonda();
+      const restante = expiraEm - Date.now();
+      const alvo = root.querySelector('[data-pix-countdown]');
+      const barra = root.querySelector('[data-pix-progress]');
+      if (alvo) alvo.textContent = formatApprovalCountdown(Math.max(0, restante));
+      if (barra) {
+        const pct = Math.max(0, Math.min(100, (restante / PIX_WINDOW_MS) * 100));
+        barra.style.width = pct + '%';
+      }
+      if (restante <= 0) {
+        pararSonda();
+        const titulo = root.querySelector('h1');
+        const botao = root.querySelector('[data-mostrar-pix]');
+        if (titulo) titulo.textContent = 'O tempo para pagar terminou';
+        if (botao) {
+          botao.textContent = 'Escolher outro horario';
+          botao.disabled = false;
+          botao.onclick = () => { location.hash = 'quadra/' + venue.id; };
+        }
+      }
+    }
+    relogio = window.setInterval(tickPix, 1000);
+    tickPix();
 
     async function seguirSePago(estado) {
       if (estado !== 'confirmed' && estado !== 'pago') return false;
