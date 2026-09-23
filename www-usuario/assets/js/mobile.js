@@ -2152,9 +2152,12 @@ async function renderConfirmation(root, route) {
 
        Antes o passo "Pagamento" vinha cravado como concluido — inclusive na
        tela que existe justamente porque o Pix NAO foi pago. */
+    /* O PIX E UMA ETAPA PROPRIA — escolher como pagar e o dinheiro entrar sao
+       momentos distintos, e o roadmap dizia que estava pago enquanto a tela
+       logo abaixo pedia o pagamento. */
     const esperandoPix = state === 'pix';
-    const pagamentoClass = esperandoPix ? 'is-current' : 'is-done';
-    const pagamentoMarker = esperandoPix ? '2' : icon('check');
+    const pixClass = esperandoPix ? 'is-current' : 'is-done';
+    const pixMarker = esperandoPix ? '3' : icon('check');
     const approvalClass = state === 'accepted'
       ? 'is-done'
       : rejected ? 'is-error' : esperandoPix ? '' : 'is-current';
@@ -2163,13 +2166,14 @@ async function renderConfirmation(root, route) {
       ? icon('check')
       : rejected
         ? icon('x')
-        : '3';
+        : '4';
     return `
       <ol class="booking-flow booking-flow--confirmation" aria-label="Etapas da reserva">
         <li class="is-done"><span>${icon('check')}</span><small>Horário</small></li>
-        <li class="${pagamentoClass}"><span>${pagamentoMarker}</span><small>Pagamento</small></li>
+        <li class="is-done"><span>${icon('check')}</span><small>Pagamento</small></li>
+        <li class="${pixClass}"><span>${pixMarker}</span><small>Pix</small></li>
         <li class="${approvalClass}"><span>${approvalMarker}</span><small>Aprovação</small></li>
-        <li class="${confirmationClass}"><span>${state === 'accepted' ? '4' : '4'}</span><small>Confirmação</small></li>
+        <li class="${confirmationClass}"><span>5</span><small>Confirmação</small></li>
       </ol>`;
   }
 

@@ -1334,8 +1334,9 @@ async function renderPayment(root, route) {
       <ol class="desktop-reservation-flow desktop-reservation-flow--checkout" aria-label="Etapas da reserva">
         <li class="is-done"><span>${icon('check', 'ic sm')}</span><div><strong>Horário</strong><small>${escapeHtml(dateText)} - ${hour}</small></div></li>
         <li class="is-current"><span>2</span><div><strong>Pagamento</strong><small>Escolha como pagar</small></div></li>
-        <li><span>3</span><div><strong>Aprovação</strong><small>A arena responde</small></div></li>
-        <li><span>4</span><div><strong>Confirmação</strong><small>Horário garantido</small></div></li>
+        <li><span>3</span><div><strong>Pix</strong><small>Pagar a cobrança</small></div></li>
+        <li><span>4</span><div><strong>Aprovação</strong><small>A arena responde</small></div></li>
+        <li><span>5</span><div><strong>Confirmação</strong><small>Horário garantido</small></div></li>
       </ol>
 
       <div class="desktop-checkout-layout">
@@ -1486,12 +1487,16 @@ async function renderConfirmation(root, route) {
        Antes o passo "Pagamento" vinha cravado como concluido — inclusive na
        tela que existe justamente porque o Pix NAO foi pago. O roadmap dizia
        que estava tudo certo enquanto pedia o pagamento logo abaixo. */
+    /* O PIX E UMA ETAPA PROPRIA.
+
+       "Pagamento" era uma etapa so, marcada como concluida assim que a pessoa
+       escolhia o metodo — o roadmap dizia que estava pago enquanto a tela
+       logo abaixo pedia o pagamento. Sao dois momentos distintos: escolher
+       como pagar e o dinheiro entrar. */
     const esperandoPix = state === 'pix';
-    const pagamentoClass = esperandoPix ? 'is-current' : 'is-done';
-    const pagamentoMarker = esperandoPix ? '2' : icon('check', 'ic sm');
-    const pagamentoNota = esperandoPix
-      ? 'Aguardando o Pix'
-      : PAYMENT_METHOD_LABELS[method];
+    const pixClass = esperandoPix ? 'is-current' : 'is-done';
+    const pixMarker = esperandoPix ? '3' : icon('check', 'ic sm');
+    const pixNota = esperandoPix ? 'Aguardando o pagamento' : 'Pago';
     const approvalClass = state === 'accepted'
       ? 'is-done'
       : rejected ? 'is-error' : esperandoPix ? '' : 'is-current';
@@ -1499,13 +1504,14 @@ async function renderConfirmation(root, route) {
       ? icon('check', 'ic sm')
       : rejected
         ? icon('x', 'ic sm')
-        : '3';
+        : '4';
     return `
       <ol class="desktop-reservation-flow desktop-reservation-flow--confirmation" aria-label="Etapas da reserva">
         <li class="is-done"><span>${icon('check', 'ic sm')}</span><div><strong>Horário</strong><small>${escapeHtml(dateText)} - ${hour}</small></div></li>
-        <li class="${pagamentoClass}"><span>${pagamentoMarker}</span><div><strong>Pagamento</strong><small>${escapeHtml(pagamentoNota)}</small></div></li>
+        <li class="is-done"><span>${icon('check', 'ic sm')}</span><div><strong>Pagamento</strong><small>${escapeHtml(PAYMENT_METHOD_LABELS[method] || 'Pix')}</small></div></li>
+        <li class="${pixClass}"><span>${pixMarker}</span><div><strong>Pix</strong><small>${escapeHtml(pixNota)}</small></div></li>
         <li class="${approvalClass}"><span>${approvalMarker}</span><div><strong>Aprovação</strong><small>${state === 'accepted' ? 'Arena aceitou' : rejected ? 'Não aprovada' : esperandoPix ? 'Depois do pagamento' : 'Aguardando arena'}</small></div></li>
-        <li class="${state === 'accepted' ? 'is-current' : ''}"><span>4</span><div><strong>Confirmação</strong><small>Horário garantido</small></div></li>
+        <li class="${state === 'accepted' ? 'is-current' : ''}"><span>5</span><div><strong>Confirmação</strong><small>Horário garantido</small></div></li>
       </ol>`;
   }
 
