@@ -185,3 +185,64 @@ def test_sincronizar_nao_vaza_pagamento_de_outro(client, login):
 
     outro = login("dono@arenabolanarede.com.br")
     assert client.post(f"/api/payments/{pid}/sincronizar", headers=outro).status_code == 403
+
+
+def _pagar_e_confirmar(client, login, hdrs, hora):
+    """Reserva paga e CONFIRMADA — o unico estado em que ha o que estornar."""
+    date_, _ = _next_slot()
+    booking = _create_booking(client, hdrs, _uma_quadra(), date_=date_, hora=hora)
+    pay = client.post(f"/api/reservas/{booking['id']}/pagar", headers=hdrs).json()["payment"]
+    wh = f"webhook-{uuid.uuid4().hex[:8]}"
+    r = client.post("/api/payments/webhook/mock", headers=WEBHOOK_HEADERS, json={
+        "webhookId": wh,
+        "status": "confirmed",
+        "paymentRef": pay["providerRef"],
+        "amountCents": int(pay["amount"] * 100),
+    })
+    assert r.status_code == 200, r.text
+    return booking, pay
+
+
+def _status_pagamento(client, hdrs, pid):
+    return client.get(f"/api/payments/{pid}", headers=hdrs).json()["payment"]["status"]
+
+
+def test_recusar_estorna_o_que_foi_pago(client, login):
+    """O incentivo nao pode ficar invertido.
+
+    O estorno so existia quando a arena IGNORAVA a solicitacao ate vencer.
+    Recusar ativamente deixava o dinheiro na conta dela — ou seja, ignorar era
+    melhor para o jogador do que receber um nao.
+    """
+    hdrs = login("gabriel@email.com")
+    booking, pay = _pagar_e_confirmar(client, login, hdrs, "21:00")
+    assert _status_pagamento(client, hdrs, pay["id"]) == "confirmed"
+
+    gerente = login("dono@arenabolanarede.com.br")
+    r = client.post(f"/api/reservas/{booking['id']}/recusar", headers=gerente,
+                    json={"motivo": "Quadra em manutencao"})
+    assert r.status_code == 200, r.text
+    assert _status_pagamento(client, hdrs, pay["id"]) == "refunded"
+
+
+def test_cancelar_estorna_o_que_foi_pago(client, login):
+    """Mesma regra do recusar: devolucao integral (decisao de 23/09/2026)."""
+    hdrs = login("gabriel@email.com")
+    booking, pay = _pagar_e_confirmar(client, login, hdrs, "22:00")
+
+    r = client.post(f"/api/reservas/{booking['id']}/cancelar", headers=hdrs,
+                    json={"motivo": "Nao vou conseguir ir"})
+    assert r.status_code == 200, r.text
+    assert _status_pagamento(client, hdrs, pay["id"]) == "refunded"
+
+
+def test_recusar_reserva_nao_paga_nao_inventa_estorno(client, login):
+    """Sem pagamento confirmado nao ha o que devolver — e nada deve quebrar."""
+    hdrs = login("gabriel@email.com")
+    date_, _ = _next_slot()
+    booking = _create_booking(client, hdrs, _uma_quadra(), date_=date_, hora="19:00")
+
+    gerente = login("dono@arenabolanarede.com.br")
+    r = client.post(f"/api/reservas/{booking['id']}/recusar", headers=gerente,
+                    json={"motivo": "Sem pagamento"})
+    assert r.status_code in (200, 409), r.text

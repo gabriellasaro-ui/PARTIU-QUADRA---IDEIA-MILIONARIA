@@ -1008,6 +1008,51 @@ def approve_booking(db: Session, manager, booking_id) -> Booking:
     return booking
 
 
+def _estornar_se_pago(db: Session, booking, motivo: str) -> bool:
+    """Devolve o dinheiro quando uma reserva JA PAGA deixa de acontecer.
+
+    O DEFEITO QUE ISTO CORRIGE. O estorno existia em um unico caminho — a
+    arena ignorar a solicitacao ate o prazo vencer. Recusar ativamente, ou o
+    jogador cancelar, apenas mudava o status da reserva e o dinheiro ficava
+    onde estava. O incentivo saia invertido: ignorar devolvia, recusar nao.
+    Passou meses sem aparecer porque com PAYMENT_PROVIDER=mock o `refund` da
+    classe base devolve True sem fazer nada — nenhum teste podia pegar.
+
+    Devolucao INTEGRAL, e a comissao da Qadras volta junto (decisao de
+    2026-09-23): no split o Mercado Pago divide o estorno proporcionalmente
+    entre vendedor e marketplace, entao basta pedir o estorno total.
+
+    QUANDO O ESTORNO FALHA o Payment NAO e marcado como estornado. Marcar
+    seria mentir no relatorio financeiro e esconder dinheiro presos: fica
+    `confirmed` com `refund_falhou` no payload, e o log sai em ERROR para
+    alguem agir. A reserva transiciona de qualquer forma — uma falha do
+    adquirente nao pode impedir a arena de recusar.
+    """
+    pay = pay_repo.get_by_booking(db, booking.id)
+    if pay is None or pay.status != PAYMENT_CONFIRMED:
+        return False
+
+    try:
+        ok = bool(get_provider(pay.provider).refund(pay))
+    except Exception as erro:  # adquirente fora do ar, token vencido, etc.
+        logger.error(
+            "ESTORNO FALHOU reserva=%s pagamento=%s: %s", booking.code, pay.id, erro
+        )
+        ok = False
+
+    if ok:
+        pay.status = PAYMENT_REFUNDED
+        pay.payload = {**(pay.payload or {}), "refund": motivo}
+    else:
+        logger.error(
+            "ESTORNO FALHOU reserva=%s pagamento=%s motivo=%s — dinheiro retido",
+            booking.code, pay.id, motivo,
+        )
+        pay.payload = {**(pay.payload or {}), "refund_falhou": motivo}
+    db.flush()
+    return ok
+
+
 def reject_booking(db: Session, manager, booking_id, reason: str | None = None) -> Booking:
     booking, _, arena = get_reservation(db, manager, booking_id)
     manager_owns_arena(db, manager, arena)
@@ -1019,6 +1064,8 @@ def reject_booking(db: Session, manager, booking_id, reason: str | None = None) 
     _transition_group(
         db, booking, STATUS_REJECTED, actor_id=manager.id, actor_role=ROLE_GERENTE, reason=reason
     )
+    # O jogador nao deu causa: devolucao integral.
+    _estornar_se_pago(db, booking, reason or "Recusada pela arena")
     db.commit()
     _notify_booking_update(db, booking)
     notify_booking_event(db, booking, NOTIF_BOOKING_REJECTED)
@@ -1035,6 +1082,7 @@ def cancel_booking(db: Session, user, booking_id, reason: str | None = None) -> 
         actor_role=user.role,
         reason=reason,
     )
+    _estornar_se_pago(db, booking, reason or "Reserva cancelada")
     db.commit()
     _notify_booking_update(db, booking)
     notify_booking_event(db, booking, NOTIF_BOOKING_CANCELLED)
@@ -1090,12 +1138,9 @@ def expire_stale(db: Session, *, now: datetime | None = None) -> int:
                 pay.payload = {**(pay.payload or {}), "expired": True}
             elif pay is not None and pay.status == PAYMENT_CONFIRMED:
                 # O jogador pagou e a arena nao respondeu: o dinheiro volta.
-                get_provider(pay.provider).refund(pay)
-                pay.status = PAYMENT_REFUNDED
-                pay.payload = {
-                    **(pay.payload or {}),
-                    "refund": "Arena não respondeu no prazo",
-                }
+                # Mesmo caminho da recusa e do cancelamento — a logica vive em
+                # um lugar so para nao divergir de novo.
+                _estornar_se_pago(db, booking, "Arena não respondeu no prazo")
             count += 1
             notified.append(booking)
             db.flush()
