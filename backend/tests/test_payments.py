@@ -246,3 +246,47 @@ def test_recusar_reserva_nao_paga_nao_inventa_estorno(client, login):
     r = client.post(f"/api/reservas/{booking['id']}/recusar", headers=gerente,
                     json={"motivo": "Sem pagamento"})
     assert r.status_code in (200, 409), r.text
+
+
+def test_estorno_usa_o_token_da_arena_e_nao_o_global(monkeypatch):
+    """No split, estornar com o token global volta 404 — e em silencio.
+
+    Foi o defeito da primeira versao: a reserva era recusada, o estorno falhava
+    contra a conta errada e o dinheiro ficava na arena sem ninguem notar. O
+    webhook e o sincronizar ja resolviam isso; o estorno nao.
+    """
+    from types import SimpleNamespace
+
+    from app.core.config import settings
+    from app.models import PAYMENT_CONFIRMED
+    from app.services import bookings as svc
+
+    consultado = {}
+
+    class _ProviderDaArena:
+        def refund(self, payment):
+            consultado["arena"] = True
+            return True
+
+    class _ProviderGlobal:
+        def refund(self, payment):
+            consultado["global"] = True
+            return True
+
+    pay = SimpleNamespace(
+        id="p1", status=PAYMENT_CONFIRMED, provider="mercadopago",
+        provider_ref="999", payload={},
+    )
+    monkeypatch.setattr(settings, "mercadopago_split_enabled", True, raising=False)
+    monkeypatch.setattr(svc.pay_repo, "get_by_booking", lambda db, bid: pay)
+    monkeypatch.setattr(svc, "get_provider", lambda *a, **k: _ProviderGlobal())
+    monkeypatch.setattr(svc, "provider_do_pagamento", lambda db, ref: _ProviderDaArena())
+
+    class _DB:
+        def flush(self):
+            pass
+
+    svc._estornar_se_pago(_DB(), SimpleNamespace(id="b1", code="PQ-X"), "teste")
+
+    assert consultado.get("arena"), "o estorno tem de sair com o token da arena"
+    assert not consultado.get("global"), "token global nao enxerga a cobranca da arena"

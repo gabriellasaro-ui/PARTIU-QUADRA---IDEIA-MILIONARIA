@@ -1032,8 +1032,20 @@ def _estornar_se_pago(db: Session, booking, motivo: str) -> bool:
     if pay is None or pay.status != PAYMENT_CONFIRMED:
         return False
 
+    # O TOKEN TEM DE SER O DA ARENA.
+    #
+    # `get_provider` devolve o provider com o token GLOBAL da Qadras, e no
+    # split a cobranca vive na conta da arena — o token global nao enxerga o
+    # pagamento dela e o estorno volta 404. Mesmo cuidado do webhook e do
+    # sincronizar; aqui passou batido na primeira versao, e o sintoma era o
+    # pior possivel: a reserva recusada e o dinheiro ficando na arena, em
+    # silencio.
+    provedor = get_provider(pay.provider)
+    if settings.mercadopago_split_enabled and pay.provider_ref:
+        provedor = provider_do_pagamento(db, pay.provider_ref) or provedor
+
     try:
-        ok = bool(get_provider(pay.provider).refund(pay))
+        ok = bool(provedor.refund(pay))
     except Exception as erro:  # adquirente fora do ar, token vencido, etc.
         logger.error(
             "ESTORNO FALHOU reserva=%s pagamento=%s: %s", booking.code, pay.id, erro
