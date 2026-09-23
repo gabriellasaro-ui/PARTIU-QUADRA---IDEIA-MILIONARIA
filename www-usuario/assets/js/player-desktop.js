@@ -6,6 +6,7 @@ import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame } from './game-mode.js';
 import { rotaLiberada } from '../../services/platform.js';
+import { authHashFor, requiresLogin } from '../../middleware/auth.js';
 import authService from '../../services/auth.js';
 import { LEVELS } from '../../config/mock-data.js';
 import { posicoesDe, MODALIDADES } from '../../config/esportes.js';
@@ -1272,10 +1273,26 @@ async function renderArena(root, route) {
 }
 
 async function renderPayment(root, route) {
+  /* SEM SESSAO NAO HA CHECKOUT — e a guarda tem de vir ANTES das chamadas.
+
+     Esta tela consulta /api/perfil e /api/carteira, que exigem login. Sem
+     sessao as duas devolvem 401, e como estavam num `Promise.all` a rota
+     inteira rejeitava: o roteador capturava e trocava a tela por "Nao foi
+     possivel carregar". Quem nao estava logado via um erro de conexao em vez
+     de um convite para entrar. */
+  if (requiresLogin() && !authService.hasSession()) {
+    location.hash = authHashFor(location.hash);
+    return;
+  }
+
+  /* `catch` em cada uma: perfil e carteira sao enfeite desta tela (nome e
+     saldo). Se falharem, o checkout continua — nao e por causa do saldo que
+     alguem deve ficar sem reservar. `bookingContext` segue sem rede porque
+     sem ele nao ha o que renderizar. */
   const [context, profile, wallet] = await Promise.all([
     bookingContext(route),
-    venueService.profile(),
-    venueService.wallet()
+    venueService.profile().catch(() => null),
+    venueService.wallet().catch(() => null)
   ]);
   if (!context) {
     location.hash = 'quadras';

@@ -1795,6 +1795,18 @@ function syncMobilePaymentChoice(root, requestedMethod = 'pix') {
 }
 
 async function renderPayment(root, route) {
+  /* SEM SESSAO NAO HA CHECKOUT — e a guarda tem de vir ANTES das chamadas.
+
+     Esta tela consulta /api/perfil e /api/carteira, que exigem login. Sem
+     sessao as duas devolvem 401, e como estavam num `Promise.all` a rota
+     inteira rejeitava: o roteador capturava e trocava a tela por "Nao foi
+     possivel carregar". Quem nao estava logado via um erro de conexao em vez
+     de um convite para entrar. */
+  if (requiresLogin() && !authService.hasSession()) {
+    location.hash = authHashFor(location.hash);
+    return;
+  }
+
   montarEscolhaDeClubeNoCheckout(root);
   const context = await bookingContext(route);
   if (!context) {
