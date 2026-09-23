@@ -10,6 +10,7 @@ import { MODALIDADES, posicoesDe } from '../../config/esportes.js';
 import { APP_PUBLIC_URL } from '../../config/constants.js';
 import authService from '../../services/auth.js';
 import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
+import { cobrarPix } from '../../services/pix-checkout.js';
 import { authHashFor, safeNext, requiresLogin } from '../../middleware/auth.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
 import { loadGame, destroyGame, getActiveMatch } from './game-mode.js';
@@ -2301,7 +2302,16 @@ async function renderConfirmation(root, route) {
         reservationData.subtotal = subtotal;
         reservationData.serviceFee = serviceFee;
         reservationData.price = total;
-        await payPlayerReservation(apiReserva.id);
+        /* A ETAPA QUE FALTAVA. Antes a resposta era descartada: o QR do Pix
+           voltava do servidor e ia para o lixo, e a tela pulava direto para
+           "aguardando aprovacao" — sem o jogador ter pago nada.
+
+           `cobrarPix` resolve na hora quando nao ha QR (provider mock, API
+           desligada), entao o comportamento antigo segue identico nesses
+           casos. Ela nunca rejeita: expirar ou "pagar depois" caem no mesmo
+           caminho de sempre, a tela de espera. */
+        const cobranca = await payPlayerReservation(apiReserva.id);
+        await cobrarPix(cobranca?.payment);
       }
     } catch (error) {
       apiReserva = null;
