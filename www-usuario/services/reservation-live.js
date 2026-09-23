@@ -69,6 +69,16 @@ export async function payPlayerReservation(reservaId) {
   return api.post(`/api/reservas/${reservaId}/pagar`);
 }
 
+/* Estado atual da cobranca. A tela de "aguardando pagamento" precisa
+   disto: a pessoa pode fechar o QR, pagar pelo app do banco e voltar —
+   sem uma sonda, a tela esperaria para sempre por um evento que ja
+   aconteceu. */
+export async function getPayment(paymentId) {
+  if (!API_BASE_URL || !paymentId) return null;
+  const data = await api.get(`/api/payments/${paymentId}`);
+  return data?.payment || null;
+}
+
 export function watchReservation(reservaId, { onStatus, onDone, interval = 2000 }) {
   stopReservationWatch();
   if (!API_BASE_URL || !reservaId) return null;

@@ -1,6 +1,6 @@
 import venueService, { localEscolhido, definirLocal } from '../../services/venues.js';
 import { API_BASE_URL } from '../../config/constants.js';
-import { submitPlayerReservation, payPlayerReservation, watchReservation } from '../../services/reservation-live.js';
+import { submitPlayerReservation, payPlayerReservation, watchReservation, getPayment } from '../../services/reservation-live.js';
 import { cobrarPix } from '../../services/pix-checkout.js';
 import { calculateCheckoutAmounts, formatCurrency } from '../../utils/formatters.js';
 import { imageFileToDataUrl } from '../../utils/helpers.js';
@@ -1446,7 +1446,7 @@ async function renderConfirmation(root, route) {
   let code = `PQ-${venue.id}${date.slice(5).replace('-', '')}${hour.replace(':', '')}`;
   const query = routeQuery(route);
   const requestedDeadline = Number(query.get('deadline'));
-  const deadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
+  let deadline = Number.isFinite(requestedDeadline) && requestedDeadline > 0
     ? requestedDeadline
     : Date.now() + APPROVAL_WINDOW_MS;
   const forcedResult = query.get('resultado') || 'aceito';
@@ -1612,6 +1612,7 @@ async function renderConfirmation(root, route) {
     refreshApprovalIcons();
   }
 
+  let cobrancaPix = null;
   if (API_BASE_URL) {
     try {
       const submit = await submitPlayerReservation(context);
@@ -1635,16 +1636,7 @@ async function renderConfirmation(root, route) {
            casos. Ela nunca rejeita: expirar ou "pagar depois" caem no mesmo
            caminho de sempre, a tela de espera. */
         const cobranca = await payPlayerReservation(apiReserva.id);
-        /* SEM `await` DE PROPOSITO.
-           A primeira versao esperava o pagamento aqui dentro. So que isto roda
-           DENTRO do render da rota, que o roteador envolve num try/catch: bloquear
-           por minutos enquanto a pessoa paga fazia o render nunca terminar, e a
-           tela caia no "Nao foi possivel carregar".
-           O overlay nao precisa bloquear. Ele fica POR CIMA da tela de espera,
-           que renderiza normalmente logo abaixo; quando o Pix cai, o overlay se
-           fecha sozinho e a espera ja esta ali atras. O `catch` existe para uma
-           falha no overlay nunca derrubar o fluxo da reserva. */
-        cobrarPix(cobranca?.payment).catch(() => {});
+        cobrancaPix = cobranca?.payment || null;
       }
     } catch (error) {
       apiReserva = null;
@@ -1657,20 +1649,110 @@ async function renderConfirmation(root, route) {
     statusClass: 'pendente',
     group: 'proxima'
   });
-  renderPending(Math.max(0, deadline - Date.now()));
+  /* A ESPERA DO PIX NAO E A ESPERA DA ARENA.
 
-  if (API_BASE_URL && apiReserva) {
-    watchReservation(apiReserva.id, {
-      onDone: async (status) => {
-        if (status === 'confirmed' || status === 'completed') {
-          await renderAccepted();
-        } else if (status === 'expired') {
-          await renderRejected('expired');
-        } else {
-          await renderRejected('declined');
-        }
+     Antes havia uma tela so: paga ou nao, a pessoa caia em "aguardando a
+     arena". Quem fechava o QR ficava olhando um cronometro de aprovacao de um
+     pedido que a arena nem tinha recebido — porque a arena so ve a
+     solicitacao depois do pagamento.
+
+     Aqui sao dois estados com telas proprias, e o relogio de 15 minutos da
+     arena so comeca a correr quando o Pix cai. */
+  async function renderAguardandoPix(pagamento) {
+    setApprovalMeta('Aguardando pagamento', 'Pague o Pix para a arena receber sua solicitacao');
+    root.innerHTML = [
+      '<div class="desktop-confirmation-page">',
+      approvalFlow('pending'),
+      '<section class="desktop-approval-view desktop-approval-view--pending">',
+      '<div class="desktop-approval-symbol">' + icon('qr-code') + '</div>',
+      '<span class="confirm__eyebrow">Falta o pagamento</span>',
+      '<h1>Pague o Pix para confirmar</h1>',
+      '<p>Sua reserva fica guardada ate o pagamento. <strong>'
+        + escapeHtml(venue.name)
+        + '</strong> so recebe a solicitacao depois que o Pix cair.</p>',
+      '<div class="desktop-approval-reservation">',
+      '<img src="' + escapeHtml(venue.image) + '" alt="' + escapeHtml(venue.name)
+        + '" decoding="async" loading="lazy">',
+      '<div><span>Sua partida</span><strong>' + escapeHtml(dateText) + ' - ' + hour + ' a '
+        + endHour + '</strong><small>' + duration + 'h - '
+        + escapeHtml(displayText(venue.sport)) + '</small></div>',
+      '<b>' + money(total) + '</b>',
+      '</div>',
+      '<div class="desktop-approval-actions">',
+      '<button type="button" class="btn btn-primary btn-lg" data-mostrar-pix>Mostrar o Pix</button>',
+      '<a href="#reservas" class="btn btn-outline btn-lg">Pagar depois</a>',
+      '</div>',
+      '<div class="desktop-approval-note">',
+      icon('shield-check'),
+      '<span><strong>Nada foi cobrado ainda</strong><small>Se voce nao pagar, a reserva '
+        + 'simplesmente expira.</small></span>',
+      '</div>',
+      '</section>',
+      '</div>'
+    ].join('');
+    refreshApprovalIcons();
+
+    let sonda = null;
+    function pararSonda() {
+      if (sonda) window.clearInterval(sonda);
+      sonda = null;
+    }
+
+    async function seguirSePago(estado) {
+      if (estado !== 'confirmed' && estado !== 'pago') return false;
+      pararSonda();
+      await esperarPelaArena();
+      return true;
+    }
+
+    async function abrirPix() {
+      const resultado = await cobrarPix(pagamento).catch(() => null);
+      await seguirSePago(resultado);
+    }
+
+    const botaoPix = root.querySelector('[data-mostrar-pix]');
+    if (botaoPix) botaoPix.addEventListener('click', abrirPix);
+
+    /* A pessoa pode fechar o QR, pagar pelo app do banco e voltar. Sem esta
+       sonda a tela esperaria para sempre por um evento que ja aconteceu. */
+    sonda = window.setInterval(async () => {
+      if (!document.contains(root)) return pararSonda();
+      try {
+        const atual = await getPayment(pagamento.id);
+        if (atual && atual.status !== 'pending') await seguirSePago(atual.status);
+      } catch (error) {
+        // Falha de rede: tenta de novo no proximo ciclo.
       }
-    });
+    }, 5000);
+
+    abrirPix();
+  }
+
+  async function esperarPelaArena() {
+    /* O relogio da arena comeca AGORA, e nao no checkout: o prazo de resposta
+       dela conta a partir do PAGAMENTO — e o backend conta assim tambem, de
+       `paid_at`. Comecar antes descontaria do dono o tempo que o jogador
+       levou para pagar. */
+    deadline = Date.now() + APPROVAL_WINDOW_MS;
+    renderPending(APPROVAL_WINDOW_MS);
+
+    if (API_BASE_URL && apiReserva) {
+      watchReservation(apiReserva.id, {
+        onDone: async (status) => {
+          if (status === 'confirmed' || status === 'completed') {
+            await renderAccepted();
+          } else if (status === 'expired') {
+            await renderRejected('expired');
+          } else {
+            await renderRejected('declined');
+          }
+        }
+      });
+    }
+
+    if (activeDesktopApprovalTimer) window.clearInterval(activeDesktopApprovalTimer);
+    activeDesktopApprovalTimer = window.setInterval(tickApproval, 1000);
+    await tickApproval();
   }
 
   async function tickApproval() {
@@ -1705,8 +1787,14 @@ async function renderConfirmation(root, route) {
     }
   }
 
-  activeDesktopApprovalTimer = window.setInterval(tickApproval, 1000);
-  await tickApproval();
+  /* Pix pendente -> tela de pagamento. Qualquer outro caso (mock, cobranca ja
+     paga, API desligada) segue direto para a espera da arena, que e o
+     comportamento de sempre. */
+  if (cobrancaPix && cobrancaPix.qrCode && cobrancaPix.status === 'pending') {
+    await renderAguardandoPix(cobrancaPix);
+  } else {
+    await esperarPelaArena();
+  }
 }
 
 async function renderReservations(root) {
