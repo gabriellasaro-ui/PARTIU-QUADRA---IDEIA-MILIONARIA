@@ -2311,7 +2311,16 @@ async function renderConfirmation(root, route) {
            casos. Ela nunca rejeita: expirar ou "pagar depois" caem no mesmo
            caminho de sempre, a tela de espera. */
         const cobranca = await payPlayerReservation(apiReserva.id);
-        await cobrarPix(cobranca?.payment);
+        /* SEM `await` DE PROPOSITO.
+           A primeira versao esperava o pagamento aqui dentro. So que isto roda
+           DENTRO do render da rota, que o roteador envolve num try/catch: bloquear
+           por minutos enquanto a pessoa paga fazia o render nunca terminar, e a
+           tela caia no "Nao foi possivel carregar".
+           O overlay nao precisa bloquear. Ele fica POR CIMA da tela de espera,
+           que renderiza normalmente logo abaixo; quando o Pix cai, o overlay se
+           fecha sozinho e a espera ja esta ali atras. O `catch` existe para uma
+           falha no overlay nunca derrubar o fluxo da reserva. */
+        cobrarPix(cobranca?.payment).catch(() => {});
       }
     } catch (error) {
       apiReserva = null;
