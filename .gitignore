@@ -41,3 +41,8 @@ backend/qadras-dev.db
 /banner pc.png
 /8617206.mp4
 /pix.png
+
+# Scratch local — NUNCA commitar (costuma ter token dentro)
+TESTE_APAGAR.py
+*_APAGAR.py
+senha*.txt
