@@ -1,9 +1,15 @@
 """Conexao da arena com o Mercado Pago (OAuth do split 1:1).
 
-  GET  /api/mercadopago/oauth/iniciar   gerente -> URL de autorizacao
-  GET  /api/mercadopago/oauth/callback  PUBLICA -> troca o code por tokens
-  GET  /api/mercadopago/status          gerente -> estado da conexao
-  POST /api/mercadopago/desconectar     gerente -> revoga a conexao
+  GET  /api/mercadopago/oauth/iniciar      gerente -> URL de autorizacao
+  GET  /api/mercadopago/oauth/callback     PUBLICA -> troca o code por tokens
+  GET  /api/mercadopago/oauth/status       gerente -> estado da conexao
+  POST /api/mercadopago/oauth/desconectar  gerente -> revoga a conexao
+
+UMA CONVENCAO SO. `status` e `desconectar` viviam fora do `oauth/` e isso
+custou tempo duas vezes durante a integracao: quem chutava o caminho obvio
+recebia 404 do FastAPI, que e indistinguivel de "a rota nao subiu". O
+`callback` e o unico que nao pode mudar de lugar — o endereco esta cadastrado
+no painel do Mercado Pago.
 
 POR QUE O CALLBACK E PUBLICO
 ----------------------------
@@ -87,7 +93,7 @@ def callback_oauth(
     return _retorno(True)
 
 
-@router.get("/status")
+@router.get("/oauth/status")
 def status_conexao(
     user: User = Depends(get_current_manager),
     db: Session = Depends(get_db),
@@ -97,7 +103,7 @@ def status_conexao(
     return {"mercadopago": oauth.status_payload(conexao)}
 
 
-@router.post("/desconectar")
+@router.post("/oauth/desconectar")
 def desconectar(
     user: User = Depends(get_current_manager),
     db: Session = Depends(get_db),

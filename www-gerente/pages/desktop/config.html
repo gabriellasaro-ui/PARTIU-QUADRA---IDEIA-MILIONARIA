@@ -82,6 +82,30 @@
     </div>
   </section>
 
+  <!-- RECEBIMENTO. Fica antes de cupons porque e pre-requisito de faturar:
+       sem conta conectada a arena nao recebe nada. -->
+  <section class="set-card" id="recebimento">
+    <div class="set-aside">
+      <h2>Recebimento</h2>
+      <p>Conecte sua conta do Mercado Pago para receber direto, sem intermediário.</p>
+    </div>
+    <div class="set-fields">
+      <div class="manager-coupon-head">
+        <div>
+          <strong data-mp-titulo>Verificando conexão...</strong>
+          <small data-mp-detalhe>Consultando o servidor</small>
+        </div>
+        <button type="button" class="btn btn-primary" data-mp-conectar hidden>
+          <i class="ic sm" data-lucide="link"></i> Conectar conta
+        </button>
+        <button type="button" class="btn btn-soft" data-mp-desconectar hidden>
+          <i class="ic sm" data-lucide="unlink"></i> Desconectar
+        </button>
+      </div>
+      <p class="set-hint" data-mp-aviso hidden></p>
+    </div>
+  </section>
+
   <section class="set-card" id="promocoes">
     <div class="set-aside">
       <h2>Cupons e descontos</h2>

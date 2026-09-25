@@ -3315,6 +3315,50 @@ export async function renderMobilePage(route, root) {
   syncMarketplaceState(document);
 }
 
+/* ENTRAR E CRIAR CONTA VALEM EM QUALQUER SHELL.
+
+   Este tratamento morava dentro de `initMobileActions`, que comeca com
+   `if (!document.querySelector('[data-route-view]')) return;` — o container
+   do MOBILE. No shell do desktop (app.html) esse elemento nao existe, entao a
+   funcao desistia e levava o login junto: o formulario de #entrar ficava sem
+   handler e o botao nao fazia nada.
+
+   E o mesmo defeito que o logout ja tinha tido (ver o comentario em
+   app.js:722); ali foi resolvido tirando o handler do gate, e aqui ficou para
+   tras. Autenticacao nao pode depender de qual container esta na pagina.
+
+   No nivel do modulo: `mobile.js` e importado estaticamente pelo `app.js`,
+   entao isto registra uma vez, nos dois shells, sem depender de ninguem
+   chamar nada. */
+document.addEventListener('submit', async (event) => {
+  const authForm = event.target.closest('[data-auth-form]');
+  if (!authForm) return;
+  event.preventDefault();
+  if (!authForm.reportValidity()) return;
+
+  const erro = authForm.querySelector('[data-auth-error]');
+  if (erro) erro.hidden = true;
+  const botao = authForm.querySelector('[type="submit"]');
+  botao?.setAttribute('disabled', 'disabled');
+  try {
+    const dados = Object.fromEntries(new FormData(authForm));
+    const modo = authForm.dataset.authForm;
+    const session = modo === 'register'
+      ? await authService.register(dados)
+      : await authService.login(dados);
+    goAfterAuth(currentRoute, session.isNew);
+  } catch (error) {
+    const msg = error.message || 'Não foi possível continuar';
+    window.pqToast?.(msg);
+    if (erro) {
+      erro.textContent = msg;
+      erro.hidden = false;
+    }
+  } finally {
+    botao?.removeAttribute('disabled');
+  }
+});
+
 export function initMobileActions() {
   if (!document.querySelector('[data-route-view]')) return;
 
@@ -3565,35 +3609,6 @@ export function initMobileActions() {
       const view = document.querySelector('[data-route-view]');
       await renderClub(view);
       window.pqRefreshIcons?.(view);
-      return;
-    }
-
-    /* Entrar / criar conta. Antes do [data-demo-form], que e generico. */
-    const authForm = event.target.closest('[data-auth-form]');
-    if (authForm) {
-      event.preventDefault();
-      if (!authForm.reportValidity()) return;
-      const erro = authForm.querySelector('[data-auth-error]');
-      if (erro) erro.hidden = true;
-      const submit = authForm.querySelector('[type="submit"]');
-      submit?.setAttribute('disabled', 'disabled');
-      try {
-        const dados = Object.fromEntries(new FormData(authForm));
-        const modo = authForm.dataset.authForm;
-        const session = modo === 'register'
-          ? await authService.register(dados)
-          : await authService.login(dados);
-        goAfterAuth(currentRoute, session.isNew);
-      } catch (error) {
-        const msg = error.message || 'Não foi possível continuar';
-        window.pqToast?.(msg);
-        if (erro) {
-          erro.textContent = msg;
-          erro.hidden = false;
-        }
-      } finally {
-        submit?.removeAttribute('disabled');
-      }
       return;
     }
 

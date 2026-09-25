@@ -629,32 +629,6 @@ function initRedirectToast() {
   } catch (error) {}
 }
 
-function initLoginForms() {
-  qsa('[data-login-form]').forEach((form) => {
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (!form.reportValidity()) return;
-
-      if (!API_BASE_URL) {
-        window.pqToast?.('API sera conectada na proxima etapa');
-        return;
-      }
-
-      const submit = form.querySelector('[type="submit"]');
-      submit?.setAttribute('disabled', 'disabled');
-
-      try {
-        await authService.login(Object.fromEntries(new FormData(form)));
-        window.location.assign('./index.html');
-      } catch (error) {
-        window.pqToast?.(error.message || 'Não foi possível entrar');
-      } finally {
-        submit?.removeAttribute('disabled');
-      }
-    });
-  });
-}
-
 /* WS + badges so valem com sessao e API. O evento do WS (booking.updated,
    message.new) refresca os baloes com um debounce curto. */
 function initRealtime() {
@@ -768,7 +742,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAppShell();
   initModals();
   initRedirectToast();
-  initLoginForms();
   initRealtime();
 
   /* Botao fisico do Android. Na raiz, minimiza em vez de fechar: fechar

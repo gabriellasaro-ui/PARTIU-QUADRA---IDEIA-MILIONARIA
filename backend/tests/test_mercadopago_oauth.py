@@ -307,7 +307,7 @@ def test_iniciar_sem_autenticacao(client):
 
 
 def test_status_do_gerente_sem_conexao(client, login):
-    r = client.get("/api/mercadopago/status", headers=login("dono@arenabolanarede.com.br"))
+    r = client.get("/api/mercadopago/oauth/status", headers=login("dono@arenabolanarede.com.br"))
     assert r.status_code == 200
     assert r.json()["mercadopago"]["conectada"] is False
 

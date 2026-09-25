@@ -444,9 +444,127 @@ const formatarData = (iso) => {
   return d ? `${d}/${m}` : iso;
 };
 
+/* Conexao com o Mercado Pago na tela de configuracoes.
+
+   O fluxo e OAuth: o dono sai daqui para o dominio do Mercado Pago, autoriza,
+   e o MP devolve o navegador para o callback da nossa API. O callback precisa
+   de MERCADOPAGO_PANEL_RETURN_URL apontando para esta tela; sem isso ele
+   responde JSON e o dono fica olhando um objeto na tela. */
+async function montarMercadoPago(root) {
+  const titulo = root.querySelector('[data-mp-titulo]');
+  if (!titulo) return;
+
+  const detalhe = root.querySelector('[data-mp-detalhe]');
+  const conectar = root.querySelector('[data-mp-conectar]');
+  const desconectar = root.querySelector('[data-mp-desconectar]');
+  const aviso = root.querySelector('[data-mp-aviso]');
+
+  function mostrarAviso(texto) {
+    if (!aviso) return;
+    aviso.textContent = texto || '';
+    aviso.hidden = !texto;
+  }
+
+  if (!API_BASE_URL) {
+    titulo.textContent = 'Indisponível sem a API';
+    if (detalhe) detalhe.textContent = 'Conecte o painel ao servidor para usar';
+    return;
+  }
+
+  async function pintar() {
+    let estado = null;
+    try {
+      estado = await managerService.mercadoPagoStatus();
+    } catch (error) {
+      titulo.textContent = 'Não foi possível verificar';
+      if (detalhe) detalhe.textContent = error?.message || 'Tente recarregar a página';
+      return;
+    }
+
+    const conectada = Boolean(estado && estado.conectada);
+    if (conectar) conectar.hidden = conectada;
+    if (desconectar) desconectar.hidden = !conectada;
+
+    if (!conectada) {
+      titulo.textContent = 'Conta não conectada';
+      if (detalhe) detalhe.textContent = 'Sem isso a arena não recebe pelos pagamentos';
+      mostrarAviso('');
+      return;
+    }
+
+    titulo.textContent = 'Conta conectada';
+    const vence = estado.expiraEm ? new Date(estado.expiraEm) : null;
+    if (detalhe) {
+      detalhe.textContent = vence
+        ? `Autorização válida até ${vence.toLocaleDateString('pt-BR')}`
+        : 'Autorização ativa';
+    }
+    /* `precisaRenovar` vem do servidor. A renovacao e automatica (tarefa
+       diaria), entao isto so aparece quando ela falhou — e ai so reconectando. */
+    mostrarAviso(estado.precisaRenovar
+      ? 'A autorização está perto de expirar. Reconecte para não interromper os recebimentos.'
+      : '');
+  }
+
+  if (conectar) {
+    conectar.addEventListener('click', async () => {
+      conectar.disabled = true;
+      const rotulo = conectar.innerHTML;
+      conectar.textContent = 'Abrindo o Mercado Pago...';
+      try {
+        const url = await managerService.mercadoPagoIniciar();
+        if (!url) throw new Error('O servidor não devolveu o endereço de autorização');
+        window.location.href = url;
+      } catch (error) {
+        window.pqToast?.(error?.message || 'Não foi possível iniciar a conexão');
+        conectar.disabled = false;
+        conectar.innerHTML = rotulo;
+      }
+    });
+  }
+
+  if (desconectar) {
+    desconectar.addEventListener('click', async () => {
+      if (!window.confirm('Desconectar a conta? A arena para de receber pagamentos até conectar de novo.')) return;
+      desconectar.disabled = true;
+      try {
+        await managerService.mercadoPagoDesconectar();
+        window.pqToast?.('Conta desconectada');
+        await pintar();
+      } catch (error) {
+        window.pqToast?.(error?.message || 'Não foi possível desconectar');
+      } finally {
+        desconectar.disabled = false;
+      }
+    });
+  }
+
+  /* O retorno do Mercado Pago chega como ?mp=ok / ?mp=erro na URL. Limpamos o
+     parametro depois de avisar, senao a mensagem reaparece a cada F5. */
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const resultado = params.get('mp');
+    if (resultado) {
+      window.pqToast?.(resultado === 'ok'
+        ? 'Conta do Mercado Pago conectada'
+        : 'Não foi possível conectar: ' + (params.get('motivo') || 'tente de novo'));
+      params.delete('mp');
+      params.delete('motivo');
+      const query = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (query ? '?' + query : '') + window.location.hash);
+    }
+  } catch (error) { /* historico bloqueado: so perde o aviso */ }
+
+  await pintar();
+}
+
 export async function renderManagerSettings(root) {
   const form = root.querySelector('[data-settings-form]');
   if (!form) return;
+
+  /* Nao bloqueia o resto da tela: se a consulta ao Mercado Pago demorar ou
+     falhar, as outras configuracoes continuam utilizaveis. */
+  montarMercadoPago(root).catch(() => {});
 
   // Com API o perfil e as configuracoes vivem no backend; sem API, storage.
   let dados;

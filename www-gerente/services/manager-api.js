@@ -156,6 +156,26 @@ export const mapAgendaEvent = (e) => {
 };
 
 export const managerService = {
+  /* CONEXAO COM O MERCADO PAGO.
+
+     Ate aqui so dava para conectar a conta por linha de comando: o dono da
+     quadra teria de pegar um token e chamar a API na mao, o que na pratica
+     significa que ninguem conectaria. Estas tres chamadas existem para a tela
+     de configuracoes fazer isso com um botao. */
+  async mercadoPagoStatus() {
+    const data = await api.get('/api/mercadopago/oauth/status');
+    return data?.mercadopago || null;
+  },
+
+  async mercadoPagoIniciar() {
+    const data = await api.get('/api/mercadopago/oauth/iniciar');
+    return data?.url || '';
+  },
+
+  async mercadoPagoDesconectar() {
+    return api.post('/api/mercadopago/oauth/desconectar');
+  },
+
   async dashboard() {
     return api.get('/api/gerente/dashboard');
   },
